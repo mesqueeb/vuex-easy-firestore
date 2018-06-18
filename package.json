@@ -1,0 +1,31 @@
+{
+  "name": "vuex-easy-firestore",
+  "version": "1.0.0",
+  "description": "Easy coupling of firestore and a vuex module. 2-way sync with 0 boilerplate!",
+  "main": "/src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mesqueeb/VuexEasyFirestore.git"
+  },
+  "keywords": [
+    "vuex",
+    "firestore",
+    "firebase",
+    "boilerplate",
+    "store",
+    "vue"
+  ],
+  "author": "Luca Ban - Mesqueeb",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mesqueeb/VuexEasyFirestore/issues"
+  },
+  "homepage": "https://github.com/mesqueeb/VuexEasyFirestore#readme",
+  "dependencies": {
+    "firebase": "^5.0.4",
+    "vuex-easy-access": "^1.0.3"
+  }
+}
