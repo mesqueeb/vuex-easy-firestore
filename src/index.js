@@ -1,7 +1,7 @@
 import { defaultMutations, getDeepRef } from 'vuex-easy-access'
 import startDebounce from './debounceHelper'
 import copyObj from './copyObj'
-import { removeNonFillables } from '../setDefaultItemValues'
+import checkFillables from './checkFillables'
 import Firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
@@ -10,9 +10,9 @@ const userId = store.getters['user/id']
 const interface = {
   vuexstorePath: 'nodes', // must be relative to rootState
   firestorePath: `userItems/${userId}/items`,
-  mapType: 'collection', // 'collection' only 'doc' not integrated yet
+  mapType: 'collection', // 'collection' only ('doc' not integrated yet)
   fetch: {
-    docLimit: 50,
+    docLimit: 50, // defaults to 50
   },
   insert: {
     checkCondition (value, storeRef) { return true },
@@ -63,8 +63,7 @@ export default {
         deletions: [],
         inserts: [],
         debounceTimer: null
-      },
-          patching: false,
+      }
     },
   },
   actions:
@@ -132,7 +131,7 @@ export default {
       state.syncStack.debounceTimer.refresh()
     },
     async batchSync ({getters, commit, dispatch, state, rootState, rootGetters}) {
-      let dbRef = getters.dbRef
+      const dbRef = getters.dbRef
       let batch = Firebase.firestore().batch()
       let count = 0
       // Add 'updateds' to batch
@@ -274,7 +273,7 @@ export default {
             fetchRef = fetchRef.orderBy(...orderBy)
           }
         }
-        fetchRef = fetchRef.limit(state.fetch.docLimit)
+        fetchRef = fetchRef.limit(getters.fetchConfig.docLimit)
 
         if (state.retrievedFetchRefs.includes(fetchRef)) {
           console.log('Already retrieved this part.')
@@ -287,7 +286,7 @@ export default {
             commit('SET_DONEFETCHING', true)
             return resolve('fetchedAll')
           }
-          if (querySnapshot.docs.length < state.fetch.docLimit) {
+          if (querySnapshot.docs.length < getters.fetchConfig.docLimit) {
             commit('SET_DONEFETCHING', true)
           }
           return callback(querySnapshot)
@@ -370,13 +369,43 @@ export default {
     storeRef: (state, getters, rootState) => {
       return getDeepRef(rootState, state.vuexstorePath)
     },
+    patchConfig: (state) => {
+      return (state.patch) ? state.patch : {}
+    },
+    insertConfig: (state) => {
+      return (state.insert) ? state.insert : {}
+    },
+    deleteConfig: (state) => {
+      return (state.delete) ? state.delete : {}
+    },
+    fetchConfig: (state) => {
+      const conf = (state.fetch) ? state.fetch : {}
+      if (!conf.docLimit) conf.docLimit = 50
+      return conf
+    },
+    patchCondition: (state, getters) => {
+      if (!getters.patchConfig.checkCondition) return false
+      if (!isFunction(getters.patchConfig.checkCondition)) return false
+      return getters.patchConfig.checkCondition
+    },
+    deleteCondition: (state, getters) => {
+      if (!getters.deleteConfig.checkCondition) return false
+      if (!isFunction(getters.deleteConfig.checkCondition)) return false
+      return getters.deleteConfig.checkCondition
+    },
+    insertCondition: (state, getters) => {
+      if (!getters.insertConfig.checkCondition) return false
+      if (!isFunction(getters.insertConfig.checkCondition)) return false
+      return getters.insertConfig.checkCondition
+    },
     prepareForPatch: (state, getters, rootState, rootGetters) =>
     (ids = [], fields = []) => {
-      let patchDataPerId = {}
-      ids.forEach(id => {
+      // get relevant data from the storeRef
+      // returns {object} -> {id: data}
+      return ids.reduce((carry, id) => {
         // Accept an extra condition to check
-        let check = state.patch.checkCondition
-        if (check && !check(id, fields, getters.storeRef)) return
+        let check = getters.patchCondition
+        if (check && !check(id, fields, getters.storeRef)) return carry
 
         let patchData = {}
         // Patch specific fields only
@@ -387,18 +416,18 @@ export default {
         // Patch the whole item
         } else {
           patchData = copyObj(getters.storeRef[id])
-          patchData = removeNonFillables(patchData)
+          patchData = checkFillables(patchData, getters.patchConfig.fillables, getters.patchConfig.guard)
         }
         patchData.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
-        patchDataPerId[id] = patchData
+        carry[id] = patchData
+        return carry
       })
-      return patchDataPerId
     },
     prepareForDeletion: (state, getters, rootState, rootGetters) =>
     (ids = []) => {
       return ids.reduce((carry, id) => {
         // Accept an extra condition to check
-        let check = state.delete.checkCondition
+        let check = getters.deleteCondition
         if (check && !check(id, getters.storeRef)) return carry
         carry.push(id)
         return carry
@@ -407,12 +436,17 @@ export default {
     prepareForInsert: (state, getters, rootState, rootGetters) =>
     (items = []) => {
       items = copyObj(items)
-      return items.map(item => {
-        item = removeNonFillables(item)
+      return items.reduce((carry, item) => {
+        // Accept an extra condition to check
+        let check = getters.insertCondition
+        if (check && !check(id, getters.storeRef)) return carry
+
+        item = checkFillables(item, getters.insertConfig.fillables, getters.insertConfig.guard)
         item.created_at = Firebase.firestore.FieldValue.serverTimestamp()
         item.created_by = rootGetters['user/id']
-        return item
-      })
+        carry.push(item)
+        return carry
+      }, [])
     }
   }
 }
