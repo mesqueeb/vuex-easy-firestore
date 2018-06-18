@@ -1,24 +1,36 @@
-import Vue from 'vue'
-import { defaultMutations } from 'vuex-easy-access'
-import { tempId } from '../../helpers/globalFunctions'
-import startDebounce from '../../helpers/debounceHelper'
-import copyObj from '../../helpers/copyObj'
+import { defaultMutations, getDeepRef } from 'vuex-easy-access'
+import startDebounce from './debounceHelper'
+import copyObj from './copyObj'
 import { removeNonFillables } from '../setDefaultItemValues'
-import { date, extend } from 'quasar'
-import asyncForEach from '../../helpers/AsyncForEach'
 import Firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
-// import * as firebaseui from 'firebaseui'
-let db = window.db
 
-
-const id = store.getters['user/id']
+const userId = store.getters['user/id']
 const interface = {
-  vuexstorePath: 'nodes',
-  firestorePath: `userItems/${id}/items`,
-  fetchDocAmount: 50,
-  mapType: 'collection', // 'collection' 'doc'
+  vuexstorePath: 'nodes', // must be relative to rootState
+  firestorePath: `userItems/${userId}/items`,
+  mapType: 'collection', // 'collection' only 'doc' not integrated yet
+  fetch: {
+    docLimit: 50,
+  },
+  insert: {
+    checkCondition (value, storeRef) { return true },
+    fillables: [],
+    guard: [],
+  },
+  patch: {
+    checkCondition (id, fields, storeRef) {
+      return (!id.toString().includes('tempItem'))
+    },
+    fillables: [],
+    guard: [],
+  },
+  delete: {
+    checkCondition (id, storeRef) {
+      return (!id.toString().includes('tempItem'))
+    },
+  }
 }
 
 function initialState () {
@@ -61,18 +73,14 @@ export default {
       {state, rootState, getters, rootGetters, commit, dispatch},
       {id, ids = [], field = '', fields = []} = {id: '', ids: [], field: '', fields: []}
     ) {
-      // 0. Prerequisites
-      // only work with arrays:
+      // 0. payload correction (only arrays)
       if (id) { ids = ids.push(id) }
       if (field) { fields = fields.push(field) }
-      // don't patch tempItems:
-      ids = ids.filter(id => !id.toString().includes('tempItem'))
-      if (!ids.length) return
 
-      // 1. Prepare item(s) for patching
+      // 1. Prepare for patching
       let syncStackItems = getters.prepareForPatch(ids, fields)
 
-      // 2. Push item(s) to syncStack
+      // 2. Push to syncStack
       Object.keys(syncStackItems).forEach(id => {
         if (!state.syncStack.updates[id]) {
           state.syncStack.updates[id] = {}
@@ -85,30 +93,31 @@ export default {
     },
     delete ({state, rootState, getters, rootGetters, commit, dispatch},
     {id = '', ids = []} = {id: '', ids: []}) {
-      // 0. Prerequisites
-      // work only with arrays:
+      // 0. payload correction (only arrays)
       if (id) { ids = ids.push(id) }
-      // don't patch tempItems:
-      ids = ids.filter(id => !id.toString().includes('tempItem'))
-      if (!ids.length) { return }
 
-      // 1. Push ids to syncStack
-      let deletions = state.syncStack.deletions.concat(ids)
-      state.syncStack.deletions = deletions
+      // 1. Prepare for patching
+      const syncStackIds = getters.prepareForDeletion(ids)
 
-      // 2. Create or refresh debounce
+      // 2. Push to syncStack
+      const deletions = state.syncStack.deletions.concat(syncStackIds)
+      commit('SET_SYNCSTACK.DELETIONS', deletions)
+
+      if (!state.syncStack.deletions.length) return
+      // 3. Create or refresh debounce
       return dispatch('handleSyncStackDebounce')
     },
     insert ({state, rootState, getters, rootGetters, commit, dispatch},
     {item, items = []} = {items: []}) {
-      // 0. Prerequisites
+      // 0. payload correction (only arrays)
       if (item) { items = items.push(item) }
 
-      // 1. Prepare item(s) for patching
-      let syncStackItems = getters.prepareForInsert(items)
+      // 1. Prepare for patching
+      const syncStackItems = getters.prepareForInsert(items)
 
-      // 2. Push item(s) to syncStack
-      state.syncStack.inserts = state.syncStack.inserts.concat(syncStackItems)
+      // 2. Push to syncStack
+      const inserts = state.syncStack.inserts.concat(syncStackItems)
+      commit('SET_SYNCSTACK.INSERTS', inserts)
 
       // 3. Create or refresh debounce
       return dispatch('handleSyncStackDebounce')
@@ -118,13 +127,13 @@ export default {
       if (!state.syncStack.debounceTimer) {
         let debounceTimer = startDebounce(1000)
         debounceTimer.done.then(_ => dispatch('batchSync'))
-        state.syncStack.debounceTimer = debounceTimer
+        commit('SET_SYNCSTACK.DEBOUNCETIMER', debounceTimer)
       }
       state.syncStack.debounceTimer.refresh()
     },
     async batchSync ({getters, commit, dispatch, state, rootState, rootGetters}) {
       let dbRef = getters.dbRef
-      let batch = window.db.batch()
+      let batch = Firebase.firestore().batch()
       let count = 0
       // Add 'updateds' to batch
       let updatesOriginal = copyObj(state.syncStack.updates)
@@ -233,10 +242,9 @@ export default {
             //   })
             // }
       }).catch(error => {
-        console.log('error on batchSync', error)
         commit('SET_PATCHING', 'error')
         commit('SET_SYNCSTACK.DEBOUNCETIMER', null)
-        throw {message: error, preset: 'error'}
+        throw error
       })
     },
     fetch (
@@ -248,7 +256,6 @@ export default {
       return new Promise((resolve, reject) => {
         console.log('[fetch] starting')
         if (!getters.signedIn) return resolve()
-        // rootState.loading = true
         if (state.doneFetching) {
           console.log('done fetching')
           return resolve('fetchedAll')
@@ -267,7 +274,7 @@ export default {
             fetchRef = fetchRef.orderBy(...orderBy)
           }
         }
-        fetchRef = fetchRef.limit(state.fetchDocAmount)
+        fetchRef = fetchRef.limit(state.fetch.docLimit)
 
         if (state.retrievedFetchRefs.includes(fetchRef)) {
           console.log('Already retrieved this part.')
@@ -280,7 +287,7 @@ export default {
             commit('SET_DONEFETCHING', true)
             return resolve('fetchedAll')
           }
-          if (querySnapshot.docs.length < state.fetchDocAmount) {
+          if (querySnapshot.docs.length < state.fetch.docLimit) {
             commit('SET_DONEFETCHING', true)
           }
           return callback(querySnapshot)
@@ -301,16 +308,12 @@ export default {
           resolve('fetchedAll')
         }).catch(error => {
           console.log(error)
-          reject(error)
+          return reject(error)
         })
       })
     },
     openDBChannel ({dispatch, getters, state, commit, rootState, rootGetters}) {
       return new Promise ((resolve, reject) => {
-        // Make loading screen
-        // commit('updateState', {loading: true})
-        // console.log('window.justLoggedIn in channel 1: ', window.justLoggedIn)
-        // Catch server ITEM changes
         getters.dbRef
         .where('archived', '==', false)
         .where('deleted', '==', false).orderBy('depth')
@@ -341,9 +344,8 @@ export default {
           })
           resolve()
         }, error => {
-          commit('SET_LOADING', false)
           commit('SET_PATCHING', 'error')
-          return reject({message: error, preset: 'error'})
+          return reject(error)
         })
       })
     },
@@ -365,13 +367,17 @@ export default {
       if (!getters.signedIn) return false
       return Firebase.firestore().path(state.firestorePath)
     },
-    storeRef: (state, getters) => {
-      return state.
+    storeRef: (state, getters, rootState) => {
+      return getDeepRef(rootState, state.vuexstorePath)
     },
     prepareForPatch: (state, getters, rootState, rootGetters) =>
     (ids = [], fields = []) => {
       let patchDataPerId = {}
       ids.forEach(id => {
+        // Accept an extra condition to check
+        let check = state.patch.checkCondition
+        if (check && !check(id, fields, getters.storeRef)) return
+
         let patchData = {}
         // Patch specific fields only
         if (fields.length) {
@@ -387,6 +393,16 @@ export default {
         patchDataPerId[id] = patchData
       })
       return patchDataPerId
+    },
+    prepareForDeletion: (state, getters, rootState, rootGetters) =>
+    (ids = []) => {
+      return ids.reduce((carry, id) => {
+        // Accept an extra condition to check
+        let check = state.delete.checkCondition
+        if (check && !check(id, getters.storeRef)) return carry
+        carry.push(id)
+        return carry
+      }, [])
     },
     prepareForInsert: (state, getters, rootState, rootGetters) =>
     (items = []) => {
