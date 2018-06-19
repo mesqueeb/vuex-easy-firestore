@@ -1,4 +1,5 @@
 import { defaultMutations, getDeepRef } from 'vuex-easy-access'
+import { isArray, isFunction } from 'is-what'
 import startDebounce from './utils/debounceHelper'
 import copyObj from './utils/copyObj'
 import setDefaultValues from './utils/setDefaultValues'
@@ -7,67 +8,8 @@ import Firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
 
-const fillables = [
-  'id',
-  'parent_id',
-  'depth',
-  'children_order', 'show_children',
-  'summary', 'description', 'toggle',
-  'tags',
-  'due_date',
-  'planned_time', 'used_time', 'completion_rate',
-  'calId', 'calendarId', 'start', 'end',
-  'recurrence', 'recurrenceSetting',
-  'done', 'done_date_full', 'done_date', 'done_hour', 'completion_memo', 'archived',
-  'parents_bodies',
-  'deleted', 'deleted_at',
-  'created_by', 'created_at', 'updated_at'
-]
-const defaultValues = {
-  children_order: [],
-  tags: {},
-  toggle: '',
-  show_children: true,
-  done: false,
-  archived: false,
-  deleted: false,
-  planned_time: 0,
-  used_time: 0
-}
-const userId = store.getters['user/id']
-const interface = {
-  vuexstorePath: 'nodes', // must be relative to rootState
-  firestorePath: `userItems/${userId}/items`,
-  mapType: 'collection', // 'collection' only ('doc' not integrated yet)
-  sync: {
-    type: '2way', // '2way' only ('1way' not yet integrated)
-    where: [['archived', '==', false], ['deleted', '==', false]],
-    orderBy: ['depth'],
-    // You HAVE to set all fields you want to be reactive on beforehand!
-    // These default values will be added to the documents if they return undefined on retrieval
-    defaultValues, // object
-  },
-  fetch: {
-    docLimit: 50, // defaults to 50
-  },
-  insert: {
-    checkCondition (value, storeRef) { return true },
-    fillables,
-    guard: [],
-  },
-  patch: {
-    checkCondition (id, fields, storeRef) {
-      return (!id.toString().includes('tempItem'))
-    },
-    fillables,
-    guard: [],
-  },
-  delete: {
-    checkCondition (id, storeRef) {
-      return (!id.toString().includes('tempItem'))
-    },
-  }
-}
+import testConfig from './testConfig'
+import defaultConfig from './defaultConfig'
 
 function initialState () {
   return {
@@ -84,6 +26,8 @@ function initialState () {
     stopPatchingTimeout: null,
   }
 }
+
+const interface = Object.assign(defaultConfig, testConfig)
 
 export default {
   state: {
@@ -310,7 +254,7 @@ export default {
             fetchRef = fetchRef.orderBy(...orderBy)
           }
         }
-        fetchRef = fetchRef.limit(getters.fetchConfig.docLimit)
+        fetchRef = fetchRef.limit(getters.fetch.docLimit)
         // Stop if all records already fetched
         if (state.retrievedFetchRefs.includes(fetchRef)) {
           console.log('Already retrieved this part.')
@@ -324,7 +268,7 @@ export default {
             commit('SET_DONEFETCHING', true)
             return resolve('fetchedAll')
           }
-          if (querySnapshot.docs.length < getters.fetchConfig.docLimit) {
+          if (querySnapshot.docs.length < getters.fetch.docLimit) {
             commit('SET_DONEFETCHING', true)
           }
           return callback(querySnapshot)
@@ -333,7 +277,7 @@ export default {
             let item = doc.data()
             item.id = id
             console.log('[fetch] retrieved record: ', item)
-            if (getters.storeRef[id]) { return }
+            if (getters.storeRef[id]) return
             dispatch('addAndCleanNode', item)
           })
           commit('PUSH_RETRIEVEDFETCHREFS', fetchRef)
@@ -362,28 +306,33 @@ export default {
       return new Promise ((resolve, reject) => {
         dbRef
         .onSnapshot(querySnapshot => {
-          let source = querySnapshot.metadata.hasPendingWrites ? 'Local' : 'Server'
+          let source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
           querySnapshot.docChanges.forEach(change => {
             // console.log('change', change)
-            let tempId = change.doc.data().id
-            let id = change.doc.id
-            let item = change.doc.data()
-            item.id = id
+            const id = change.doc.id
+            let doc = change.doc.data()
+            const tempId = change.doc.data().id
+            doc.id = id
             if (change.type === 'added') {
-              item = setDefaultValues(item, state.sync.defaultValues)
-              dispatch('newItemFromServer', {item, tempId})
-
+              doc = setDefaultValues(doc, state.sync.defaultValues)
+              state.added.before(id, doc, source, change)
+              dispatch('newItemFromServer', {item: doc, tempId})
+              state.added.after(id, doc, source, change)
             }
             if (change.type === 'modified') {
-              if (source === 'Server') {
+              if (source === 'server') {
+                state.modified.before(id, doc, source, change)
                 console.log('Modified item: ', id, copyObj(item), 'server Msg: ', change)
-                dispatch('modifiedItemFromServer', {item})
+                dispatch('modifiedItemFromServer', {item: doc})
+                state.modified.after(id, doc, source, change)
               }
             }
             if (change.type === 'removed') {
-              if (source === 'Server') {
+              if (source === 'server') {
+                state.removed.before(id, doc, source, change)
                 console.log('Removed item: ', id, copyObj(item), 'server Msg: ', change)
-                dispatch('deletedItemFromServer', {item})
+                dispatch('deletedItemFromServer', {item: doc})
+                state.removed.after(id, doc, source, change)
               }
             }
           })
@@ -415,41 +364,12 @@ export default {
     storeRef: (state, getters, rootState) => {
       return getDeepRef(rootState, state.vuexstorePath)
     },
-    patchConfig: (state) => {
-      return (state.patch) ? state.patch : {}
-    },
-    insertConfig: (state) => {
-      return (state.insert) ? state.insert : {}
-    },
-    deleteConfig: (state) => {
-      return (state.delete) ? state.delete : {}
-    },
-    fetchConfig: (state) => {
-      const conf = (state.fetch) ? state.fetch : {}
-      if (!conf.docLimit) conf.docLimit = 50
-      return conf
-    },
-    patchCondition: (state, getters) => {
-      if (!getters.patchConfig.checkCondition) return false
-      if (!isFunction(getters.patchConfig.checkCondition)) return false
-      return getters.patchConfig.checkCondition
-    },
-    deleteCondition: (state, getters) => {
-      if (!getters.deleteConfig.checkCondition) return false
-      if (!isFunction(getters.deleteConfig.checkCondition)) return false
-      return getters.deleteConfig.checkCondition
-    },
-    insertCondition: (state, getters) => {
-      if (!getters.insertConfig.checkCondition) return false
-      if (!isFunction(getters.insertConfig.checkCondition)) return false
-      return getters.insertConfig.checkCondition
-    },
     syncWhere: (state) => {
-      if (!state.sync || !state.sync.where) return []
+      if (!state.sync.where || !isArray(state.sync.where)) return []
       return state.sync.where
     },
     syncOrderBy: (state) => {
-      if (!state.sync || !state.sync.orderBy) return []
+      if (!state.sync.orderBy || !isArray(state.sync.orderBy)) return []
       return state.sync.orderBy
     },
     prepareForPatch: (state, getters, rootState, rootGetters) =>
@@ -458,7 +378,7 @@ export default {
       // returns {object} -> {id: data}
       return ids.reduce((carry, id) => {
         // Accept an extra condition to check
-        let check = getters.patchCondition
+        let check = state.patch.checkCondition
         if (check && !check(id, fields, getters.storeRef)) return carry
 
         let patchData = {}
@@ -470,7 +390,7 @@ export default {
         // Patch the whole item
         } else {
           patchData = copyObj(getters.storeRef[id])
-          patchData = checkFillables(patchData, getters.patchConfig.fillables, getters.patchConfig.guard)
+          patchData = checkFillables(patchData, getters.patch.fillables, getters.patch.guard)
         }
         patchData.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
         carry[id] = patchData
@@ -481,7 +401,7 @@ export default {
     (ids = []) => {
       return ids.reduce((carry, id) => {
         // Accept an extra condition to check
-        let check = getters.deleteCondition
+        let check = state.delete.checkCondition
         if (check && !check(id, getters.storeRef)) return carry
         carry.push(id)
         return carry
@@ -492,10 +412,10 @@ export default {
       items = copyObj(items)
       return items.reduce((carry, item) => {
         // Accept an extra condition to check
-        let check = getters.insertCondition
+        let check = state.insert.checkCondition
         if (check && !check(id, getters.storeRef)) return carry
 
-        item = checkFillables(item, getters.insertConfig.fillables, getters.insertConfig.guard)
+        item = checkFillables(item, getters.insert.fillables, getters.insert.guard)
         item.created_at = Firebase.firestore.FieldValue.serverTimestamp()
         item.created_by = rootGetters['user/id']
         carry.push(item)
