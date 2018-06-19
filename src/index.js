@@ -27,16 +27,28 @@ function initialState () {
   }
 }
 
-const interface = Object.assign(defaultConfig, testConfig)
+const config = Object.assign(defaultConfig, testConfig)
 
 export default {
+  namespaced: true,
   state: {
     ...initialState(),
-    ...interface,
+    ...config,
   },
   mutations:
   {
     ...defaultMutations(initialState()),
+    SET_DOC (state, {id, doc}) {
+      this._vm.$set(getters.storeRef, id, doc)
+    },
+    OVERWRITE_DOC (state, {id, doc}) {
+      this._vm.$set(getters.storeRef, id, Object.assign(
+        getters.storeRef[id], doc
+      ))
+    },
+    DELETE_DOC (state, {id}) {
+      this._vm.$delete(getters.storeRef, id)
+    },
     resetSyncStack (state) {
       state.syncStack = {
         updates: {},
@@ -227,8 +239,8 @@ export default {
       })
     },
     fetch (
-      {state, rootState, dispatch, getters, rootGetters},
-      {whereFilters = [], orderBy = [], callback} = {whereFilters: [], orderBy: [], callback: _ => {}}
+      {state, getters, commit},
+      {whereFilters = [], orderBy = []} = {whereFilters: [], orderBy: []}
       // whereFilters: [['archived', '==', true]]
       // orderBy: ['done_date', 'desc']
     ) {
@@ -254,7 +266,7 @@ export default {
             fetchRef = fetchRef.orderBy(...orderBy)
           }
         }
-        fetchRef = fetchRef.limit(getters.fetch.docLimit)
+        fetchRef = fetchRef.limit(state.fetch.docLimit)
         // Stop if all records already fetched
         if (state.retrievedFetchRefs.includes(fetchRef)) {
           console.log('Already retrieved this part.')
@@ -263,44 +275,35 @@ export default {
         // make fetch request
         fetchRef.get()
         .then(querySnapshot => {
-          console.log(`[fetch] querySnapshot: (${querySnapshot.docs.length}) `, querySnapshot)
-          if (querySnapshot.docs.length === 0) {
+          const docs = querySnapshot.docs
+          if (docs.length === 0) {
             commit('SET_DONEFETCHING', true)
             return resolve('fetchedAll')
           }
-          if (querySnapshot.docs.length < getters.fetch.docLimit) {
+          if (docs.length < state.fetch.docLimit) {
             commit('SET_DONEFETCHING', true)
           }
-          return callback(querySnapshot)
-          querySnapshot.forEach(doc => {
-            let id = doc.id
-            let item = doc.data()
-            item.id = id
-            console.log('[fetch] retrieved record: ', item)
-            if (getters.storeRef[id]) return
-            dispatch('addAndCleanNode', item)
-          })
           commit('PUSH_RETRIEVEDFETCHREFS', fetchRef)
           // Get the last visible document
-          const lastVisible = querySnapshot.docs.pop()
+          resolve(querySnapshot)
+          const lastVisible = docs[docs.length - 1]
           // get the next records.
           const next = fetchRef.startAfter(lastVisible)
           commit('SET_NEXTFETCHREF', next)
-          resolve('fetchedAll')
         }).catch(error => {
           console.log(error)
           return reject(error)
         })
       })
     },
-    openDBChannel ({dispatch, getters, state, commit, rootState, rootGetters}) {
+    openDBChannel ({getters, state, commit, dispatch}) {
       let dbRef = getters.dbRef
       // apply where filters and orderBy
-      getters.syncWhere.forEach(paramsArr => {
+      state.sync.where.forEach(paramsArr => {
         dbRef = dbRef.where(...paramsArr)
       })
-      if (orderBy.length) {
-        dbRef = dbRef.orderBy(...getters.syncOrderBy)
+      if (state.sync.orderBy.length) {
+        dbRef = dbRef.orderBy(...state.sync.orderBy)
       }
       // make a promise
       return new Promise ((resolve, reject) => {
@@ -308,46 +311,59 @@ export default {
         .onSnapshot(querySnapshot => {
           let source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
           querySnapshot.docChanges.forEach(change => {
-            // console.log('change', change)
             const id = change.doc.id
             let doc = change.doc.data()
-            const tempId = change.doc.data().id
-            doc.id = id
+            // Set default values on doc
             if (change.type === 'added') {
               doc = setDefaultValues(doc, state.sync.defaultValues)
-              state.added.before(id, doc, source, change)
-              dispatch('newItemFromServer', {item: doc, tempId})
-              state.added.after(id, doc, source, change)
             }
-            if (change.type === 'modified') {
-              if (source === 'server') {
-                state.modified.before(id, doc, source, change)
-                console.log('Modified item: ', id, copyObj(item), 'server Msg: ', change)
-                dispatch('modifiedItemFromServer', {item: doc})
-                state.modified.after(id, doc, source, change)
+            // start before hook
+            state.sync[change.type].before(id, doc, this, source, change)
+            .then(response => {
+              // modify store data based on change.type
+              switch (change.type) {
+                case 'added':
+                  dispatch('SET_DOC', {id, doc})
+                  break
+                case 'modified':
+                  dispatch('OVERWRITE_DOC', {id, doc})
+                  break
+                case 'removed':
+                  dispatch('DELETE_DOC', {id})
+                  break
               }
-            }
-            if (change.type === 'removed') {
-              if (source === 'server') {
-                state.removed.before(id, doc, source, change)
-                console.log('Removed item: ', id, copyObj(item), 'server Msg: ', change)
-                dispatch('deletedItemFromServer', {item: doc})
-                state.removed.after(id, doc, source, change)
-              }
-            }
+              // start after hook
+              state.sync[change.type].after(id, doc, this, source, change, response)
+              resolve()
+            })
+            .catch(error => {
+              // do ONLY after hook if returned error
+              state.sync[change.type].after(id, doc, this, source, change, error)
+              reject(error)
+            })
           })
-          resolve()
         }, error => {
           commit('SET_PATCHING', 'error')
           return reject(error)
         })
       })
     },
-    stopPatching ({state, rootState, commit, dispatch}) {
+    SET_DOC ({getters}, {id, doc}) {
+      this._vm.$set(getters.storeRef, id, doc)
+    },
+    OVERWRITE_DOC ({getters}, {id, doc}) {
+      this._vm.$set(getters.storeRef, id, Object.assign(
+        getters.storeRef[id], doc
+      ))
+    },
+    DELETE_DOC ({getters}, {id}) {
+      this._vm.$delete(getters.storeRef, id)
+    },
+    stopPatching ({state, commit}) {
       if (state.stopPatchingTimeout) { clearTimeout(state.stopPatchingTimeout) }
       state.stopPatchingTimeout = setTimeout(_ => { commit('SET_PATCHING', false) }, 300)
     },
-    startPatching ({state, rootState, commit, dispatch}) {
+    startPatching ({state, commit}) {
       if (state.stopPatchingTimeout) { clearTimeout(state.stopPatchingTimeout) }
       commit('SET_PATCHING', true)
     }
@@ -359,18 +375,10 @@ export default {
     },
     dbRef: (state, getters, rootState, rootGetters) => {
       if (!getters.signedIn) return false
-      return Firebase.firestore().path(state.firestorePath)
+      return Firebase.firestore().collection(state.firestorePath)
     },
     storeRef: (state, getters, rootState) => {
       return getDeepRef(rootState, state.vuexstorePath)
-    },
-    syncWhere: (state) => {
-      if (!state.sync.where || !isArray(state.sync.where)) return []
-      return state.sync.where
-    },
-    syncOrderBy: (state) => {
-      if (!state.sync.orderBy || !isArray(state.sync.orderBy)) return []
-      return state.sync.orderBy
     },
     prepareForPatch: (state, getters, rootState, rootGetters) =>
     (ids = [], fields = []) => {

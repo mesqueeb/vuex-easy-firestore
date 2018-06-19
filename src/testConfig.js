@@ -1,3 +1,4 @@
+import store from '../index'
 const fillables = [
   'id',
   'parent_id',
@@ -25,10 +26,10 @@ const defaultValues = {
   planned_time: 0,
   used_time: 0
 }
-const userId = store.getters['user/id']
+// const userId = store.getters['user/id']
 export default {
   vuexstorePath: 'nodes', // must be relative to rootState
-  firestorePath: `userItems/${userId}/items`,
+  firestorePath: 'userItems/${userId}/items',
   mapType: 'collection', // 'collection' only ('doc' not integrated yet)
   sync: {
     type: '2way', // '2way' only ('1way' not yet integrated)
@@ -39,16 +40,42 @@ export default {
     // These default values will be merged with a reverse Object.assign on retrieved documents
     defaultValues, // object
     added: {
-      before: _ => _,
-      after: _ => _,
-    },
-    modified: {
-      before: _ => _,
-      after: _ => _,
+      before: async (id, doc, store, source, change) => {
+        const tempId = doc.id
+        doc.id = id
+        if (store.state.tempIdsToReplace.includes(tempId)) {
+          store.dispatch('replaceTempItem', {item: doc, tempId})
+          store.state.tempIdsToReplace = store.state.tempIdsToReplace
+            .filter(_tempId => _tempId !== tempId)
+          console.log(`Took ${tempId} out of the tempIdsToReplace.`)
+          throw false
+        }
+      },
+      after: (id, doc, store, source, change, response) => {
+        if (response === false) return
+        const item = doc
+        if (item.parent_id && !store.state.nodes[item.parent_id]) {
+          store.state.orphans.push(item)
+        }
+        if (!item.archived && dateIsBeforeToday(item.done_date)) {
+          console.log('archiving this item: ', item.id, item)
+          // Update done date to adjust other related fields:
+          store.commit('updateDoneDate', {id: item.id, date: item.done_date_full})
+          store.dispatch('patch', {id: item.id, fields: ['archived']})
+          if (item.parent_id) {
+            store.state.nodes[item.parent_id].children_order =
+              store.state.nodes[item.parent_id].children_order
+              .filter(childId => childId !== item.id)
+            // Patch and recalculate
+            store.dispatch('patch', {id: item.parent_id, field: 'children_order'})
+          }
+        }
+      }
     },
     removed: {
-      before: _ => _,
-      after: _ => _,
+      after: (id, doc, store, source, change) => {
+        delete window.cachedItems[id]
+      }
     },
   },
   fetch: {
