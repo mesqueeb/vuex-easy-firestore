@@ -1,29 +1,65 @@
 import { defaultMutations, getDeepRef } from 'vuex-easy-access'
-import startDebounce from './debounceHelper'
-import copyObj from './copyObj'
-import checkFillables from './checkFillables'
+import startDebounce from './utils/debounceHelper'
+import copyObj from './utils/copyObj'
+import setDefaultValues from './utils/setDefaultValues'
+import checkFillables from './utils/checkFillables'
 import Firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
 
+const fillables = [
+  'id',
+  'parent_id',
+  'depth',
+  'children_order', 'show_children',
+  'summary', 'description', 'toggle',
+  'tags',
+  'due_date',
+  'planned_time', 'used_time', 'completion_rate',
+  'calId', 'calendarId', 'start', 'end',
+  'recurrence', 'recurrenceSetting',
+  'done', 'done_date_full', 'done_date', 'done_hour', 'completion_memo', 'archived',
+  'parents_bodies',
+  'deleted', 'deleted_at',
+  'created_by', 'created_at', 'updated_at'
+]
+const defaultValues = {
+  children_order: [],
+  tags: {},
+  toggle: '',
+  show_children: true,
+  done: false,
+  archived: false,
+  deleted: false,
+  planned_time: 0,
+  used_time: 0
+}
 const userId = store.getters['user/id']
 const interface = {
   vuexstorePath: 'nodes', // must be relative to rootState
   firestorePath: `userItems/${userId}/items`,
   mapType: 'collection', // 'collection' only ('doc' not integrated yet)
+  sync: {
+    type: '2way', // '2way' only ('1way' not yet integrated)
+    where: [['archived', '==', false], ['deleted', '==', false]],
+    orderBy: ['depth'],
+    // You HAVE to set all fields you want to be reactive on beforehand!
+    // These default values will be added to the documents if they return undefined on retrieval
+    defaultValues, // object
+  },
   fetch: {
     docLimit: 50, // defaults to 50
   },
   insert: {
     checkCondition (value, storeRef) { return true },
-    fillables: [],
+    fillables,
     guard: [],
   },
   patch: {
     checkCondition (id, fields, storeRef) {
       return (!id.toString().includes('tempItem'))
     },
-    fillables: [],
+    fillables,
     guard: [],
   },
   delete: {
@@ -259,6 +295,7 @@ export default {
           console.log('done fetching')
           return resolve('fetchedAll')
         }
+        // attach fetch filters
         let fetchRef
         if (state.nextFetchRef) {
           // get next ref if saved in state
@@ -274,11 +311,12 @@ export default {
           }
         }
         fetchRef = fetchRef.limit(getters.fetchConfig.docLimit)
-
+        // Stop if all records already fetched
         if (state.retrievedFetchRefs.includes(fetchRef)) {
           console.log('Already retrieved this part.')
           return resolve()
         }
+        // make fetch request
         fetchRef.get()
         .then(querySnapshot => {
           console.log(`[fetch] querySnapshot: (${querySnapshot.docs.length}) `, querySnapshot)
@@ -312,10 +350,17 @@ export default {
       })
     },
     openDBChannel ({dispatch, getters, state, commit, rootState, rootGetters}) {
+      let dbRef = getters.dbRef
+      // apply where filters and orderBy
+      getters.syncWhere.forEach(paramsArr => {
+        dbRef = dbRef.where(...paramsArr)
+      })
+      if (orderBy.length) {
+        dbRef = dbRef.orderBy(...getters.syncOrderBy)
+      }
+      // make a promise
       return new Promise ((resolve, reject) => {
-        getters.dbRef
-        .where('archived', '==', false)
-        .where('deleted', '==', false).orderBy('depth')
+        dbRef
         .onSnapshot(querySnapshot => {
           let source = querySnapshot.metadata.hasPendingWrites ? 'Local' : 'Server'
           querySnapshot.docChanges.forEach(change => {
@@ -325,8 +370,9 @@ export default {
             let item = change.doc.data()
             item.id = id
             if (change.type === 'added') {
-              // console.log('Raw new item: ', id, copyObj(item), 'server Msg: ', change)
+              item = setDefaultValues(item, state.sync.defaultValues)
               dispatch('newItemFromServer', {item, tempId})
+
             }
             if (change.type === 'modified') {
               if (source === 'Server') {
@@ -397,6 +443,14 @@ export default {
       if (!getters.insertConfig.checkCondition) return false
       if (!isFunction(getters.insertConfig.checkCondition)) return false
       return getters.insertConfig.checkCondition
+    },
+    syncWhere: (state) => {
+      if (!state.sync || !state.sync.where) return []
+      return state.sync.where
+    },
+    syncOrderBy: (state) => {
+      if (!state.sync || !state.sync.orderBy) return []
+      return state.sync.orderBy
     },
     prepareForPatch: (state, getters, rootState, rootGetters) =>
     (ids = [], fields = []) => {
