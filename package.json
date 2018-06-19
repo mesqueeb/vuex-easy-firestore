@@ -26,6 +26,12 @@
   "homepage": "https://github.com/mesqueeb/VuexEasyFirestore#readme",
   "dependencies": {
     "firebase": "^5.0.4",
-    "vuex-easy-access": "^1.0.3"
+    "is-what": "^1.0.1",
+    "vuex-easy-access": "^1.0.4"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.7.0"
   }
 }
