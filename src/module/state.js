@@ -14,6 +14,6 @@ const state = {
   stopPatchingTimeout: null
 }
 
-export default function (userState, userConfig) {
+export default function (userState = {}, userConfig) {
   return Object.assign({}, state, defaultConfig, userState, userConfig)
 }

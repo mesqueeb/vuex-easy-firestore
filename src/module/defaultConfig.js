@@ -7,7 +7,6 @@
  * @param {string} id the doc id returned in `change.doc.id` (see firestore documentation for more info)
  * @param {object} doc the doc returned in `change.doc.data()` (see firestore documentation for more info)
  * @param {string} source of the change. Can be 'local' or 'server'
- * @param {object} change of firestore at `querySnapshot.docChanges.forEach(change => ...)` (see firestore documentation for more info)
  */
 function syncHook (storeUpdateFn, store, id, doc, source, change) {
   // throw error if you want to stop the document in your store from being modified

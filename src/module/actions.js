@@ -242,8 +242,8 @@ const actions = {
       })
     })
   },
-  dbUpdate ({dispatch}, {type, id, doc}) {
-    switch (type) {
+  dbUpdate ({dispatch}, {change, id, doc}) {
+    switch (change) {
       case 'added':
         dispatch('SET_DOC', {id, doc})
         break
@@ -269,19 +269,18 @@ const actions = {
       dbRef
       .onSnapshot(querySnapshot => {
         let source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
+        console.log(`found ${querySnapshot.docs.length} documents`)
         querySnapshot.docChanges.forEach(change => {
           const id = change.doc.id
-          let doc = change.doc.data()
-          // Set default values on doc
-          if (change.type === 'added') {
-            doc = setDefaultValues(doc, state.sync.defaultValues)
-          }
+          const doc = (change.type === 'added')
+            ? setDefaultValues(change.doc.data(), state.sync.defaultValues)
+            : change.doc.data()
           // prepare dbUpdate action
-          function storeUpdateFn () { return dispatch('dbUpdate', {type: change.type, id, doc}) }
+          function storeUpdateFn () { return dispatch('dbUpdate', {change: change.type, id, doc}) }
           // get user set sync hook function
           const syncHookFn = state.sync[change.type]
           if (syncHookFn) {
-            syncHookFn(storeUpdateFn, this, id, doc, source, change)
+            syncHookFn(storeUpdateFn, this, id, doc, source)
           } else {
             storeUpdateFn()
           }
@@ -294,6 +293,7 @@ const actions = {
     })
   },
   SET_DOC ({getters}, {id, doc}) {
+    console.log('set! ')
     this._vm.$set(getters.storeRef, id, doc)
   },
   OVERWRITE_DOC ({getters}, {id, doc}) {
@@ -314,6 +314,6 @@ const actions = {
   }
 }
 
-export default function (userActions) {
+export default function (userActions = {}) {
   return Object.assign({}, actions, userActions)
 }

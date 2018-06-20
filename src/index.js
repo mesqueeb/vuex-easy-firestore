@@ -4,6 +4,8 @@ import iniMutations from './module/mutations'
 import iniActions from './module/actions'
 import iniGetters from './module/getters'
 
+let conf = {state: null, mutations: null, actions: null, getters: null}
+
 /**
  * A function that returns a vuex module object with seamless 2-way sync for firestore.
  *
@@ -11,17 +13,18 @@ import iniGetters from './module/getters'
  * @returns {object} the module ready to be included in your vuex store
  */
 export default function (userConfig) {
-  const userState = userConfig.state
-  const userMutations = userConfig.mutations
-  const userActions = userConfig.actions
-  const userGetters = userConfig.getters
-  delete userConfig.state
-  delete userConfig.mutations
-  delete userConfig.actions
-  delete userConfig.getters
+  Object.assign(conf, userConfig)
+  const userState = conf.state
+  const userMutations = conf.mutations
+  const userActions = conf.actions
+  const userGetters = conf.getters
+  delete conf.state
+  delete conf.mutations
+  delete conf.actions
+  delete conf.getters
   return {
     namespaced: true,
-    state: iniState(userState, userConfig),
+    state: iniState(userState, conf),
     mutations: iniMutations(userMutations),
     actions: iniActions(userActions),
     getters: iniGetters(userGetters)

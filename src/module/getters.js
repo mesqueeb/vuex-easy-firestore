@@ -11,10 +11,12 @@ const getters = {
   },
   dbRef: (state, getters, rootState, rootGetters) => {
     if (!getters.signedIn) return false
-    return Firebase.firestore().collection(state.firestorePath)
+    const userId = Firebase.auth().currentUser.uid
+    const path = state.firestorePath.replace('{userId}', userId)
+    return Firebase.firestore().collection(path)
   },
   storeRef: (state, getters, rootState) => {
-    returngetDeepRef(rootState, state.vuexstorePath)
+    return getDeepRef(rootState, state.vuexstorePath)
   },
   prepareForPatch: (state, getters, rootState, rootGetters) =>
   (ids = [], fields = []) => {
@@ -68,6 +70,6 @@ const getters = {
   }
 }
 
-export default function (userGetters) {
+export default function (userGetters = {}) {
   return Object.assign({}, getters, userGetters)
 }
