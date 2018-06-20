@@ -27,6 +27,7 @@
   "dependencies": {
     "firebase": "^5.0.4",
     "is-what": "^1.0.1",
+    "nanoclone": "^0.2.1",
     "vuex-easy-access": "^1.0.4"
   },
   "devDependencies": {

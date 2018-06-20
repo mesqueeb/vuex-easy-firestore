@@ -1,5 +1,5 @@
 
-import copyObj from './copyObj'
+import copyObj from 'nanoclone'
 
 /**
  * Sets default values on an object
@@ -8,5 +8,5 @@ import copyObj from './copyObj'
  * @param {object} defaultValues the default values
  */
 export default function (obj, defaultValues) {
-  return Object.assign({}, copyObj(defaultValues), copyObj(obj))
+  return copyObj(Object.assign({}, defaultValues, obj))
 }
