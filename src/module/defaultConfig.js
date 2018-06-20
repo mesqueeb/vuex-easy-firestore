@@ -35,7 +35,7 @@ export default {
     docLimit: 50, // defaults to 50
   },
   insert: {
-    // checkCondition (value, storeRef) { return (params == 'something') },
+    // checkCondition (doc, storeRef) { return (params == 'something') },
     checkCondition: null,
     fillables: [],
     guard: [],

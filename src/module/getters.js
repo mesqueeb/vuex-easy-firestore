@@ -1,7 +1,7 @@
 import Firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
-import copyObj from 'nanoclone'
+import copyObj from '../utils/copyObj'
 import { getDeepRef } from 'vuex-easy-access'
 import checkFillables from '../utils/checkFillables'
 
@@ -36,12 +36,12 @@ const getters = {
       // Patch the whole item
       } else {
         patchData = copyObj(getters.storeRef[id])
-        patchData = checkFillables(patchData, getters.patch.fillables, getters.patch.guard)
+        patchData = checkFillables(patchData, state.patch.fillables, state.patch.guard)
       }
       patchData.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
       carry[id] = patchData
       return carry
-    })
+    }, {})
   },
   prepareForDeletion: (state, getters, rootState, rootGetters) =>
   (ids = []) => {
@@ -59,9 +59,9 @@ const getters = {
     return items.reduce((carry, item) => {
       // Accept an extra condition to check
       let check = state.insert.checkCondition
-      if (check && !check(id, getters.storeRef)) return carry
+      if (check && !check(item, getters.storeRef)) return carry
 
-      item = checkFillables(item, getters.insert.fillables, getters.insert.guard)
+      item = checkFillables(item, state.insert.fillables, state.insert.guard)
       item.created_at = Firebase.firestore.FieldValue.serverTimestamp()
       item.created_by = rootGetters['user/id']
       carry.push(item)

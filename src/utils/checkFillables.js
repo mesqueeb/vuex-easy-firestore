@@ -1,4 +1,5 @@
 
+import { isObject } from 'is-what'
 /**
  * Checks all props of an object and deletes guarded and non-fillables.
  *
@@ -9,8 +10,9 @@
  * @returns {object} the cleaned object after deleting guard and non-fillables
  */
 export default function (obj, fillables = [], guard = []) {
+  if (!isObject(obj)) return obj
   if (fillables.length) {
-    Object.keys[obj].forEach(key => {
+    Object.keys(obj).forEach(key => {
       if (!fillables.includes(key)) {
         delete obj[key]
       }

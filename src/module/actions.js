@@ -1,18 +1,21 @@
 import Firebase from 'firebase/app'
 import 'firebase/firestore'
-import copyObj from 'nanoclone'
+import copyObj from '../utils/copyObj'
+import { isArray, isString } from 'is-what'
 
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
 
 const actions = {
   patch (
-    {state, rootState, getters, rootGetters, commit, dispatch},
-    {id, ids = [], field = '', fields = []} = {id: '', ids: [], field: '', fields: []}
+    {state, getters, commit, dispatch},
+    {id = '', ids = [], field = '', fields = []} = {ids: [], fields: []}
   ) {
     // 0. payload correction (only arrays)
-    if (id) { ids = ids.push(id) }
-    if (field) { fields = fields.push(field) }
+    if (!isArray(ids) || !isArray(fields)) return console.log('ids, fields need to be arrays')
+    if (!isString(id) || !isString(field)) return console.log('id, field need to be strings')
+    if (id) ids.push(id)
+    if (field) fields.push(field)
 
     // 1. Prepare for patching
     let syncStackItems = getters.prepareForPatch(ids, fields)
@@ -28,10 +31,12 @@ const actions = {
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
-  delete ({state, rootState, getters, rootGetters, commit, dispatch},
-  {id = '', ids = []} = {id: '', ids: []}) {
+  delete ({state, getters, commit, dispatch},
+  {id = '', ids = []} = {ids: []}) {
     // 0. payload correction (only arrays)
-    if (id) { ids = ids.push(id) }
+    if (!isArray(ids)) return console.log('ids needs to be an array')
+    if (!isString(id)) return console.log('id needs to be a string')
+    if (id) ids.push(id)
 
     // 1. Prepare for patching
     const syncStackIds = getters.prepareForDeletion(ids)
@@ -44,10 +49,11 @@ const actions = {
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
-  insert ({state, rootState, getters, rootGetters, commit, dispatch},
+  insert ({state, getters, commit, dispatch},
   {item, items = []} = {items: []}) {
     // 0. payload correction (only arrays)
-    if (item) { items = items.push(item) }
+    if (!isArray(items)) return console.log('items needs to be an array')
+    if (item) items.push(item)
 
     // 1. Prepare for patching
     const syncStackItems = getters.prepareForInsert(items)
@@ -59,16 +65,16 @@ const actions = {
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
-  handleSyncStackDebounce ({commit, dispatch, state, rootGetters}) {
+  handleSyncStackDebounce ({state, commit, dispatch, getters}) {
     if (!getters.signedIn) return false
     if (!state.syncStack.debounceTimer) {
-      let debounceTimer = startDebounce(1000)
+      const debounceTimer = startDebounce(1000)
       debounceTimer.done.then(_ => dispatch('batchSync'))
       commit('SET_SYNCSTACK.DEBOUNCETIMER', debounceTimer)
     }
     state.syncStack.debounceTimer.refresh()
   },
-  async batchSync ({getters, commit, dispatch, state, rootState, rootGetters}) {
+  async batchSync ({getters, commit, dispatch, state}) {
     const dbRef = getters.dbRef
     let batch = Firebase.firestore().batch()
     let count = 0
@@ -270,7 +276,13 @@ const actions = {
       .onSnapshot(querySnapshot => {
         let source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
         console.log(`found ${querySnapshot.docs.length} documents`)
-        querySnapshot.docChanges.forEach(change => {
+        querySnapshot.docChanges().forEach(change => {
+          // Don't do anything for local modifications & removals
+          if (source === 'local' &&
+            (change.type === 'modified' || change.type === 'removed')
+          ) {
+            return resolve()
+          }
           const id = change.doc.id
           const doc = (change.type === 'added')
             ? setDefaultValues(change.doc.data(), state.sync.defaultValues)
@@ -293,7 +305,6 @@ const actions = {
     })
   },
   SET_DOC ({getters}, {id, doc}) {
-    console.log('set! ')
     this._vm.$set(getters.storeRef, id, doc)
   },
   OVERWRITE_DOC ({getters}, {id, doc}) {
