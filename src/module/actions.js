@@ -7,7 +7,7 @@ import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
 
 const actions = {
-  patch (
+  patchDoc (
     {state, getters, commit, dispatch},
     {id = '', ids = [], field = '', fields = []} = {ids: [], fields: []}
   ) {
@@ -31,12 +31,10 @@ const actions = {
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
-  delete ({state, getters, commit, dispatch},
-  {id = '', ids = []} = {ids: []}) {
+  deleteDoc ({state, getters, commit, dispatch},
+  ids = []) {
     // 0. payload correction (only arrays)
-    if (!isArray(ids)) return console.log('ids needs to be an array')
-    if (!isString(id)) return console.log('id needs to be a string')
-    if (id) ids.push(id)
+    if (!isArray(ids)) ids = [ids]
 
     // 1. Prepare for patching
     const syncStackIds = getters.prepareForDeletion(ids)
@@ -49,17 +47,16 @@ const actions = {
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
-  insert ({state, getters, commit, dispatch},
-  {item, items = []} = {items: []}) {
+  insertDoc ({state, getters, commit, dispatch},
+  docs = []) {
     // 0. payload correction (only arrays)
-    if (!isArray(items)) return console.log('items needs to be an array')
-    if (item) items.push(item)
+    if (!isArray(docs)) docs = [docs]
 
     // 1. Prepare for patching
-    const syncStackItems = getters.prepareForInsert(items)
+    const syncStack = getters.prepareForInsert(docs)
 
     // 2. Push to syncStack
-    const inserts = state.syncStack.inserts.concat(syncStackItems)
+    const inserts = state.syncStack.inserts.concat(syncStack)
     commit('SET_SYNCSTACK.INSERTS', inserts)
 
     // 3. Create or refresh debounce
@@ -148,7 +145,7 @@ const actions = {
     }
     // Add to batch
     inserts.forEach(item => {
-      let newRef = getters.dbRef.doc()
+      let newRef = getters.dbRef.doc(item.id)
       batch.set(newRef, item)
     })
     // Commit the batch:
@@ -248,16 +245,17 @@ const actions = {
       })
     })
   },
-  dbUpdate ({dispatch}, {change, id, doc}) {
+  serverUpdate ({commit}, {change, id, doc = {}}) {
+    doc.id = id
     switch (change) {
       case 'added':
-        dispatch('INSERT_DOC', {id, doc})
+        commit('INSERT_DOC', doc)
         break
       case 'modified':
-        dispatch('PATCH_DOC', {id, doc})
+        commit('PATCH_DOC', doc)
         break
       case 'removed':
-        dispatch('DELETE_DOC', {id})
+        commit('DELETE_DOC', id)
         break
     }
   },
@@ -286,8 +284,8 @@ const actions = {
           const doc = (change.type === 'added')
             ? setDefaultValues(change.doc.data(), state.sync.defaultValues)
             : change.doc.data()
-          // prepare dbUpdate action
-          function storeUpdateFn () { return dispatch('dbUpdate', {change: change.type, id, doc}) }
+          // prepare serverUpdate to DB
+          function storeUpdateFn () { return dispatch('serverUpdate', {change: change.type, id, doc}) }
           // get user set sync hook function
           const syncHookFn = state.sync[change.type]
           if (syncHookFn) {
@@ -303,37 +301,27 @@ const actions = {
       })
     })
   },
-  INSERT_DOC ({commit, getters}, {id, doc}) {
-    commit('INSERT_DOC', {id, doc})
-    this._vm.$set(getters.storeRef, id, doc)
-  },
-  PATCH_DOC ({commit, getters}, {id, doc}) {
-    commit('PATCH_DOC', {id, doc})
-    this._vm.$set(getters.storeRef, id, Object.assign(
-      getters.storeRef[id], doc
-    ))
-  },
-  DELETE_DOC ({commit, getters}, {id}) {
-    commit('DELETE_DOC', {id})
-    this._vm.$delete(getters.storeRef, id)
-  },
-  setDoc ({commit, dispatch, getters, state}, {id, doc}) {
-    if (!state[state.docsStateProp][id]) {
-      return dispatch('insertDoc', {id, doc})
+  set ({commit, dispatch, getters, state}, doc) {
+    if (!doc) return
+    if (!doc.id || !state[state.docsStateProp][doc.id]) {
+      return dispatch('insert', doc)
     }
-    return dispatch('patchDoc', {id, doc})
+    return dispatch('patch', doc)
   },
-  insertDoc ({commit, dispatch, getters}, {id, doc}) {
-    commit('INSERT_DOC', {id, doc})
-    return dispatch('insert', {item: doc})
+  insert ({commit, dispatch, getters}, doc) {
+    if (!doc) return
+    if (!doc.id) doc.id = getters.dbRef.doc().id
+    commit('INSERT_DOC', doc)
+    return dispatch('insertDoc', doc)
   },
-  patchDoc ({commit, dispatch, getters}, {id, doc}) {
-    commit('PATCH_DOC', {id, doc})
-    return dispatch('patch', {id, fields: Object.keys(doc)})
+  patch ({commit, dispatch, getters}, doc) {
+    if (!doc || !doc.id) return
+    commit('PATCH_DOC', doc)
+    return dispatch('patchDoc', {id: doc.id, fields: Object.keys(doc)})
   },
-  deleteDoc ({commit, dispatch, getters}, {id}) {
-    commit('DELETE_DOC', {id})
-    return dispatch('delete', {id})
+  delete ({commit, dispatch, getters}, id) {
+    commit('DELETE_DOC', id)
+    return dispatch('deleteDoc', id)
   },
   _stopPatching ({state, commit}) {
     if (state.stopPatchingTimeout) { clearTimeout(state.stopPatchingTimeout) }

@@ -11,7 +11,7 @@ const state = {
   nextFetchRef: null,
   patching: false,
   doneFetching: false,
-  stopPatchingTimeout: null
+  stopPatchingTimeout: null,
 }
 
 export default function (userState = {}, userConfig = {}) {

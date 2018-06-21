@@ -24,10 +24,11 @@ export default function (userConfig) {
   delete conf.mutations
   delete conf.actions
   delete conf.getters
+  const state = iniState(userState, conf)
   return {
     namespaced: true,
-    state: iniState(userState, conf),
-    mutations: iniMutations(userMutations),
+    state,
+    mutations: iniMutations(userMutations, state),
     actions: iniActions(userActions),
     getters: iniGetters(userGetters)
   }
