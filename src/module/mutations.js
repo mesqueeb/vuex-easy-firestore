@@ -24,5 +24,6 @@ const mutations = {
   },
 }
 export default function (userMutations = {}) {
+
   return Object.assign({}, vuexEasyMutations, mutations, userMutations)
 }

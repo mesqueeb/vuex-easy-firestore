@@ -37,18 +37,17 @@ Get all the firebase boilerplate installed for you in one vuex module.
 The configuration as seen below is how you set up vuex-easy-firestore. This is to be repeated for each firestore collection you want to sync.
 
 ```js
-import autoFirestore from 'vuex-easy-firestore'
+import createEasyFirestore from 'vuex-easy-firestore'
 const config = {
   // Your configuration!
   // SEE `module/defaultConfig` for examples
 }
 // do the magic 🧙🏻‍♂️
-const firestore = autoFirestore(config)
+const easyFirestore = createEasyFirestore(config)
 // and include as module in your vuex store:
 store: {
-  modules: {
-    firestore
-  }
+  // ... your store
+  plugins: [easyFirestore]
 }
 ```
 
