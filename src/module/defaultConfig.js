@@ -16,38 +16,50 @@ function syncHook (storeUpdateFn, store, id, doc, source, change) {
 }
 
 export default {
-  vuexstorePath: '', // must be relative to rootState
+  moduleNameSpace: 'firestore',
+  // this is the vuex module path that will be created
+  docsStateProp: 'docs',
+  // this is the state property where your docs will end up inside the module
   firestorePath: '',
-  mapType: 'collection', // 'collection' only ('doc' not integrated yet)
+  // this is the firestore collection path to your documents. You can use `{userId}` which will be replaced with `Firebase.auth().uid`
+  mapType: 'collection',
+  // 'collection' only ('doc' not integrated yet)
   sync: {
-    type: '2way', // '2way' only ('1way' not yet integrated)
+    type: '2way',
+    // '2way' only ('read only' not yet integrated)
     where: [],
     orderBy: [],
-    // You HAVE to set all fields you want to be reactive on beforehand!
+    defaultValues: {},
+    // About defaultValues:
+    // These are the default properties that will be set on each doc that's synced to the store or comes out of the store.
+    // You HAVE to set all props you want to be reactive on beforehand!
     // These values are only set when you have items who don't have the props defined in defaultValues upon retrieval
     // These default values will be merged with a reverse Object.assign on retrieved documents
-    defaultValues: {},
     added: syncHook,
     modified: syncHook,
     removed: syncHook,
+    // see the syncHook function above to see what you can do
   },
   fetch: {
     docLimit: 50, // defaults to 50
   },
   insert: {
-    // checkCondition (doc, storeRef) { return (params == 'something') },
     checkCondition: null,
+    // A function where you can check something and force stopping the operation if you return `false`
+    // Eg. checkCondition (doc, docs) { return (doc.something != 'something') },
     fillables: [],
     guard: [],
   },
   patch: {
-    // checkCondition (id, fields, storeRef) { return (params == 'something') },
     checkCondition: null,
+    // A function where you can check something and force stopping the operation if you return `false`
+    // Eg. checkCondition (id, fields, docs) { return (doc.something != 'something') },
     fillables: [],
     guard: [],
   },
   delete: {
-    // checkCondition (id, storeRef) { return (params == 'something') },
     checkCondition: null,
+    // A function where you can check something and force stopping the operation if you return `false`
+    // Eg. checkCondition (id, docs) { return (doc.something != 'something') },
   }
 }

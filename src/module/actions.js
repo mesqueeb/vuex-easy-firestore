@@ -7,7 +7,7 @@ import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
 
 const actions = {
-  patch (
+  patchDoc (
     {state, getters, commit, dispatch},
     {id = '', ids = [], field = '', fields = []} = {ids: [], fields: []}
   ) {
@@ -31,12 +31,10 @@ const actions = {
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
-  delete ({state, getters, commit, dispatch},
-  {id = '', ids = []} = {ids: []}) {
+  deleteDoc ({state, getters, commit, dispatch},
+  ids = []) {
     // 0. payload correction (only arrays)
-    if (!isArray(ids)) return console.log('ids needs to be an array')
-    if (!isString(id)) return console.log('id needs to be a string')
-    if (id) ids.push(id)
+    if (!isArray(ids)) ids = [ids]
 
     // 1. Prepare for patching
     const syncStackIds = getters.prepareForDeletion(ids)
@@ -49,17 +47,16 @@ const actions = {
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
-  insert ({state, getters, commit, dispatch},
-  {item, items = []} = {items: []}) {
+  insertDoc ({state, getters, commit, dispatch},
+  docs = []) {
     // 0. payload correction (only arrays)
-    if (!isArray(items)) return console.log('items needs to be an array')
-    if (item) items.push(item)
+    if (!isArray(docs)) docs = [docs]
 
     // 1. Prepare for patching
-    const syncStackItems = getters.prepareForInsert(items)
+    const syncStack = getters.prepareForInsert(docs)
 
     // 2. Push to syncStack
-    const inserts = state.syncStack.inserts.concat(syncStackItems)
+    const inserts = state.syncStack.inserts.concat(syncStack)
     commit('SET_SYNCSTACK.INSERTS', inserts)
 
     // 3. Create or refresh debounce
@@ -148,7 +145,7 @@ const actions = {
     }
     // Add to batch
     inserts.forEach(item => {
-      let newRef = getters.dbRef.doc()
+      let newRef = getters.dbRef.doc(item.id)
       batch.set(newRef, item)
     })
     // Commit the batch:
@@ -157,7 +154,7 @@ const actions = {
     //   ${deletions.length} deletions,
     //   ${inserts.length} inserts`
     // )
-    dispatch('startPatching')
+    dispatch('_startPatching')
     commit('SET_SYNCSTACK.DEBOUNCETIMER', null)
     await batch.commit()
     .then(res => {
@@ -170,11 +167,11 @@ const actions = {
         + state.syncStack.deletions.length
         + state.syncStack.inserts.length
       if (remainingSyncStack) { dispatch('batchSync') }
-      dispatch('stopPatching')
+      dispatch('_stopPatching')
 
       // // Fetch the item if it was added as an Archived item:
       // if (item.archived) {
-        //   getters.dbRef.doc(res.id).get()
+        //   get_ters.dbRef.doc(res.id).get()
         //   .then(doc => {
           //     let tempId = doc.data().id
           //     let id = doc.id
@@ -248,16 +245,17 @@ const actions = {
       })
     })
   },
-  dbUpdate ({dispatch}, {change, id, doc}) {
+  serverUpdate ({commit}, {change, id, doc = {}}) {
+    doc.id = id
     switch (change) {
       case 'added':
-        dispatch('SET_DOC', {id, doc})
+        commit('INSERT_DOC', doc)
         break
       case 'modified':
-        dispatch('OVERWRITE_DOC', {id, doc})
+        commit('PATCH_DOC', doc)
         break
       case 'removed':
-        dispatch('DELETE_DOC', {id})
+        commit('DELETE_DOC', id)
         break
     }
   },
@@ -275,7 +273,6 @@ const actions = {
       dbRef
       .onSnapshot(querySnapshot => {
         let source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
-        console.log(`found ${querySnapshot.docs.length} documents`)
         querySnapshot.docChanges().forEach(change => {
           // Don't do anything for local modifications & removals
           if (source === 'local' &&
@@ -287,8 +284,8 @@ const actions = {
           const doc = (change.type === 'added')
             ? setDefaultValues(change.doc.data(), state.sync.defaultValues)
             : change.doc.data()
-          // prepare dbUpdate action
-          function storeUpdateFn () { return dispatch('dbUpdate', {change: change.type, id, doc}) }
+          // prepare serverUpdate to DB
+          function storeUpdateFn () { return dispatch('serverUpdate', {change: change.type, id, doc}) }
           // get user set sync hook function
           const syncHookFn = state.sync[change.type]
           if (syncHookFn) {
@@ -304,22 +301,33 @@ const actions = {
       })
     })
   },
-  SET_DOC ({getters}, {id, doc}) {
-    this._vm.$set(getters.storeRef, id, doc)
+  set ({commit, dispatch, getters, state}, doc) {
+    if (!doc) return
+    if (!doc.id || !state[state.docsStateProp][doc.id]) {
+      return dispatch('insert', doc)
+    }
+    return dispatch('patch', doc)
   },
-  OVERWRITE_DOC ({getters}, {id, doc}) {
-    this._vm.$set(getters.storeRef, id, Object.assign(
-      getters.storeRef[id], doc
-    ))
+  insert ({commit, dispatch, getters}, doc) {
+    if (!doc) return
+    if (!doc.id) doc.id = getters.dbRef.doc().id
+    commit('INSERT_DOC', doc)
+    return dispatch('insertDoc', doc)
   },
-  DELETE_DOC ({getters}, {id}) {
-    this._vm.$delete(getters.storeRef, id)
+  patch ({commit, dispatch, getters}, doc) {
+    if (!doc || !doc.id) return
+    commit('PATCH_DOC', doc)
+    return dispatch('patchDoc', {id: doc.id, fields: Object.keys(doc)})
   },
-  stopPatching ({state, commit}) {
+  delete ({commit, dispatch, getters}, id) {
+    commit('DELETE_DOC', id)
+    return dispatch('deleteDoc', id)
+  },
+  _stopPatching ({state, commit}) {
     if (state.stopPatchingTimeout) { clearTimeout(state.stopPatchingTimeout) }
     state.stopPatchingTimeout = setTimeout(_ => { commit('SET_PATCHING', false) }, 300)
   },
-  startPatching ({state, commit}) {
+  _startPatching ({state, commit}) {
     if (state.stopPatchingTimeout) { clearTimeout(state.stopPatchingTimeout) }
     commit('SET_PATCHING', true)
   }

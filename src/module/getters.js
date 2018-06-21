@@ -6,8 +6,9 @@ import { getDeepRef } from 'vuex-easy-access'
 import checkFillables from '../utils/checkFillables'
 
 const getters = {
-  signedIn: () => {
-    return Firebase.auth().currentUser !== null
+  signedIn: (state, getters, rootState, rootGetters) => {
+    return rootState.user.user !== null
+    // return Firebase.auth().currentUser !== null
   },
   dbRef: (state, getters, rootState, rootGetters) => {
     if (!getters.signedIn) return false
@@ -16,7 +17,8 @@ const getters = {
     return Firebase.firestore().collection(path)
   },
   storeRef: (state, getters, rootState) => {
-    return getDeepRef(rootState, state.vuexstorePath)
+    const path = `${state.moduleNameSpace}/${state.docsStateProp}`
+    return getDeepRef(rootState, path)
   },
   prepareForPatch: (state, getters, rootState, rootGetters) =>
   (ids = [], fields = []) => {

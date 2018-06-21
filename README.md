@@ -12,7 +12,7 @@ Includes:
 
 Todo:
 
-- Auto sync with watchers
+- Refinements
 - Documentation
 
 ### Table of contents
@@ -37,66 +37,31 @@ Get all the firebase boilerplate installed for you in one vuex module.
 The configuration as seen below is how you set up vuex-easy-firestore. This is to be repeated for each firestore collection you want to sync.
 
 ```js
-import autoFirestore from 'vuex-easy-firestore'
+import createEasyFirestore from 'vuex-easy-firestore'
 const config = {
   // Your configuration!
-  // SEE `module/defaultConfig` for examples
+  moduleNameSpace: 'user/favourites',
+    // this is the vuex module path that will be created
+  docsStateProp: 'docs',
+    // this is the state property where your docs will end up inside the module
+  firestorePath: 'users/{userId}/favourites',
+    // this is the firestore collection path to your documents. You can use `{userId}` which will be replaced with `Firebase.auth().uid`
+  // SEE `src/module/defaultConfig` for more!
 }
 // do the magic 🧙🏻‍♂️
-const firestore = autoFirestore(config)
+const easyFirestore = createEasyFirestore(config)
 // and include as module in your vuex store:
 store: {
-  modules: {
-    firestore
-  }
+  // ... your store
+  plugins: [easyFirestore]
 }
 ```
 
 ### Config options
 
-About the config file, better documentation will follow. For now see `module/defaultConfig`
+About the config file, better documentation will follow. For now see `src/module/defaultConfig` for all possibilities.
 
-<!-- - `vuexstorePath: ''` must be relative to rootState
-- `firestorePath: ''` -->
-<!-- - mapType: 'collection', // 'collection' only ('doc' not integrated yet) -->
-  <!-- - type: '2way', // '2way' only ('1way' not yet integrated) -->
-<!-- - `sync.where: []`
-- `sync.orderBy: []`
-- `sync.defaultValues: {}`
-  You HAVE to set all fields you want to be reactive on beforehand!
-  These values are only set when you have items who don't have the props defined in defaultValues upon retrieval
-  These default values will be merged with a reverse Object.assign on retrieved documents
-- `sync.added: syncHookFn`
-- `sync.modified: syncHookFn`
-- `sync.removed: syncHookFn` -->
-
-<!-- synchookFn example:
-```js
-/**
- * A function executed during the 2 way sync when docs are added/modified/deleted. NEEDS TO EXECUTE FIRST PARAM! You can use this function to do a conditional check on the documents to decide if/when to execute the store update.
- *
- * @param {function} storeUpdateFn this is the function that will make changes to your vuex store. Takes no params.
- * @param {object} store the store for usage with `store.dispatch`, `store.commit`, `store.getters` etc.
- * @param {string} id the doc id returned in `change.doc.id` (see firestore documentation for more info)
- * @param {object} doc the doc returned in `change.doc.data()` (see firestore documentation for more info)
- * @param {string} source of the change. Can be 'local' or 'server'
- */
-function syncHook (storeUpdateFn, store, id, doc, source, change) {
-  // throw error if you want to stop the document in your store from being modified
-  // do some stuff
-  storeUpdateFn()
-  // do some stuff
-}
-``` -->
-
-<!-- - `fetch.docLimit: 50` // defaults to 50
-- `insert.checkCondition (doc, storeRef) { return (params == 'something') }`
-- `insert.fillables: []`
-- `insert.guard: []`
-- `patch.checkCondition (id, fields, storeRef) { return (params == 'something') }`
-- `patch.fillables: []`
-- `patch.guard: []`
-- `delete.checkCondition (id, storeRef) { return (params == 'something') }` -->
+You can also add other state/getters/mutations/actions to the module that will be generated. See [Custom state/getters/mutations/actions](#custom-stategettersmutationsactions) for details.
 
 ## Usage
 
@@ -105,26 +70,26 @@ function syncHook (storeUpdateFn, store, id, doc, source, change) {
 You need to dispatch the following action once to open the channel to your firestore.
 
 ```js
-dispatch('firestore/openDBChannel')
+dispatch('user/favourites/openDBChannel')
   .then(console.log)
   .catch(console.error)
 ```
 
-For now any changes need to be notified manually. See 'Editing' below.
-
-Automatic 2 way sync is a WIP.
+To automatically edit your vuex store & have firebase always in sync you just need to use the actions that were set up for you.
 
 ### Editing
 
-The many actions you get for free:
+With these 4 actions below you can edit the docs in your vuex module.
+Anything you change will be automaticall changed in firestore as well!
 
 ```js
-dispatch('firestore/patch', {id = '', ids = [], field = '', fields = []})
-dispatch('firestore/delete', {id = '', ids = []})
-dispatch('firestore/insert', {item = {}, items = []})
+dispatch('user/favourites/set', doc) // will dispatch `patch` OR `insert` automatically
+dispatch('user/favourites/patch', doc)
+dispatch('user/favourites/insert', doc)
+dispatch('user/favourites/delete', id)
 ```
 
-All changes through the functions above work with batches.
+With just the commands above you have complete in-sync vuex store & firestore!
 
 ### Fetching
 ```js
@@ -132,10 +97,10 @@ All changes through the functions above work with batches.
 // @params {array} whereFilters an array of arrays with the filters you want. eg. `[['field', '==', false], ...]`
 // @params {array} orderBy the params of the firebase collection().orderBy() eg. `['created_date']`
 // @returns the docs
-dispatch('firestore/fetch', {whereFilters = [], orderBy = []})
+dispatch('user/favourites/fetch', {whereFilters = [], orderBy = []})
 ```
 
-See `module/actions` for a full list.
+You only ever need to use the 5 actions above. You can look at `src/module/actions` for what's more under the hood.
 
 ### Custom state/getters/mutations/actions
 
@@ -149,9 +114,3 @@ const vuexEasyFirestoreConfig = {
   actions: {}, // extra actions
 }
 ```
-
-<!-- ## Build from source
-
-```bash
-npm run build
-``` -->
