@@ -28,7 +28,7 @@
     "firebase": "^5.0.4",
     "is-what": "^1.0.1",
     "nanoclone": "^0.2.1",
-    "vuex-easy-access": "^1.0.9"
+    "vuex-easy-access": "^1.0.10"
   },
   "devDependencies": {
     "babel-core": "^6.26.3",

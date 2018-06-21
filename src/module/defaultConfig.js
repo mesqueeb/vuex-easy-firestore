@@ -16,7 +16,8 @@ function syncHook (storeUpdateFn, store, id, doc, source, change) {
 }
 
 export default {
-  vuexstorePath: '', // must be relative to rootState
+  moduleNameSpace: 'firestore',
+  docsStateProp: 'docs', // must be relative to rootState
   firestorePath: '',
   mapType: 'collection', // 'collection' only ('doc' not integrated yet)
   sync: {

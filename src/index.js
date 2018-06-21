@@ -1,32 +1,30 @@
-// store
-import iniState from './module/state'
-import iniMutations from './module/mutations'
-import iniActions from './module/actions'
-import iniGetters from './module/getters'
+// import { getKeysFromPath } from 'vuex-easy-access'
+import { getKeysFromPath } from './utils/temp-vuex-easy-access'
+import { isArray } from 'is-what'
+import iniModule from './module/index'
 
-let conf = {state: null, mutations: null, actions: null, getters: null}
+// I don't know why getKeysFromPath is UNDEFINED WTF
 
-/**
- * A function that returns a vuex module object with seamless 2-way sync for firestore.
- *
- * @param {object} userConfig Takes a config object as per ...
- * @returns {object} the module ready to be included in your vuex store
- */
-export default function (userConfig) {
-  Object.assign(conf, userConfig)
-  const userState = conf.state
-  const userMutations = conf.mutations
-  const userActions = conf.actions
-  const userGetters = conf.getters
-  delete conf.state
-  delete conf.mutations
-  delete conf.actions
-  delete conf.getters
-  return {
-    namespaced: true,
-    state: iniState(userState, conf),
-    mutations: iniMutations(userMutations),
-    actions: iniActions(userActions),
-    getters: iniGetters(userGetters)
+export default function createEasyFirestore (userConfig) {
+  return store => {
+    // Get an array of config files
+    if (!isArray(userConfig)) userConfig = [userConfig]
+    // Create a module for each config file
+    userConfig.forEach(config => {
+      const moduleNameSpace = getKeysFromPath(config.moduleNameSpace)
+      store.registerModule(moduleNameSpace, iniModule(config))
+    })
+    store.setDoc = (path, payload) => {
+      return store.dispatch(path + '/setDoc', payload)
+    }
+    store.insertDoc = (path, payload) => {
+      return store.dispatch(path + '/insertDoc', payload)
+    }
+    store.patchDoc = (path, payload) => {
+      return store.dispatch(path + '/patchDoc', payload)
+    }
+    store.deleteDoc = (path, payload) => {
+      return store.dispatch(path + '/deleteDoc', payload)
+    }
   }
 }

@@ -16,7 +16,7 @@ const getters = {
     return Firebase.firestore().collection(path)
   },
   storeRef: (state, getters, rootState) => {
-    return getDeepRef(rootState, state.vuexstorePath)
+    return getDeepRef(rootState, state.vuexStorePath)
   },
   prepareForPatch: (state, getters, rootState, rootGetters) =>
   (ids = [], fields = []) => {

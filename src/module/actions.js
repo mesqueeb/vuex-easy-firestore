@@ -157,7 +157,7 @@ const actions = {
     //   ${deletions.length} deletions,
     //   ${inserts.length} inserts`
     // )
-    dispatch('startPatching')
+    dispatch('_startPatching')
     commit('SET_SYNCSTACK.DEBOUNCETIMER', null)
     await batch.commit()
     .then(res => {
@@ -170,11 +170,11 @@ const actions = {
         + state.syncStack.deletions.length
         + state.syncStack.inserts.length
       if (remainingSyncStack) { dispatch('batchSync') }
-      dispatch('stopPatching')
+      dispatch('_stopPatching')
 
       // // Fetch the item if it was added as an Archived item:
       // if (item.archived) {
-        //   getters.dbRef.doc(res.id).get()
+        //   get_ters.dbRef.doc(res.id).get()
         //   .then(doc => {
           //     let tempId = doc.data().id
           //     let id = doc.id
@@ -251,10 +251,10 @@ const actions = {
   dbUpdate ({dispatch}, {change, id, doc}) {
     switch (change) {
       case 'added':
-        dispatch('SET_DOC', {id, doc})
+        dispatch('INSERT_DOC', {id, doc})
         break
       case 'modified':
-        dispatch('OVERWRITE_DOC', {id, doc})
+        dispatch('PATCH_DOC', {id, doc})
         break
       case 'removed':
         dispatch('DELETE_DOC', {id})
@@ -275,7 +275,6 @@ const actions = {
       dbRef
       .onSnapshot(querySnapshot => {
         let source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
-        console.log(`found ${querySnapshot.docs.length} documents`)
         querySnapshot.docChanges().forEach(change => {
           // Don't do anything for local modifications & removals
           if (source === 'local' &&
@@ -304,22 +303,43 @@ const actions = {
       })
     })
   },
-  SET_DOC ({getters}, {id, doc}) {
+  INSERT_DOC ({commit, getters}, {id, doc}) {
+    commit('INSERT_DOC', {id, doc})
     this._vm.$set(getters.storeRef, id, doc)
   },
-  OVERWRITE_DOC ({getters}, {id, doc}) {
+  PATCH_DOC ({commit, getters}, {id, doc}) {
+    commit('PATCH_DOC', {id, doc})
     this._vm.$set(getters.storeRef, id, Object.assign(
       getters.storeRef[id], doc
     ))
   },
-  DELETE_DOC ({getters}, {id}) {
+  DELETE_DOC ({commit, getters}, {id}) {
+    commit('DELETE_DOC', {id})
     this._vm.$delete(getters.storeRef, id)
   },
-  stopPatching ({state, commit}) {
+  setDoc ({commit, dispatch, getters, state}, {id, doc}) {
+    if (!state[state.docsStateProp][id]) {
+      return dispatch('insertDoc', {id, doc})
+    }
+    return dispatch('patchDoc', {id, doc})
+  },
+  insertDoc ({commit, dispatch, getters}, {id, doc}) {
+    commit('INSERT_DOC', {id, doc})
+    return dispatch('insert', {item: doc})
+  },
+  patchDoc ({commit, dispatch, getters}, {id, doc}) {
+    commit('PATCH_DOC', {id, doc})
+    return dispatch('patch', {id, fields: Object.keys(doc)})
+  },
+  deleteDoc ({commit, dispatch, getters}, {id}) {
+    commit('DELETE_DOC', {id})
+    return dispatch('delete', {id})
+  },
+  _stopPatching ({state, commit}) {
     if (state.stopPatchingTimeout) { clearTimeout(state.stopPatchingTimeout) }
     state.stopPatchingTimeout = setTimeout(_ => { commit('SET_PATCHING', false) }, 300)
   },
-  startPatching ({state, commit}) {
+  _startPatching ({state, commit}) {
     if (state.stopPatchingTimeout) { clearTimeout(state.stopPatchingTimeout) }
     commit('SET_PATCHING', true)
   }

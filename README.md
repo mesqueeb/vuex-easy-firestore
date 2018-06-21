@@ -56,7 +56,7 @@ store: {
 
 About the config file, better documentation will follow. For now see `module/defaultConfig`
 
-<!-- - `vuexstorePath: ''` must be relative to rootState
+<!-- - `vuexStorePath: ''` must be relative to rootState
 - `firestorePath: ''` -->
 <!-- - mapType: 'collection', // 'collection' only ('doc' not integrated yet) -->
   <!-- - type: '2way', // '2way' only ('1way' not yet integrated) -->
