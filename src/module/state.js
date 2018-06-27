@@ -1,6 +1,6 @@
-import defaultConfig from './defaultConfig'
 
-const state = {
+export default {
+  // user: null,
   syncStack: {
     updates: {},
     deletions: [],
@@ -12,10 +12,4 @@ const state = {
   patching: false,
   doneFetching: false,
   stopPatchingTimeout: null,
-}
-
-export default function (userState = {}, userConfig = {}) {
-  const docsStateProp = {}
-  docsStateProp[userConfig.docsStateProp] = {}
-  return Object.assign({}, state, defaultConfig, userState, userConfig, docsStateProp)
 }

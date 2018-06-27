@@ -18,17 +18,20 @@ function syncHook (storeUpdateFn, store, id, doc, source, change) {
 export default {
   moduleNameSpace: 'firestore',
   // this is the vuex module path that will be created
-  docsStateProp: 'docs',
+  docsStateProp: '',
   // this is the state property where your docs will end up inside the module
+  // when not set your doc's props will be set directly to your vuex module's state
   firestorePath: '',
   // this is the firestore collection path to your documents. You can use `{userId}` which will be replaced with `Firebase.auth().uid`
-  mapType: 'collection',
+  firestoreRefType: 'collection',
   // 'collection' only ('doc' not integrated yet)
+  userVuexPath: '',
+  // the path where your firebase user gets saved in vuex. Required to be able to have reactivity after login.
   sync: {
     type: '2way',
     // '2way' only ('read only' not yet integrated)
-    where: [],
-    orderBy: [],
+    where: [], // only applicable on 'collection'
+    orderBy: [], // only applicable on 'collection'
     defaultValues: {},
     // About defaultValues:
     // These are the default properties that will be set on each doc that's synced to the store or comes out of the store.
@@ -39,6 +42,7 @@ export default {
     modified: syncHook,
     removed: syncHook,
     // see the syncHook function above to see what you can do
+    // for firestoreRefType: 'doc' only use 'modified' syncHook
   },
   fetch: {
     docLimit: 50, // defaults to 50

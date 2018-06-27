@@ -50,7 +50,7 @@ const config = {
 }
 // do the magic 🧙🏻‍♂️
 const easyFirestore = createEasyFirestore(config)
-// and include as module in your vuex store:
+// and include as plugin in your vuex store:
 store: {
   // ... your store
   plugins: [easyFirestore]

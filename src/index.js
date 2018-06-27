@@ -1,3 +1,5 @@
+import Firebase from 'firebase/app'
+import 'firebase/auth'
 // import { getKeysFromPath } from 'vuex-easy-access'
 import { getKeysFromPath } from './utils/temp-vuex-easy-access'
 import { isArray } from 'is-what'
@@ -17,14 +19,14 @@ export default function createEasyFirestore (userConfig) {
     store.setDoc = (path, payload) => {
       return store.dispatch(path + '/setDoc', payload)
     }
-    store.insertDoc = (path, payload) => {
-      return store.dispatch(path + '/insertDoc', payload)
+    store.insert = (path, payload) => {
+      return store.dispatch(path + '/insert', payload)
     }
-    store.patchDoc = (path, payload) => {
-      return store.dispatch(path + '/patchDoc', payload)
+    store.patch = (path, payload) => {
+      return store.dispatch(path + '/patch', payload)
     }
-    store.deleteDoc = (path, payload) => {
-      return store.dispatch(path + '/deleteDoc', payload)
+    store.delete = (path, payload) => {
+      return store.dispatch(path + '/delete', payload)
     }
   }
 }

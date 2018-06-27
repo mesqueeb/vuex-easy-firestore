@@ -1,5 +1,6 @@
 // store
-import iniState from './state'
+import defaultConfig from './defaultConfig'
+import initialState from './state'
 import iniMutations from './mutations'
 import iniActions from './actions'
 import iniGetters from './getters'
@@ -24,11 +25,15 @@ export default function (userConfig) {
   delete conf.mutations
   delete conf.actions
   delete conf.getters
-  const state = iniState(userState, conf)
+
+  const docContainer = {}
+  if (conf.docsStateProp) docContainer[conf.docsStateProp] = {}
+  const state = Object.assign({}, initialState, defaultConfig, userState, conf, docContainer)
+
   return {
     namespaced: true,
     state,
-    mutations: iniMutations(userMutations, state),
+    mutations: iniMutations(userMutations, Object.assign({}, initialState, userState)),
     actions: iniActions(userActions),
     getters: iniGetters(userGetters)
   }
