@@ -1,8 +1,9 @@
 import Firebase from 'firebase/app'
 import 'firebase/firestore'
-import copyObj from '../utils/copyObj'
 import { isArray, isString } from 'is-what'
-
+import merge from '../../node_modules/deepmerge/dist/es.js'
+import copyObj from '../utils/copyObj'
+import overwriteMerge from '../utils/overwriteMerge'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
 
@@ -13,7 +14,7 @@ const actions = {
   ) {
     // 0. payload correction (only arrays)
     if (!isArray(ids) || !isArray(fields)) return console.log('ids, fields need to be arrays')
-    if (!isString(id) || !isString(field)) return console.log('id, field need to be strings')
+    if (!isString(field)) return console.log('field needs to be a string')
     if (id) ids.push(id)
     if (field) fields.push(field)
 
@@ -22,10 +23,14 @@ const actions = {
 
     // 2. Push to syncStack
     Object.keys(syncStackItems).forEach(id => {
-      if (!state.syncStack.updates[id]) {
-        state.syncStack.updates[id] = {}
-      }
-      Object.assign(state.syncStack.updates[id], syncStackItems[id])
+      const newVal = (!state.syncStack.updates[id])
+        ? syncStackItems[id]
+        : merge(
+            state.syncStack.updates[id],
+            syncStackItems[id],
+            {arrayMerge: overwriteMerge}
+          )
+      state.syncStack.updates[id] = newVal
     })
 
     // 3. Create or refresh debounce
@@ -72,6 +77,7 @@ const actions = {
     state.syncStack.debounceTimer.refresh()
   },
   async batchSync ({getters, commit, dispatch, state}) {
+    const collectionMode = getters.collectionMode
     const dbRef = getters.dbRef
     let batch = Firebase.firestore().batch()
     let count = 0
@@ -96,11 +102,12 @@ const actions = {
       updates = updatesOK
     } else {
       state.syncStack.updates = {}
+      count = updates.length
     }
     // Add to batch
     updates.forEach(item => {
       let id = item.id
-      let docRef = dbRef.doc(id)
+      let docRef = (collectionMode) ? dbRef.doc(id) : dbRef
       let fields = item.fields
       batch.update(docRef, fields)
     })
@@ -251,28 +258,52 @@ const actions = {
       case 'added':
         commit('INSERT_DOC', doc)
         break
-      case 'modified':
-        commit('PATCH_DOC', doc)
-        break
       case 'removed':
         commit('DELETE_DOC', id)
+        break
+      default:
+        commit('PATCH_DOC', doc)
         break
     }
   },
   openDBChannel ({getters, state, commit, dispatch}) {
+    const collectionMode = getters.collectionMode
     let dbRef = getters.dbRef
     // apply where filters and orderBy
-    state.sync.where.forEach(paramsArr => {
-      dbRef = dbRef.where(...paramsArr)
-    })
-    if (state.sync.orderBy.length) {
-      dbRef = dbRef.orderBy(...state.sync.orderBy)
+    if (state.firestoreRefType.toLowerCase() !== 'doc') {
+      state.sync.where.forEach(paramsArr => {
+        dbRef = dbRef.where(...paramsArr)
+      })
+      if (state.sync.orderBy.length) {
+        dbRef = dbRef.orderBy(...state.sync.orderBy)
+      }
+    }
+    // define handleDoc()
+    function handleDoc (change, id, doc, source) {
+      change = (!change) ? 'modified' : change.type
+      // define storeUpdateFn()
+      function storeUpdateFn () {
+        return dispatch('serverUpdate', {change, id, doc})
+      }
+      // get user set sync hook function
+      const syncHookFn = state.sync[change]
+      if (syncHookFn) {
+        syncHookFn(storeUpdateFn, this, id, doc, source)
+      } else {
+        storeUpdateFn()
+      }
     }
     // make a promise
     return new Promise ((resolve, reject) => {
       dbRef
       .onSnapshot(querySnapshot => {
         let source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
+        if (!collectionMode) {
+          const doc = setDefaultValues(querySnapshot.data(), state.sync.defaultValues)
+          if (source === 'local') return resolve()
+          handleDoc(null, null, doc, source)
+          return resolve()
+        }
         querySnapshot.docChanges().forEach(change => {
           // Don't do anything for local modifications & removals
           if (source === 'local' &&
@@ -284,16 +315,8 @@ const actions = {
           const doc = (change.type === 'added')
             ? setDefaultValues(change.doc.data(), state.sync.defaultValues)
             : change.doc.data()
-          // prepare serverUpdate to DB
-          function storeUpdateFn () { return dispatch('serverUpdate', {change: change.type, id, doc}) }
-          // get user set sync hook function
-          const syncHookFn = state.sync[change.type]
-          if (syncHookFn) {
-            syncHookFn(storeUpdateFn, this, id, doc, source)
-          } else {
-            storeUpdateFn()
-          }
-          resolve()
+          handleDoc(change, id, doc, source)
+          return resolve()
         })
       }, error => {
         commit('SET_PATCHING', 'error')
@@ -303,6 +326,9 @@ const actions = {
   },
   set ({commit, dispatch, getters, state}, doc) {
     if (!doc) return
+    if (!getters.collectionMode) {
+      return dispatch('patch', doc)
+    }
     if (!doc.id || !state[state.docsStateProp][doc.id]) {
       return dispatch('insert', doc)
     }
@@ -314,8 +340,9 @@ const actions = {
     commit('INSERT_DOC', doc)
     return dispatch('insertDoc', doc)
   },
-  patch ({commit, dispatch, getters}, doc) {
-    if (!doc || !doc.id) return
+  patch ({commit, state, dispatch, getters}, doc) {
+    if (!doc) return
+    if (!doc.id && getters.collectionMode) return
     commit('PATCH_DOC', doc)
     return dispatch('patchDoc', {id: doc.id, fields: Object.keys(doc)})
   },

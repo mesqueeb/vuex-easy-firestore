@@ -1,5 +1,5 @@
-
-import copyObj from 'nanoclone'
+import merge from '../../node_modules/deepmerge/dist/es.js'
+import overwriteMerge from './overwriteMerge'
 
 /**
  * Sets default values on an object
@@ -8,5 +8,5 @@ import copyObj from 'nanoclone'
  * @param {object} defaultValues the default values
  */
 export default function (obj, defaultValues) {
-  return copyObj(Object.assign({}, defaultValues, obj))
+  return merge(defaultValues, obj, {arrayMerge: overwriteMerge})
 }
