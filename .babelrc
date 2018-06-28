@@ -4,5 +4,8 @@
       "modules": false
     }]
   ],
-  "plugins": ["external-helpers", "babel-plugin-transform-object-rest-spread"]
+  "plugins": [["transform-runtime", {
+    "polyfill": false,
+    "regenerator": true
+  }], "external-helpers", "babel-plugin-transform-object-rest-spread"]
 }

@@ -29,10 +29,11 @@ const umd = {
   external,
   output: output('js'),
   plugins: [
-    resolve(),
+    // resolve(),
     commonjs(),
     babel({
-      exclude: 'node_modules/**' // only transpile our source code
+      exclude: 'node_modules/**', // only transpile our source code
+      runtimeHelpers: true
     })
   ]
 }
