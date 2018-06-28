@@ -3,6 +3,7 @@ import 'firebase/auth'
 import { getKeysFromPath } from 'vuex-easy-access'
 import { isArray } from 'is-what'
 import iniModule from './module/index'
+import 'regenerator-runtime/runtime'
 
 export default function createEasyFirestore (userConfig) {
   return store => {
