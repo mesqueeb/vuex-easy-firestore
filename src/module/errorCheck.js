@@ -1,6 +1,6 @@
 
 export default function errorCheck (config) {
-  let reqProps = ['firestorePath', 'userVuexPath']
+  let reqProps = ['firestorePath', 'vuexUserPath']
   reqProps.forEach(prop => {
     console.error(`Missing ${prop} from your config!`)
     return false

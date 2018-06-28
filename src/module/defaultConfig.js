@@ -23,9 +23,9 @@ export default {
   // when not set your doc's props will be set directly to your vuex module's state
   firestorePath: '',
   // this is the firestore collection path to your documents. You can use `{userId}` which will be replaced with `Firebase.auth().uid`
-  firestoreRefType: 'collection',
-  // 'collection' only ('doc' not integrated yet)
-  userVuexPath: '',
+  firestoreRefType: 'collection', // or 'doc'
+  // depending if what you want to sync is a whole collection or a single doc
+  vuexUserPath: '',
   // the path where your firebase user gets saved in vuex. Required to be able to have reactivity after login.
   sync: {
     type: '2way',
@@ -37,7 +37,7 @@ export default {
     // These are the default properties that will be set on each doc that's synced to the store or comes out of the store.
     // You HAVE to set all props you want to be reactive on beforehand!
     // These values are only set when you have items who don't have the props defined in defaultValues upon retrieval
-    // These default values will be merged with a reverse Object.assign on retrieved documents
+    // The retrieved document will be deep merged on top of these default values
     added: syncHook,
     modified: syncHook,
     removed: syncHook,

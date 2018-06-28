@@ -1,4 +1,7 @@
 import { defaultMutations } from 'vuex-easy-access'
+import { isObject } from 'is-what'
+import merge from '../../node_modules/deepmerge/dist/es.js'
+import overwriteMerge from '../utils/overwriteMerge'
 
 const mutations = {
   resetSyncStack (state) {
@@ -17,17 +20,30 @@ const mutations = {
     if (state.firestoreRefType.toLowerCase() === 'doc') {
       if (!state.docsStateProp) {
         return Object.keys(doc).forEach(key => {
-          this._vm.$set(state, key, doc[key])
+          // Merge if exists
+          const newVal = (state[key] === undefined)
+            ? doc[key]
+            : (!isObject(state[key]) || !isObject(doc[key]))
+              ? doc[key]
+              : merge(state[key], doc[key], {arrayMerge: overwriteMerge})
+          this._vm.$set(state, key, newVal)
         })
       }
-      doc = Object.assign(state[state.docsStateProp], doc)
-      state[state.docsStateProp] = doc
+      // state[state.docsStateProp] will always be an empty object by default
+      state[state.docsStateProp] = merge(
+        state[state.docsStateProp],
+        doc,
+        {arrayMerge: overwriteMerge}
+      )
       return
     }
-    doc = (state[state.docsStateProp][doc.id])
-      ? Object.assign(state[state.docsStateProp][doc.id], doc)
-      : doc
-    this._vm.$set(state[state.docsStateProp], doc.id, doc)
+    // Merge if exists
+    const newVal = (state[state.docsStateProp][doc.id] === undefined)
+      ? doc
+      : (!isObject(state[state.docsStateProp][doc.id]) || !isObject(doc))
+        ? doc
+        : merge(state[state.docsStateProp][doc.id], doc, {arrayMerge: overwriteMerge})
+    this._vm.$set(state[state.docsStateProp], doc.id, newVal)
   },
   DELETE_DOC (state, id) {
     if (state.firestoreRefType.toLowerCase() === 'doc') return

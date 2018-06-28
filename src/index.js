@@ -1,11 +1,8 @@
 import Firebase from 'firebase/app'
 import 'firebase/auth'
-// import { getKeysFromPath } from 'vuex-easy-access'
-import { getKeysFromPath } from './utils/temp-vuex-easy-access'
+import { getKeysFromPath } from 'vuex-easy-access'
 import { isArray } from 'is-what'
 import iniModule from './module/index'
-
-// I don't know why getKeysFromPath is UNDEFINED WTF
 
 export default function createEasyFirestore (userConfig) {
   return store => {

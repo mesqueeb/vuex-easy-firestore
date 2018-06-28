@@ -7,7 +7,7 @@ import checkFillables from '../utils/checkFillables'
 
 const getters = {
   signedIn: (state, getters, rootState, rootGetters) => {
-    const user = getDeepRef(rootState, state.userVuexPath)
+    const user = getDeepRef(rootState, state.vuexUserPath)
     return (user !== null)
   },
   dbRef: (state, getters, rootState, rootGetters) => {

@@ -1,8 +1,9 @@
 import Firebase from 'firebase/app'
 import 'firebase/firestore'
-import copyObj from '../utils/copyObj'
 import { isArray, isString } from 'is-what'
-
+import merge from '../../node_modules/deepmerge/dist/es.js'
+import copyObj from '../utils/copyObj'
+import overwriteMerge from '../utils/overwriteMerge'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
 
@@ -22,10 +23,14 @@ const actions = {
 
     // 2. Push to syncStack
     Object.keys(syncStackItems).forEach(id => {
-      if (!state.syncStack.updates[id]) {
-        state.syncStack.updates[id] = {}
-      }
-      Object.assign(state.syncStack.updates[id], syncStackItems[id])
+      const newVal = (!state.syncStack.updates[id])
+        ? syncStackItems[id]
+        : merge(
+            state.syncStack.updates[id],
+            syncStackItems[id],
+            {arrayMerge: overwriteMerge}
+          )
+      state.syncStack.updates[id] = newVal
     })
 
     // 3. Create or refresh debounce
