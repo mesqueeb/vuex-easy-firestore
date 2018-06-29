@@ -1,5 +1,4 @@
-import merge from '../../node_modules/deepmerge/dist/es.js'
-import overwriteMerge from './overwriteMerge'
+import merge from './deepmerge'
 
 /**
  * Sets default values on an object
@@ -8,5 +7,5 @@ import overwriteMerge from './overwriteMerge'
  * @param {object} defaultValues the default values
  */
 export default function (obj, defaultValues) {
-  return merge(defaultValues, obj, {arrayMerge: overwriteMerge})
+  return merge(defaultValues, obj, {arrayOverwrite: true})
 }

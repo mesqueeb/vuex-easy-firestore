@@ -1,9 +1,8 @@
 import Firebase from 'firebase/app'
 import 'firebase/firestore'
 import { isArray, isString } from 'is-what'
-import merge from '../../node_modules/deepmerge/dist/es.js'
+import merge from '../utils/deepmerge'
 import copyObj from '../utils/copyObj'
-import overwriteMerge from '../utils/overwriteMerge'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
 
@@ -28,7 +27,7 @@ const actions = {
         : merge(
             state.syncStack.updates[id],
             syncStackItems[id],
-            {arrayMerge: overwriteMerge}
+            {arrayOverwrite: true}
           )
       state.syncStack.updates[id] = newVal
     })
