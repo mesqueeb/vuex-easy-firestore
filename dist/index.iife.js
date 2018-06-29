@@ -1,13 +1,6 @@
-(function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('vuex-easy-access'), require('is-what'), require('babel-runtime/helpers/typeof'), require('babel-runtime/helpers/toConsumableArray'), require('babel-runtime/regenerator'), require('babel-runtime/helpers/asyncToGenerator'), require('firebase/app'), require('firebase/firestore'), require('firebase/auth'), require('regenerator-runtime/runtime')) :
-	typeof define === 'function' && define.amd ? define(['exports', 'vuex-easy-access', 'is-what', 'babel-runtime/helpers/typeof', 'babel-runtime/helpers/toConsumableArray', 'babel-runtime/regenerator', 'babel-runtime/helpers/asyncToGenerator', 'firebase/app', 'firebase/firestore', 'firebase/auth', 'regenerator-runtime/runtime'], factory) :
-	(factory((global.Index = {}),global.vuexEasyAccess,global.isWhat,global._typeof,global._toConsumableArray,global._regeneratorRuntime,global._asyncToGenerator,global.Firebase));
-}(this, (function (exports,vuexEasyAccess,isWhat,_typeof,_toConsumableArray,_regeneratorRuntime,_asyncToGenerator,Firebase) { 'use strict';
+var VuexEasyFirestore = (function (vuexEasyAccess,isWhat,Firebase) {
+	'use strict';
 
-	_typeof = _typeof && _typeof.hasOwnProperty('default') ? _typeof['default'] : _typeof;
-	_toConsumableArray = _toConsumableArray && _toConsumableArray.hasOwnProperty('default') ? _toConsumableArray['default'] : _toConsumableArray;
-	_regeneratorRuntime = _regeneratorRuntime && _regeneratorRuntime.hasOwnProperty('default') ? _regeneratorRuntime['default'] : _regeneratorRuntime;
-	_asyncToGenerator = _asyncToGenerator && _asyncToGenerator.hasOwnProperty('default') ? _asyncToGenerator['default'] : _asyncToGenerator;
 	Firebase = Firebase && Firebase.hasOwnProperty('default') ? Firebase['default'] : Firebase;
 
 	var isMergeableObject = function isMergeableObject(value) {
@@ -98,15 +91,30 @@
 
 	var deepmerge_1 = deepmerge;
 
+	// import deepmerge from '../../node_modules/deepmerge/dist/es.js'
+
 	/**
-	 * Makes sure to overwrite arrays completely instead of concatenating with a merge(). Usage: merge(arr1, arr2, {arrayMerge: overwriteMerge})
+	 * Makes sure to overwrite arrays completely instead of concatenating with a merge(). Usage: merge(arr1, arr2, {arrayOverwrite: true})
 	 *
-	 * @export
 	 * @returns the latter array passed
 	 */
-	function overwriteMerge (destinationArray, sourceArray, options) {
+	function overwriteMerge(destinationArray, sourceArray, options) {
 	  return sourceArray;
 	}
+
+	function merge(a, b, options) {
+	  if (options && options.arrayOverwrite) {
+	    return deepmerge_1(a, b, { arrayMerge: overwriteMerge });
+	  }
+	  return deepmerge_1(a, b);
+	}
+
+	merge.all = function (array, options) {
+	  if (options && options.arrayOverwrite) {
+	    return deepmerge_1.all(array, { arrayMerge: overwriteMerge });
+	  }
+	  return deepmerge_1.all(array);
+	};
 
 	/**
 	 * A function executed during the 2 way sync when docs are added/modified/deleted. NEEDS TO EXECUTE FIRST PARAM! You can use this function to do a conditional check on the documents to decide if/when to execute the store update.
@@ -212,16 +220,16 @@
 	      if (!state.docsStateProp) {
 	        return Object.keys(doc).forEach(function (key) {
 	          // Merge if exists
-	          var newVal = state[key] === undefined ? doc[key] : !isWhat.isObject(state[key]) || !isWhat.isObject(doc[key]) ? doc[key] : deepmerge_1(state[key], doc[key], { arrayMerge: overwriteMerge });
+	          var newVal = state[key] === undefined ? doc[key] : !isWhat.isObject(state[key]) || !isWhat.isObject(doc[key]) ? doc[key] : merge(state[key], doc[key], { arrayOverwrite: true });
 	          _this._vm.$set(state, key, newVal);
 	        });
 	      }
 	      // state[state.docsStateProp] will always be an empty object by default
-	      state[state.docsStateProp] = deepmerge_1(state[state.docsStateProp], doc, { arrayMerge: overwriteMerge });
+	      state[state.docsStateProp] = merge(state[state.docsStateProp], doc, { arrayOverwrite: true });
 	      return;
 	    }
 	    // Merge if exists
-	    var newVal = state[state.docsStateProp][doc.id] === undefined ? doc : !isWhat.isObject(state[state.docsStateProp][doc.id]) || !isWhat.isObject(doc) ? doc : deepmerge_1(state[state.docsStateProp][doc.id], doc, { arrayMerge: overwriteMerge });
+	    var newVal = state[state.docsStateProp][doc.id] === undefined ? doc : !isWhat.isObject(state[state.docsStateProp][doc.id]) || !isWhat.isObject(doc) ? doc : merge(state[state.docsStateProp][doc.id], doc, { arrayOverwrite: true });
 	    this._vm.$set(state[state.docsStateProp], doc.id, newVal);
 	  },
 	  DELETE_DOC: function DELETE_DOC(state, id) {
@@ -237,6 +245,22 @@
 	  var vuexEasyMutations = vuexEasyAccess.defaultMutations(state);
 	  return Object.assign({}, vuexEasyMutations, mutations, userMutations);
 	}
+
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
+	  return typeof obj;
+	} : function (obj) {
+	  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+	};
+
+	var toConsumableArray = function (arr) {
+	  if (Array.isArray(arr)) {
+	    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+	    return arr2;
+	  } else {
+	    return Array.from(arr);
+	  }
+	};
 
 	/**
 	 * copyObj helper
@@ -280,7 +304,7 @@
 	 * @param {object} defaultValues the default values
 	 */
 	function setDefaultValues (obj, defaultValues) {
-	  return deepmerge_1(defaultValues, obj, { arrayMerge: overwriteMerge });
+	  return merge(defaultValues, obj, { arrayOverwrite: true });
 	}
 
 	/**
@@ -341,7 +365,7 @@
 
 	    // 2. Push to syncStack
 	    Object.keys(syncStackItems).forEach(function (id) {
-	      var newVal = !state.syncStack.updates[id] ? syncStackItems[id] : deepmerge_1(state.syncStack.updates[id], syncStackItems[id], { arrayMerge: overwriteMerge });
+	      var newVal = !state.syncStack.updates[id] ? syncStackItems[id] : merge(state.syncStack.updates[id], syncStackItems[id], { arrayOverwrite: true });
 	      state.syncStack.updates[id] = newVal;
 	    });
 
@@ -405,164 +429,139 @@
 	    }
 	    state.syncStack.debounceTimer.refresh();
 	  },
-	  batchSync: function () {
-	    var _ref7 = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime.mark(function _callee(_ref6) {
-	      var getters = _ref6.getters,
-	          commit = _ref6.commit,
-	          dispatch = _ref6.dispatch,
-	          state = _ref6.state;
-	      var collectionMode, dbRef, batch, count, updatesOriginal, updates, updatesOK, updatesLeft, deletions, deletionsAmount, deletionsOK, deletionsLeft, inserts, insertsAmount, insertsOK, insertsLeft;
-	      return _regeneratorRuntime.wrap(function _callee$(_context) {
-	        while (1) {
-	          switch (_context.prev = _context.next) {
-	            case 0:
-	              collectionMode = getters.collectionMode;
-	              dbRef = getters.dbRef;
-	              batch = Firebase.firestore().batch();
-	              count = 0;
-	              // Add 'updateds' to batch
+	  batchSync: function batchSync(_ref6) {
+	    var getters = _ref6.getters,
+	        commit = _ref6.commit,
+	        dispatch = _ref6.dispatch,
+	        state = _ref6.state;
 
-	              updatesOriginal = copyObj(state.syncStack.updates);
-	              updates = Object.keys(updatesOriginal).map(function (k) {
-	                var fields = updatesOriginal[k];
-	                return { id: k, fields: fields };
-	              });
-	              // Check if there are more than 500 batch items already
-
-	              if (updates.length >= 500) {
-	                // Batch supports only until 500 items
-	                count = 500;
-	                updatesOK = updates.slice(0, 500);
-	                updatesLeft = updates.slice(500, -1);
-	                // Put back the remaining items over 500
-
-	                state.syncStack.updates = updatesLeft.reduce(function (carry, item) {
-	                  carry[item.id] = item;
-	                  delete item.id;
-	                  return carry;
-	                }, {});
-	                updates = updatesOK;
-	              } else {
-	                state.syncStack.updates = {};
-	                count = updates.length;
-	              }
-	              // Add to batch
-	              updates.forEach(function (item) {
-	                var id = item.id;
-	                var docRef = collectionMode ? dbRef.doc(id) : dbRef;
-	                var fields = item.fields;
-	                batch.update(docRef, fields);
-	              });
-	              // Add 'deletions' to batch
-	              deletions = copyObj(state.syncStack.deletions);
-	              // Check if there are more than 500 batch items already
-
-	              if (count >= 500) {
-	                // already at 500 or more, leave items in syncstack, and don't add anything to batch
-	                deletions = [];
-	              } else {
-	                // Batch supports only until 500 items
-	                deletionsAmount = 500 - count;
-	                deletionsOK = deletions.slice(0, deletionsAmount);
-	                deletionsLeft = deletions.slice(deletionsAmount, -1);
-	                // Put back the remaining items over 500
-
-	                commit('SET_SYNCSTACK.DELETIONS', deletionsLeft);
-	                count = count + deletionsOK.length;
-	                // Define the items we'll add below
-	                deletions = deletionsOK;
-	              }
-	              // Add to batch
-	              deletions.forEach(function (id) {
-	                var docRef = dbRef.doc(id);
-	                batch.delete(docRef);
-	              });
-	              // Add 'inserts' to batch
-	              inserts = copyObj(state.syncStack.inserts);
-	              // Check if there are more than 500 batch items already
-
-	              if (count >= 500) {
-	                // already at 500 or more, leave items in syncstack, and don't add anything to batch
-	                inserts = [];
-	              } else {
-	                // Batch supports only until 500 items
-	                insertsAmount = 500 - count;
-	                insertsOK = inserts.slice(0, insertsAmount);
-	                insertsLeft = inserts.slice(insertsAmount, -1);
-	                // Put back the remaining items over 500
-
-	                commit('SET_SYNCSTACK.INSERTS', insertsLeft);
-	                count = count + insertsOK.length;
-	                // Define the items we'll add below
-	                inserts = insertsOK;
-	              }
-	              // Add to batch
-	              inserts.forEach(function (item) {
-	                var newRef = getters.dbRef.doc(item.id);
-	                batch.set(newRef, item);
-	              });
-	              // Commit the batch:
-	              // console.log(`[batchSync] START:
-	              //   ${Object.keys(updates).length} updates,
-	              //   ${deletions.length} deletions,
-	              //   ${inserts.length} inserts`
-	              // )
-	              dispatch('_startPatching');
-	              commit('SET_SYNCSTACK.DEBOUNCETIMER', null);
-	              _context.next = 18;
-	              return batch.commit().then(function (res) {
-	                console.log('[batchSync] RESOLVED:', res, '\n        updates: ', Object.keys(updates).length ? updates : {}, '\n        deletions: ', deletions.length ? deletions : [], '\n        inserts: ', inserts.length ? inserts : []);
-	                var remainingSyncStack = Object.keys(state.syncStack.updates).length + state.syncStack.deletions.length + state.syncStack.inserts.length;
-	                if (remainingSyncStack) {
-	                  dispatch('batchSync');
-	                }
-	                dispatch('_stopPatching');
-
-	                // // Fetch the item if it was added as an Archived item:
-	                // if (item.archived) {
-	                //   get_ters.dbRef.doc(res.id).get()
-	                //   .then(doc => {
-	                //     let tempId = doc.data().id
-	                //     let id = doc.id
-	                //     let item = doc.data()
-	                //     item.id = id
-	                //     console.log('retrieved Archived new item: ', id, item)
-	                //     dispatch('newItemFromServer', {item, tempId})
-	                //   })
-	                // }
-	              }).catch(function (error) {
-	                commit('SET_PATCHING', 'error');
-	                commit('SET_SYNCSTACK.DEBOUNCETIMER', null);
-	                throw error;
-	              });
-
-	            case 18:
-	            case 'end':
-	              return _context.stop();
-	          }
-	        }
-	      }, _callee, this);
-	    }));
-
-	    function batchSync(_x4) {
-	      return _ref7.apply(this, arguments);
+	    var collectionMode = getters.collectionMode;
+	    var dbRef = getters.dbRef;
+	    var batch = Firebase.firestore().batch();
+	    var count = 0;
+	    // Add 'updateds' to batch
+	    var updatesOriginal = copyObj(state.syncStack.updates);
+	    var updates = Object.keys(updatesOriginal).map(function (k) {
+	      var fields = updatesOriginal[k];
+	      return { id: k, fields: fields };
+	    });
+	    // Check if there are more than 500 batch items already
+	    if (updates.length >= 500) {
+	      // Batch supports only until 500 items
+	      count = 500;
+	      var updatesOK = updates.slice(0, 500);
+	      var updatesLeft = updates.slice(500, -1);
+	      // Put back the remaining items over 500
+	      state.syncStack.updates = updatesLeft.reduce(function (carry, item) {
+	        carry[item.id] = item;
+	        delete item.id;
+	        return carry;
+	      }, {});
+	      updates = updatesOK;
+	    } else {
+	      state.syncStack.updates = {};
+	      count = updates.length;
 	    }
+	    // Add to batch
+	    updates.forEach(function (item) {
+	      var id = item.id;
+	      var docRef = collectionMode ? dbRef.doc(id) : dbRef;
+	      var fields = item.fields;
+	      batch.update(docRef, fields);
+	    });
+	    // Add 'deletions' to batch
+	    var deletions = copyObj(state.syncStack.deletions);
+	    // Check if there are more than 500 batch items already
+	    if (count >= 500) {
+	      // already at 500 or more, leave items in syncstack, and don't add anything to batch
+	      deletions = [];
+	    } else {
+	      // Batch supports only until 500 items
+	      var deletionsAmount = 500 - count;
+	      var deletionsOK = deletions.slice(0, deletionsAmount);
+	      var deletionsLeft = deletions.slice(deletionsAmount, -1);
+	      // Put back the remaining items over 500
+	      commit('SET_SYNCSTACK.DELETIONS', deletionsLeft);
+	      count = count + deletionsOK.length;
+	      // Define the items we'll add below
+	      deletions = deletionsOK;
+	    }
+	    // Add to batch
+	    deletions.forEach(function (id) {
+	      var docRef = dbRef.doc(id);
+	      batch.delete(docRef);
+	    });
+	    // Add 'inserts' to batch
+	    var inserts = copyObj(state.syncStack.inserts);
+	    // Check if there are more than 500 batch items already
+	    if (count >= 500) {
+	      // already at 500 or more, leave items in syncstack, and don't add anything to batch
+	      inserts = [];
+	    } else {
+	      // Batch supports only until 500 items
+	      var insertsAmount = 500 - count;
+	      var insertsOK = inserts.slice(0, insertsAmount);
+	      var insertsLeft = inserts.slice(insertsAmount, -1);
+	      // Put back the remaining items over 500
+	      commit('SET_SYNCSTACK.INSERTS', insertsLeft);
+	      count = count + insertsOK.length;
+	      // Define the items we'll add below
+	      inserts = insertsOK;
+	    }
+	    // Add to batch
+	    inserts.forEach(function (item) {
+	      var newRef = getters.dbRef.doc(item.id);
+	      batch.set(newRef, item);
+	    });
+	    // Commit the batch:
+	    // console.log(`[batchSync] START:
+	    //   ${Object.keys(updates).length} updates,
+	    //   ${deletions.length} deletions,
+	    //   ${inserts.length} inserts`
+	    // )
+	    dispatch('_startPatching');
+	    commit('SET_SYNCSTACK.DEBOUNCETIMER', null);
+	    return new Promise(function (resolve, reject) {
+	      batch.commit().then(function (res) {
+	        console.log('[batchSync] RESOLVED:', res, '\n          updates: ', Object.keys(updates).length ? updates : {}, '\n          deletions: ', deletions.length ? deletions : [], '\n          inserts: ', inserts.length ? inserts : []);
+	        var remainingSyncStack = Object.keys(state.syncStack.updates).length + state.syncStack.deletions.length + state.syncStack.inserts.length;
+	        if (remainingSyncStack) {
+	          dispatch('batchSync');
+	        }
+	        dispatch('_stopPatching');
+	        return resolve();
+	        // // Fetch the item if it was added as an Archived item:
+	        // if (item.archived) {
+	        //   get_ters.dbRef.doc(res.id).get()
+	        //   .then(doc => {
+	        //     let tempId = doc.data().id
+	        //     let id = doc.id
+	        //     let item = doc.data()
+	        //     item.id = id
+	        //     console.log('retrieved Archived new item: ', id, item)
+	        //     dispatch('newItemFromServer', {item, tempId})
+	        //   })
+	        // }
+	      }).catch(function (error) {
+	        commit('SET_PATCHING', 'error');
+	        commit('SET_SYNCSTACK.DEBOUNCETIMER', null);
+	        return reject();
+	      });
+	    });
+	  },
+	  fetch: function fetch(_ref7) {
+	    var state = _ref7.state,
+	        getters = _ref7.getters,
+	        commit = _ref7.commit;
 
-	    return batchSync;
-	  }(),
-	  fetch: function fetch(_ref8) {
-	    var state = _ref8.state,
-	        getters = _ref8.getters,
-	        commit = _ref8.commit;
-
-	    var _ref9 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : { whereFilters: [], orderBy: []
+	    var _ref8 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : { whereFilters: [], orderBy: []
 	      // whereFilters: [['archived', '==', true]]
 	      // orderBy: ['done_date', 'desc']
 	    },
-	        _ref9$whereFilters = _ref9.whereFilters,
-	        whereFilters = _ref9$whereFilters === undefined ? [] : _ref9$whereFilters,
-	        _ref9$orderBy = _ref9.orderBy,
-	        orderBy = _ref9$orderBy === undefined ? [] : _ref9$orderBy;
+	        _ref8$whereFilters = _ref8.whereFilters,
+	        whereFilters = _ref8$whereFilters === undefined ? [] : _ref8$whereFilters,
+	        _ref8$orderBy = _ref8.orderBy,
+	        orderBy = _ref8$orderBy === undefined ? [] : _ref8$orderBy;
 
 	    return new Promise(function (resolve, reject) {
 	      console.log('[fetch] starting');
@@ -582,12 +581,12 @@
 	        whereFilters.forEach(function (paramsArr) {
 	          var _fetchRef;
 
-	          fetchRef = (_fetchRef = fetchRef).where.apply(_fetchRef, _toConsumableArray(paramsArr));
+	          fetchRef = (_fetchRef = fetchRef).where.apply(_fetchRef, toConsumableArray(paramsArr));
 	        });
 	        if (orderBy.length) {
 	          var _fetchRef2;
 
-	          fetchRef = (_fetchRef2 = fetchRef).orderBy.apply(_fetchRef2, _toConsumableArray(orderBy));
+	          fetchRef = (_fetchRef2 = fetchRef).orderBy.apply(_fetchRef2, toConsumableArray(orderBy));
 	        }
 	      }
 	      fetchRef = fetchRef.limit(state.fetch.docLimit);
@@ -619,12 +618,12 @@
 	      });
 	    });
 	  },
-	  serverUpdate: function serverUpdate(_ref10, _ref11) {
-	    var commit = _ref10.commit;
-	    var change = _ref11.change,
-	        id = _ref11.id,
-	        _ref11$doc = _ref11.doc,
-	        doc = _ref11$doc === undefined ? {} : _ref11$doc;
+	  serverUpdate: function serverUpdate(_ref9, _ref10) {
+	    var commit = _ref9.commit;
+	    var change = _ref10.change,
+	        id = _ref10.id,
+	        _ref10$doc = _ref10.doc,
+	        doc = _ref10$doc === undefined ? {} : _ref10$doc;
 
 	    doc.id = id;
 	    switch (change) {
@@ -639,11 +638,11 @@
 	        break;
 	    }
 	  },
-	  openDBChannel: function openDBChannel(_ref12) {
-	    var getters = _ref12.getters,
-	        state = _ref12.state,
-	        commit = _ref12.commit,
-	        dispatch = _ref12.dispatch;
+	  openDBChannel: function openDBChannel(_ref11) {
+	    var getters = _ref11.getters,
+	        state = _ref11.state,
+	        commit = _ref11.commit,
+	        dispatch = _ref11.dispatch;
 
 	    var collectionMode = getters.collectionMode;
 	    var dbRef = getters.dbRef;
@@ -652,12 +651,12 @@
 	      state.sync.where.forEach(function (paramsArr) {
 	        var _dbRef;
 
-	        dbRef = (_dbRef = dbRef).where.apply(_dbRef, _toConsumableArray(paramsArr));
+	        dbRef = (_dbRef = dbRef).where.apply(_dbRef, toConsumableArray(paramsArr));
 	      });
 	      if (state.sync.orderBy.length) {
 	        var _dbRef2;
 
-	        dbRef = (_dbRef2 = dbRef).orderBy.apply(_dbRef2, _toConsumableArray(state.sync.orderBy));
+	        dbRef = (_dbRef2 = dbRef).orderBy.apply(_dbRef2, toConsumableArray(state.sync.orderBy));
 	      }
 	    }
 	    // define handleDoc()
@@ -701,11 +700,11 @@
 	      });
 	    });
 	  },
-	  set: function set(_ref13, doc) {
-	    var commit = _ref13.commit,
-	        dispatch = _ref13.dispatch,
-	        getters = _ref13.getters,
-	        state = _ref13.state;
+	  set: function set$$1(_ref12, doc) {
+	    var commit = _ref12.commit,
+	        dispatch = _ref12.dispatch,
+	        getters = _ref12.getters,
+	        state = _ref12.state;
 
 	    if (!doc) return;
 	    if (!getters.collectionMode) {
@@ -716,38 +715,38 @@
 	    }
 	    return dispatch('patch', doc);
 	  },
-	  insert: function insert(_ref14, doc) {
-	    var commit = _ref14.commit,
-	        dispatch = _ref14.dispatch,
-	        getters = _ref14.getters;
+	  insert: function insert(_ref13, doc) {
+	    var commit = _ref13.commit,
+	        dispatch = _ref13.dispatch,
+	        getters = _ref13.getters;
 
 	    if (!doc) return;
 	    if (!doc.id) doc.id = getters.dbRef.doc().id;
 	    commit('INSERT_DOC', doc);
 	    return dispatch('insertDoc', doc);
 	  },
-	  patch: function patch(_ref15, doc) {
-	    var commit = _ref15.commit,
-	        state = _ref15.state,
-	        dispatch = _ref15.dispatch,
-	        getters = _ref15.getters;
+	  patch: function patch(_ref14, doc) {
+	    var commit = _ref14.commit,
+	        state = _ref14.state,
+	        dispatch = _ref14.dispatch,
+	        getters = _ref14.getters;
 
 	    if (!doc) return;
 	    if (!doc.id && getters.collectionMode) return;
 	    commit('PATCH_DOC', doc);
 	    return dispatch('patchDoc', { id: doc.id, fields: Object.keys(doc) });
 	  },
-	  delete: function _delete(_ref16, id) {
-	    var commit = _ref16.commit,
-	        dispatch = _ref16.dispatch,
-	        getters = _ref16.getters;
+	  delete: function _delete(_ref15, id) {
+	    var commit = _ref15.commit,
+	        dispatch = _ref15.dispatch,
+	        getters = _ref15.getters;
 
 	    commit('DELETE_DOC', id);
 	    return dispatch('deleteDoc', id);
 	  },
-	  _stopPatching: function _stopPatching(_ref17) {
-	    var state = _ref17.state,
-	        commit = _ref17.commit;
+	  _stopPatching: function _stopPatching(_ref16) {
+	    var state = _ref16.state,
+	        commit = _ref16.commit;
 
 	    if (state.stopPatchingTimeout) {
 	      clearTimeout(state.stopPatchingTimeout);
@@ -756,9 +755,9 @@
 	      commit('SET_PATCHING', false);
 	    }, 300);
 	  },
-	  _startPatching: function _startPatching(_ref18) {
-	    var state = _ref18.state,
-	        commit = _ref18.commit;
+	  _startPatching: function _startPatching(_ref17) {
+	    var state = _ref17.state,
+	        commit = _ref17.commit;
 
 	    if (state.stopPatchingTimeout) {
 	      clearTimeout(state.stopPatchingTimeout);
@@ -905,8 +904,6 @@
 	  return true;
 	}
 
-	// import merge from 'deepmerge'
-
 	var vuexBase = { state: null, mutations: null, actions: null, getters: null
 
 	  /**
@@ -916,7 +913,7 @@
 	   * @returns {object} the module ready to be included in your vuex store
 	   */
 	};function iniModule (userConfig) {
-	  var conf = deepmerge_1(vuexBase, userConfig, { arrayMerge: overwriteMerge });
+	  var conf = merge(vuexBase, userConfig, { arrayOverwrite: true });
 	  if (!errorCheck(conf)) return;
 	  var userState = conf.state;
 	  var userMutations = conf.mutations;
@@ -929,12 +926,12 @@
 
 	  var docContainer = {};
 	  if (conf.docsStateProp) docContainer[conf.docsStateProp] = {};
-	  var state = deepmerge_1.all([initialState, defaultConfig, userState, conf, docContainer], { arrayMerge: overwriteMerge });
+	  var state = merge.all([initialState, defaultConfig, userState, conf, docContainer], { arrayOverwrite: true });
 
 	  return {
 	    namespaced: true,
 	    state: state,
-	    mutations: iniMutations(userMutations, deepmerge_1(initialState, userState)),
+	    mutations: iniMutations(userMutations, merge(initialState, userState)),
 	    actions: iniActions(userActions),
 	    getters: iniGetters(userGetters)
 	  };
@@ -964,9 +961,7 @@
 	  };
 	}
 
-	exports.default = createEasyFirestore;
+	return createEasyFirestore;
 
-	Object.defineProperty(exports, '__esModule', { value: true });
-
-})));
-//# sourceMappingURL=index.js.map
+}(vuexEasyAccess,isWhat,Firebase));
+//# sourceMappingURL=index.iife.js.map

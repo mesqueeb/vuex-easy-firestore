@@ -1,4 +1,5 @@
-import deepmerge from '../../node_modules/deepmerge/dist/es.js'
+import deepmerge from 'deepmerge'
+// import deepmerge from '../../node_modules/deepmerge/dist/es.js'
 
 /**
  * Makes sure to overwrite arrays completely instead of concatenating with a merge(). Usage: merge(arr1, arr2, {arrayOverwrite: true})
