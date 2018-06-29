@@ -1,6 +1,4 @@
-// import merge from 'deepmerge'
-import merge from '../../node_modules/deepmerge/dist/es.js'
-import overwriteMerge from '../utils/overwriteMerge'
+import merge from '../utils/deepmerge'
 // store
 import defaultConfig from './defaultConfig'
 import initialState from './state'
@@ -18,7 +16,7 @@ const vuexBase = {state: null, mutations: null, actions: null, getters: null}
  * @returns {object} the module ready to be included in your vuex store
  */
 export default function (userConfig) {
-  const conf = merge(vuexBase, userConfig, {arrayMerge: overwriteMerge})
+  const conf = merge(vuexBase, userConfig, {arrayOverwrite: true})
   if (!errorCheck(conf)) return
   const userState = conf.state
   const userMutations = conf.mutations
@@ -31,7 +29,7 @@ export default function (userConfig) {
 
   const docContainer = {}
   if (conf.docsStateProp) docContainer[conf.docsStateProp] = {}
-  const state = merge.all([initialState, defaultConfig, userState, conf, docContainer], {arrayMerge: overwriteMerge})
+  const state = merge.all([initialState, defaultConfig, userState, conf, docContainer], {arrayOverwrite: true})
 
   return {
     namespaced: true,

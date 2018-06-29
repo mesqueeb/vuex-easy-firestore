@@ -1,7 +1,6 @@
 import { defaultMutations } from 'vuex-easy-access'
 import { isObject } from 'is-what'
-import merge from '../../node_modules/deepmerge/dist/es.js'
-import overwriteMerge from '../utils/overwriteMerge'
+import merge from '../utils/deepmerge'
 
 const mutations = {
   resetSyncStack (state) {
@@ -25,7 +24,7 @@ const mutations = {
             ? doc[key]
             : (!isObject(state[key]) || !isObject(doc[key]))
               ? doc[key]
-              : merge(state[key], doc[key], {arrayMerge: overwriteMerge})
+              : merge(state[key], doc[key], {arrayOverwrite: true})
           this._vm.$set(state, key, newVal)
         })
       }
@@ -33,7 +32,7 @@ const mutations = {
       state[state.docsStateProp] = merge(
         state[state.docsStateProp],
         doc,
-        {arrayMerge: overwriteMerge}
+        {arrayOverwrite: true}
       )
       return
     }
@@ -42,7 +41,7 @@ const mutations = {
       ? doc
       : (!isObject(state[state.docsStateProp][doc.id]) || !isObject(doc))
         ? doc
-        : merge(state[state.docsStateProp][doc.id], doc, {arrayMerge: overwriteMerge})
+        : merge(state[state.docsStateProp][doc.id], doc, {arrayOverwrite: true})
     this._vm.$set(state[state.docsStateProp], doc.id, newVal)
   },
   DELETE_DOC (state, id) {

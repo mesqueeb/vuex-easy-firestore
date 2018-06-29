@@ -1,9 +1,8 @@
 import Firebase from 'firebase/app'
 import 'firebase/firestore'
 import { isArray, isString } from 'is-what'
-import merge from '../../node_modules/deepmerge/dist/es.js'
+import merge from '../utils/deepmerge'
 import copyObj from '../utils/copyObj'
-import overwriteMerge from '../utils/overwriteMerge'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
 
@@ -28,7 +27,7 @@ const actions = {
         : merge(
             state.syncStack.updates[id],
             syncStackItems[id],
-            {arrayMerge: overwriteMerge}
+            {arrayOverwrite: true}
           )
       state.syncStack.updates[id] = newVal
     })
@@ -76,7 +75,7 @@ const actions = {
     }
     state.syncStack.debounceTimer.refresh()
   },
-  async batchSync ({getters, commit, dispatch, state}) {
+  batchSync ({getters, commit, dispatch, state}) {
     const collectionMode = getters.collectionMode
     const dbRef = getters.dbRef
     let batch = Firebase.firestore().batch()
@@ -163,35 +162,37 @@ const actions = {
     // )
     dispatch('_startPatching')
     commit('SET_SYNCSTACK.DEBOUNCETIMER', null)
-    await batch.commit()
-    .then(res => {
-      console.log(`[batchSync] RESOLVED:`, res, `
-        updates: `, Object.keys(updates).length ? updates : {}, `
-        deletions: `, deletions.length ? deletions : [], `
-        inserts: `, inserts.length ? inserts : []
-      )
-      let remainingSyncStack = Object.keys(state.syncStack.updates).length
-        + state.syncStack.deletions.length
-        + state.syncStack.inserts.length
-      if (remainingSyncStack) { dispatch('batchSync') }
-      dispatch('_stopPatching')
-
-      // // Fetch the item if it was added as an Archived item:
-      // if (item.archived) {
-        //   get_ters.dbRef.doc(res.id).get()
-        //   .then(doc => {
-          //     let tempId = doc.data().id
-          //     let id = doc.id
-          //     let item = doc.data()
-          //     item.id = id
-          //     console.log('retrieved Archived new item: ', id, item)
-          //     dispatch('newItemFromServer', {item, tempId})
-          //   })
-          // }
-    }).catch(error => {
-      commit('SET_PATCHING', 'error')
-      commit('SET_SYNCSTACK.DEBOUNCETIMER', null)
-      throw error
+    return new Promise((resolve, reject) => {
+      batch.commit()
+      .then(res => {
+        console.log(`[batchSync] RESOLVED:`, res, `
+          updates: `, Object.keys(updates).length ? updates : {}, `
+          deletions: `, deletions.length ? deletions : [], `
+          inserts: `, inserts.length ? inserts : []
+        )
+        let remainingSyncStack = Object.keys(state.syncStack.updates).length
+          + state.syncStack.deletions.length
+          + state.syncStack.inserts.length
+        if (remainingSyncStack) { dispatch('batchSync') }
+        dispatch('_stopPatching')
+        return resolve()
+        // // Fetch the item if it was added as an Archived item:
+        // if (item.archived) {
+          //   get_ters.dbRef.doc(res.id).get()
+          //   .then(doc => {
+            //     let tempId = doc.data().id
+            //     let id = doc.id
+            //     let item = doc.data()
+            //     item.id = id
+            //     console.log('retrieved Archived new item: ', id, item)
+            //     dispatch('newItemFromServer', {item, tempId})
+            //   })
+            // }
+      }).catch(error => {
+        commit('SET_PATCHING', 'error')
+        commit('SET_SYNCSTACK.DEBOUNCETIMER', null)
+        return reject()
+      })
     })
   },
   fetch (
