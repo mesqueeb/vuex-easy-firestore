@@ -7,5 +7,5 @@ import merge from './deepmerge'
  * @param {object} defaultValues the default values
  */
 export default function (obj, defaultValues) {
-  return merge(defaultValues, obj, {arrayOverwrite: true})
+  return merge(defaultValues, obj)
 }

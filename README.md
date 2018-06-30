@@ -7,13 +7,14 @@ In just 4 lines of code, get your vuex module in complete 2-way sync with firest
 You literally only need to add these 4 lines to your vuex module and you'll have automatic sync with firestore!
 
 ```js
-config: {
+const firebaseModule = {
   firestorePath: 'users/{userId}/data',
   firestoreRefType: 'collection', // or 'doc'
   moduleName: 'user',
   statePropName: 'docs',
   // the rest of your module here
 }
+// add firebaseModule as vuex plugin wrapped in vuex-easy-firestore
 ```
 
 and Alakazam! Now you have a vuex module called `user` with `state: {docs: {}}`.
@@ -35,6 +36,7 @@ Other features include hooks, fillables (limit props to sync), default values (a
     - [Editing](#editing)
     - [Shortcut: set(path, doc)](#shortcut-setpath-doc)
     - [Fetching](#fetching)
+    - [Multiple modules with 2way sync](#multiple-modules-with-2way-sync)
     - [Sync directly to module state](#sync-directly-to-module-state)
 - [Extra features](#extra-features)
     - [Filters](#filters)
@@ -64,7 +66,7 @@ npm i --save vuex-easy-firestore
 ```js
 import createEasyFirestore from 'vuex-easy-firestore'
 
-const userModule = {
+const userDataModule = {
   firestorePath: 'users/{userId}/data',
   firestoreRefType: 'collection', // or 'doc'
   moduleName: 'userData',
@@ -74,7 +76,7 @@ const userModule = {
 }
 
 // do the magic 🧙🏻‍♂️
-const easyFirestore = createEasyFirestore(userModule)
+const easyFirestore = createEasyFirestore(userDataModule)
 
 // and include as PLUGIN in your vuex store:
 store: {
@@ -140,6 +142,23 @@ dispatch('user/favourites/fetch', {whereFilters = [], orderBy = []})
 
 You have to manually write the logic for what you want to do with the fetched documents.s
 
+### Multiple modules with 2way sync
+
+Of course you can have multiple vuex modules, all in sync with different firestore paths.
+
+```js
+const userDataModule = {/* config */}
+const anotherModule = {/* config */}
+const aThirdModule = {/* config */}
+// make sure you choose a different moduleName and firestorePath each time!
+const easyFirestores = createEasyFirestore([userDataModule, anotherModule, aThirdModule])
+// and include as PLUGIN in your vuex store:
+store: {
+  // ... your store
+  plugins: [easyFirestores]
+}
+```
+
 ### Sync directly to module state
 
 You can sync the doc(s) directly to the module state. This is not recommended for 'collections', because it will be harded to aggregate/count/filter your docs. However, this can be very usefull for syncing a single document.
@@ -147,10 +166,12 @@ You can sync the doc(s) directly to the module state. This is not recommended fo
 You can do so like this:
 
 ```js
+{
   firestorePath: 'users/{userId}/data/settings',
   firestoreRefType: 'doc',
   moduleName: 'user/settings',
-  statePropName: '',
+  statePropName: ''
+}
 ```
 
 In this case however, you need to set up fillables to make sure only the actual settings are synced. A clean way of doing so would be like this:
@@ -217,29 +238,33 @@ The filters set in `sync: {}` are applied before the DB Channel is openend. They
 ### Hooks before insert/patch/delete
 
 A function where you can check something or even change the doc before the store mutation occurs.
-! Must return the `doc`. May return `false` to abort the mutation.
+! Must call `updateStore(doc)` to make the store mutation.
+May choose not to call this to abort the mutation.
 
 ```js
 {
   // your other config...
-  insertHook: function (doc, store) { return doc },
-  patchHook: function (doc, store) { return doc },
-  deleteHook: function (id, store) { return id },
+  insertHook: function (updateStore, doc, store) { updateStore(doc) },
+  patchHook: function (updateStore, doc, store) { updateStore(doc) },
+  deleteHook: function (updateStore, id, store) { updateStore(id) },
 }
 ```
 
 ### Hooks after changes on the server
 
-A function where you can check something or even change the doc before the store mutation occurs.
-! Must return the `doc`. May return `false` to abort the mutation.
+Exactly the same as above, but for changes that have occured on the server. You also have some extra parameters to work with:
+
+- *id:* the doc id returned in `change.doc.id` (see firestore documentation for more info)
+- *doc:* the doc returned in `change.doc.data()` (see firestore documentation for more info)
+- *source:* of the change. Can be 'local' or 'server'
 
 ```js
 {
   // your other config...
-  onServer: {
-    addedHook: function (doc, id, store, source, change) { return doc },
-    modifiedHook: function (doc, id, store, source, change) { return doc },
-    removedHook: function (doc, id, store, source, change) { return doc },
+  serverChange: {
+    addedHook: function (updateStore, doc, id, store, source, change) { updateStore(doc) },
+    modifiedHook: function (updateStore, doc, id, store, source, change) { updateStore(doc) },
+    removedHook: function (updateStore, doc, id, store, source, change) { updateStore(doc) },
   }
 }
 ```
@@ -251,7 +276,7 @@ A function where you can check something or even change the doc before the store
 ```js
 {
   // your other config...
-  onServer: {
+  serverChange: {
     defaultValues: {},
   }
 }
@@ -263,10 +288,14 @@ Here is a list with all possible config options:
 
 ```js
 const firestoreModule = {
-  firestorePath: '', // The path to a collection or doc in firestore. You can use `{userId}` which will be replaced with the user Id.
-  firestoreRefType: '', // `'collection'` or `'doc'`. Depending on your `firestorePath`.
-  moduleName: '', // The module name. Can be nested, eg. `'user/items'`
-  statePropName: '', // The name of the property where the docs or doc will be synced to. If left blank it will be synced on the state of the module. (Please see [Sync directly to module state](#sync-directly-to-module-state) for more info)
+  firestorePath: '',
+    // The path to a collection or doc in firestore. You can use `{userId}` which will be replaced with the user Id.
+  firestoreRefType: '',
+    // `'collection'` or `'doc'`. Depending on your `firestorePath`.
+  moduleName: '',
+    // The module name. Can be nested, eg. `'user/items'`
+  statePropName: '',
+    // The name of the property where the docs or doc will be synced to. If left blank it will be synced on the state of the module. (Please see [Sync directly to module state](#sync-directly-to-module-state) for more info)
 
   // Related to the 2-way sync:
   sync: {
@@ -277,17 +306,17 @@ const firestoreModule = {
   },
 
   // HOOKS:
-  insertHook: function (doc, store) { return doc },
-  patchHook: function (doc, store) { return doc },
-  deleteHook: function (id, store) { return id },
+  insertHook: function (updateStore, doc, store) { return updateStore(doc) },
+  patchHook: function (updateStore, doc, store) { return updateStore(doc) },
+  deleteHook: function (updateStore, id, store) { return updateStore(id) },
 
   // When items on the server side are changed:
-  onServer: {
+  serverChange: {
     defaultValues: {},
     // HOOKS for changes on SERVER:
-    addedHook: function (doc, id, store, source, change) { return doc },
-    modifiedHook: function (doc, id, store, source, change) { return doc },
-    removedHook: function (doc, id, store, source, change) { return doc },
+    addedHook: function (updateStore, doc, id, store, source, change) { return updateStore(doc) },
+    modifiedHook: function (updateStore, doc, id, store, source, change) { return updateStore(doc) },
+    removedHook: function (updateStore, doc, id, store, source, change) { return updateStore(doc) },
   },
 
   // When items are fetched through `dispatch('module/fetch', filters)`.
@@ -296,11 +325,11 @@ const firestoreModule = {
     docLimit: 50,
   },
 
-  // You can also add state/getters/mutations/actions:
-  state: {}, // Custom state, will be added to the module.
-  getters: {}, // Custom getters, will be added to the module.
-  mutations: {}, // Custom mutations, will be added to the module.
-  actions: {}, // Custom actions, will be added to the module.
+  // You can also add custom state/getters/mutations/actions. These will be added to your module.
+  state: {},
+  getters: {},
+  mutations: {},
+  actions: {},
 }
 ```
 
