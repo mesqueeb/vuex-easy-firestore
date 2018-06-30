@@ -1,27 +1,16 @@
-import deepmerge from 'deepmerge'
-// import deepmerge from '../../node_modules/deepmerge/dist/es.js'
+import { isObject } from 'is-what'
+import deepmerge from './nanomerge'
 
-/**
- * Makes sure to overwrite arrays completely instead of concatenating with a merge(). Usage: merge(arr1, arr2, {arrayOverwrite: true})
- *
- * @returns the latter array passed
- */
-function overwriteMerge (destinationArray, sourceArray, options) {
-  return sourceArray
-}
-
-function merge (a, b, options) {
-  if (options && options.arrayOverwrite) {
-    return deepmerge(a, b, {arrayMerge: overwriteMerge})
+function merge (...params) {
+  let l = params.length
+  for (l; l > 0; l--) {
+    const item = params[l - 1]
+    if (!isObject(item)) {
+      console.error('trying to merge a non-object: ', item)
+      return item
+    }
   }
-  return deepmerge(a, b)
-}
-
-merge.all = function (array, options) {
-  if (options && options.arrayOverwrite) {
-    return deepmerge.all(array, {arrayMerge: overwriteMerge})
-  }
-  return deepmerge.all(array)
+  return deepmerge(...params)
 }
 
 export default merge

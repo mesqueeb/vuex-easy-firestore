@@ -7,8 +7,6 @@ import iniActions from './actions'
 import iniGetters from './getters'
 import errorCheck from './errorCheck'
 
-const vuexBase = {state: null, mutations: null, actions: null, getters: null}
-
 /**
  * A function that returns a vuex module object with seamless 2-way sync for firestore.
  *
@@ -16,7 +14,7 @@ const vuexBase = {state: null, mutations: null, actions: null, getters: null}
  * @returns {object} the module ready to be included in your vuex store
  */
 export default function (userConfig) {
-  const conf = merge(vuexBase, userConfig, {arrayOverwrite: true})
+  const conf = merge(defaultConfig, userConfig)
   if (!errorCheck(conf)) return
   const userState = conf.state
   const userMutations = conf.mutations
@@ -28,9 +26,8 @@ export default function (userConfig) {
   delete conf.getters
 
   const docContainer = {}
-  if (conf.docsStateProp) docContainer[conf.docsStateProp] = {}
-  const state = merge.all([initialState, defaultConfig, userState, conf, docContainer], {arrayOverwrite: true})
-
+  if (conf.statePropName) docContainer[conf.statePropName] = {}
+  const state = merge(initialState, userState, docContainer, {_conf: conf})
   return {
     namespaced: true,
     state,

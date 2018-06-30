@@ -1,35 +1,33 @@
 import Firebase from 'firebase/app'
 import 'firebase/firestore'
+import 'firebase/auth'
 import { isArray, isString } from 'is-what'
 import merge from '../utils/deepmerge'
 import copyObj from '../utils/copyObj'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
+import flattenToPaths from '../utils/objectFlattenToPaths'
 
 const actions = {
   patchDoc (
     {state, getters, commit, dispatch},
-    {id = '', ids = [], field = '', fields = []} = {ids: [], fields: []}
+    {id = '', ids = [], doc} = {ids: [], doc: {}}
   ) {
     // 0. payload correction (only arrays)
-    if (!isArray(ids) || !isArray(fields)) return console.log('ids, fields need to be arrays')
-    if (!isString(field)) return console.log('field needs to be a string')
+    if (!isArray(ids)) return console.log('ids needs to be an array')
     if (id) ids.push(id)
-    if (field) fields.push(field)
+    if (doc.id) delete doc.id
 
     // 1. Prepare for patching
-    let syncStackItems = getters.prepareForPatch(ids, fields)
+    let syncStackItems = getters.prepareForPatch(ids, doc)
 
     // 2. Push to syncStack
     Object.keys(syncStackItems).forEach(id => {
-      const newVal = (!state.syncStack.updates[id])
+      const newVal = (!state._sync.syncStack.updates[id])
         ? syncStackItems[id]
-        : merge(
-            state.syncStack.updates[id],
-            syncStackItems[id],
-            {arrayOverwrite: true}
-          )
-      state.syncStack.updates[id] = newVal
+        : merge(state._sync.syncStack.updates[id],
+                syncStackItems[id])
+      state._sync.syncStack.updates[id] = newVal
     })
 
     // 3. Create or refresh debounce
@@ -44,10 +42,10 @@ const actions = {
     const syncStackIds = getters.prepareForDeletion(ids)
 
     // 2. Push to syncStack
-    const deletions = state.syncStack.deletions.concat(syncStackIds)
-    commit('SET_SYNCSTACK.DELETIONS', deletions)
+    const deletions = state._sync.syncStack.deletions.concat(syncStackIds)
+    state._sync.syncStack.deletions = deletions
 
-    if (!state.syncStack.deletions.length) return
+    if (!state._sync.syncStack.deletions.length) return
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
@@ -60,20 +58,20 @@ const actions = {
     const syncStack = getters.prepareForInsert(docs)
 
     // 2. Push to syncStack
-    const inserts = state.syncStack.inserts.concat(syncStack)
-    commit('SET_SYNCSTACK.INSERTS', inserts)
+    const inserts = state._sync.syncStack.inserts.concat(syncStack)
+    state._sync.syncStack.inserts = inserts
 
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
   handleSyncStackDebounce ({state, commit, dispatch, getters}) {
     if (!getters.signedIn) return false
-    if (!state.syncStack.debounceTimer) {
+    if (!state._sync.syncStack.debounceTimer) {
       const debounceTimer = startDebounce(1000)
       debounceTimer.done.then(_ => dispatch('batchSync'))
-      commit('SET_SYNCSTACK.DEBOUNCETIMER', debounceTimer)
+      state._sync.syncStack.debounceTimer = debounceTimer
     }
-    state.syncStack.debounceTimer.refresh()
+    state._sync.syncStack.debounceTimer.refresh()
   },
   batchSync ({getters, commit, dispatch, state}) {
     const collectionMode = getters.collectionMode
@@ -81,7 +79,7 @@ const actions = {
     let batch = Firebase.firestore().batch()
     let count = 0
     // Add 'updateds' to batch
-    let updatesOriginal = copyObj(state.syncStack.updates)
+    let updatesOriginal = copyObj(state._sync.syncStack.updates)
     let updates = Object.keys(updatesOriginal).map(k => {
       let fields = updatesOriginal[k]
       return {id: k, fields}
@@ -93,25 +91,26 @@ const actions = {
       let updatesOK = updates.slice(0, 500)
       let updatesLeft = updates.slice(500, -1)
       // Put back the remaining items over 500
-      state.syncStack.updates = updatesLeft.reduce((carry, item) => {
+      state._sync.syncStack.updates = updatesLeft.reduce((carry, item) => {
         carry[item.id] = item
         delete item.id
         return carry
       }, {})
       updates = updatesOK
     } else {
-      state.syncStack.updates = {}
+      state._sync.syncStack.updates = {}
       count = updates.length
     }
     // Add to batch
     updates.forEach(item => {
       let id = item.id
       let docRef = (collectionMode) ? dbRef.doc(id) : dbRef
-      let fields = item.fields
+      let fields = flattenToPaths(item.fields)
+      console.log('fields → ', fields)
       batch.update(docRef, fields)
     })
     // Add 'deletions' to batch
-    let deletions = copyObj(state.syncStack.deletions)
+    let deletions = copyObj(state._sync.syncStack.deletions)
     // Check if there are more than 500 batch items already
     if (count >= 500) {
       // already at 500 or more, leave items in syncstack, and don't add anything to batch
@@ -122,7 +121,7 @@ const actions = {
       let deletionsOK = deletions.slice(0, deletionsAmount)
       let deletionsLeft = deletions.slice(deletionsAmount, -1)
       // Put back the remaining items over 500
-      commit('SET_SYNCSTACK.DELETIONS', deletionsLeft)
+      state._sync.syncStack.deletions = deletionsLeft
       count = count + deletionsOK.length
       // Define the items we'll add below
       deletions = deletionsOK
@@ -133,7 +132,7 @@ const actions = {
       batch.delete(docRef)
     })
     // Add 'inserts' to batch
-    let inserts = copyObj(state.syncStack.inserts)
+    let inserts = copyObj(state._sync.syncStack.inserts)
     // Check if there are more than 500 batch items already
     if (count >= 500) {
       // already at 500 or more, leave items in syncstack, and don't add anything to batch
@@ -144,7 +143,7 @@ const actions = {
       let insertsOK = inserts.slice(0, insertsAmount)
       let insertsLeft = inserts.slice(insertsAmount, -1)
       // Put back the remaining items over 500
-      commit('SET_SYNCSTACK.INSERTS', insertsLeft)
+      state._sync.syncStack.inserts = insertsLeft
       count = count + insertsOK.length
       // Define the items we'll add below
       inserts = insertsOK
@@ -161,7 +160,7 @@ const actions = {
     //   ${inserts.length} inserts`
     // )
     dispatch('_startPatching')
-    commit('SET_SYNCSTACK.DEBOUNCETIMER', null)
+    state._sync.syncStack.debounceTimer = null
     return new Promise((resolve, reject) => {
       batch.commit()
       .then(res => {
@@ -170,9 +169,9 @@ const actions = {
           deletions: `, deletions.length ? deletions : [], `
           inserts: `, inserts.length ? inserts : []
         )
-        let remainingSyncStack = Object.keys(state.syncStack.updates).length
-          + state.syncStack.deletions.length
-          + state.syncStack.inserts.length
+        let remainingSyncStack = Object.keys(state._sync.syncStack.updates).length
+          + state._sync.syncStack.deletions.length
+          + state._sync.syncStack.inserts.length
         if (remainingSyncStack) { dispatch('batchSync') }
         dispatch('_stopPatching')
         return resolve()
@@ -189,14 +188,14 @@ const actions = {
             //   })
             // }
       }).catch(error => {
-        commit('SET_PATCHING', 'error')
-        commit('SET_SYNCSTACK.DEBOUNCETIMER', null)
+        state._sync.patching = 'error'
+        state._sync.syncStack.debounceTimer = null
         return reject()
       })
     })
   },
   fetch (
-    {state, getters, commit},
+    {state, getters, commit, dispatch},
     {whereFilters = [], orderBy = []} = {whereFilters: [], orderBy: []}
     // whereFilters: [['archived', '==', true]]
     // orderBy: ['done_date', 'desc']
@@ -204,49 +203,63 @@ const actions = {
     return new Promise((resolve, reject) => {
       console.log('[fetch] starting')
       if (!getters.signedIn) return resolve()
-      if (state.doneFetching) {
+      const identifier = JSON.stringify({whereFilters, orderBy})
+      const fetched = state._sync.fetched[identifier]
+      // We've never fetched this before:
+      if (!fetched) {
+        let ref = getters.dbRef
+        // apply where filters and orderBy
+        whereFilters.forEach(paramsArr => {
+          ref = ref.where(...paramsArr)
+        })
+        if (orderBy.length) {
+          ref = ref.orderBy(...orderBy)
+        }
+        state._sync.fetched[identifier] = {
+          ref,
+          done: false,
+          retrievedFetchRefs: [],
+          nextFetchRef: null
+        }
+      }
+      const fRequest = state._sync.fetched[identifier]
+      // We're already done fetching everything:
+      if (fRequest.done) {
         console.log('done fetching')
         return resolve('fetchedAll')
       }
       // attach fetch filters
-      let fetchRef
-      if (state.nextFetchRef) {
+      let fRef = state._sync.fetched[identifier].ref
+      if (fRequest.nextFetchRef) {
         // get next ref if saved in state
-        fetchRef = state.nextFetchRef
-      } else {
-        // apply where filters and orderBy
-        fetchRef = getters.dbRef
-        whereFilters.forEach(paramsArr => {
-          fetchRef = fetchRef.where(...paramsArr)
-        })
-        if (orderBy.length) {
-          fetchRef = fetchRef.orderBy(...orderBy)
-        }
+        fRef = state._sync.fetched[identifier].nextFetchRef
       }
-      fetchRef = fetchRef.limit(state.fetch.docLimit)
+      fRef = fRef.limit(state._conf.fetch.docLimit)
       // Stop if all records already fetched
-      if (state.retrievedFetchRefs.includes(fetchRef)) {
+      if (fRequest.retrievedFetchRefs.includes(fRef)) {
         console.log('Already retrieved this part.')
         return resolve()
       }
       // make fetch request
-      fetchRef.get()
+      fRef.get()
       .then(querySnapshot => {
         const docs = querySnapshot.docs
         if (docs.length === 0) {
-          commit('SET_DONEFETCHING', true)
-          return resolve('fetchedAll')
+          state._sync.fetched[identifier].done = true
+          resolve('fetchedAll')
+
+          return
         }
-        if (docs.length < state.fetch.docLimit) {
-          commit('SET_DONEFETCHING', true)
+        if (docs.length < state._conf.fetch.docLimit) {
+          state._sync.fetched[identifier].done = true
         }
-        commit('PUSH_RETRIEVEDFETCHREFS', fetchRef)
+        state._sync.fetched[identifier].retrievedFetchRefs.push(fetchRef)
         // Get the last visible document
         resolve(querySnapshot)
         const lastVisible = docs[docs.length - 1]
         // get the next records.
-        const next = fetchRef.startAfter(lastVisible)
-        commit('SET_NEXTFETCHREF', next)
+        const next = fRef.startAfter(lastVisible)
+        state._sync.fetched[identifier].nextFetchRef = next
       }).catch(error => {
         console.log(error)
         return reject(error)
@@ -268,30 +281,31 @@ const actions = {
     }
   },
   openDBChannel ({getters, state, commit, dispatch}) {
+    if (Firebase.auth().currentUser) state._sync.signedIn = true
     const collectionMode = getters.collectionMode
     let dbRef = getters.dbRef
     // apply where filters and orderBy
-    if (state.firestoreRefType.toLowerCase() !== 'doc') {
-      state.sync.where.forEach(paramsArr => {
+    if (state._conf.firestoreRefType.toLowerCase() !== 'doc') {
+      state._conf.sync.where.forEach(paramsArr => {
         dbRef = dbRef.where(...paramsArr)
       })
-      if (state.sync.orderBy.length) {
-        dbRef = dbRef.orderBy(...state.sync.orderBy)
+      if (state._conf.sync.orderBy.length) {
+        dbRef = dbRef.orderBy(...state._conf.sync.orderBy)
       }
     }
     // define handleDoc()
     function handleDoc (change, id, doc, source) {
       change = (!change) ? 'modified' : change.type
       // define storeUpdateFn()
-      function storeUpdateFn () {
-        return dispatch('serverUpdate', {change, id, doc})
+      function storeUpdateFn (_doc) {
+        return dispatch('serverUpdate', {change, id, doc: _doc})
       }
       // get user set sync hook function
-      const syncHookFn = state.sync[change]
+      const syncHookFn = state._conf.sync[change + 'Hook']
       if (syncHookFn) {
-        syncHookFn(storeUpdateFn, this, id, doc, source)
+        syncHookFn(storeUpdateFn, doc, id, this, source, change)
       } else {
-        storeUpdateFn()
+        storeUpdateFn(doc)
       }
     }
     // make a promise
@@ -300,7 +314,7 @@ const actions = {
       .onSnapshot(querySnapshot => {
         let source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
         if (!collectionMode) {
-          const doc = setDefaultValues(querySnapshot.data(), state.sync.defaultValues)
+          const doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues)
           if (source === 'local') return resolve()
           handleDoc(null, null, doc, source)
           return resolve()
@@ -314,13 +328,13 @@ const actions = {
           }
           const id = change.doc.id
           const doc = (change.type === 'added')
-            ? setDefaultValues(change.doc.data(), state.sync.defaultValues)
+            ? setDefaultValues(change.doc.data(), state._conf.serverChange.defaultValues)
             : change.doc.data()
           handleDoc(change, id, doc, source)
           return resolve()
         })
       }, error => {
-        commit('SET_PATCHING', 'error')
+        state._sync.patching = 'error'
         return reject(error)
       })
     })
@@ -330,34 +344,74 @@ const actions = {
     if (!getters.collectionMode) {
       return dispatch('patch', doc)
     }
-    if (!doc.id || !state[state.docsStateProp][doc.id]) {
+    if (!doc.id || !state[state._conf.statePropName][doc.id]) {
       return dispatch('insert', doc)
     }
     return dispatch('patch', doc)
   },
-  insert ({commit, dispatch, getters}, doc) {
+  insert ({state, getters, commit, dispatch}, doc) {
     if (!doc) return
     if (!doc.id) doc.id = getters.dbRef.doc().id
-    commit('INSERT_DOC', doc)
-    return dispatch('insertDoc', doc)
+    // define the store update
+    function storeUpdateFn (_doc) {
+      commit('INSERT_DOC', _doc)
+      return dispatch('insertDoc', _doc)
+    }
+    // check for hooks
+    if (state._conf.insertHook) {
+      return state._conf.insertHook(storeUpdateFn, doc, this)
+    }
+    return storeUpdateFn(doc)
   },
-  patch ({commit, state, dispatch, getters}, doc) {
+  patch ({state, getters, commit, dispatch}, doc) {
     if (!doc) return
     if (!doc.id && getters.collectionMode) return
-    commit('PATCH_DOC', doc)
-    return dispatch('patchDoc', {id: doc.id, fields: Object.keys(doc)})
+    // define the store update
+    function storeUpdateFn (_doc) {
+      commit('PATCH_DOC', _doc)
+      return dispatch('patchDoc', {id: _doc.id, doc: _doc})
+    }
+    // check for hooks
+    if (state._conf.patchHook) {
+      return state._conf.patchHook(storeUpdateFn, doc, this)
+    }
+    return storeUpdateFn(doc)
   },
-  delete ({commit, dispatch, getters}, id) {
-    commit('DELETE_DOC', id)
-    return dispatch('deleteDoc', id)
+  patchBatch (
+    {state, getters, commit, dispatch},
+    {doc, ids = []}
+  ) {
+    if (!doc) return
+    // define the store update
+    function storeUpdateFn (_doc) {
+      commit('PATCH_DOC', _doc)
+      return dispatch('patchDoc', {ids, doc: _doc})
+    }
+    // check for hooks
+    if (state._conf.patchHook) {
+      return state._conf.patchHook(storeUpdateFn, doc, this)
+    }
+    return storeUpdateFn(doc)
+  },
+  delete ({state, getters, commit, dispatch}, id) {
+    // define the store update
+    function storeUpdateFn (_id) {
+      commit('DELETE_DOC', _id)
+      return dispatch('deleteDoc', _id)
+    }
+    // check for hooks
+    if (state._conf.deleteHook) {
+      return state._conf.deleteHook(storeUpdateFn, id, this)
+    }
+    return storeUpdateFn(id)
   },
   _stopPatching ({state, commit}) {
-    if (state.stopPatchingTimeout) { clearTimeout(state.stopPatchingTimeout) }
-    state.stopPatchingTimeout = setTimeout(_ => { commit('SET_PATCHING', false) }, 300)
+    if (state._sync.stopPatchingTimeout) { clearTimeout(state._sync.stopPatchingTimeout) }
+    state._sync.stopPatchingTimeout = setTimeout(_ => { state._sync.patching = false }, 300)
   },
   _startPatching ({state, commit}) {
-    if (state.stopPatchingTimeout) { clearTimeout(state.stopPatchingTimeout) }
-    commit('SET_PATCHING', true)
+    if (state._sync.stopPatchingTimeout) { clearTimeout(state._sync.stopPatchingTimeout) }
+    state._sync.patching = true
   }
 }
 

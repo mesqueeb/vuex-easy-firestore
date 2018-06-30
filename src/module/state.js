@@ -1,15 +1,15 @@
 
 export default {
-  // user: null,
-  syncStack: {
-    updates: {},
-    deletions: [],
-    inserts: [],
-    debounceTimer: null
-  },
-  retrievedFetchRefs: [],
-  nextFetchRef: null,
-  patching: false,
-  doneFetching: false,
-  stopPatchingTimeout: null,
+  _sync: {
+    signedIn: false,
+    patching: false,
+    syncStack: {
+      updates: {},
+      deletions: [],
+      inserts: [],
+      debounceTimer: null
+    },
+    fetched: [],
+    stopPatchingTimeout: null
+  }
 }

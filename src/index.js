@@ -10,8 +10,8 @@ export default function createEasyFirestore (userConfig) {
     if (!isArray(userConfig)) userConfig = [userConfig]
     // Create a module for each config file
     userConfig.forEach(config => {
-      const moduleNameSpace = getKeysFromPath(config.moduleNameSpace)
-      store.registerModule(moduleNameSpace, iniModule(config))
+      const moduleName = getKeysFromPath(config.moduleName)
+      store.registerModule(moduleName, iniModule(config))
     })
     store.setDoc = (path, payload) => {
       return store.dispatch(path + '/setDoc', payload)
@@ -21,6 +21,9 @@ export default function createEasyFirestore (userConfig) {
     }
     store.patch = (path, payload) => {
       return store.dispatch(path + '/patch', payload)
+    }
+    store.patchBatch = (path, payload) => {
+      return store.dispatch(path + '/patchBatch', payload)
     }
     store.delete = (path, payload) => {
       return store.dispatch(path + '/delete', payload)

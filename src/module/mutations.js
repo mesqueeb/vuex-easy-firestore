@@ -4,7 +4,7 @@ import merge from '../utils/deepmerge'
 
 const mutations = {
   resetSyncStack (state) {
-    state.syncStack = {
+    state._sync.syncStack = {
       updates: {},
       deletions: [],
       inserts: [],
@@ -12,41 +12,37 @@ const mutations = {
     }
   },
   INSERT_DOC (state, doc) {
-    if (state.firestoreRefType.toLowerCase() === 'doc') return
-    this._vm.$set(state[state.docsStateProp], doc.id, doc)
+    if (state._conf.firestoreRefType.toLowerCase() === 'doc') return
+    this._vm.$set(state[state._conf.statePropName], doc.id, doc)
   },
   PATCH_DOC (state, doc) {
-    if (state.firestoreRefType.toLowerCase() === 'doc') {
-      if (!state.docsStateProp) {
+    if (state._conf.firestoreRefType.toLowerCase() === 'doc') {
+      if (!state._conf.statePropName) {
         return Object.keys(doc).forEach(key => {
           // Merge if exists
           const newVal = (state[key] === undefined)
             ? doc[key]
             : (!isObject(state[key]) || !isObject(doc[key]))
               ? doc[key]
-              : merge(state[key], doc[key], {arrayOverwrite: true})
+              : merge(state[key], doc[key])
           this._vm.$set(state, key, newVal)
         })
       }
-      // state[state.docsStateProp] will always be an empty object by default
-      state[state.docsStateProp] = merge(
-        state[state.docsStateProp],
-        doc,
-        {arrayOverwrite: true}
-      )
+      // state[state._conf.statePropName] will always be an empty object by default
+      state[state._conf.statePropName] = merge(state[state._conf.statePropName], doc)
       return
     }
     // Merge if exists
-    const newVal = (state[state.docsStateProp][doc.id] === undefined)
+    const newVal = (state[state._conf.statePropName][doc.id] === undefined)
       ? doc
-      : (!isObject(state[state.docsStateProp][doc.id]) || !isObject(doc))
+      : (!isObject(state[state._conf.statePropName][doc.id]) || !isObject(doc))
         ? doc
-        : merge(state[state.docsStateProp][doc.id], doc, {arrayOverwrite: true})
-    this._vm.$set(state[state.docsStateProp], doc.id, newVal)
+        : merge(state[state._conf.statePropName][doc.id], doc)
+    this._vm.$set(state[state._conf.statePropName], doc.id, newVal)
   },
   DELETE_DOC (state, id) {
-    if (state.firestoreRefType.toLowerCase() === 'doc') return
-    this._vm.$delete(state[state.docsStateProp], id)
+    if (state._conf.firestoreRefType.toLowerCase() === 'doc') return
+    this._vm.$delete(state[state._conf.statePropName], id)
   }
 }
 
