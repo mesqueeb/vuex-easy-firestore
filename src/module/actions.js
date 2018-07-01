@@ -301,7 +301,7 @@ const actions = {
         return dispatch('serverUpdate', {change, id, doc: _doc})
       }
       // get user set sync hook function
-      const syncHookFn = state._conf.sync[change + 'Hook']
+      const syncHookFn = state._conf.serverChange[change + 'Hook']
       if (syncHookFn) {
         syncHookFn(storeUpdateFn, doc, id, this, source, change)
       } else {
@@ -358,8 +358,8 @@ const actions = {
       return dispatch('insertDoc', _doc)
     }
     // check for hooks
-    if (state._conf.insertHook) {
-      return state._conf.insertHook(storeUpdateFn, doc, this)
+    if (state._conf.sync.insertHook) {
+      return state._conf.sync.insertHook(storeUpdateFn, doc, this)
     }
     return storeUpdateFn(doc)
   },
@@ -372,8 +372,8 @@ const actions = {
       return dispatch('patchDoc', {id: _doc.id, doc: _doc})
     }
     // check for hooks
-    if (state._conf.patchHook) {
-      return state._conf.patchHook(storeUpdateFn, doc, this)
+    if (state._conf.sync.patchHook) {
+      return state._conf.sync.patchHook(storeUpdateFn, doc, this)
     }
     return storeUpdateFn(doc)
   },
@@ -388,8 +388,8 @@ const actions = {
       return dispatch('patchDoc', {ids, doc: _doc})
     }
     // check for hooks
-    if (state._conf.patchHook) {
-      return state._conf.patchHook(storeUpdateFn, doc, this)
+    if (state._conf.sync.patchHook) {
+      return state._conf.sync.patchHook(storeUpdateFn, doc, this)
     }
     return storeUpdateFn(doc)
   },
@@ -400,8 +400,8 @@ const actions = {
       return dispatch('deleteDoc', _id)
     }
     // check for hooks
-    if (state._conf.deleteHook) {
-      return state._conf.deleteHook(storeUpdateFn, id, this)
+    if (state._conf.sync.deleteHook) {
+      return state._conf.sync.deleteHook(storeUpdateFn, id, this)
     }
     return storeUpdateFn(id)
   },
