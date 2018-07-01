@@ -231,7 +231,7 @@ The filters set in `sync: {}` are applied before the DB Channel is openend. They
   sync: {
     fillables: [],
     guard: [],
-  },
+  }
 }
 ```
 
@@ -244,9 +244,11 @@ May choose not to call this to abort the mutation.
 ```js
 {
   // your other config...
-  insertHook: function (updateStore, doc, store) { updateStore(doc) },
-  patchHook: function (updateStore, doc, store) { updateStore(doc) },
-  deleteHook: function (updateStore, id, store) { updateStore(id) },
+  sync: {
+    insertHook: function (updateStore, doc, store) { updateStore(doc) },
+    patchHook: function (updateStore, doc, store) { updateStore(doc) },
+    deleteHook: function (updateStore, id, store) { updateStore(id) },
+  }
 }
 ```
 
@@ -303,12 +305,11 @@ const firestoreModule = {
     orderBy: [],
     fillables: [],
     guard: [],
+    // HOOKS for local changes:
+    insertHook: function (updateStore, doc, store) { return updateStore(doc) },
+    patchHook: function (updateStore, doc, store) { return updateStore(doc) },
+    deleteHook: function (updateStore, id, store) { return updateStore(id) },
   },
-
-  // HOOKS:
-  insertHook: function (updateStore, doc, store) { return updateStore(doc) },
-  patchHook: function (updateStore, doc, store) { return updateStore(doc) },
-  deleteHook: function (updateStore, id, store) { return updateStore(id) },
 
   // When items on the server side are changed:
   serverChange: {

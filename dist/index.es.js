@@ -189,18 +189,17 @@ var defaultConfig = {
     where: [],
     orderBy: [],
     fillables: [],
-    guard: []
-  },
-
-  // HOOKS:
-  insertHook: function insertHook(updateStore, doc, store) {
-    return updateStore(doc);
-  },
-  patchHook: function patchHook(updateStore, doc, store) {
-    return updateStore(doc);
-  },
-  deleteHook: function deleteHook(updateStore, id, store) {
-    return updateStore(id);
+    guard: [],
+    // HOOKS for local changes:
+    insertHook: function insertHook(updateStore, doc, store) {
+      return updateStore(doc);
+    },
+    patchHook: function patchHook(updateStore, doc, store) {
+      return updateStore(doc);
+    },
+    deleteHook: function deleteHook(updateStore, id, store) {
+      return updateStore(id);
+    }
   },
 
   // When items on the server side are changed:
@@ -729,7 +728,7 @@ var actions = {
         return dispatch('serverUpdate', { change: change, id: id, doc: _doc });
       }
       // get user set sync hook function
-      var syncHookFn = state._conf.sync[change + 'Hook'];
+      var syncHookFn = state._conf.serverChange[change + 'Hook'];
       if (syncHookFn) {
         syncHookFn(storeUpdateFn, doc, id, this, source, change);
       } else {
@@ -791,8 +790,8 @@ var actions = {
       return dispatch('insertDoc', _doc);
     }
     // check for hooks
-    if (state._conf.insertHook) {
-      return state._conf.insertHook(storeUpdateFn, doc, this);
+    if (state._conf.sync.insertHook) {
+      return state._conf.sync.insertHook(storeUpdateFn, doc, this);
     }
     return storeUpdateFn(doc);
   },
@@ -810,8 +809,8 @@ var actions = {
       return dispatch('patchDoc', { id: _doc.id, doc: _doc });
     }
     // check for hooks
-    if (state._conf.patchHook) {
-      return state._conf.patchHook(storeUpdateFn, doc, this);
+    if (state._conf.sync.patchHook) {
+      return state._conf.sync.patchHook(storeUpdateFn, doc, this);
     }
     return storeUpdateFn(doc);
   },
@@ -831,8 +830,8 @@ var actions = {
       return dispatch('patchDoc', { ids: ids, doc: _doc });
     }
     // check for hooks
-    if (state._conf.patchHook) {
-      return state._conf.patchHook(storeUpdateFn, doc, this);
+    if (state._conf.sync.patchHook) {
+      return state._conf.sync.patchHook(storeUpdateFn, doc, this);
     }
     return storeUpdateFn(doc);
   },
@@ -848,8 +847,8 @@ var actions = {
       return dispatch('deleteDoc', _id);
     }
     // check for hooks
-    if (state._conf.deleteHook) {
-      return state._conf.deleteHook(storeUpdateFn, id, this);
+    if (state._conf.sync.deleteHook) {
+      return state._conf.sync.deleteHook(storeUpdateFn, id, this);
     }
     return storeUpdateFn(id);
   },
