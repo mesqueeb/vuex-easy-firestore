@@ -339,6 +339,12 @@ Do you have questions, comments, suggestions or feedback? Or any feature that's 
 
 Also check out the sister vuex-plugin [Vuex Easy Access](https://github.com/mesqueeb/VuexEasyAccess)!
 
+Planned for future releases:
+
+- Action to duplicate item(s)
+- Improve 'patching' documentation for loaders/spinners
+- Better error handling
+
 --
 
 Happy Vuexing!<br>
