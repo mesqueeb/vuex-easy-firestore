@@ -15,12 +15,11 @@ export default {
     orderBy: [],
     fillables: [],
     guard: [],
+    // HOOKS for local changes:
+    insertHook: function (updateStore, doc, store) { return updateStore(doc) },
+    patchHook: function (updateStore, doc, store) { return updateStore(doc) },
+    deleteHook: function (updateStore, id, store) { return updateStore(id) },
   },
-
-  // HOOKS:
-  insertHook: function (updateStore, doc, store) { return updateStore(doc) },
-  patchHook: function (updateStore, doc, store) { return updateStore(doc) },
-  deleteHook: function (updateStore, id, store) { return updateStore(id) },
 
   // When items on the server side are changed:
   serverChange: {
