@@ -161,45 +161,79 @@ store: {
 
 ### Sync directly to module state
 
-You can sync the doc(s) directly to the module state. This is not recommended for 'collections', because it will be harded to aggregate/count/filter your docs. However, this can be very usefull for syncing a single document.
+You can sync the doc(s) directly to the module state. (This is not yet compatible for 'collections')
 
-You can do so like this:
+Say your have a vuex-easy-firestore module for `user` with the following settings:
 
 ```js
-{
-  firestorePath: 'users/{userId}/data/settings',
+const userModule = {
+  firestorePath: 'userSettings/{userId}',
   firestoreRefType: 'doc',
-  moduleName: 'user/settings',
-  statePropName: ''
+  moduleName: 'user',
+  statePropName: 'settings',
+  state: {
+    settings: {ui: {mode: 'dark'}}
+  }
 }
 ```
 
-In this case however, you need to set up fillables to make sure only the actual settings are synced. A clean way of doing so would be like this:
+To update the ui mode to 'light' you would have to do:
 
 ```js
-// a function returns an object with your state
-initialState () {
-  return {
-    favouriteColour: '',
-    favouriteNumber: null,
+dispatch('user/set', {ui: {mode: 'light'}})
+```
+
+This is kind of weird because the word "settings" is nowhere to be found... It just says `'user/set'`. It would be much clearer if we can set the settings with `dispatch('user/settings/set')`.
+
+To do this we would have to separate the settings into a settings module. One way to do so is to make the moduleName `'user/settings'` instead of just `'user'`:
+
+```js
+const settingsModule = {
+  firestorePath: 'userSettings/{userId}',
+  firestoreRefType: 'doc',
+  moduleName: 'user/settings',
+  statePropName: 'settings',
+  state: {
+    settings: {ui: {mode: 'dark'}}
   }
 }
-// you export your vuex-easy-firestore powered module
-// then import to your vuex store and add as plugin
-export default {
-  // the config from above
-  firestorePath: 'users/{userId}/data/settings',
+```
+
+But now we have another kind of weird problem! We would have to access settings by `state.user.settings.settings`! Also not very nice... So the best solution is to **sync the settings doc directly to the settings-module's state**.
+
+You can do this like so:
+
+```js
+const settingsModule = {
+  firestorePath: 'userSettings/{userId}',
+  firestoreRefType: 'doc',
+  moduleName: 'user/settings',
+  statePropName: '', // Leave statePropName blank!
+  state: {
+    ui: {mode: 'dark'}
+  }
+}
+```
+
+Please note that if you have other state-props in settings that you don't want to be synced you have to add it to the `guard` array (see [guard config](#fillables-and-guard)).
+
+```js
+const settingsModule = {
+  firestorePath: 'userSettings/{userId}',
   firestoreRefType: 'doc',
   moduleName: 'user/settings',
   statePropName: '',
-  // the state
-  state: initialState(),
-  // set fillables for vuex-easy-firestore
+  state: {
+    ui: {mode: 'dark'},
+    modalOpened: false,
+  },
   sync: {
-    fillables: Object.keys(initialState()),
+    guard: ['modalOpenend'] // will not be synced to firestore
   }
 }
 ```
+
+Syncing an entire 'collection' directly to state is not possible. It's being developed now.
 
 ## Extra features
 
