@@ -114,12 +114,14 @@ Anything you change will be automaticall changed in firestore as well!
 
 ```js
 dispatch('userData/set', doc) // will choose to dispatch either `patch` OR `insert` automatically
-dispatch('userData/patch', doc)
+dispatch('userData/patch', doc) // doc needs 'id' prop
 dispatch('userData/insert', doc)
 dispatch('userData/delete', id)
 ```
 
 With just the commands above you have complete in-sync vuex store & firestore!
+
+Please note that when using 'collection' mode, the `doc` you set or patch will require a prop with `id`. Any docs retrieved from the server or added via insert will have the id automatically added as the document key but also as a prop on the actual item.
 
 ### Shortcut: set(path, doc)
 
