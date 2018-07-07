@@ -13,18 +13,22 @@ const mutations = {
   },
   INSERT_DOC (state, doc) {
     if (state._conf.firestoreRefType.toLowerCase() === 'doc') return
-    this._vm.$set(state[state._conf.statePropName], doc.id, doc)
+    if (state._conf.statePropName) {
+      this._vm.$set(state[state._conf.statePropName], doc.id, doc)
+    } else {
+      this._vm.$set(state, doc.id, doc)
+    }
   },
   PATCH_DOC (state, doc) {
+    // When patching in single 'doc' mode
     if (state._conf.firestoreRefType.toLowerCase() === 'doc') {
+      // if no target prop is the state
       if (!state._conf.statePropName) {
         return Object.keys(doc).forEach(key => {
           // Merge if exists
-          const newVal = (state[key] === undefined)
+          const newVal = (state[key] === undefined || !isObject(state[key]) || !isObject(doc[key]))
             ? doc[key]
-            : (!isObject(state[key]) || !isObject(doc[key]))
-              ? doc[key]
-              : merge(state[key], doc[key])
+            : merge(state[key], doc[key])
           this._vm.$set(state, key, newVal)
         })
       }
@@ -32,17 +36,28 @@ const mutations = {
       state[state._conf.statePropName] = merge(state[state._conf.statePropName], doc)
       return
     }
+    // Patching in 'collection' mode
+    // get the doc ref
+    const docRef = (state._conf.statePropName)
+      ? state[state._conf.statePropName][doc.id]
+      : state[doc.id]
     // Merge if exists
-    const newVal = (state[state._conf.statePropName][doc.id] === undefined)
+    const newVal = (docRef === undefined || !isObject(docRef) || !isObject(doc))
       ? doc
-      : (!isObject(state[state._conf.statePropName][doc.id]) || !isObject(doc))
-        ? doc
-        : merge(state[state._conf.statePropName][doc.id], doc)
-    this._vm.$set(state[state._conf.statePropName], doc.id, newVal)
+      : merge(docRef, doc)
+    if (state._conf.statePropName) {
+      this._vm.$set(state[state._conf.statePropName], doc.id, newVal)
+    } else {
+      this._vm.$set(state, doc.id, newVal)
+    }
   },
   DELETE_DOC (state, id) {
     if (state._conf.firestoreRefType.toLowerCase() === 'doc') return
-    this._vm.$delete(state[state._conf.statePropName], id)
+    if (state._conf.statePropName) {
+      this._vm.$delete(state[state._conf.statePropName], id)
+    } else {
+      this._vm.$delete(state, id)
+    }
   }
 }
 

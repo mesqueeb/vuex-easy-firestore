@@ -163,7 +163,11 @@ store: {
 
 ### Sync directly to module state
 
-You can sync the doc(s) directly to the module state. (This is not yet compatible for 'collections')
+You can sync the doc(s) directly to the module state as well! Syncing directly to the state means that the doc(s) will not be added to the `statePropName` you can define, but instead be added directly to the `state` of the module.
+
+This can be useful to prevent cases where you have: `items/items` where the first is the module and the second is the stateProp that holds all docs. You can simple leave the `statePropName` blank (set to empty string) and the docs will be synced to the state directly!
+
+#### A more in depth example:
 
 Say your have a vuex-easy-firestore module for `user` with the following settings:
 
@@ -179,36 +183,17 @@ const userModule = {
 }
 ```
 
-To update the ui mode to 'light' you would have to do:
-
-```js
-dispatch('user/set', {ui: {mode: 'light'}})
-```
+To update the ui mode to 'light' and have it patch automatically through Vuex Easy Firestore, you would have to use the `set` actions on the `user` module like so: `dispatch('user/set', {ui: {mode: 'light'}})`
 
 This is kind of weird because the word "settings" is nowhere to be found... It just says `'user/set'`. It would be much clearer if we can set the settings with `dispatch('user/settings/set')`.
 
-To do this we would have to separate the settings into a settings module. One way to do so is to make the moduleName `'user/settings'` instead of just `'user'`:
+To do this we would have to separate the settings into a settings module. But if we change the `moduleName` to 'user/settings' we don't want to set a `statePropName` to 'settings' as well! Otherwise we'd have to access it by `user/settings.settings`... Kinda weird huh.
+
+So the best solution is to **sync the settings doc directly to the settings-module's state**. You can do this like so:
 
 ```js
 const settingsModule = {
-  firestorePath: 'userSettings/{userId}',
-  firestoreRefType: 'doc',
-  moduleName: 'user/settings',
-  statePropName: 'settings',
-  state: {
-    settings: {ui: {mode: 'dark'}}
-  }
-}
-```
-
-But now we have another kind of weird problem! We would have to access settings by `state.user.settings.settings`! Also not very nice... So the best solution is to **sync the settings doc directly to the settings-module's state**.
-
-You can do this like so:
-
-```js
-const settingsModule = {
-  firestorePath: 'userSettings/{userId}',
-  firestoreRefType: 'doc',
+  // ...
   moduleName: 'user/settings',
   statePropName: '', // Leave statePropName blank!
   state: {
@@ -221,21 +206,16 @@ Please note that if you have other state-props in settings that you don't want t
 
 ```js
 const settingsModule = {
-  firestorePath: 'userSettings/{userId}',
-  firestoreRefType: 'doc',
-  moduleName: 'user/settings',
-  statePropName: '',
-  state: {
-    ui: {mode: 'dark'},
-    modalOpened: false,
-  },
+  // ...
   sync: {
     guard: ['modalOpenend'] // will not be synced to firestore
+  },
+  state: {
+    ui: {mode: 'dark'},
+    modalOpened: false
   }
 }
 ```
-
-Syncing an entire 'collection' directly to state is not possible. It's being developed now.
 
 ## Extra features
 
