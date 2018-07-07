@@ -258,16 +258,22 @@
     },
     INSERT_DOC: function INSERT_DOC(state, doc) {
       if (state._conf.firestoreRefType.toLowerCase() === 'doc') return;
-      this._vm.$set(state[state._conf.statePropName], doc.id, doc);
+      if (state._conf.statePropName) {
+        this._vm.$set(state[state._conf.statePropName], doc.id, doc);
+      } else {
+        this._vm.$set(state, doc.id, doc);
+      }
     },
     PATCH_DOC: function PATCH_DOC(state, doc) {
       var _this = this;
 
+      // When patching in single 'doc' mode
       if (state._conf.firestoreRefType.toLowerCase() === 'doc') {
+        // if no target prop is the state
         if (!state._conf.statePropName) {
           return Object.keys(doc).forEach(function (key) {
             // Merge if exists
-            var newVal = state[key] === undefined ? doc[key] : !isWhat.isObject(state[key]) || !isWhat.isObject(doc[key]) ? doc[key] : merge$1(state[key], doc[key]);
+            var newVal = state[key] === undefined || !isWhat.isObject(state[key]) || !isWhat.isObject(doc[key]) ? doc[key] : merge$1(state[key], doc[key]);
             _this._vm.$set(state, key, newVal);
           });
         }
@@ -275,13 +281,24 @@
         state[state._conf.statePropName] = merge$1(state[state._conf.statePropName], doc);
         return;
       }
+      // Patching in 'collection' mode
+      // get the doc ref
+      var docRef = state._conf.statePropName ? state[state._conf.statePropName][doc.id] : state[doc.id];
       // Merge if exists
-      var newVal = state[state._conf.statePropName][doc.id] === undefined ? doc : !isWhat.isObject(state[state._conf.statePropName][doc.id]) || !isWhat.isObject(doc) ? doc : merge$1(state[state._conf.statePropName][doc.id], doc);
-      this._vm.$set(state[state._conf.statePropName], doc.id, newVal);
+      var newVal = docRef === undefined || !isWhat.isObject(docRef) || !isWhat.isObject(doc) ? doc : merge$1(docRef, doc);
+      if (state._conf.statePropName) {
+        this._vm.$set(state[state._conf.statePropName], doc.id, newVal);
+      } else {
+        this._vm.$set(state, doc.id, newVal);
+      }
     },
     DELETE_DOC: function DELETE_DOC(state, id) {
       if (state._conf.firestoreRefType.toLowerCase() === 'doc') return;
-      this._vm.$delete(state[state._conf.statePropName], id);
+      if (state._conf.statePropName) {
+        this._vm.$delete(state[state._conf.statePropName], id);
+      } else {
+        this._vm.$delete(state, id);
+      }
     }
   };
 
@@ -706,6 +723,7 @@
           commit = _ref13.commit,
           dispatch = _ref13.dispatch;
 
+      var store = this;
       if (Firebase.auth().currentUser) state._sync.signedIn = true;
       var collectionMode = getters.collectionMode;
       var dbRef = getters.dbRef;
@@ -732,7 +750,7 @@
         // get user set sync hook function
         var syncHookFn = state._conf.serverChange[change + 'Hook'];
         if (syncHookFn) {
-          syncHookFn(storeUpdateFn, doc, id, this, source, change);
+          syncHookFn(storeUpdateFn, doc, id, store, source, change);
         } else {
           storeUpdateFn(doc);
         }
@@ -773,7 +791,7 @@
       if (!getters.collectionMode) {
         return dispatch('patch', doc);
       }
-      if (!doc.id || !state[state._conf.statePropName][doc.id]) {
+      if (!doc.id || !state._conf.statePropName && !state[doc.id] || state._conf.statePropName && !state[state._conf.statePropName][doc.id]) {
         return dispatch('insert', doc);
       }
       return dispatch('patch', doc);
@@ -784,6 +802,7 @@
           commit = _ref15.commit,
           dispatch = _ref15.dispatch;
 
+      var store = this;
       if (!doc) return;
       if (!doc.id) doc.id = getters.dbRef.doc().id;
       // define the store update
@@ -793,7 +812,7 @@
       }
       // check for hooks
       if (state._conf.sync.insertHook) {
-        return state._conf.sync.insertHook(storeUpdateFn, doc, this);
+        return state._conf.sync.insertHook(storeUpdateFn, doc, store);
       }
       return storeUpdateFn(doc);
     },
@@ -803,6 +822,7 @@
           commit = _ref16.commit,
           dispatch = _ref16.dispatch;
 
+      var store = this;
       if (!doc) return;
       if (!doc.id && getters.collectionMode) return;
       // define the store update
@@ -812,7 +832,7 @@
       }
       // check for hooks
       if (state._conf.sync.patchHook) {
-        return state._conf.sync.patchHook(storeUpdateFn, doc, this);
+        return state._conf.sync.patchHook(storeUpdateFn, doc, store);
       }
       return storeUpdateFn(doc);
     },
@@ -825,6 +845,7 @@
           _ref18$ids = _ref18.ids,
           ids = _ref18$ids === undefined ? [] : _ref18$ids;
 
+      var store = this;
       if (!doc) return;
       // define the store update
       function storeUpdateFn(_doc) {
@@ -833,7 +854,7 @@
       }
       // check for hooks
       if (state._conf.sync.patchHook) {
-        return state._conf.sync.patchHook(storeUpdateFn, doc, this);
+        return state._conf.sync.patchHook(storeUpdateFn, doc, store);
       }
       return storeUpdateFn(doc);
     },
@@ -843,6 +864,7 @@
           commit = _ref19.commit,
           dispatch = _ref19.dispatch;
 
+      var store = this;
       // define the store update
       function storeUpdateFn(_id) {
         commit('DELETE_DOC', _id);
@@ -850,7 +872,7 @@
       }
       // check for hooks
       if (state._conf.sync.deleteHook) {
-        return state._conf.sync.deleteHook(storeUpdateFn, id, this);
+        return state._conf.sync.deleteHook(storeUpdateFn, id, store);
       }
       return storeUpdateFn(id);
     },

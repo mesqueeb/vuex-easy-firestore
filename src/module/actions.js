@@ -281,6 +281,7 @@ const actions = {
     }
   },
   openDBChannel ({getters, state, commit, dispatch}) {
+    const store = this
     if (Firebase.auth().currentUser) state._sync.signedIn = true
     const collectionMode = getters.collectionMode
     let dbRef = getters.dbRef
@@ -303,7 +304,7 @@ const actions = {
       // get user set sync hook function
       const syncHookFn = state._conf.serverChange[change + 'Hook']
       if (syncHookFn) {
-        syncHookFn(storeUpdateFn, doc, id, this, source, change)
+        syncHookFn(storeUpdateFn, doc, id, store, source, change)
       } else {
         storeUpdateFn(doc)
       }
@@ -344,12 +345,17 @@ const actions = {
     if (!getters.collectionMode) {
       return dispatch('patch', doc)
     }
-    if (!doc.id || !state[state._conf.statePropName][doc.id]) {
+    if (
+      !doc.id ||
+      (!state._conf.statePropName && !state[doc.id]) ||
+      (state._conf.statePropName && !state[state._conf.statePropName][doc.id])
+    ) {
       return dispatch('insert', doc)
     }
     return dispatch('patch', doc)
   },
   insert ({state, getters, commit, dispatch}, doc) {
+    const store = this
     if (!doc) return
     if (!doc.id) doc.id = getters.dbRef.doc().id
     // define the store update
@@ -359,11 +365,12 @@ const actions = {
     }
     // check for hooks
     if (state._conf.sync.insertHook) {
-      return state._conf.sync.insertHook(storeUpdateFn, doc, this)
+      return state._conf.sync.insertHook(storeUpdateFn, doc, store)
     }
     return storeUpdateFn(doc)
   },
   patch ({state, getters, commit, dispatch}, doc) {
+    const store = this
     if (!doc) return
     if (!doc.id && getters.collectionMode) return
     // define the store update
@@ -373,7 +380,7 @@ const actions = {
     }
     // check for hooks
     if (state._conf.sync.patchHook) {
-      return state._conf.sync.patchHook(storeUpdateFn, doc, this)
+      return state._conf.sync.patchHook(storeUpdateFn, doc, store)
     }
     return storeUpdateFn(doc)
   },
@@ -381,6 +388,7 @@ const actions = {
     {state, getters, commit, dispatch},
     {doc, ids = []}
   ) {
+    const store = this
     if (!doc) return
     // define the store update
     function storeUpdateFn (_doc) {
@@ -389,11 +397,12 @@ const actions = {
     }
     // check for hooks
     if (state._conf.sync.patchHook) {
-      return state._conf.sync.patchHook(storeUpdateFn, doc, this)
+      return state._conf.sync.patchHook(storeUpdateFn, doc, store)
     }
     return storeUpdateFn(doc)
   },
   delete ({state, getters, commit, dispatch}, id) {
+    const store = this
     // define the store update
     function storeUpdateFn (_id) {
       commit('DELETE_DOC', _id)
@@ -401,7 +410,7 @@ const actions = {
     }
     // check for hooks
     if (state._conf.sync.deleteHook) {
-      return state._conf.sync.deleteHook(storeUpdateFn, id, this)
+      return state._conf.sync.deleteHook(storeUpdateFn, id, store)
     }
     return storeUpdateFn(id)
   },

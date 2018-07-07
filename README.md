@@ -114,12 +114,14 @@ Anything you change will be automaticall changed in firestore as well!
 
 ```js
 dispatch('userData/set', doc) // will choose to dispatch either `patch` OR `insert` automatically
-dispatch('userData/patch', doc)
+dispatch('userData/patch', doc) // doc needs 'id' prop
 dispatch('userData/insert', doc)
 dispatch('userData/delete', id)
 ```
 
 With just the commands above you have complete in-sync vuex store & firestore!
+
+Please note that when using 'collection' mode, the `doc` you set or patch will require a prop with `id`. Any docs retrieved from the server or added via insert will have the id automatically added as the document key but also as a prop on the actual item.
 
 ### Shortcut: set(path, doc)
 
@@ -161,42 +163,56 @@ store: {
 
 ### Sync directly to module state
 
-You can sync the doc(s) directly to the module state. This is not recommended for 'collections', because it will be harded to aggregate/count/filter your docs. However, this can be very usefull for syncing a single document.
+You can sync the doc(s) directly to the module state as well! Syncing directly to the state means that the doc(s) will not be added to the `statePropName` you can define, but instead be added directly to the `state` of the module.
 
-You can do so like this:
+This can be useful to prevent cases where you have: `items/items` where the first is the module and the second is the stateProp that holds all docs. You can simple leave the `statePropName` blank (set to empty string) and the docs will be synced to the state directly!
+
+#### A more in depth example:
+
+Say your have a vuex-easy-firestore module for `user` with the following settings:
 
 ```js
-{
-  firestorePath: 'users/{userId}/data/settings',
+const userModule = {
+  firestorePath: 'userSettings/{userId}',
   firestoreRefType: 'doc',
-  moduleName: 'user/settings',
-  statePropName: ''
+  moduleName: 'user',
+  statePropName: 'settings',
+  state: {
+    settings: {ui: {mode: 'dark'}}
+  }
 }
 ```
 
-In this case however, you need to set up fillables to make sure only the actual settings are synced. A clean way of doing so would be like this:
+To update the ui mode to 'light' and have it patch automatically through Vuex Easy Firestore, you would have to use the `set` actions on the `user` module like so: `dispatch('user/set', {ui: {mode: 'light'}})`
+
+This is kind of weird because the word "settings" is nowhere to be found... It just says `'user/set'`. It would be much clearer if we can set the settings with `dispatch('user/settings/set')`.
+
+To do this we would have to separate the settings into a settings module. But if we change the `moduleName` to 'user/settings' we don't want to set a `statePropName` to 'settings' as well! Otherwise we'd have to access it by `user/settings.settings`... Kinda weird huh.
+
+So the best solution is to **sync the settings doc directly to the settings-module's state**. You can do this like so:
 
 ```js
-// a function returns an object with your state
-initialState () {
-  return {
-    favouriteColour: '',
-    favouriteNumber: null,
+const settingsModule = {
+  // ...
+  moduleName: 'user/settings',
+  statePropName: '', // Leave statePropName blank!
+  state: {
+    ui: {mode: 'dark'}
   }
 }
-// you export your vuex-easy-firestore powered module
-// then import to your vuex store and add as plugin
-export default {
-  // the config from above
-  firestorePath: 'users/{userId}/data/settings',
-  firestoreRefType: 'doc',
-  moduleName: 'user/settings',
-  statePropName: '',
-  // the state
-  state: initialState(),
-  // set fillables for vuex-easy-firestore
+```
+
+Please note that if you have other state-props in settings that you don't want to be synced you have to add it to the `guard` array (see [guard config](#fillables-and-guard)).
+
+```js
+const settingsModule = {
+  // ...
   sync: {
-    fillables: Object.keys(initialState()),
+    guard: ['modalOpenend'] // will not be synced to firestore
+  },
+  state: {
+    ui: {mode: 'dark'},
+    modalOpened: false
   }
 }
 ```
