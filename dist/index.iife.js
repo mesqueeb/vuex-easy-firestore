@@ -1,4 +1,4 @@
-var VuexEasyFirestore = (function (isWhat,vuexEasyAccess,Firebase) {
+var VuexEasyFirestore = (function (isWhat,Firebase,firestore,auth,vuexEasyAccess) {
   'use strict';
 
   Firebase = Firebase && Firebase.hasOwnProperty('default') ? Firebase['default'] : Firebase;
@@ -301,10 +301,8 @@ var VuexEasyFirestore = (function (isWhat,vuexEasyAccess,Firebase) {
 
   function iniMutations () {
     var userMutations = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    var state = arguments[1];
 
-    var vuexEasyMutations = vuexEasyAccess.defaultMutations(state);
-    return Object.assign({}, vuexEasyMutations, mutations, userMutations);
+    return Object.assign({}, mutations, userMutations);
   }
 
   /**
@@ -1081,5 +1079,5 @@ var VuexEasyFirestore = (function (isWhat,vuexEasyAccess,Firebase) {
 
   return createEasyFirestore;
 
-}(isWhat,vuexEasyAccess,Firebase));
+}(isWhat,Firebase,null,null,vuexEasyAccess));
 //# sourceMappingURL=index.iife.js.map

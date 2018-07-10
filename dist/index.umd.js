@@ -1,8 +1,8 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('is-what'), require('vuex-easy-access'), require('firebase/app'), require('firebase/firestore'), require('firebase/auth')) :
-  typeof define === 'function' && define.amd ? define(['is-what', 'vuex-easy-access', 'firebase/app', 'firebase/firestore', 'firebase/auth'], factory) :
-  (global.VuexEasyFirestore = factory(global.isWhat,global.vuexEasyAccess,global.Firebase));
-}(this, (function (isWhat,vuexEasyAccess,Firebase) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('is-what'), require('firebase/app'), require('firebase/firestore'), require('firebase/auth'), require('vuex-easy-access')) :
+  typeof define === 'function' && define.amd ? define(['is-what', 'firebase/app', 'firebase/firestore', 'firebase/auth', 'vuex-easy-access'], factory) :
+  (global.VuexEasyFirestore = factory(global.isWhat,global.Firebase,null,null,global.vuexEasyAccess));
+}(this, (function (isWhat,Firebase,firestore,auth,vuexEasyAccess) { 'use strict';
 
   Firebase = Firebase && Firebase.hasOwnProperty('default') ? Firebase['default'] : Firebase;
 
@@ -304,10 +304,8 @@
 
   function iniMutations () {
     var userMutations = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    var state = arguments[1];
 
-    var vuexEasyMutations = vuexEasyAccess.defaultMutations(state);
-    return Object.assign({}, vuexEasyMutations, mutations, userMutations);
+    return Object.assign({}, mutations, userMutations);
   }
 
   /**

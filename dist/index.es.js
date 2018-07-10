@@ -1,8 +1,8 @@
 import { isObject, isArray } from 'is-what';
-import { defaultMutations, getDeepRef, getKeysFromPath } from 'vuex-easy-access';
 import Firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
+import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
@@ -302,10 +302,8 @@ var mutations = {
 
 function iniMutations () {
   var userMutations = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-  var state = arguments[1];
 
-  var vuexEasyMutations = defaultMutations(state);
-  return Object.assign({}, vuexEasyMutations, mutations, userMutations);
+  return Object.assign({}, mutations, userMutations);
 }
 
 /**

@@ -1,4 +1,3 @@
-import { defaultMutations } from 'vuex-easy-access'
 import { isObject } from 'is-what'
 import merge from '../utils/deepmerge'
 
@@ -62,6 +61,5 @@ const mutations = {
 }
 
 export default function (userMutations = {}, state) {
-  const vuexEasyMutations = defaultMutations(state)
-  return Object.assign({}, vuexEasyMutations, mutations, userMutations)
+  return Object.assign({}, mutations, userMutations)
 }

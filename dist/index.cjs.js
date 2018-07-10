@@ -3,10 +3,10 @@
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var isWhat = require('is-what');
-var vuexEasyAccess = require('vuex-easy-access');
 var Firebase = _interopDefault(require('firebase/app'));
 require('firebase/firestore');
 require('firebase/auth');
+var vuexEasyAccess = require('vuex-easy-access');
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
@@ -306,10 +306,8 @@ var mutations = {
 
 function iniMutations () {
   var userMutations = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-  var state = arguments[1];
 
-  var vuexEasyMutations = vuexEasyAccess.defaultMutations(state);
-  return Object.assign({}, vuexEasyMutations, mutations, userMutations);
+  return Object.assign({}, mutations, userMutations);
 }
 
 /**

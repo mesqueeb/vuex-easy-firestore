@@ -1,4 +1,4 @@
-# Vuex Easy Firestore
+# Vuex Easy Firestore 🔥
 
 In just 4 lines of code, get your vuex module in complete 2-way sync with firestore.
 
@@ -125,9 +125,11 @@ Please note that when using 'collection' mode, the `doc` you set or patch will r
 
 ### Shortcut: set(path, doc)
 
-You can also access the `set` action through a shortcut: `store.set(path, doc)`. Or with our path: `store.set('userData', doc)`.
+Inside Vue component templates you can also access the `set` action through a shortcut: `$store.set(path, doc)`. Or with our path: `$store.set('userData', doc)`.
 
 For this shortcut usage, import the npm module '[vuex-easy-access](https://github.com/mesqueeb/VuexEasyAccess)' and just add `{vuexEasyFirestore: true}` in its options. Please check the relevant [documentation](https://github.com/mesqueeb/VuexEasyAccess#vuex-easy-firestore-integration-for-google-firebase)!
+
+Please note that it is important to pass the 'vuex-easy-firestore' plugin first, and the 'vuex-easy-access' plugin second for it to work properly.
 
 ### Fetching
 
