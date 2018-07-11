@@ -7,13 +7,21 @@ import checkFillables from '../utils/checkFillables'
 
 const getters = {
   signedIn: (state, getters, rootState, rootGetters) => {
+    const requireUser = state._conf.firestorePath.includes('{userId}')
+    if (!requireUser) return true
     return state._sync.signedIn
   },
   dbRef: (state, getters, rootState, rootGetters) => {
-    if (!getters.signedIn) return false
-    if (!Firebase.auth().currentUser) return false
-    const userId = Firebase.auth().currentUser.uid
-    const path = state._conf.firestorePath.replace('{userId}', userId)
+    let path
+    const requireUser = state._conf.firestorePath.includes('{userId}')
+    if (requireUser) {
+      if (!getters.signedIn) return false
+      if (!Firebase.auth().currentUser) return false
+      const userId = Firebase.auth().currentUser.uid
+      path = state._conf.firestorePath.replace('{userId}', userId)
+    } else {
+      path = state._conf.firestorePath
+    }
     return (state._conf.firestoreRefType.toLowerCase() === 'collection')
       ? Firebase.firestore().collection(path)
       : Firebase.firestore().doc(path)

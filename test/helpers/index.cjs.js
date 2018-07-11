@@ -4,12 +4,75 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var isWhat = require('is-what');
-var deepmerge = _interopDefault(require('nanomerge'));
 var Firebase = _interopDefault(require('firebase/app'));
 require('firebase/firestore');
-require('firebase/auth');
 var vuexEasyAccess = require('vuex-easy-access');
+var isWhat = require('is-what');
+var deepmerge = _interopDefault(require('nanomerge'));
+require('firebase/auth');
+var Vue = _interopDefault(require('vue'));
+var Vuex = _interopDefault(require('vuex'));
+
+process.env.apiKey = "AIzaSyDivMlXIuHqDFsTCCqBDTVL0h29xbltcL8";
+process.env.authDomain = "tests-firestore.firebaseapp.com";
+process.env.databaseURL = "https://tests-firestore.firebaseio.com";
+process.env.projectId = "tests-firestore";
+
+var config = {
+  apiKey: process.env.apiKey,
+  authDomain: process.env.authDomain,
+  databaseURL: process.env.databaseURL,
+  projectId: process.env.projectId
+};
+Firebase.initializeApp(config);
+var firestore$1 = Firebase.firestore();
+var settings = { timestampsInSnapshots: true };
+firestore$1.settings(settings);
+
+function initialState() {
+  return {
+    playerName: 'Satoshi',
+    pokemon: {},
+    stats: {
+      pokemonCount: 0,
+      freedCount: 0
+    }
+  };
+}
+
+var pokemonBox = {
+  // easy firestore config
+  firestorePath: 'pokemonBoxes/Satoshi/pokemon',
+  firestoreRefType: 'collection',
+  moduleName: 'pokemonBox',
+  statePropName: 'pokemon',
+  // module
+  state: initialState(),
+  mutations: vuexEasyAccess.defaultMutations(initialState()),
+  actions: {},
+  getters: {}
+};
+
+function initialState$1() {
+  return {
+    name: 'Satoshi',
+    pokemonBelt: [],
+    items: []
+  };
+}
+
+var mainCharacter = {
+  // easy firestore config
+  firestorePath: 'playerCharacters/Satoshi',
+  firestoreRefType: 'doc',
+  moduleName: 'mainCharacter',
+  statePropName: '',
+  // module
+  state: initialState$1(),
+  mutations: vuexEasyAccess.defaultMutations(initialState$1()),
+  actions: {},
+  getters: {}
+};
 
 // import deepmerge from './nanomerge'
 
@@ -81,7 +144,7 @@ var defaultConfig = {
   actions: {}
 };
 
-var initialState = {
+var initialState$2 = {
   _sync: {
     signedIn: false,
     patching: false,
@@ -916,17 +979,17 @@ function iniModule (userConfig) {
 
   var docContainer = {};
   if (conf.statePropName) docContainer[conf.statePropName] = {};
-  var state = merge(initialState, userState, docContainer, { _conf: conf });
+  var state = merge(initialState$2, userState, docContainer, { _conf: conf });
   return {
     namespaced: true,
     state: state,
-    mutations: iniMutations(userMutations, merge(initialState, userState)),
+    mutations: iniMutations(userMutations, merge(initialState$2, userState)),
     actions: iniActions(userActions),
     getters: iniGetters(userGetters)
   };
 }
 
-function index (userConfig) {
+function createFirestores (userConfig) {
   return function (store) {
     // Get an array of config files
     if (!isWhat.isArray(userConfig)) userConfig = [userConfig];
@@ -953,4 +1016,16 @@ function index (userConfig) {
   };
 }
 
-exports.default = index;
+var easyFirestores = createFirestores([pokemonBox, mainCharacter]);
+
+var storeObj = {
+  plugins: [easyFirestores]
+};
+
+Vue.use(Vuex);
+var store = new Vuex.Store(storeObj);
+
+store.dispatch('pokemonBox/openDBChannel');
+store.dispatch('mainCharacter/openDBChannel');
+
+exports.default = store;

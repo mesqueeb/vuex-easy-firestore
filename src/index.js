@@ -4,7 +4,7 @@ import { getKeysFromPath } from 'vuex-easy-access'
 import { isArray } from 'is-what'
 import iniModule from './module/index'
 
-export default function createEasyFirestore (userConfig) {
+export default function (userConfig) {
   return store => {
     // Get an array of config files
     if (!isArray(userConfig)) userConfig = [userConfig]

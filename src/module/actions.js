@@ -106,7 +106,7 @@ const actions = {
       let id = item.id
       let docRef = (collectionMode) ? dbRef.doc(id) : dbRef
       let fields = flattenToPaths(item.fields)
-      console.log('fields → ', fields)
+      // console.log('fields → ', fields)
       batch.update(docRef, fields)
     })
     // Add 'deletions' to batch

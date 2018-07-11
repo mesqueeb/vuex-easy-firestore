@@ -1,168 +1,13 @@
 import { isObject, isArray } from 'is-what';
+import deepmerge from 'nanomerge';
 import Firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
 import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
-  return typeof obj;
-} : function (obj) {
-  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-};
+// import deepmerge from './nanomerge'
 
-var toConsumableArray = function (arr) {
-  if (Array.isArray(arr)) {
-    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
-
-    return arr2;
-  } else {
-    return Array.from(arr);
-  }
-};
-
-var nanoclone = require('nanoclone').default;
-
-function toArray$1(object) {
-  var result = [];
-
-  for (var i = 0; i < object.length; ++i) {
-    result.push(object[i]);
-  }
-
-  return result;
-}
-
-var types = [{
-  name: 'primitive',
-
-  is: function is(el) {
-    var type = typeof el === 'undefined' ? 'undefined' : _typeof(el);
-
-    return type === 'number' || type === 'string' || type === 'boolean';
-  },
-
-  default: 'default',
-
-  merge: {
-    default: function _default(merger, a, b) {
-      return b;
-    }
-  }
-}, {
-  name: 'object',
-
-  is: function is(el) {
-    return el !== null && (typeof el === 'undefined' ? 'undefined' : _typeof(el)) === 'object';
-  },
-
-  default: 'deep',
-
-  merge: {
-    deep: function deep(merger, a, b) {
-      var result = {};
-
-      var keys = {
-        a: Object.keys(a),
-        b: Object.keys(b)
-      };
-
-      keys.a.concat(keys.b).forEach(function (key) {
-        result[key] = merger(a[key], b[key]);
-      });
-
-      return result;
-    }
-  }
-}, {
-  name: 'array',
-
-  is: function is(el) {
-    return Array.isArray(el);
-  },
-
-  default: 'replace',
-
-  merge: {
-    merge: function merge(merger, a, b) {
-      var result = [];
-
-      for (var i = 0; i < Math.max(a.length, b.length); ++i) {
-        result.push(merger(a[i], b[i]));
-      }
-
-      return result;
-    },
-
-    replace: function replace(merger, a, b) {
-      return nanoclone(b);
-    },
-
-    concat: function concat(merger, a, b) {
-      return [].concat(a).concat(b);
-    }
-  }
-}];
-
-function merge(config) {
-  if (!config) {
-    config = {};
-  }
-
-  config = {
-    strategy: config.strategy || {}
-  };
-
-  function determineType(a, b) {
-    for (var i = types.length - 1; i >= 0; --i) {
-      var type = types[i];
-
-      if (type.is(a) && type.is(b)) {
-        return type;
-      } else if (type.is(a) || type.is(b)) {
-        break;
-      }
-    }
-
-    return null;
-  }
-
-  function merger(a, b) {
-    if (b === void 0) {
-      return nanoclone(a);
-    }
-
-    var type = determineType(a, b);
-
-    if (!type) {
-      return nanoclone(b);
-    }
-
-    var strategy = config.strategy[type.name] || type.default;
-
-    return type.merge[strategy](merger, a, b);
-  }
-
-  return function () {
-    var elements = toArray$1(arguments);
-
-    return elements.reduceRight(function (result, element) {
-      return merger(element, result);
-    });
-  };
-}
-
-function wrapper() {
-  var args = toArray$1(arguments);
-
-  // custom config
-  if (args.length === 1) {
-    return merge(args[0]);
-  }
-
-  return merge().apply(null, args);
-}
-
-function merge$1() {
+function merge() {
   var l = arguments.length;
   for (l; l > 0; l--) {
     var item = arguments.length <= l - 1 ? undefined : arguments[l - 1];
@@ -171,7 +16,7 @@ function merge$1() {
       return item;
     }
   }
-  return wrapper.apply(undefined, arguments);
+  return deepmerge.apply(undefined, arguments);
 }
 
 var defaultConfig = {
@@ -271,19 +116,19 @@ var mutations = {
       if (!state._conf.statePropName) {
         return Object.keys(doc).forEach(function (key) {
           // Merge if exists
-          var newVal = state[key] === undefined || !isObject(state[key]) || !isObject(doc[key]) ? doc[key] : merge$1(state[key], doc[key]);
+          var newVal = state[key] === undefined || !isObject(state[key]) || !isObject(doc[key]) ? doc[key] : merge(state[key], doc[key]);
           _this._vm.$set(state, key, newVal);
         });
       }
       // state[state._conf.statePropName] will always be an empty object by default
-      state[state._conf.statePropName] = merge$1(state[state._conf.statePropName], doc);
+      state[state._conf.statePropName] = merge(state[state._conf.statePropName], doc);
       return;
     }
     // Patching in 'collection' mode
     // get the doc ref
     var docRef = state._conf.statePropName ? state[state._conf.statePropName][doc.id] : state[doc.id];
     // Merge if exists
-    var newVal = docRef === undefined || !isObject(docRef) || !isObject(doc) ? doc : merge$1(docRef, doc);
+    var newVal = docRef === undefined || !isObject(docRef) || !isObject(doc) ? doc : merge(docRef, doc);
     if (state._conf.statePropName) {
       this._vm.$set(state[state._conf.statePropName], doc.id, newVal);
     } else {
@@ -305,6 +150,22 @@ function iniMutations () {
 
   return Object.assign({}, mutations, userMutations);
 }
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
+  return typeof obj;
+} : function (obj) {
+  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+};
+
+var toConsumableArray = function (arr) {
+  if (Array.isArray(arr)) {
+    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+    return arr2;
+  } else {
+    return Array.from(arr);
+  }
+};
 
 /**
  * copyObj helper
@@ -348,7 +209,7 @@ function copyObj(obj) {
  * @param {object} defaultValues the default values
  */
 function setDefaultValues (obj, defaultValues) {
-  return merge$1(defaultValues, obj);
+  return merge(defaultValues, obj);
 }
 
 /**
@@ -424,7 +285,7 @@ var actions = {
 
     // 2. Push to syncStack
     Object.keys(syncStackItems).forEach(function (id) {
-      var newVal = !state._sync.syncStack.updates[id] ? syncStackItems[id] : merge$1(state._sync.syncStack.updates[id], syncStackItems[id]);
+      var newVal = !state._sync.syncStack.updates[id] ? syncStackItems[id] : merge(state._sync.syncStack.updates[id], syncStackItems[id]);
       state._sync.syncStack.updates[id] = newVal;
     });
 
@@ -526,7 +387,7 @@ var actions = {
       var id = item.id;
       var docRef = collectionMode ? dbRef.doc(id) : dbRef;
       var fields = flattenToPaths(item.fields);
-      console.log('fields → ', fields);
+      // console.log('fields → ', fields)
       batch.update(docRef, fields);
     });
     // Add 'deletions' to batch
@@ -929,13 +790,21 @@ function checkFillables (obj) {
 
 var getters = {
   signedIn: function signedIn(state, getters, rootState, rootGetters) {
+    var requireUser = state._conf.firestorePath.includes('{userId}');
+    if (!requireUser) return true;
     return state._sync.signedIn;
   },
   dbRef: function dbRef(state, getters, rootState, rootGetters) {
-    if (!getters.signedIn) return false;
-    if (!Firebase.auth().currentUser) return false;
-    var userId = Firebase.auth().currentUser.uid;
-    var path = state._conf.firestorePath.replace('{userId}', userId);
+    var path = void 0;
+    var requireUser = state._conf.firestorePath.includes('{userId}');
+    if (requireUser) {
+      if (!getters.signedIn) return false;
+      if (!Firebase.auth().currentUser) return false;
+      var userId = Firebase.auth().currentUser.uid;
+      path = state._conf.firestorePath.replace('{userId}', userId);
+    } else {
+      path = state._conf.firestorePath;
+    }
     return state._conf.firestoreRefType.toLowerCase() === 'collection' ? Firebase.firestore().collection(path) : Firebase.firestore().doc(path);
   },
   storeRef: function storeRef(state, getters, rootState) {
@@ -1028,7 +897,7 @@ function errorCheck(config) {
  * @returns {object} the module ready to be included in your vuex store
  */
 function iniModule (userConfig) {
-  var conf = merge$1(defaultConfig, userConfig);
+  var conf = merge(defaultConfig, userConfig);
   if (!errorCheck(conf)) return;
   var userState = conf.state;
   var userMutations = conf.mutations;
@@ -1041,17 +910,17 @@ function iniModule (userConfig) {
 
   var docContainer = {};
   if (conf.statePropName) docContainer[conf.statePropName] = {};
-  var state = merge$1(initialState, userState, docContainer, { _conf: conf });
+  var state = merge(initialState, userState, docContainer, { _conf: conf });
   return {
     namespaced: true,
     state: state,
-    mutations: iniMutations(userMutations, merge$1(initialState, userState)),
+    mutations: iniMutations(userMutations, merge(initialState, userState)),
     actions: iniActions(userActions),
     getters: iniGetters(userGetters)
   };
 }
 
-function createEasyFirestore(userConfig) {
+function index (userConfig) {
   return function (store) {
     // Get an array of config files
     if (!isArray(userConfig)) userConfig = [userConfig];
@@ -1078,5 +947,4 @@ function createEasyFirestore(userConfig) {
   };
 }
 
-export default createEasyFirestore;
-//# sourceMappingURL=index.es.js.map
+export default index;
