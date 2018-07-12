@@ -7,14 +7,14 @@ In just 4 lines of code, get your vuex module in complete 2-way sync with firest
 You literally only need to add these 4 lines to your vuex module and you'll have automatic sync with firestore!
 
 ```js
-const firebaseModule = {
+const userModule = {
   firestorePath: 'users/{userId}/data',
   firestoreRefType: 'collection', // or 'doc'
   moduleName: 'user',
   statePropName: 'docs',
   // the rest of your module here
 }
-// add firebaseModule as vuex plugin wrapped in vuex-easy-firestore
+// add userModule as vuex plugin wrapped in vuex-easy-firestore
 ```
 
 and Alakazam! Now you have a vuex module called `user` with `state: {docs: {}}`.
@@ -92,6 +92,7 @@ store: {
 After Firebase finds a user through `onAuthStateChanged` you need to dispatch `openDBChannel` once to open the channel to your firestore:
 
 ```js
+// Be sure to initialise Firebase first
 Firebase.auth().onAuthStateChanged(user => {
   if (user) {
     // user is logged in
@@ -356,7 +357,22 @@ const firestoreModule = {
 
 Do you have questions, comments, suggestions or feedback? Or any feature that's missing that you'd love to have? Feel free to open an issue! ♥
 
-Also check out the sister vuex-plugin [Vuex Easy Access](https://github.com/mesqueeb/VuexEasyAccess)!
+Planned future features:
+
+- Improve setting nested props of items with ID's
+  - Maybe something like `set('items/${id}.field', newVal)`
+- Add promise resolve callback possible on batch api calls
+  - Probably have to extract all batch call logic into a custom class
+- Make a blog post
+- Improve error handling
+  - Warn developer about wrong config props
+- Improve tests: test different configurations
+- Improve tests: use a firestore mock
+  - [expect-firestore](https://github.com/GitbookIO/expect-firestore)
+  - [mock-cloud-firestore](https://github.com/rmmmp/mock-cloud-firestore)
+  - [firebase-mock](https://github.com/soumak77/firebase-mock/blob/master/tutorials/client/firestore.md)
+
+Also be sure to check out the sister vuex-plugin [Vuex Easy Access](https://github.com/mesqueeb/VuexEasyAccess)!
 
 --
 
