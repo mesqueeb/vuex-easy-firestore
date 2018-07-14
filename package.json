@@ -1,6 +1,6 @@
 {
   "name": "vuex-easy-firestore",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Easy coupling of firestore and a vuex module. 2-way sync with 0 boilerplate!",
   "main": "dist/index.cjs.js",
   "module": "dist/index.es.js",
@@ -33,7 +33,7 @@
     "is-what": "^1.0.4",
     "nanoclone": "^0.2.1",
     "nanomerge": "^0.2.0",
-    "vuex-easy-access": "^1.1.0"
+    "vuex-easy-access": "^2.3.0"
   },
   "devDependencies": {
     "ava": "^0.25.0",

@@ -13,20 +13,5 @@ export default function (userConfig) {
       const moduleName = getKeysFromPath(config.moduleName)
       store.registerModule(moduleName, iniModule(config))
     })
-    store.setDoc = (path, payload) => {
-      return store.dispatch(path + '/setDoc', payload)
-    }
-    store.insert = (path, payload) => {
-      return store.dispatch(path + '/insert', payload)
-    }
-    store.patch = (path, payload) => {
-      return store.dispatch(path + '/patch', payload)
-    }
-    store.patchBatch = (path, payload) => {
-      return store.dispatch(path + '/patchBatch', payload)
-    }
-    store.delete = (path, payload) => {
-      return store.dispatch(path + '/delete', payload)
-    }
   }
 }

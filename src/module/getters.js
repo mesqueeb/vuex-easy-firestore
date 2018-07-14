@@ -53,7 +53,6 @@ const getters = {
       }
       patchData = copyObj(patchData)
       patchData = checkFillables(patchData, state._conf.sync.fillables, state._conf.sync.guard)
-      patchData.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
       carry[id] = patchData
       return carry
     }, {})
@@ -70,8 +69,6 @@ const getters = {
     items = copyObj(items)
     return items.reduce((carry, item) => {
       item = checkFillables(item, state._conf.sync.fillables, state._conf.sync.guard)
-      item.created_at = Firebase.firestore.FieldValue.serverTimestamp()
-      item.created_by = rootGetters['user/id']
       carry.push(item)
       return carry
     }, [])

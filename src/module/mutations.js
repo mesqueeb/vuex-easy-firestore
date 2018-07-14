@@ -1,4 +1,5 @@
 import { isObject } from 'is-what'
+import { getDeepRef } from 'vuex-easy-access'
 import merge from '../utils/deepmerge'
 
 const mutations = {
@@ -11,7 +12,7 @@ const mutations = {
     }
   },
   INSERT_DOC (state, doc) {
-    if (state._conf.firestoreRefType.toLowerCase() === 'doc') return
+    if (state._conf.firestoreRefType.toLowerCase() !== 'collection') return
     if (state._conf.statePropName) {
       this._vm.$set(state[state._conf.statePropName], doc.id, doc)
     } else {
@@ -51,12 +52,25 @@ const mutations = {
     }
   },
   DELETE_DOC (state, id) {
-    if (state._conf.firestoreRefType.toLowerCase() === 'doc') return
+    if (state._conf.firestoreRefType.toLowerCase() !== 'collection') return
     if (state._conf.statePropName) {
       this._vm.$delete(state[state._conf.statePropName], id)
     } else {
       this._vm.$delete(state, id)
     }
+  },
+  DELETE_PROP (state, path) {
+    if (state._conf.firestoreRefType.toLowerCase() !== 'doc') return
+    const searchTarget = (state._conf.statePropName)
+      ? state[state._conf.statePropName]
+      : state
+    const propArr = path.split('.')
+    const target = propArr.pop()
+    if (!propArr.length) {
+      return this._vm.$delete(searchTarget, target)
+    }
+    const ref = getDeepRef(searchTarget, propArr.join('.'))
+    return this._vm.$delete(ref, target)
   }
 }
 

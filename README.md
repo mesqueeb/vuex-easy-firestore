@@ -361,16 +361,22 @@ Planned future features:
 
 - Improve setting nested props of items with ID's
   - Maybe something like `set('items/${id}.field', newVal)`
+- Improve setting nested props for syncability
+  - currently this does not sync: `set('settings/wallet.address', this.state.wallet.address)`
+  - this does sync: `set('settings', {wallet: {address: this.state.wallet.address})`
+  - maybe add possibility to force full patch on docs: `dispatch('module/fullPatch')`
 - Add promise resolve callback possible on batch api calls
   - Probably have to extract all batch call logic into a custom class
 - Make a blog post
 - Improve error handling
-  - Warn developer about wrong config props
+  - Warn about wrong config props
+  - Warn when there is a `_conf` state prop
 - Improve tests: test different configurations
 - Improve tests: use a firestore mock
   - [expect-firestore](https://github.com/GitbookIO/expect-firestore)
   - [mock-cloud-firestore](https://github.com/rmmmp/mock-cloud-firestore)
   - [firebase-mock](https://github.com/soumak77/firebase-mock/blob/master/tutorials/client/firestore.md)
+- Improve syntax (`_dbConf` instead of `_conf`)
 
 Also be sure to check out the sister vuex-plugin [Vuex Easy Access](https://github.com/mesqueeb/VuexEasyAccess)!
 
