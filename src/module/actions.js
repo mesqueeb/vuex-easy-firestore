@@ -7,6 +7,7 @@ import copyObj from '../utils/copyObj'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
 import flattenToPaths from '../utils/objectFlattenToPaths'
+import error from './errors'
 
 const actions = {
   patchDoc (
@@ -33,8 +34,10 @@ const actions = {
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
-  deleteDoc ({state, getters, commit, dispatch},
-  ids = []) {
+  deleteDoc (
+    {state, getters, commit, dispatch},
+    ids = []
+  ) {
     // 0. payload correction (only arrays)
     if (!isArray(ids)) ids = [ids]
 
@@ -49,8 +52,22 @@ const actions = {
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
-  insertDoc ({state, getters, commit, dispatch},
-  docs = []) {
+  deleteProp (
+    {state, getters, commit, dispatch},
+    path
+  ) {
+    // 1. Prepare for patching
+    // 2. Push to syncStack
+    state._sync.syncStack.propDeletions.push(path)
+
+    if (!state._sync.syncStack.propDeletions.length) return
+    // 3. Create or refresh debounce
+    return dispatch('handleSyncStackDebounce')
+  },
+  insertDoc (
+    {state, getters, commit, dispatch},
+    docs = []
+  ) {
     // 0. payload correction (only arrays)
     if (!isArray(docs)) docs = [docs]
 
@@ -64,6 +81,17 @@ const actions = {
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
+  insertInitialDoc ({state, getters, commit, dispatch}) {
+    // 0. only docMode
+    if (getters.collectionMode) return
+
+    // 1. Prepare for insert
+    const initialDoc = (getters.storeRef) ? getters.storeRef : {}
+    const doc = getters.prepareInitialDocForInsert(initialDoc)
+
+    // 2. insert
+    return getters.dbRef.set(doc)
+  },
   handleSyncStackDebounce ({state, commit, dispatch, getters}) {
     if (!getters.signedIn) return false
     if (!state._sync.syncStack.debounceTimer) {
@@ -73,12 +101,12 @@ const actions = {
     }
     state._sync.syncStack.debounceTimer.refresh()
   },
-  batchSync ({getters, commit, dispatch, state}) {
+  batchSync ({getters, commit, dispatch, state, rootGetters}) {
     const collectionMode = getters.collectionMode
     const dbRef = getters.dbRef
     let batch = Firebase.firestore().batch()
     let count = 0
-    // Add 'updateds' to batch
+    // Add 'updates' to batch
     let updatesOriginal = copyObj(state._sync.syncStack.updates)
     let updates = Object.keys(updatesOriginal).map(k => {
       let fields = updatesOriginal[k]
@@ -106,8 +134,34 @@ const actions = {
       let id = item.id
       let docRef = (collectionMode) ? dbRef.doc(id) : dbRef
       let fields = flattenToPaths(item.fields)
-      console.log('fields → ', fields)
+      fields.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
+      // console.log('fields → ', fields)
       batch.update(docRef, fields)
+    })
+    // Add 'propDeletions' to batch
+    let propDeletions = copyObj(state._sync.syncStack.propDeletions)
+    // Check if there are more than 500 batch items already
+    if (count >= 500) {
+      // already at 500 or more, leave items in syncstack, and don't add anything to batch
+      propDeletions = []
+    } else {
+      // Batch supports only until 500 items
+      let deletionsAmount = 500 - count
+      let deletionsOK = propDeletions.slice(0, deletionsAmount)
+      let deletionsLeft = propDeletions.slice(deletionsAmount, -1)
+      // Put back the remaining items over 500
+      state._sync.syncStack.propDeletions = deletionsLeft
+      count = count + deletionsOK.length
+      // Define the items we'll add below
+      propDeletions = deletionsOK
+    }
+    // Add to batch
+    propDeletions.forEach(path => {
+      const updateObj = {}
+      updateObj[path] = Firebase.firestore.FieldValue.delete()
+      updateObj.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
+      let docRef = dbRef
+      batch.update(docRef, updateObj)
     })
     // Add 'deletions' to batch
     let deletions = copyObj(state._sync.syncStack.deletions)
@@ -150,6 +204,8 @@ const actions = {
     }
     // Add to batch
     inserts.forEach(item => {
+      item.created_at = Firebase.firestore.FieldValue.serverTimestamp()
+      item.created_by = rootGetters['user/id']
       let newRef = getters.dbRef.doc(item.id)
       batch.set(newRef, item)
     })
@@ -164,14 +220,14 @@ const actions = {
     return new Promise((resolve, reject) => {
       batch.commit()
       .then(res => {
-        console.log(`[batchSync] RESOLVED:`, res, `
-          updates: `, Object.keys(updates).length ? updates : {}, `
-          deletions: `, deletions.length ? deletions : [], `
-          inserts: `, inserts.length ? inserts : []
-        )
-        let remainingSyncStack = Object.keys(state._sync.syncStack.updates).length
+        if (Object.keys(updates).length) console.log(`updates: `, updates)
+        if (deletions.length) console.log(`deletions: `, deletions)
+        if (inserts.length) console.log(`inserts: `, inserts)
+        if (propDeletions.length) console.log(`propDeletions: `, propDeletions)
+        const remainingSyncStack = Object.keys(state._sync.syncStack.updates).length
           + state._sync.syncStack.deletions.length
           + state._sync.syncStack.inserts.length
+          + state._sync.syncStack.propDeletions.length
         if (remainingSyncStack) { dispatch('batchSync') }
         dispatch('_stopPatching')
         return resolve()
@@ -261,7 +317,7 @@ const actions = {
         const next = fRef.startAfter(lastVisible)
         state._sync.fetched[identifier].nextFetchRef = next
       }).catch(error => {
-        console.log(error)
+        console.error(error)
         return reject(error)
       })
     })
@@ -283,7 +339,6 @@ const actions = {
   openDBChannel ({getters, state, commit, dispatch}) {
     const store = this
     if (Firebase.auth().currentUser) state._sync.signedIn = true
-    const collectionMode = getters.collectionMode
     let dbRef = getters.dbRef
     // apply where filters and orderBy
     if (state._conf.firestoreRefType.toLowerCase() !== 'doc') {
@@ -314,7 +369,12 @@ const actions = {
       dbRef
       .onSnapshot(querySnapshot => {
         let source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
-        if (!collectionMode) {
+        if (!getters.collectionMode) {
+          if (!querySnapshot.data()) {
+            // No initial doc found in docMode
+            console.log('insert initial doc')
+            return dispatch('insertInitialDoc')
+          }
           const doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues)
           if (source === 'local') return resolve()
           handleDoc(null, null, doc, source)
@@ -356,6 +416,7 @@ const actions = {
   },
   insert ({state, getters, commit, dispatch}, doc) {
     const store = this
+    if (!getters.signedIn) return 'auth/invalid-user-token'
     if (!doc) return
     if (!doc.id) doc.id = getters.dbRef.doc().id
     // define the store update
@@ -405,6 +466,13 @@ const actions = {
     const store = this
     // define the store update
     function storeUpdateFn (_id) {
+      if (state._conf.firestoreRefType.toLowerCase() === 'doc') {
+        const path = _id // id is a path in this case
+        if (!path) return error('actionsDeleteMissingPath')
+        commit('DELETE_PROP', path)
+        return dispatch('deleteProp', path)
+      }
+      if (!_id) return error('actionsDeleteMissingId')
       commit('DELETE_DOC', _id)
       return dispatch('deleteDoc', _id)
     }

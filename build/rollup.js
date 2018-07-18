@@ -1,3 +1,4 @@
+// npm i -D babel-core babel-plugin-external-helpers babel-plugin-transform-object-rest-spread babel-preset-env rollup rollup-plugin-babel rollup-plugin-commonjs rollup-plugin-node-resolve rollup-plugin-terser
 import babel from 'rollup-plugin-babel'
 import commonjs from 'rollup-plugin-commonjs'
 import { terser } from 'rollup-plugin-terser'
@@ -14,31 +15,46 @@ import resolve from 'rollup-plugin-node-resolve'
 // ------------------------------------------------------------------------------------------
 // setup
 // ------------------------------------------------------------------------------------------
+const indexFileName = 'index'
+const formats = ['cjs', 'es']
+const exportFolder = 'dist'
+const extraBuildFileNames = ['../test/helpers/index']
+const extraBuildFormats = ['cjs']
+const extraExportFolder = ''
+const minify = false
+const sourcemap = false
+const _plugins = [
+  // resolve({only: ['deepmerge']}),
+  babel({
+    exclude: 'node_modules/**' // only transpile our source code
+  }),
+  commonjs()
+]
+// ------------------------------------------------------------------------------------------
 const pkg = require('../package.json')
 const name = pkg.name
 const className = name.replace(/(^\w|-\w)/g, c => c.replace('-', '').toUpperCase())
 const external = Object.keys(pkg.dependencies || [])
-  .filter(p => p !== 'deepmerge')
-const _plugins = [
-  resolve({only: ['deepmerge']}),
-  babel({
-    exclude: 'node_modules/**', // only transpile our source code
-  }),
-  commonjs(),
-]
+  // .filter(p => p !== 'deepmerge')
 
 // ------------------------------------------------------------------------------------------
 // build helpers
 // ------------------------------------------------------------------------------------------
-function output (ext, format) {
+function output (targetFileName, ext, format) {
+  let _exportFolder = extraBuildFileNames.includes(targetFileName)
+    ? extraExportFolder
+    : exportFolder
+  if (_exportFolder) _exportFolder = _exportFolder + '/'
+  targetFileName = targetFileName.replace(/^\.\.\//, '')
   return {
     name: className,
-    sourcemap: true,
-    file: `dist/index.${ext}`,
+    sourcemap,
+    exports: 'named',
+    file: `${_exportFolder}${targetFileName}.${ext}`,
     format
   }
 }
-function buildTemplate (format, minified = false) {
+function buildTemplate (targetFileName, format, minified = false) {
   const plugins = (minified)
     ? _plugins.concat(terser())
     : _plugins
@@ -46,8 +62,8 @@ function buildTemplate (format, minified = false) {
     ? `${format}.min.js`
     : `${format}.js`
   return {
-    input: `src/index.js`,
-    output: output(ext, format),
+    input: `src/${targetFileName}.js`,
+    output: output(targetFileName, ext, format),
     plugins,
     external
   }
@@ -56,9 +72,14 @@ function buildTemplate (format, minified = false) {
 // ------------------------------------------------------------------------------------------
 // builds
 // ------------------------------------------------------------------------------------------
-const formats = ['umd', 'cjs', 'es', 'iife']
-const regBuilds = formats.map(format => buildTemplate(format))
-const minBuilds = formats.map(format => buildTemplate(format, true))
-const result = regBuilds.concat(minBuilds)
+const files = [indexFileName].concat(extraBuildFileNames)
+const builds = files.reduce((carry, file) => {
+  formats.forEach(format => {
+    if (extraBuildFileNames.includes(file) && !extraBuildFormats.includes(format)) return
+    carry.push(buildTemplate(file, format))
+    if (minify) carry.push(buildTemplate(file, format, true))
+  })
+  return carry
+}, [])
 
-export default result
+export default builds

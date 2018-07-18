@@ -1,4 +1,4 @@
-var nanoclone = require('nanoclone').default
+var nanoclone = require('nanoclone')
 
 function toArray (object) {
   var result = []

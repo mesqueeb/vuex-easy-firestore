@@ -1,9 +1,78 @@
-import { isObject, isArray } from 'is-what';
-import deepmerge from 'nanomerge';
-import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
-import Firebase from 'firebase/app';
-import 'firebase/firestore';
-import 'firebase/auth';
+'use strict';
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var Firebase = _interopDefault(require('firebase/app'));
+require('firebase/firestore');
+var vuexEasyAccess = require('vuex-easy-access');
+var isWhat = require('is-what');
+var deepmerge = _interopDefault(require('nanomerge'));
+require('firebase/auth');
+var Vue = _interopDefault(require('vue'));
+var Vuex = _interopDefault(require('vuex'));
+
+process.env.apiKey = "AIzaSyDivMlXIuHqDFsTCCqBDTVL0h29xbltcL8";
+process.env.authDomain = "tests-firestore.firebaseapp.com";
+process.env.databaseURL = "https://tests-firestore.firebaseio.com";
+process.env.projectId = "tests-firestore";
+
+var config = {
+  apiKey: process.env.apiKey,
+  authDomain: process.env.authDomain,
+  databaseURL: process.env.databaseURL,
+  projectId: process.env.projectId
+};
+Firebase.initializeApp(config);
+var firestore$1 = Firebase.firestore();
+var settings = { timestampsInSnapshots: true };
+firestore$1.settings(settings);
+
+function initialState() {
+  return {
+    playerName: 'Satoshi',
+    pokemon: {},
+    stats: {
+      pokemonCount: 0,
+      freedCount: 0
+    }
+  };
+}
+
+var pokemonBox = {
+  // easy firestore config
+  firestorePath: 'pokemonBoxes/Satoshi/pokemon',
+  firestoreRefType: 'collection',
+  moduleName: 'pokemonBox',
+  statePropName: 'pokemon',
+  // module
+  state: initialState(),
+  mutations: vuexEasyAccess.defaultMutations(initialState()),
+  actions: {},
+  getters: {}
+};
+
+function initialState$1() {
+  return {
+    name: 'Satoshi',
+    pokemonBelt: [],
+    items: []
+  };
+}
+
+var mainCharacter = {
+  // easy firestore config
+  firestorePath: 'playerCharacters/Satoshi',
+  firestoreRefType: 'doc',
+  moduleName: 'mainCharacter',
+  statePropName: '',
+  // module
+  state: initialState$1(),
+  mutations: vuexEasyAccess.defaultMutations(initialState$1()),
+  actions: {},
+  getters: {}
+};
 
 // import deepmerge from './nanomerge'
 
@@ -11,7 +80,7 @@ function merge() {
   var l = arguments.length;
   for (l; l > 0; l--) {
     var item = arguments.length <= l - 1 ? undefined : arguments[l - 1];
-    if (!isObject(item)) {
+    if (!isWhat.isObject(item)) {
       console.error('trying to merge a non-object: ', item);
       return item;
     }
@@ -75,7 +144,7 @@ var defaultConfig = {
   actions: {}
 };
 
-var initialState = {
+var initialState$2 = {
   _sync: {
     signedIn: false,
     patching: false,
@@ -117,7 +186,7 @@ var mutations = {
       if (!state._conf.statePropName) {
         return Object.keys(doc).forEach(function (key) {
           // Merge if exists
-          var newVal = state[key] === undefined || !isObject(state[key]) || !isObject(doc[key]) ? doc[key] : merge(state[key], doc[key]);
+          var newVal = state[key] === undefined || !isWhat.isObject(state[key]) || !isWhat.isObject(doc[key]) ? doc[key] : merge(state[key], doc[key]);
           _this._vm.$set(state, key, newVal);
         });
       }
@@ -129,7 +198,7 @@ var mutations = {
     // get the doc ref
     var docRef = state._conf.statePropName ? state[state._conf.statePropName][doc.id] : state[doc.id];
     // Merge if exists
-    var newVal = docRef === undefined || !isObject(docRef) || !isObject(doc) ? doc : merge(docRef, doc);
+    var newVal = docRef === undefined || !isWhat.isObject(docRef) || !isWhat.isObject(doc) ? doc : merge(docRef, doc);
     if (state._conf.statePropName) {
       this._vm.$set(state[state._conf.statePropName], doc.id, newVal);
     } else {
@@ -152,7 +221,7 @@ var mutations = {
     if (!propArr.length) {
       return this._vm.$delete(searchTarget, target);
     }
-    var ref = getDeepRef(searchTarget, propArr.join('.'));
+    var ref = vuexEasyAccess.getDeepRef(searchTarget, propArr.join('.'));
     return this._vm.$delete(ref, target);
   }
 };
@@ -255,7 +324,7 @@ function startDebounce (ms) {
 }
 
 function retrievePaths(object, path, result) {
-  if (!isObject(object) || !Object.keys(object).length) {
+  if (!isWhat.isObject(object) || !Object.keys(object).length) {
     if (!path) return object;
     result[path] = object;
     return result;
@@ -298,7 +367,7 @@ var actions = {
         doc = _ref2.doc;
 
     // 0. payload correction (only arrays)
-    if (!isArray(ids)) return console.log('ids needs to be an array');
+    if (!isWhat.isArray(ids)) return console.log('ids needs to be an array');
     if (id) ids.push(id);
     if (doc.id) delete doc.id;
 
@@ -322,7 +391,7 @@ var actions = {
     var ids = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
 
     // 0. payload correction (only arrays)
-    if (!isArray(ids)) ids = [ids];
+    if (!isWhat.isArray(ids)) ids = [ids];
 
     // 1. Prepare for patching
     var syncStackIds = getters.prepareForDeletion(ids);
@@ -357,7 +426,7 @@ var actions = {
     var docs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
 
     // 0. payload correction (only arrays)
-    if (!isArray(docs)) docs = [docs];
+    if (!isWhat.isArray(docs)) docs = [docs];
 
     // 1. Prepare for patching
     var syncStack = getters.prepareForInsert(docs);
@@ -870,7 +939,7 @@ function checkFillables (obj) {
   var fillables = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
   var guard = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
 
-  if (!isObject(obj)) return obj;
+  if (!isWhat.isObject(obj)) return obj;
   if (fillables.length) {
     Object.keys(obj).forEach(function (key) {
       if (!fillables.includes(key)) {
@@ -905,7 +974,7 @@ var getters = {
   },
   storeRef: function storeRef(state, getters, rootState) {
     var path = state._conf.statePropName ? state._conf.moduleName + '/' + state._conf.statePropName : state._conf.moduleName;
-    return getDeepRef(rootState, path);
+    return vuexEasyAccess.getDeepRef(rootState, path);
   },
   collectionMode: function collectionMode(state, getters, rootState) {
     return state._conf.firestoreRefType.toLowerCase() === 'collection';
@@ -1010,26 +1079,38 @@ function iniModule (userConfig) {
 
   var docContainer = {};
   if (conf.statePropName) docContainer[conf.statePropName] = {};
-  var state = merge(initialState, userState, docContainer, { _conf: conf });
+  var state = merge(initialState$2, userState, docContainer, { _conf: conf });
   return {
     namespaced: true,
     state: state,
-    mutations: iniMutations(userMutations, merge(initialState, userState)),
+    mutations: iniMutations(userMutations, merge(initialState$2, userState)),
     actions: iniActions(userActions),
     getters: iniGetters(userGetters)
   };
 }
 
-function index (userConfig) {
+function createFirestores (userConfig) {
   return function (store) {
     // Get an array of config files
-    if (!isArray(userConfig)) userConfig = [userConfig];
+    if (!isWhat.isArray(userConfig)) userConfig = [userConfig];
     // Create a module for each config file
     userConfig.forEach(function (config) {
-      var moduleName = getKeysFromPath(config.moduleName);
+      var moduleName = vuexEasyAccess.getKeysFromPath(config.moduleName);
       store.registerModule(moduleName, iniModule(config));
     });
   };
 }
 
-export default index;
+var easyFirestores = createFirestores([pokemonBox, mainCharacter]);
+
+var storeObj = {
+  plugins: [easyFirestores]
+};
+
+Vue.use(Vuex);
+var store = new Vuex.Store(storeObj);
+
+store.dispatch('pokemonBox/openDBChannel');
+store.dispatch('mainCharacter/openDBChannel');
+
+exports.default = store;

@@ -4,10 +4,11 @@ export default {
     signedIn: false,
     patching: false,
     syncStack: {
+      inserts: [],
       updates: {},
       deletions: [],
-      inserts: [],
-      debounceTimer: null
+      propDeletions: [],
+      debounceTimer: null,
     },
     fetched: [],
     stopPatchingTimeout: null

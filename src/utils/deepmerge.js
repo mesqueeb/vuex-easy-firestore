@@ -1,6 +1,6 @@
 import { isObject } from 'is-what'
-// import deepmerge from 'nanomerge'
-import deepmerge from './nanomerge'
+import deepmerge from 'nanomerge'
+// import deepmerge from './nanomerge'
 
 function merge (...params) {
   let l = params.length
