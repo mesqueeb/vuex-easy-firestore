@@ -5,6 +5,7 @@
   "main": "dist/index.cjs.js",
   "module": "dist/index.es.js",
   "scripts": {
+    "lint": "eslint --ext .js,.vue src",
     "test": "ava",
     "build": "rollup -c build/rollup.js",
     "watch": "rollup -c build/rollup.js --watch"
@@ -38,9 +39,19 @@
   "devDependencies": {
     "ava": "^0.25.0",
     "babel-core": "^6.26.3",
+    "babel-eslint": "^8.2.6",
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.7.0",
+    "eslint": "^5.1.0",
+    "eslint-config-standard": "^11.0.0",
+    "eslint-friendly-formatter": "^4.0.1",
+    "eslint-loader": "^2.0.0",
+    "eslint-plugin-import": "^2.13.0",
+    "eslint-plugin-node": "^7.0.1",
+    "eslint-plugin-promise": "^3.8.0",
+    "eslint-plugin-standard": "^3.1.0",
+    "eslint-plugin-vue": "^4.7.0",
     "rollup": "^0.62.0",
     "rollup-plugin-babel": "^3.0.4",
     "rollup-plugin-commonjs": "^9.1.3",

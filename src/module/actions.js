@@ -34,8 +34,10 @@ const actions = {
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
-  deleteDoc ({state, getters, commit, dispatch},
-  ids = []) {
+  deleteDoc (
+    {state, getters, commit, dispatch},
+    ids = []
+  ) {
     // 0. payload correction (only arrays)
     if (!isArray(ids)) ids = [ids]
 
@@ -50,8 +52,10 @@ const actions = {
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
-  deleteProp ({state, getters, commit, dispatch},
-  path) {
+  deleteProp (
+    {state, getters, commit, dispatch},
+    path
+  ) {
     // 1. Prepare for patching
     // 2. Push to syncStack
     state._sync.syncStack.propDeletions.push(path)
@@ -60,8 +64,10 @@ const actions = {
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
-  insertDoc ({state, getters, commit, dispatch},
-  docs = []) {
+  insertDoc (
+    {state, getters, commit, dispatch},
+    docs = []
+  ) {
     // 0. payload correction (only arrays)
     if (!isArray(docs)) docs = [docs]
 
@@ -354,6 +360,7 @@ const actions = {
       .onSnapshot(querySnapshot => {
         let source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
         if (!collectionMode) {
+          if (!querySnapshot.data()) return dispatch('insert', state._conf.serverChange.defaultValues)
           const doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues)
           if (source === 'local') return resolve()
           handleDoc(null, null, doc, source)
@@ -395,6 +402,7 @@ const actions = {
   },
   insert ({state, getters, commit, dispatch}, doc) {
     const store = this
+    if (!getters.signedIn) return 'auth/invalid-user-token'
     if (!doc) return
     if (!doc.id) doc.id = getters.dbRef.doc().id
     // define the store update
