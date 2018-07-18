@@ -81,6 +81,17 @@ const actions = {
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce')
   },
+  insertInitialDoc ({state, getters, commit, dispatch}) {
+    // 0. only docMode
+    if (getters.collectionMode) return
+
+    // 1. Prepare for insert
+    const initialDoc = (getters.storeRef) ? getters.storeRef : {}
+    const doc = getters.prepareInitialDocForInsert(initialDoc)
+
+    // 2. insert
+    return getters.dbRef.set(doc)
+  },
   handleSyncStackDebounce ({state, commit, dispatch, getters}) {
     if (!getters.signedIn) return false
     if (!state._sync.syncStack.debounceTimer) {
@@ -328,7 +339,6 @@ const actions = {
   openDBChannel ({getters, state, commit, dispatch}) {
     const store = this
     if (Firebase.auth().currentUser) state._sync.signedIn = true
-    const collectionMode = getters.collectionMode
     let dbRef = getters.dbRef
     // apply where filters and orderBy
     if (state._conf.firestoreRefType.toLowerCase() !== 'doc') {
@@ -359,8 +369,12 @@ const actions = {
       dbRef
       .onSnapshot(querySnapshot => {
         let source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
-        if (!collectionMode) {
-          if (!querySnapshot.data()) return dispatch('insert', state._conf.serverChange.defaultValues)
+        if (!getters.collectionMode) {
+          if (!querySnapshot.data()) {
+            // No initial doc found in docMode
+            console.log('insert initial doc')
+            return dispatch('insertInitialDoc')
+          }
           const doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues)
           if (source === 'local') return resolve()
           handleDoc(null, null, doc, source)

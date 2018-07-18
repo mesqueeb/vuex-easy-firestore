@@ -145,7 +145,6 @@ var mutations = {
     }
   },
   DELETE_PROP: function DELETE_PROP(state, path) {
-    console.log('delprop → ');
     if (state._conf.firestoreRefType.toLowerCase() !== 'doc') return;
     var searchTarget = state._conf.statePropName ? state[state._conf.statePropName] : state;
     var propArr = path.split('.');
@@ -370,11 +369,27 @@ var actions = {
     // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce');
   },
-  handleSyncStackDebounce: function handleSyncStackDebounce(_ref6) {
+  insertInitialDoc: function insertInitialDoc(_ref6) {
     var state = _ref6.state,
+        getters = _ref6.getters,
         commit = _ref6.commit,
-        dispatch = _ref6.dispatch,
-        getters = _ref6.getters;
+        dispatch = _ref6.dispatch;
+
+    // 0. only docMode
+    if (getters.collectionMode) return;
+
+    // 1. Prepare for insert
+    var initialDoc = getters.storeRef ? getters.storeRef : {};
+    var doc = getters.prepareInitialDocForInsert(initialDoc);
+
+    // 2. insert
+    return getters.dbRef.set(doc);
+  },
+  handleSyncStackDebounce: function handleSyncStackDebounce(_ref7) {
+    var state = _ref7.state,
+        commit = _ref7.commit,
+        dispatch = _ref7.dispatch,
+        getters = _ref7.getters;
 
     if (!getters.signedIn) return false;
     if (!state._sync.syncStack.debounceTimer) {
@@ -386,12 +401,12 @@ var actions = {
     }
     state._sync.syncStack.debounceTimer.refresh();
   },
-  batchSync: function batchSync(_ref7) {
-    var getters = _ref7.getters,
-        commit = _ref7.commit,
-        dispatch = _ref7.dispatch,
-        state = _ref7.state,
-        rootGetters = _ref7.rootGetters;
+  batchSync: function batchSync(_ref8) {
+    var getters = _ref8.getters,
+        commit = _ref8.commit,
+        dispatch = _ref8.dispatch,
+        state = _ref8.state,
+        rootGetters = _ref8.rootGetters;
 
     var collectionMode = getters.collectionMode;
     var dbRef = getters.dbRef;
@@ -539,20 +554,20 @@ var actions = {
       });
     });
   },
-  fetch: function fetch(_ref8) {
-    var state = _ref8.state,
-        getters = _ref8.getters,
-        commit = _ref8.commit,
-        dispatch = _ref8.dispatch;
+  fetch: function fetch(_ref9) {
+    var state = _ref9.state,
+        getters = _ref9.getters,
+        commit = _ref9.commit,
+        dispatch = _ref9.dispatch;
 
-    var _ref9 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : { whereFilters: [], orderBy: []
+    var _ref10 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : { whereFilters: [], orderBy: []
       // whereFilters: [['archived', '==', true]]
       // orderBy: ['done_date', 'desc']
     },
-        _ref9$whereFilters = _ref9.whereFilters,
-        whereFilters = _ref9$whereFilters === undefined ? [] : _ref9$whereFilters,
-        _ref9$orderBy = _ref9.orderBy,
-        orderBy = _ref9$orderBy === undefined ? [] : _ref9$orderBy;
+        _ref10$whereFilters = _ref10.whereFilters,
+        whereFilters = _ref10$whereFilters === undefined ? [] : _ref10$whereFilters,
+        _ref10$orderBy = _ref10.orderBy,
+        orderBy = _ref10$orderBy === undefined ? [] : _ref10$orderBy;
 
     return new Promise(function (resolve, reject) {
       console.log('[fetch] starting');
@@ -564,14 +579,14 @@ var actions = {
         var ref = getters.dbRef;
         // apply where filters and orderBy
         whereFilters.forEach(function (paramsArr) {
-          var _ref10;
-
-          ref = (_ref10 = ref).where.apply(_ref10, toConsumableArray(paramsArr));
-        });
-        if (orderBy.length) {
           var _ref11;
 
-          ref = (_ref11 = ref).orderBy.apply(_ref11, toConsumableArray(orderBy));
+          ref = (_ref11 = ref).where.apply(_ref11, toConsumableArray(paramsArr));
+        });
+        if (orderBy.length) {
+          var _ref12;
+
+          ref = (_ref12 = ref).orderBy.apply(_ref12, toConsumableArray(orderBy));
         }
         state._sync.fetched[identifier] = {
           ref: ref,
@@ -623,12 +638,12 @@ var actions = {
       });
     });
   },
-  serverUpdate: function serverUpdate(_ref12, _ref13) {
-    var commit = _ref12.commit;
-    var change = _ref13.change,
-        id = _ref13.id,
-        _ref13$doc = _ref13.doc,
-        doc = _ref13$doc === undefined ? {} : _ref13$doc;
+  serverUpdate: function serverUpdate(_ref13, _ref14) {
+    var commit = _ref13.commit;
+    var change = _ref14.change,
+        id = _ref14.id,
+        _ref14$doc = _ref14.doc,
+        doc = _ref14$doc === undefined ? {} : _ref14$doc;
 
     doc.id = id;
     switch (change) {
@@ -643,15 +658,14 @@ var actions = {
         break;
     }
   },
-  openDBChannel: function openDBChannel(_ref14) {
-    var getters = _ref14.getters,
-        state = _ref14.state,
-        commit = _ref14.commit,
-        dispatch = _ref14.dispatch;
+  openDBChannel: function openDBChannel(_ref15) {
+    var getters = _ref15.getters,
+        state = _ref15.state,
+        commit = _ref15.commit,
+        dispatch = _ref15.dispatch;
 
     var store = this;
     if (Firebase.auth().currentUser) state._sync.signedIn = true;
-    var collectionMode = getters.collectionMode;
     var dbRef = getters.dbRef;
     // apply where filters and orderBy
     if (state._conf.firestoreRefType.toLowerCase() !== 'doc') {
@@ -685,7 +699,12 @@ var actions = {
     return new Promise(function (resolve, reject) {
       dbRef.onSnapshot(function (querySnapshot) {
         var source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server';
-        if (!collectionMode) {
+        if (!getters.collectionMode) {
+          if (!querySnapshot.data()) {
+            // No initial doc found in docMode
+            console.log('insert initial doc');
+            return dispatch('insertInitialDoc');
+          }
           var doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues);
           if (source === 'local') return resolve();
           handleDoc(null, null, doc, source);
@@ -707,11 +726,11 @@ var actions = {
       });
     });
   },
-  set: function set$$1(_ref15, doc) {
-    var commit = _ref15.commit,
-        dispatch = _ref15.dispatch,
-        getters = _ref15.getters,
-        state = _ref15.state;
+  set: function set$$1(_ref16, doc) {
+    var commit = _ref16.commit,
+        dispatch = _ref16.dispatch,
+        getters = _ref16.getters,
+        state = _ref16.state;
 
     if (!doc) return;
     if (!getters.collectionMode) {
@@ -722,13 +741,14 @@ var actions = {
     }
     return dispatch('patch', doc);
   },
-  insert: function insert(_ref16, doc) {
-    var state = _ref16.state,
-        getters = _ref16.getters,
-        commit = _ref16.commit,
-        dispatch = _ref16.dispatch;
+  insert: function insert(_ref17, doc) {
+    var state = _ref17.state,
+        getters = _ref17.getters,
+        commit = _ref17.commit,
+        dispatch = _ref17.dispatch;
 
     var store = this;
+    if (!getters.signedIn) return 'auth/invalid-user-token';
     if (!doc) return;
     if (!doc.id) doc.id = getters.dbRef.doc().id;
     // define the store update
@@ -742,11 +762,11 @@ var actions = {
     }
     return storeUpdateFn(doc);
   },
-  patch: function patch(_ref17, doc) {
-    var state = _ref17.state,
-        getters = _ref17.getters,
-        commit = _ref17.commit,
-        dispatch = _ref17.dispatch;
+  patch: function patch(_ref18, doc) {
+    var state = _ref18.state,
+        getters = _ref18.getters,
+        commit = _ref18.commit,
+        dispatch = _ref18.dispatch;
 
     var store = this;
     if (!doc) return;
@@ -762,14 +782,14 @@ var actions = {
     }
     return storeUpdateFn(doc);
   },
-  patchBatch: function patchBatch(_ref18, _ref19) {
-    var state = _ref18.state,
-        getters = _ref18.getters,
-        commit = _ref18.commit,
-        dispatch = _ref18.dispatch;
-    var doc = _ref19.doc,
-        _ref19$ids = _ref19.ids,
-        ids = _ref19$ids === undefined ? [] : _ref19$ids;
+  patchBatch: function patchBatch(_ref19, _ref20) {
+    var state = _ref19.state,
+        getters = _ref19.getters,
+        commit = _ref19.commit,
+        dispatch = _ref19.dispatch;
+    var doc = _ref20.doc,
+        _ref20$ids = _ref20.ids,
+        ids = _ref20$ids === undefined ? [] : _ref20$ids;
 
     var store = this;
     if (!doc) return;
@@ -784,11 +804,11 @@ var actions = {
     }
     return storeUpdateFn(doc);
   },
-  delete: function _delete(_ref20, id) {
-    var state = _ref20.state,
-        getters = _ref20.getters,
-        commit = _ref20.commit,
-        dispatch = _ref20.dispatch;
+  delete: function _delete(_ref21, id) {
+    var state = _ref21.state,
+        getters = _ref21.getters,
+        commit = _ref21.commit,
+        dispatch = _ref21.dispatch;
 
     var store = this;
     // define the store update
@@ -809,9 +829,9 @@ var actions = {
     }
     return storeUpdateFn(id);
   },
-  _stopPatching: function _stopPatching(_ref21) {
-    var state = _ref21.state,
-        commit = _ref21.commit;
+  _stopPatching: function _stopPatching(_ref22) {
+    var state = _ref22.state,
+        commit = _ref22.commit;
 
     if (state._sync.stopPatchingTimeout) {
       clearTimeout(state._sync.stopPatchingTimeout);
@@ -820,9 +840,9 @@ var actions = {
       state._sync.patching = false;
     }, 300);
   },
-  _startPatching: function _startPatching(_ref22) {
-    var state = _ref22.state,
-        commit = _ref22.commit;
+  _startPatching: function _startPatching(_ref23) {
+    var state = _ref23.state,
+        commit = _ref23.commit;
 
     if (state._sync.stopPatchingTimeout) {
       clearTimeout(state._sync.stopPatchingTimeout);
@@ -934,6 +954,13 @@ var getters = {
         carry.push(item);
         return carry;
       }, []);
+    };
+  },
+  prepareInitialDocForInsert: function prepareInitialDocForInsert(state, getters, rootState, rootGetters) {
+    return function (doc) {
+      doc = copyObj(doc);
+      doc = checkFillables(doc, state._conf.sync.fillables, state._conf.sync.guard);
+      return doc;
     };
   }
 };

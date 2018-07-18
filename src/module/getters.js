@@ -36,43 +36,49 @@ const getters = {
     return (state._conf.firestoreRefType.toLowerCase() === 'collection')
   },
   prepareForPatch: (state, getters, rootState, rootGetters) =>
-  (ids = [], doc = {}) => {
-    // get relevant data from the storeRef
-    const collectionMode = getters.collectionMode
-    if (!collectionMode) ids.push('singleDoc')
-    // returns {object} -> {id: data}
-    return ids.reduce((carry, id) => {
-      let patchData = {}
-      // retrieve full object
-      if (!Object.keys(doc).length) {
-        patchData = (collectionMode)
-          ? getters.storeRef[id]
-          : getters.storeRef
-      } else {
-        patchData = doc
-      }
-      patchData = copyObj(patchData)
-      patchData = checkFillables(patchData, state._conf.sync.fillables, state._conf.sync.guard)
-      carry[id] = patchData
-      return carry
-    }, {})
-  },
+    (ids = [], doc = {}) => {
+      // get relevant data from the storeRef
+      const collectionMode = getters.collectionMode
+      if (!collectionMode) ids.push('singleDoc')
+      // returns {object} -> {id: data}
+      return ids.reduce((carry, id) => {
+        let patchData = {}
+        // retrieve full object
+        if (!Object.keys(doc).length) {
+          patchData = (collectionMode)
+            ? getters.storeRef[id]
+            : getters.storeRef
+        } else {
+          patchData = doc
+        }
+        patchData = copyObj(patchData)
+        patchData = checkFillables(patchData, state._conf.sync.fillables, state._conf.sync.guard)
+        carry[id] = patchData
+        return carry
+      }, {})
+    },
   prepareForDeletion: (state, getters, rootState, rootGetters) =>
-  (ids = []) => {
-    return ids.reduce((carry, id) => {
-      carry.push(id)
-      return carry
-    }, [])
-  },
+    (ids = []) => {
+      return ids.reduce((carry, id) => {
+        carry.push(id)
+        return carry
+      }, [])
+    },
   prepareForInsert: (state, getters, rootState, rootGetters) =>
-  (items = []) => {
-    items = copyObj(items)
-    return items.reduce((carry, item) => {
-      item = checkFillables(item, state._conf.sync.fillables, state._conf.sync.guard)
-      carry.push(item)
-      return carry
-    }, [])
-  }
+    (items = []) => {
+      items = copyObj(items)
+      return items.reduce((carry, item) => {
+        item = checkFillables(item, state._conf.sync.fillables, state._conf.sync.guard)
+        carry.push(item)
+        return carry
+      }, [])
+    },
+  prepareInitialDocForInsert: (state, getters, rootState, rootGetters) =>
+    (doc) => {
+      doc = copyObj(doc)
+      doc = checkFillables(doc, state._conf.sync.fillables, state._conf.sync.guard)
+      return doc
+    }
 }
 
 export default function (userGetters = {}) {
