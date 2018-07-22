@@ -1,4 +1,4 @@
-import Firebase from 'firebase/app'
+import Firebase from 'firebase'
 import 'firebase/firestore'
 import 'firebase/auth'
 import { isArray } from 'is-what'
@@ -8,6 +8,7 @@ import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
 import flattenToPaths from '../utils/objectFlattenToPaths'
 import { grabUntilApiLimit } from '../utils/apiHelpers'
+import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
 import error from './errors'
 
 const actions = {
@@ -116,7 +117,7 @@ const actions = {
       // Batch supports only until 500 items
       count = 500
       const updatesOK = updates.slice(0, 500)
-      const updatesLeft = updates.slice(500, -1)
+      const updatesLeft = updates.slice(500)
       // Put back the remaining items over 500
       state._sync.syncStack.updates = updatesLeft.reduce((carry, item) => {
         carry[item.id] = item
@@ -144,8 +145,8 @@ const actions = {
     propDeletions.forEach(path => {
       let docRef = dbRef
       if (collectionMode) {
-        const id = path.slice(0, path.indexOf('.'))
-        path = path.slice(path.indexOf('.') + 1, -1)
+        const id = path.substring(0, path.indexOf('.'))
+        path = path.substring(path.indexOf('.') + 1)
         docRef = dbRef.doc(id)
       }
       const updateObj = {}
@@ -367,10 +368,11 @@ const actions = {
     if (!getters.collectionMode) {
       return dispatch('patch', doc)
     }
+    const id = getId(doc)
     if (
-      !doc.id ||
-      (!state._conf.statePropName && !state[doc.id]) ||
-      (state._conf.statePropName && !state[state._conf.statePropName][doc.id])
+      !id ||
+      (!state._conf.statePropName && !state[id]) ||
+      (state._conf.statePropName && !state[state._conf.statePropName][id])
     ) {
       return dispatch('insert', doc)
     }
@@ -380,7 +382,8 @@ const actions = {
     const store = this
     if (!getters.signedIn) return 'auth/invalid-user-token'
     if (!doc) return
-    if (!doc.id) doc.id = getters.dbRef.doc().id
+    const newDoc = getValueFromPayloadPiece(doc)
+    if (!newDoc.id) newDoc.id = getters.dbRef.doc().id
     // define the store update
     function storeUpdateFn (_doc) {
       commit('INSERT_DOC', _doc)
@@ -388,24 +391,26 @@ const actions = {
     }
     // check for hooks
     if (state._conf.sync.insertHook) {
-      return state._conf.sync.insertHook(storeUpdateFn, doc, store)
+      return state._conf.sync.insertHook(storeUpdateFn, newDoc, store)
     }
-    return storeUpdateFn(doc)
+    return storeUpdateFn(newDoc)
   },
   patch ({state, getters, commit, dispatch}, doc) {
     const store = this
     if (!doc) return
-    if (!doc.id && getters.collectionMode) return
+    const id = getId(doc)
+    const value = getValueFromPayloadPiece(doc)
+    if (!id && getters.collectionMode) return
     // define the store update
-    function storeUpdateFn (_doc) {
-      commit('PATCH_DOC', _doc)
-      return dispatch('patchDoc', {id: _doc.id, doc: _doc})
+    function storeUpdateFn (_val) {
+      commit('PATCH_DOC', _val)
+      return dispatch('patchDoc', {id, doc: _val})
     }
     // check for hooks
     if (state._conf.sync.patchHook) {
-      return state._conf.sync.patchHook(storeUpdateFn, doc, store)
+      return state._conf.sync.patchHook(storeUpdateFn, value, store)
     }
-    return storeUpdateFn(doc)
+    return storeUpdateFn(value)
   },
   patchBatch (
     {state, getters, commit, dispatch},

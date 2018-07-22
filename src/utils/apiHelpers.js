@@ -18,10 +18,11 @@ export function grabUntilApiLimit (syncStackProp, count, state) {
     // Batch supports only until 500 items
     const targetsAmount = 500 - count
     const targetsOK = targets.slice(0, targetsAmount)
-    const targetsLeft = targets.slice(targetsAmount, -1)
+    const targetsLeft = targets.slice(targetsAmount)
     // Put back the remaining items over 500
     state._sync.syncStack[syncStackProp] = targetsLeft
     // Define the items we'll add below
     targets = targetsOK
   }
+  return targets
 }
