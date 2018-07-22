@@ -1,9 +1,10 @@
-import { isObject, isArray } from 'is-what';
+import { isObject, isString, isArray } from 'is-what';
 import deepmerge from 'nanomerge';
 import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
-import Firebase from 'firebase/app';
+import Firebase from 'firebase';
 import 'firebase/firestore';
 import 'firebase/auth';
+import Firebase$1 from 'firebase/app';
 
 // import deepmerge from './nanomerge'
 
@@ -145,7 +146,6 @@ var mutations = {
     }
   },
   DELETE_PROP: function DELETE_PROP(state, path) {
-    if (state._conf.firestoreRefType.toLowerCase() !== 'doc') return;
     var searchTarget = state._conf.statePropName ? state[state._conf.statePropName] : state;
     var propArr = path.split('.');
     var target = propArr.pop();
@@ -273,14 +273,74 @@ function flattenToPaths (object) {
   return retrievePaths(object, null, result);
 }
 
+/**
+ * Grab until the api limit (500), put the rest back in the syncStack.
+ *
+ * @export
+ * @param {string} syncStackProp the prop of _sync.syncStack[syncStackProp]
+ * @param {number} count the current count
+ * @param {object} state the store's state, will be edited!
+ */
+function grabUntilApiLimit(syncStackProp, count, state) {
+  var targets = copyObj(state._sync.syncStack[syncStackProp]);
+  // Check if there are more than 500 batch items already
+  if (count >= 500) {
+    // already at 500 or more, leave items in syncstack, and don't add anything to batch
+    targets = [];
+  } else {
+    // Batch supports only until 500 items
+    var targetsAmount = 500 - count;
+    var targetsOK = targets.slice(0, targetsAmount);
+    var targetsLeft = targets.slice(targetsAmount);
+    // Put back the remaining items over 500
+    state._sync.syncStack[syncStackProp] = targetsLeft;
+    // Define the items we'll add below
+    targets = targetsOK;
+  }
+  return targets;
+}
+
 var errorMessages = {
   actionsDeleteMissingId: '\n    Missing Id of the Doc you want to delete!\n    Correct usage:\n      dispatch(\'delete\', id)\n  ',
-  actionsDeleteMissingPath: '\n    Missing path to the prop you want to delete!\n    Correct usage:\n      dispatch(\'delete\', \'path.to.prop\')\n\n    Use `.` for sub props!\n  '
+  actionsDeleteMissingPath: '\n    Missing path to the prop you want to delete!\n    Correct usage:\n      dispatch(\'delete\', \'path.to.prop\')\n\n    Use `.` for sub props!\n  ',
+  missingId: '\n    Missing an id! Correct usage:\n\n    // `id` as prop of item:\n    dispatch(\'module/set\', {id: \'123\', name: \'best item name\'})\n\n    // or object with only 1 prop, which is the `id` as key, and item as its value:\n    dispatch(\'module/set\', {\'123\': {name: \'best item name\'}})\n  '
 };
 
 function error (error) {
-  console.error('[vuex-easy-firestore] Error!' + errorMessages[error]);
+  console.error('[vuex-easy-firestore] Error!', errorMessages[error]);
   return error;
+}
+
+/**
+ * gets an ID from a single piece of payload.
+ *
+ * @param {object, string} payload
+ * @param {object} conf (optional - for error handling) the vuex-easy-access config
+ * @param {string} path (optional - for error handling) the path called
+ * @param {array|object|string} fullPayload (optional - for error handling) the full payload on which each was `getId()` called
+ * @returns {string} the id
+ */
+function getId(payloadPiece, conf, path, fullPayload) {
+  if (isObject(payloadPiece)) {
+    if (payloadPiece.id) return payloadPiece.id;
+    if (Object.keys(payloadPiece).length === 1) return Object.keys(payloadPiece)[0];
+  }
+  if (isString(payloadPiece)) return payloadPiece;
+  error('missingId');
+  return false;
+}
+
+/**
+ * Returns a value of a payload piece. Eg. {[id]: 'val'} will return 'val'
+ *
+ * @param {*} payloadPiece
+ * @returns {*} the value
+ */
+function getValueFromPayloadPiece(payloadPiece) {
+  if (isObject(payloadPiece) && !payloadPiece.id && Object.keys(payloadPiece).length === 1) {
+    return Object.values(payloadPiece)[0];
+  }
+  return payloadPiece;
 }
 
 var actions = {
@@ -325,10 +385,8 @@ var actions = {
     if (!isArray(ids)) ids = [ids];
 
     // 1. Prepare for patching
-    var syncStackIds = getters.prepareForDeletion(ids);
-
     // 2. Push to syncStack
-    var deletions = state._sync.syncStack.deletions.concat(syncStackIds);
+    var deletions = state._sync.syncStack.deletions.concat(ids);
     state._sync.syncStack.deletions = deletions;
 
     if (!state._sync.syncStack.deletions.length) return;
@@ -423,7 +481,7 @@ var actions = {
       // Batch supports only until 500 items
       count = 500;
       var updatesOK = updates.slice(0, 500);
-      var updatesLeft = updates.slice(500, -1);
+      var updatesLeft = updates.slice(500);
       // Put back the remaining items over 500
       state._sync.syncStack.updates = updatesLeft.reduce(function (carry, item) {
         carry[item.id] = item;
@@ -445,69 +503,32 @@ var actions = {
       batch.update(docRef, fields);
     });
     // Add 'propDeletions' to batch
-    var propDeletions = copyObj(state._sync.syncStack.propDeletions);
-    // Check if there are more than 500 batch items already
-    if (count >= 500) {
-      // already at 500 or more, leave items in syncstack, and don't add anything to batch
-      propDeletions = [];
-    } else {
-      // Batch supports only until 500 items
-      var deletionsAmount = 500 - count;
-      var deletionsOK = propDeletions.slice(0, deletionsAmount);
-      var deletionsLeft = propDeletions.slice(deletionsAmount, -1);
-      // Put back the remaining items over 500
-      state._sync.syncStack.propDeletions = deletionsLeft;
-      count = count + deletionsOK.length;
-      // Define the items we'll add below
-      propDeletions = deletionsOK;
-    }
+    var propDeletions = grabUntilApiLimit('propDeletions', count, state);
+    count = count + propDeletions.length;
     // Add to batch
     propDeletions.forEach(function (path) {
+      var docRef = dbRef;
+      if (collectionMode) {
+        var id = path.substring(0, path.indexOf('.'));
+        path = path.substring(path.indexOf('.') + 1);
+        docRef = dbRef.doc(id);
+      }
       var updateObj = {};
       updateObj[path] = Firebase.firestore.FieldValue.delete();
       updateObj.updated_at = Firebase.firestore.FieldValue.serverTimestamp();
-      var docRef = dbRef;
       batch.update(docRef, updateObj);
     });
     // Add 'deletions' to batch
-    var deletions = copyObj(state._sync.syncStack.deletions);
-    // Check if there are more than 500 batch items already
-    if (count >= 500) {
-      // already at 500 or more, leave items in syncstack, and don't add anything to batch
-      deletions = [];
-    } else {
-      // Batch supports only until 500 items
-      var _deletionsAmount = 500 - count;
-      var _deletionsOK = deletions.slice(0, _deletionsAmount);
-      var _deletionsLeft = deletions.slice(_deletionsAmount, -1);
-      // Put back the remaining items over 500
-      state._sync.syncStack.deletions = _deletionsLeft;
-      count = count + _deletionsOK.length;
-      // Define the items we'll add below
-      deletions = _deletionsOK;
-    }
+    var deletions = grabUntilApiLimit('deletions', count, state);
+    count = count + deletions.length;
     // Add to batch
     deletions.forEach(function (id) {
       var docRef = dbRef.doc(id);
       batch.delete(docRef);
     });
     // Add 'inserts' to batch
-    var inserts = copyObj(state._sync.syncStack.inserts);
-    // Check if there are more than 500 batch items already
-    if (count >= 500) {
-      // already at 500 or more, leave items in syncstack, and don't add anything to batch
-      inserts = [];
-    } else {
-      // Batch supports only until 500 items
-      var insertsAmount = 500 - count;
-      var insertsOK = inserts.slice(0, insertsAmount);
-      var insertsLeft = inserts.slice(insertsAmount, -1);
-      // Put back the remaining items over 500
-      state._sync.syncStack.inserts = insertsLeft;
-      count = count + insertsOK.length;
-      // Define the items we'll add below
-      inserts = insertsOK;
-    }
+    var inserts = grabUntilApiLimit('inserts', count, state);
+    count = count + inserts.length;
     // Add to batch
     inserts.forEach(function (item) {
       item.created_at = Firebase.firestore.FieldValue.serverTimestamp();
@@ -668,7 +689,7 @@ var actions = {
     if (Firebase.auth().currentUser) state._sync.signedIn = true;
     var dbRef = getters.dbRef;
     // apply where filters and orderBy
-    if (state._conf.firestoreRefType.toLowerCase() !== 'doc') {
+    if (getters.collectionMode) {
       state._conf.sync.where.forEach(function (paramsArr) {
         var _dbRef;
 
@@ -736,7 +757,8 @@ var actions = {
     if (!getters.collectionMode) {
       return dispatch('patch', doc);
     }
-    if (!doc.id || !state._conf.statePropName && !state[doc.id] || state._conf.statePropName && !state[state._conf.statePropName][doc.id]) {
+    var id = getId(doc);
+    if (!id || !state._conf.statePropName && !state[id] || state._conf.statePropName && !state[state._conf.statePropName][id]) {
       return dispatch('insert', doc);
     }
     return dispatch('patch', doc);
@@ -750,7 +772,8 @@ var actions = {
     var store = this;
     if (!getters.signedIn) return 'auth/invalid-user-token';
     if (!doc) return;
-    if (!doc.id) doc.id = getters.dbRef.doc().id;
+    var newDoc = getValueFromPayloadPiece(doc);
+    if (!newDoc.id) newDoc.id = getters.dbRef.doc().id;
     // define the store update
     function storeUpdateFn(_doc) {
       commit('INSERT_DOC', _doc);
@@ -758,9 +781,9 @@ var actions = {
     }
     // check for hooks
     if (state._conf.sync.insertHook) {
-      return state._conf.sync.insertHook(storeUpdateFn, doc, store);
+      return state._conf.sync.insertHook(storeUpdateFn, newDoc, store);
     }
-    return storeUpdateFn(doc);
+    return storeUpdateFn(newDoc);
   },
   patch: function patch(_ref18, doc) {
     var state = _ref18.state,
@@ -770,17 +793,19 @@ var actions = {
 
     var store = this;
     if (!doc) return;
-    if (!doc.id && getters.collectionMode) return;
+    var id = getId(doc);
+    var value = getValueFromPayloadPiece(doc);
+    if (!id && getters.collectionMode) return;
     // define the store update
-    function storeUpdateFn(_doc) {
-      commit('PATCH_DOC', _doc);
-      return dispatch('patchDoc', { id: _doc.id, doc: _doc });
+    function storeUpdateFn(_val) {
+      commit('PATCH_DOC', _val);
+      return dispatch('patchDoc', { id: id, doc: _val });
     }
     // check for hooks
     if (state._conf.sync.patchHook) {
-      return state._conf.sync.patchHook(storeUpdateFn, doc, store);
+      return state._conf.sync.patchHook(storeUpdateFn, value, store);
     }
-    return storeUpdateFn(doc);
+    return storeUpdateFn(value);
   },
   patchBatch: function patchBatch(_ref19, _ref20) {
     var state = _ref19.state,
@@ -813,8 +838,10 @@ var actions = {
     var store = this;
     // define the store update
     function storeUpdateFn(_id) {
-      if (state._conf.firestoreRefType.toLowerCase() === 'doc') {
-        var path = _id; // id is a path in this case
+      // id is a path
+      var pathDelete = _id.includes('.') || !getters.collectionMode;
+      if (pathDelete) {
+        var path = _id;
         if (!path) return error('actionsDeleteMissingPath');
         commit('DELETE_PROP', path);
         return dispatch('deleteProp', path);
@@ -895,13 +922,13 @@ var getters = {
     var requireUser = state._conf.firestorePath.includes('{userId}');
     if (requireUser) {
       if (!getters.signedIn) return false;
-      if (!Firebase.auth().currentUser) return false;
-      var userId = Firebase.auth().currentUser.uid;
+      if (!Firebase$1.auth().currentUser) return false;
+      var userId = Firebase$1.auth().currentUser.uid;
       path = state._conf.firestorePath.replace('{userId}', userId);
     } else {
       path = state._conf.firestorePath;
     }
-    return state._conf.firestoreRefType.toLowerCase() === 'collection' ? Firebase.firestore().collection(path) : Firebase.firestore().doc(path);
+    return getters.collectionMode ? Firebase$1.firestore().collection(path) : Firebase$1.firestore().doc(path);
   },
   storeRef: function storeRef(state, getters, rootState) {
     var path = state._conf.statePropName ? state._conf.moduleName + '/' + state._conf.statePropName : state._conf.moduleName;
@@ -932,16 +959,6 @@ var getters = {
         carry[id] = patchData;
         return carry;
       }, {});
-    };
-  },
-  prepareForDeletion: function prepareForDeletion(state, getters, rootState, rootGetters) {
-    return function () {
-      var ids = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-
-      return ids.reduce(function (carry, id) {
-        carry.push(id);
-        return carry;
-      }, []);
     };
   },
   prepareForInsert: function prepareForInsert(state, getters, rootState, rootGetters) {

@@ -34,6 +34,8 @@ Other features include hooks, fillables (limit props to sync), default values (a
 - [Usage](#usage)
     - [Automatic 2-way sync](#automatic-2-way-sync)
     - [Editing](#editing)
+        - [Editing in 'collection' mode](#editing-in-collection-mode)
+        - [Editing in 'doc' mode](#editing-in-doc-mode)
     - [Shortcut: set(path, doc)](#shortcut-setpath-doc)
     - [Fetching](#fetching)
     - [Multiple modules with 2way sync](#multiple-modules-with-2way-sync)
@@ -111,18 +113,79 @@ To automatically edit your vuex store & have firebase always in sync you just ne
 ### Editing
 
 With these 4 actions below you can edit the docs in your vuex module.
-Anything you change will be automaticall changed in firestore as well!
+Any updates with these actions and your firestore stays in sync!
 
 ```js
-dispatch('userData/set', doc) // will choose to dispatch either `patch` OR `insert` automatically
-dispatch('userData/patch', doc) // doc needs 'id' prop
-dispatch('userData/insert', doc)
-dispatch('userData/delete', id)
+dispatch('moduleName/set', doc) // will choose to dispatch either `patch` OR `insert` automatically
+dispatch('moduleName/patch', doc) // doc needs 'id' prop
+dispatch('moduleName/insert', doc)
+dispatch('moduleName/delete', id)
 ```
 
-With just the commands above you have complete in-sync vuex store & firestore!
+The sync is fully robust and automatically makes api call "batches" per 1000 ms, so you can loop through things, make a lot of edits here and there and the **api calls are automatically optimised!** (it even stacks until the max batch limit of 500 and splits up the calls so it won't go over this limit)
 
-Please note that when using 'collection' mode, the `doc` you set or patch will require a prop with `id`. Any docs retrieved from the server or added via insert will have the id automatically added as the document key but also as a prop on the actual item.
+#### Editing in 'collection' mode
+
+In 'collection' mode (`firestoreRefType: 'collection'` in the config object), you can use the 4 actions like you see them above. Plus some extra:
+
+There are two ways you can give a payload to `set patch` or `insert`:
+
+```js
+const id = '123'
+// Add the `id` as a prop to the item you want to set/update:
+dispatch('moduleName/set', {id, name: 'my new name'})
+// Or use the `id` as [key] and the item as its value:
+dispatch('moduleName/set', {[id]: {name: 'my new name'}})
+
+// Please note that only the `name` will be updated, and other fields are left alone!
+```
+
+There are two ways to delete things: the whole item **or just a sub-property!**
+
+```js
+// Delete the whole item:
+dispatch('moduleName/delete', id)
+// Delete a sub-property of an item:
+dispatch('moduleName/delete', `${id}.tags.water`)
+
+// the items looks like:
+{
+  id: '123',
+  tags: {
+    fire: true,
+    water: true, // only `water` will be deleted from the item!
+  }
+}
+```
+
+In the above example you can see that you can delete a sub-property by passing a string and separate sub-props with `.`
+
+#### Editing in 'doc' mode
+
+In 'doc' mode (`firestoreRefType: 'doc'` in the config object), you can use the following actions:
+
+```js
+dispatch('moduleName/set', {name: 'my new name'}) // same as `patch`
+dispatch('moduleName/patch', {status: 'awesome'})
+// Only the props you pass will be updated.
+dispatch('moduleName/delete', 'status') // pass a prop-name
+// Only the propName (string) you pass will be deleted
+```
+
+And yes, just like in 'collection' mode, you can pass a prop-name with sub-props like so:
+
+```js
+dispatch('moduleName/delete', 'settings.banned')
+
+// the doc looks like:
+{
+  userName: 'Satoshi',
+  settings: {
+    showStatus: true,
+    banned: true, // only `banned` will be deleted from the item!
+  }
+}
+```
 
 ### Shortcut: set(path, doc)
 

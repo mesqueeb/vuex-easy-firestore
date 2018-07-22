@@ -22,7 +22,7 @@ const getters = {
     } else {
       path = state._conf.firestorePath
     }
-    return (state._conf.firestoreRefType.toLowerCase() === 'collection')
+    return (getters.collectionMode)
       ? Firebase.firestore().collection(path)
       : Firebase.firestore().doc(path)
   },
@@ -56,13 +56,6 @@ const getters = {
         carry[id] = patchData
         return carry
       }, {})
-    },
-  prepareForDeletion: (state, getters, rootState, rootGetters) =>
-    (ids = []) => {
-      return ids.reduce((carry, id) => {
-        carry.push(id)
-        return carry
-      }, [])
     },
   prepareForInsert: (state, getters, rootState, rootGetters) =>
     (items = []) => {
