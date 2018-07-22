@@ -60,7 +60,6 @@ const mutations = {
     }
   },
   DELETE_PROP (state, path) {
-    if (state._conf.firestoreRefType.toLowerCase() !== 'doc') return
     const searchTarget = (state._conf.statePropName)
       ? state[state._conf.statePropName]
       : state

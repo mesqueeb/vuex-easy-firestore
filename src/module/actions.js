@@ -1,12 +1,13 @@
 import Firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
-import { isArray, isString } from 'is-what'
+import { isArray } from 'is-what'
 import merge from '../utils/deepmerge'
 import copyObj from '../utils/copyObj'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
 import flattenToPaths from '../utils/objectFlattenToPaths'
+import { grabUntilApiLimit } from '../utils/apiHelpers'
 import error from './errors'
 
 const actions = {
@@ -20,7 +21,7 @@ const actions = {
     if (doc.id) delete doc.id
 
     // 1. Prepare for patching
-    let syncStackItems = getters.prepareForPatch(ids, doc)
+    const syncStackItems = getters.prepareForPatch(ids, doc)
 
     // 2. Push to syncStack
     Object.keys(syncStackItems).forEach(id => {
@@ -42,10 +43,8 @@ const actions = {
     if (!isArray(ids)) ids = [ids]
 
     // 1. Prepare for patching
-    const syncStackIds = getters.prepareForDeletion(ids)
-
     // 2. Push to syncStack
-    const deletions = state._sync.syncStack.deletions.concat(syncStackIds)
+    const deletions = state._sync.syncStack.deletions.concat(ids)
     state._sync.syncStack.deletions = deletions
 
     if (!state._sync.syncStack.deletions.length) return
@@ -104,20 +103,20 @@ const actions = {
   batchSync ({getters, commit, dispatch, state, rootGetters}) {
     const collectionMode = getters.collectionMode
     const dbRef = getters.dbRef
-    let batch = Firebase.firestore().batch()
+    const batch = Firebase.firestore().batch()
     let count = 0
     // Add 'updates' to batch
-    let updatesOriginal = copyObj(state._sync.syncStack.updates)
+    const updatesOriginal = copyObj(state._sync.syncStack.updates)
     let updates = Object.keys(updatesOriginal).map(k => {
-      let fields = updatesOriginal[k]
+      const fields = updatesOriginal[k]
       return {id: k, fields}
     })
     // Check if there are more than 500 batch items already
     if (updates.length >= 500) {
       // Batch supports only until 500 items
       count = 500
-      let updatesOK = updates.slice(0, 500)
-      let updatesLeft = updates.slice(500, -1)
+      const updatesOK = updates.slice(0, 500)
+      const updatesLeft = updates.slice(500, -1)
       // Put back the remaining items over 500
       state._sync.syncStack.updates = updatesLeft.reduce((carry, item) => {
         carry[item.id] = item
@@ -131,82 +130,45 @@ const actions = {
     }
     // Add to batch
     updates.forEach(item => {
-      let id = item.id
-      let docRef = (collectionMode) ? dbRef.doc(id) : dbRef
-      let fields = flattenToPaths(item.fields)
+      const id = item.id
+      const docRef = (collectionMode) ? dbRef.doc(id) : dbRef
+      const fields = flattenToPaths(item.fields)
       fields.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
       // console.log('fields → ', fields)
       batch.update(docRef, fields)
     })
     // Add 'propDeletions' to batch
-    let propDeletions = copyObj(state._sync.syncStack.propDeletions)
-    // Check if there are more than 500 batch items already
-    if (count >= 500) {
-      // already at 500 or more, leave items in syncstack, and don't add anything to batch
-      propDeletions = []
-    } else {
-      // Batch supports only until 500 items
-      let deletionsAmount = 500 - count
-      let deletionsOK = propDeletions.slice(0, deletionsAmount)
-      let deletionsLeft = propDeletions.slice(deletionsAmount, -1)
-      // Put back the remaining items over 500
-      state._sync.syncStack.propDeletions = deletionsLeft
-      count = count + deletionsOK.length
-      // Define the items we'll add below
-      propDeletions = deletionsOK
-    }
+    const propDeletions = grabUntilApiLimit('propDeletions', count, state)
+    count = count + propDeletions.length
     // Add to batch
     propDeletions.forEach(path => {
+      let docRef = dbRef
+      if (collectionMode) {
+        const id = path.slice(0, path.indexOf('.'))
+        path = path.slice(path.indexOf('.') + 1, -1)
+        docRef = dbRef.doc(id)
+      }
       const updateObj = {}
       updateObj[path] = Firebase.firestore.FieldValue.delete()
       updateObj.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
-      let docRef = dbRef
       batch.update(docRef, updateObj)
     })
     // Add 'deletions' to batch
-    let deletions = copyObj(state._sync.syncStack.deletions)
-    // Check if there are more than 500 batch items already
-    if (count >= 500) {
-      // already at 500 or more, leave items in syncstack, and don't add anything to batch
-      deletions = []
-    } else {
-      // Batch supports only until 500 items
-      let deletionsAmount = 500 - count
-      let deletionsOK = deletions.slice(0, deletionsAmount)
-      let deletionsLeft = deletions.slice(deletionsAmount, -1)
-      // Put back the remaining items over 500
-      state._sync.syncStack.deletions = deletionsLeft
-      count = count + deletionsOK.length
-      // Define the items we'll add below
-      deletions = deletionsOK
-    }
+    const deletions = grabUntilApiLimit('deletions', count, state)
+    count = count + deletions.length
     // Add to batch
     deletions.forEach(id => {
-      let docRef = dbRef.doc(id)
+      const docRef = dbRef.doc(id)
       batch.delete(docRef)
     })
     // Add 'inserts' to batch
-    let inserts = copyObj(state._sync.syncStack.inserts)
-    // Check if there are more than 500 batch items already
-    if (count >= 500) {
-      // already at 500 or more, leave items in syncstack, and don't add anything to batch
-      inserts = []
-    } else {
-      // Batch supports only until 500 items
-      let insertsAmount = 500 - count
-      let insertsOK = inserts.slice(0, insertsAmount)
-      let insertsLeft = inserts.slice(insertsAmount, -1)
-      // Put back the remaining items over 500
-      state._sync.syncStack.inserts = insertsLeft
-      count = count + insertsOK.length
-      // Define the items we'll add below
-      inserts = insertsOK
-    }
+    const inserts = grabUntilApiLimit('inserts', count, state)
+    count = count + inserts.length
     // Add to batch
     inserts.forEach(item => {
       item.created_at = Firebase.firestore.FieldValue.serverTimestamp()
       item.created_by = rootGetters['user/id']
-      let newRef = getters.dbRef.doc(item.id)
+      const newRef = getters.dbRef.doc(item.id)
       batch.set(newRef, item)
     })
     // Commit the batch:
@@ -341,7 +303,7 @@ const actions = {
     if (Firebase.auth().currentUser) state._sync.signedIn = true
     let dbRef = getters.dbRef
     // apply where filters and orderBy
-    if (state._conf.firestoreRefType.toLowerCase() !== 'doc') {
+    if (getters.collectionMode) {
       state._conf.sync.where.forEach(paramsArr => {
         dbRef = dbRef.where(...paramsArr)
       })
@@ -466,8 +428,10 @@ const actions = {
     const store = this
     // define the store update
     function storeUpdateFn (_id) {
-      if (state._conf.firestoreRefType.toLowerCase() === 'doc') {
-        const path = _id // id is a path in this case
+      // id is a path
+      const pathDelete = (_id.includes('.') || !getters.collectionMode)
+      if (pathDelete) {
+        const path = _id
         if (!path) return error('actionsDeleteMissingPath')
         commit('DELETE_PROP', path)
         return dispatch('deleteProp', path)
