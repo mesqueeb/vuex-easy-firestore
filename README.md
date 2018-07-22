@@ -443,6 +443,12 @@ Planned future features:
 
 Also be sure to check out the sister vuex-plugin [Vuex Easy Access](https://github.com/mesqueeb/VuexEasyAccess)!
 
+Planned for future releases:
+
+- Action to duplicate item(s)
+- Improve 'patching' documentation for loaders/spinners
+- Better error handling
+
 --
 
 Happy Vuexing!<br>
