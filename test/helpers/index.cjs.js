@@ -427,7 +427,7 @@ var actions = {
         doc = _ref2.doc;
 
     // 0. payload correction (only arrays)
-    if (!isWhat.isArray(ids)) return console.log('ids needs to be an array');
+    if (!isWhat.isArray(ids)) return console.error('ids needs to be an array');
     if (id) ids.push(id);
     if (doc.id) delete doc.id;
 
@@ -862,8 +862,8 @@ var actions = {
 
     var store = this;
     if (!doc) return;
-    var id = getId(doc);
-    var value = getValueFromPayloadPiece(doc);
+    var id = getters.collectionMode ? getId(doc) : undefined;
+    var value = getters.collectionMode ? getValueFromPayloadPiece(doc) : doc;
     if (!id && getters.collectionMode) return;
     // define the store update
     function storeUpdateFn(_val) {
