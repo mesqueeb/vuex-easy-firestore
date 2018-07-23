@@ -17,7 +17,7 @@ const actions = {
     {id = '', ids = [], doc} = {ids: [], doc: {}}
   ) {
     // 0. payload correction (only arrays)
-    if (!isArray(ids)) return console.log('ids needs to be an array')
+    if (!isArray(ids)) return console.error('ids needs to be an array')
     if (id) ids.push(id)
     if (doc.id) delete doc.id
 
@@ -398,8 +398,8 @@ const actions = {
   patch ({state, getters, commit, dispatch}, doc) {
     const store = this
     if (!doc) return
-    const id = getId(doc)
-    const value = getValueFromPayloadPiece(doc)
+    const id = (getters.collectionMode) ? getId(doc) : undefined
+    const value = (getters.collectionMode) ? getValueFromPayloadPiece(doc) : doc
     if (!id && getters.collectionMode) return
     // define the store update
     function storeUpdateFn (_val) {
