@@ -20,36 +20,21 @@ const mutations = {
     }
   },
   PATCH_DOC (state, doc) {
-    // When patching in single 'doc' mode
-    if (state._conf.firestoreRefType.toLowerCase() === 'doc') {
-      // if no target prop is the state
-      if (!state._conf.statePropName) {
-        return Object.keys(doc).forEach(key => {
-          // Merge if exists
-          const newVal = (state[key] === undefined || !isObject(state[key]) || !isObject(doc[key]))
-            ? doc[key]
-            : merge(state[key], doc[key])
-          this._vm.$set(state, key, newVal)
-        })
-      }
-      // state[state._conf.statePropName] will always be an empty object by default
-      state[state._conf.statePropName] = merge(state[state._conf.statePropName], doc)
-      return
+    // Get the state prop ref
+    let ref = (state._conf.statePropName)
+      ? state[state._conf.statePropName]
+      : state
+    if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
+      ref = ref[doc.id]
     }
-    // Patching in 'collection' mode
-    // get the doc ref
-    const docRef = (state._conf.statePropName)
-      ? state[state._conf.statePropName][doc.id]
-      : state[doc.id]
-    // Merge if exists
-    const newVal = (docRef === undefined || !isObject(docRef) || !isObject(doc))
+    const newDoc = (!isObject(ref) || !isObject(doc))
       ? doc
-      : merge(docRef, doc)
-    if (state._conf.statePropName) {
-      this._vm.$set(state[state._conf.statePropName], doc.id, newVal)
-    } else {
-      this._vm.$set(state, doc.id, newVal)
-    }
+      : merge(ref, doc)
+    return Object.keys(newDoc).forEach(key => {
+      const newVal = newDoc[key]
+      // Merge if exists
+      this._vm.$set(ref, key, newVal)
+    })
   },
   DELETE_DOC (state, id) {
     if (state._conf.firestoreRefType.toLowerCase() !== 'collection') return
