@@ -1,5 +1,3 @@
-import Firebase from 'firebase/app'
-import 'firebase/auth'
 import { getKeysFromPath } from 'vuex-easy-access'
 import { isArray } from 'is-what'
 import iniModule from './module/index'

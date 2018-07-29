@@ -5,16 +5,19 @@ Object.defineProperty(exports, '__esModule', { value: true });
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var isWhat = require('is-what');
-var deepmerge = _interopDefault(require('nanomerge'));
+var nanomerge = _interopDefault(require('nanomerge'));
 var vuexEasyAccess = require('vuex-easy-access');
 var Firebase = _interopDefault(require('firebase'));
 require('firebase/firestore');
 require('firebase/auth');
 var Firebase$1 = _interopDefault(require('firebase/app'));
 
-// import deepmerge from './nanomerge'
+// import deepmerge from 'deepmerge'
+// import deepAssign from 'deep-object-assign-with-reduce'
+// const mergeOptions = require('merge-options')
 
 function merge() {
+  // check if all are objects
   var l = arguments.length;
   for (l; l > 0; l--) {
     var item = arguments.length <= l - 1 ? undefined : arguments[l - 1];
@@ -23,7 +26,16 @@ function merge() {
       return item;
     }
   }
-  return deepmerge.apply(undefined, arguments);
+  return nanomerge.apply(undefined, arguments);
+  // settings for 'deepmerge'
+  // const overwriteMerge = (destinationArray, sourceArray, options) => sourceArray
+  // const options = {arrayMerge: overwriteMerge}
+  // if (params.length > 2) {
+  //   return deepmerge.all([...params], options)
+  // }
+  // return deepmerge(...params, options)
+  // return deepAssign(...params)
+  // return mergeOptions(...params)
 }
 
 var defaultConfig = {
@@ -118,30 +130,17 @@ var mutations = {
   PATCH_DOC: function PATCH_DOC(state, doc) {
     var _this = this;
 
-    // When patching in single 'doc' mode
-    if (state._conf.firestoreRefType.toLowerCase() === 'doc') {
-      // if no target prop is the state
-      if (!state._conf.statePropName) {
-        return Object.keys(doc).forEach(function (key) {
-          // Merge if exists
-          var newVal = state[key] === undefined || !isWhat.isObject(state[key]) || !isWhat.isObject(doc[key]) ? doc[key] : merge(state[key], doc[key]);
-          _this._vm.$set(state, key, newVal);
-        });
-      }
-      // state[state._conf.statePropName] will always be an empty object by default
-      state[state._conf.statePropName] = merge(state[state._conf.statePropName], doc);
-      return;
+    // Get the state prop ref
+    var ref = state._conf.statePropName ? state[state._conf.statePropName] : state;
+    if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
+      ref = ref[doc.id];
     }
-    // Patching in 'collection' mode
-    // get the doc ref
-    var docRef = state._conf.statePropName ? state[state._conf.statePropName][doc.id] : state[doc.id];
-    // Merge if exists
-    var newVal = docRef === undefined || !isWhat.isObject(docRef) || !isWhat.isObject(doc) ? doc : merge(docRef, doc);
-    if (state._conf.statePropName) {
-      this._vm.$set(state[state._conf.statePropName], doc.id, newVal);
-    } else {
-      this._vm.$set(state, doc.id, newVal);
-    }
+    var newDoc = !isWhat.isObject(ref) || !isWhat.isObject(doc) ? doc : merge(ref, doc);
+    return Object.keys(newDoc).forEach(function (key) {
+      var newVal = newDoc[key];
+      // Merge if exists
+      _this._vm.$set(ref, key, newVal);
+    });
   },
   DELETE_DOC: function DELETE_DOC(state, id) {
     if (state._conf.firestoreRefType.toLowerCase() !== 'collection') return;
