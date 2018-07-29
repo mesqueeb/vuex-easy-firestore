@@ -401,6 +401,8 @@ const actions = {
     const id = (getters.collectionMode) ? getId(doc) : undefined
     const value = (getters.collectionMode) ? getValueFromPayloadPiece(doc) : doc
     if (!id && getters.collectionMode) return
+    // add id to value
+    if (!value.id) value.id = id
     // define the store update
     function storeUpdateFn (_val) {
       commit('PATCH_DOC', _val)
