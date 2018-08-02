@@ -344,14 +344,35 @@ const actions = {
       return dispatch('patchDoc', {ids, doc: _doc})
     }
     // check for hooks
-    if (state._conf.sync.patchHook) {
-      return state._conf.sync.patchHook(storeUpdateFn, doc, store)
+    if (state._conf.sync.patchBatchHook) {
+      return state._conf.sync.patchBatchHook(storeUpdateFn, doc, store)
     }
     return storeUpdateFn(doc)
   },
   delete ({state, getters, commit, dispatch}, id) {
     if (!id) return
-    const ids = (!isArray(id)) ? [id] : id
+    const store = this
+    function storeUpdateFn (_id) {
+      // id is a path
+      const pathDelete = (_id.includes('.') || !getters.collectionMode)
+      if (pathDelete) {
+        const path = _id
+        if (!path) return error('actionsDeleteMissingPath')
+        commit('DELETE_PROP', path)
+        return dispatch('deleteProp', path)
+      }
+      if (!_id) return error('actionsDeleteMissingId')
+      commit('DELETE_DOC', _id)
+      return dispatch('deleteDoc', _id)
+    }
+    // check for hooks
+    if (state._conf.sync.deleteHook) {
+      return state._conf.sync.deleteHook(storeUpdateFn, id, store)
+    }
+    return storeUpdateFn(id)
+  },
+  deleteBatch ({state, getters, commit, dispatch}, ids) {
+    if (!isArray(ids)) return
     if (!ids.length) return
     const store = this
     // define the store update
@@ -371,8 +392,8 @@ const actions = {
       })
     }
     // check for hooks
-    if (state._conf.sync.deleteHook) {
-      return state._conf.sync.deleteHook(storeUpdateFn, ids, store)
+    if (state._conf.sync.deleteBatchHook) {
+      return state._conf.sync.deleteBatchHook(storeUpdateFn, ids, store)
     }
     return storeUpdateFn(ids)
   },
