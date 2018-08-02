@@ -2,7 +2,8 @@
 import babel from 'rollup-plugin-babel'
 import commonjs from 'rollup-plugin-commonjs'
 import { terser } from 'rollup-plugin-terser'
-import resolve from 'rollup-plugin-node-resolve'
+import { isArray } from 'is-what'
+// import resolve from 'rollup-plugin-node-resolve'
 
 // ------------------------------------------------------------------------------------------
 // formats
@@ -15,16 +16,14 @@ import resolve from 'rollup-plugin-node-resolve'
 // ------------------------------------------------------------------------------------------
 // setup
 // ------------------------------------------------------------------------------------------
-const indexFileName = 'index'
-const formats = ['cjs', 'es']
-const exportFolder = 'dist'
-const extraBuildFileNames = ['../test/helpers/index']
-const extraBuildFormats = ['cjs']
-const extraExportFolder = ''
+const files = [
+  {in: 'src/index.js', out: 'dist', formats: ['cjs', 'es']},
+  {in: 'test/helpers/index.js', out: 'test/helpers', formats: 'cjs'},
+  {in: 'src/utils/apiHelpers.js', out: 'test/helpers', formats: 'cjs'}
+]
 const minify = false
 const sourcemap = false
-const _plugins = [
-  // resolve({only: ['deepmerge']}),
+const plugins = [
   babel({
     exclude: 'node_modules/**' // only transpile our source code
   }),
@@ -35,51 +34,62 @@ const pkg = require('../package.json')
 const name = pkg.name
 const className = name.replace(/(^\w|-\w)/g, c => c.replace('-', '').toUpperCase())
 const external = Object.keys(pkg.dependencies || [])
-  // .filter(p => p !== 'deepmerge')
 
 // ------------------------------------------------------------------------------------------
-// build helpers
+// Builds
 // ------------------------------------------------------------------------------------------
-function output (targetFileName, ext, format) {
-  let _exportFolder = extraBuildFileNames.includes(targetFileName)
-    ? extraExportFolder
-    : exportFolder
-  if (_exportFolder) _exportFolder = _exportFolder + '/'
-  targetFileName = targetFileName.replace(/^\.\.\//, '')
+const nsNameExt = new RegExp('(.+)\/([^\/]+)\.([^\.]+$)', 'g')
+function getNS (name) {
+  if (!name.includes('/')) return ''
+  return name.replace(nsNameExt, '$1')
+}
+function getName (name) {
+  if (!name.includes('/')) name = 'a/' + name
+  name = name.replace(nsNameExt, '$2')
+  if (name.endsWith('.')) name = name.slice(0, -1)
+  return name
+}
+function getExt (name) {
+  return name.split('.').pop()
+}
+function getFileInfo (file) {
   return {
-    name: className,
-    sourcemap,
-    exports: 'named',
-    file: `${_exportFolder}${targetFileName}.${ext}`,
-    format
+    ns:       getNS(file.in),
+    name:     getName(file.in),
+    ext:      getExt(file.in),
+    out:      file.out,
+    formats:  !isArray(file.formats) ? [file.formats] : file.formats,
+    plugins:  (file.plugins === undefined) ? plugins : file.plugins,
+    min:      (file.minify === undefined) ? minify : file.minify,
+    map:      (file.sourcemap === undefined) ? sourcemap : file.sourcemap,
+    external: external,
   }
 }
-function buildTemplate (targetFileName, format, minified = false) {
-  const plugins = (minified)
-    ? _plugins.concat(terser())
-    : _plugins
-  const ext = (minified)
-    ? `${format}.min.js`
-    : `${format}.js`
+function getRollupObject (info, format) {
   return {
-    input: `src/${targetFileName}.js`,
-    output: output(targetFileName, ext, format),
-    plugins,
-    external
+    input: `${info.ns}/${info.name}.${info.ext}`,
+    output: {
+      name: className,
+      sourcemap: info.map,
+      exports: 'named',
+      file: (!info.min)
+        ? `${info.out}/${info.name}.${format}.${info.ext}`
+        : `${info.out}/${info.name}.${format}.min.${info.ext}`,
+      format
+    },
+    plugins: (!info.min) ? plugins : plugins.concat(terser()),
+    external: info.external
   }
 }
-
-// ------------------------------------------------------------------------------------------
-// builds
-// ------------------------------------------------------------------------------------------
-const files = [indexFileName].concat(extraBuildFileNames)
 const builds = files.reduce((carry, file) => {
-  formats.forEach(format => {
-    if (extraBuildFileNames.includes(file) && !extraBuildFormats.includes(format)) return
-    carry.push(buildTemplate(file, format))
-    if (minify) carry.push(buildTemplate(file, format, true))
-  })
-  return carry
+  const info = getFileInfo(file)
+  const _builds = info.formats
+    .reduce((carry, format) => {
+      return carry
+        .concat(getRollupObject(info, format))
+    }, [])
+
+  return carry.concat(_builds)
 }, [])
 
 export default builds
