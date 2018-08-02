@@ -53,6 +53,7 @@ const getters = {
         }
         patchData = copyObj(patchData)
         patchData = checkFillables(patchData, state._conf.sync.fillables, state._conf.sync.guard)
+        patchData.id = id
         carry[id] = patchData
         return carry
       }, {})

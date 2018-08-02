@@ -1,14 +1,15 @@
 {
   "name": "vuex-easy-firestore",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "description": "Easy coupling of firestore and a vuex module. 2-way sync with 0 boilerplate!",
   "main": "dist/index.cjs.js",
   "module": "dist/index.es.js",
   "scripts": {
     "lint": "eslint --ext .js,.vue src",
     "test": "ava",
-    "build": "rollup -c build/rollup.js",
-    "watch": "rollup -c build/rollup.js --watch"
+    "rollup": "rollup -c build/rollup.js",
+    "rollup:watch": "rollup -c build/rollup.js --watch",
+    "build": "npm run rollup && npm run test"
   },
   "repository": {
     "type": "git",
@@ -30,7 +31,7 @@
   "homepage": "https://github.com/mesqueeb/VuexEasyFirestore#readme",
   "dependencies": {
     "firebase": "^5.0.4",
-    "is-what": "^1.0.4",
+    "is-what": "^1.1.0",
     "nanomerge": "^0.2.0",
     "vuex-easy-access": "^2.3.0"
   },
@@ -50,9 +51,10 @@
     "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-standard": "^3.1.0",
     "eslint-plugin-vue": "^4.7.0",
+    "mock-cloud-firestore": "^0.4.0",
     "rollup": "^0.62.0",
-    "rollup-plugin-babel": "^3.0.4",
-    "rollup-plugin-commonjs": "^9.1.3",
+    "rollup-plugin-babel": "^3.0.7",
+    "rollup-plugin-commonjs": "^9.1.4",
     "rollup-plugin-node-resolve": "^3.3.0",
     "rollup-plugin-terser": "^1.0.1",
     "vue": "^2.5.16",

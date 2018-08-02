@@ -3,11 +3,9 @@ import 'firebase/firestore'
 import 'firebase/auth'
 import { isArray } from 'is-what'
 import merge from '../utils/deepmerge'
-import copyObj from '../utils/copyObj'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
-import flattenToPaths from '../utils/objectFlattenToPaths'
-import { grabUntilApiLimit } from '../utils/apiHelpers'
+import { makeBatchFromSyncstack } from '../utils/apiHelpers'
 import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
 import error from './errors'
 
@@ -28,8 +26,7 @@ const actions = {
     Object.keys(syncStackItems).forEach(id => {
       const newVal = (!state._sync.syncStack.updates[id])
         ? syncStackItems[id]
-        : merge(state._sync.syncStack.updates[id],
-                syncStackItems[id])
+        : merge(state._sync.syncStack.updates[id], syncStackItems[id])
       state._sync.syncStack.updates[id] = newVal
     })
 
@@ -104,112 +101,35 @@ const actions = {
   batchSync ({getters, commit, dispatch, state, rootGetters}) {
     const collectionMode = getters.collectionMode
     const dbRef = getters.dbRef
-    const batch = Firebase.firestore().batch()
-    let count = 0
-    // Add 'updates' to batch
-    const updatesOriginal = copyObj(state._sync.syncStack.updates)
-    let updates = Object.keys(updatesOriginal).map(k => {
-      const fields = updatesOriginal[k]
-      return {id: k, fields}
-    })
-    // Check if there are more than 500 batch items already
-    if (updates.length >= 500) {
-      // Batch supports only until 500 items
-      count = 500
-      const updatesOK = updates.slice(0, 500)
-      const updatesLeft = updates.slice(500)
-      // Put back the remaining items over 500
-      state._sync.syncStack.updates = updatesLeft.reduce((carry, item) => {
-        carry[item.id] = item
-        delete item.id
-        return carry
-      }, {})
-      updates = updatesOK
-    } else {
-      state._sync.syncStack.updates = {}
-      count = updates.length
-    }
-    // Add to batch
-    updates.forEach(item => {
-      const id = item.id
-      const docRef = (collectionMode) ? dbRef.doc(id) : dbRef
-      const fields = flattenToPaths(item.fields)
-      fields.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
-      // console.log('fields → ', fields)
-      batch.update(docRef, fields)
-    })
-    // Add 'propDeletions' to batch
-    const propDeletions = grabUntilApiLimit('propDeletions', count, state)
-    count = count + propDeletions.length
-    // Add to batch
-    propDeletions.forEach(path => {
-      let docRef = dbRef
-      if (collectionMode) {
-        const id = path.substring(0, path.indexOf('.'))
-        path = path.substring(path.indexOf('.') + 1)
-        docRef = dbRef.doc(id)
-      }
-      const updateObj = {}
-      updateObj[path] = Firebase.firestore.FieldValue.delete()
-      updateObj.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
-      batch.update(docRef, updateObj)
-    })
-    // Add 'deletions' to batch
-    const deletions = grabUntilApiLimit('deletions', count, state)
-    count = count + deletions.length
-    // Add to batch
-    deletions.forEach(id => {
-      const docRef = dbRef.doc(id)
-      batch.delete(docRef)
-    })
-    // Add 'inserts' to batch
-    const inserts = grabUntilApiLimit('inserts', count, state)
-    count = count + inserts.length
-    // Add to batch
-    inserts.forEach(item => {
-      item.created_at = Firebase.firestore.FieldValue.serverTimestamp()
-      item.created_by = rootGetters['user/id']
-      const newRef = getters.dbRef.doc(item.id)
-      batch.set(newRef, item)
-    })
-    // Commit the batch:
-    // console.log(`[batchSync] START:
-    //   ${Object.keys(updates).length} updates,
-    //   ${deletions.length} deletions,
-    //   ${inserts.length} inserts`
-    // )
+    const userId = rootGetters['user/id']
+    const batch = makeBatchFromSyncstack(state, dbRef, collectionMode, userId)
     dispatch('_startPatching')
     state._sync.syncStack.debounceTimer = null
     return new Promise((resolve, reject) => {
-      batch.commit()
-      .then(res => {
-        if (Object.keys(updates).length) console.log(`updates: `, updates)
-        if (deletions.length) console.log(`deletions: `, deletions)
-        if (inserts.length) console.log(`inserts: `, inserts)
-        if (propDeletions.length) console.log(`propDeletions: `, propDeletions)
-        const remainingSyncStack = Object.keys(state._sync.syncStack.updates).length
-          + state._sync.syncStack.deletions.length
-          + state._sync.syncStack.inserts.length
-          + state._sync.syncStack.propDeletions.length
+      batch.commit().then(res => {
+        const remainingSyncStack = Object.keys(state._sync.syncStack.updates).length +
+          state._sync.syncStack.deletions.length +
+          state._sync.syncStack.inserts.length +
+          state._sync.syncStack.propDeletions.length
         if (remainingSyncStack) { dispatch('batchSync') }
         dispatch('_stopPatching')
         return resolve()
         // // Fetch the item if it was added as an Archived item:
         // if (item.archived) {
-          //   get_ters.dbRef.doc(res.id).get()
-          //   .then(doc => {
-            //     let tempId = doc.data().id
-            //     let id = doc.id
-            //     let item = doc.data()
-            //     item.id = id
-            //     console.log('retrieved Archived new item: ', id, item)
-            //     dispatch('newItemFromServer', {item, tempId})
-            //   })
-            // }
+        //   get_ters.dbRef.doc(res.id).get().then(doc => {
+        //     let tempId = doc.data().id
+        //     let id = doc.id
+        //     let item = doc.data()
+        //     item.id = id
+        //     console.log('retrieved Archived new item: ', id, item)
+        //     dispatch('newItemFromServer', {item, tempId})
+        //   })
+        // }
       }).catch(error => {
         state._sync.patching = 'error'
         state._sync.syncStack.debounceTimer = null
-        return reject()
+        Error('Error during synchronisation.', error)
+        return reject(error)
       })
     })
   },
@@ -260,8 +180,7 @@ const actions = {
         return resolve()
       }
       // make fetch request
-      fRef.get()
-      .then(querySnapshot => {
+      fRef.get().then(querySnapshot => {
         const docs = querySnapshot.docs
         if (docs.length === 0) {
           state._sync.fetched[identifier].done = true
@@ -272,7 +191,7 @@ const actions = {
         if (docs.length < state._conf.fetch.docLimit) {
           state._sync.fetched[identifier].done = true
         }
-        state._sync.fetched[identifier].retrievedFetchRefs.push(fetchRef)
+        state._sync.fetched[identifier].retrievedFetchRefs.push(fRef)
         // Get the last visible document
         resolve(querySnapshot)
         const lastVisible = docs[docs.length - 1]
@@ -328,10 +247,9 @@ const actions = {
       }
     }
     // make a promise
-    return new Promise ((resolve, reject) => {
-      dbRef
-      .onSnapshot(querySnapshot => {
-        let source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
+    return new Promise((resolve, reject) => {
+      dbRef.onSnapshot(querySnapshot => {
+        const source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
         if (!getters.collectionMode) {
           if (!querySnapshot.data()) {
             // No initial doc found in docMode
@@ -401,6 +319,8 @@ const actions = {
     const id = (getters.collectionMode) ? getId(doc) : undefined
     const value = (getters.collectionMode) ? getValueFromPayloadPiece(doc) : doc
     if (!id && getters.collectionMode) return
+    // add id to value
+    if (!value.id) value.id = id
     // define the store update
     function storeUpdateFn (_val) {
       commit('PATCH_DOC', _val)
@@ -419,19 +339,21 @@ const actions = {
     const store = this
     if (!doc) return
     // define the store update
-    function storeUpdateFn (_doc) {
-      commit('PATCH_DOC', _doc)
-      return dispatch('patchDoc', {ids, doc: _doc})
+    function storeUpdateFn (_doc, _ids) {
+      _ids.forEach(_id => {
+        commit('PATCH_DOC', {id: _id, ..._doc})
+      })
+      return dispatch('patchDoc', {ids: _ids, doc: _doc})
     }
     // check for hooks
-    if (state._conf.sync.patchHook) {
-      return state._conf.sync.patchHook(storeUpdateFn, doc, store)
+    if (state._conf.sync.patchBatchHook) {
+      return state._conf.sync.patchBatchHook(storeUpdateFn, doc, ids, store)
     }
-    return storeUpdateFn(doc)
+    return storeUpdateFn(doc, ids)
   },
   delete ({state, getters, commit, dispatch}, id) {
+    if (!id) return
     const store = this
-    // define the store update
     function storeUpdateFn (_id) {
       // id is a path
       const pathDelete = (_id.includes('.') || !getters.collectionMode)
@@ -450,6 +372,32 @@ const actions = {
       return state._conf.sync.deleteHook(storeUpdateFn, id, store)
     }
     return storeUpdateFn(id)
+  },
+  deleteBatch ({state, getters, commit, dispatch}, ids) {
+    if (!isArray(ids)) return
+    if (!ids.length) return
+    const store = this
+    // define the store update
+    function storeUpdateFn (_ids) {
+      _ids.forEach(_id => {
+        // id is a path
+        const pathDelete = (_id.includes('.') || !getters.collectionMode)
+        if (pathDelete) {
+          const path = _id
+          if (!path) return error('actionsDeleteMissingPath')
+          commit('DELETE_PROP', path)
+          return dispatch('deleteProp', path)
+        }
+        if (!_id) return error('actionsDeleteMissingId')
+        commit('DELETE_DOC', _id)
+        return dispatch('deleteDoc', _id)
+      })
+    }
+    // check for hooks
+    if (state._conf.sync.deleteBatchHook) {
+      return state._conf.sync.deleteBatchHook(storeUpdateFn, ids, store)
+    }
+    return storeUpdateFn(ids)
   },
   _stopPatching ({state, commit}) {
     if (state._sync.stopPatchingTimeout) { clearTimeout(state._sync.stopPatchingTimeout) }

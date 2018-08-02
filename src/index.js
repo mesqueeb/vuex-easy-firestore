@@ -1,6 +1,6 @@
 import { getKeysFromPath } from 'vuex-easy-access'
 import { isArray } from 'is-what'
-import iniModule from './module/index'
+import iniModule from './module'
 
 export default function (userConfig) {
   return store => {
