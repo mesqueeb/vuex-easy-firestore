@@ -231,6 +231,46 @@ function iniMutations () {
   return Object.assign({}, mutations, userMutations);
 }
 
+/**
+ * Sets default values on an object
+ *
+ * @param {object} obj on which to set the default values
+ * @param {object} defaultValues the default values
+ */
+function setDefaultValues (obj, defaultValues) {
+  return merge(defaultValues, obj);
+}
+
+/**
+ * debounce helper
+ *
+ * @author     Adam Dorling
+ * @contact    https://codepen.io/naito
+ */
+
+// USAGE:
+// let d = startDebounce(1000)
+// d.done.then(_ => handle())
+// d.refresh() // to refresh
+
+function startDebounce (ms) {
+  var startTime = Date.now();
+  var done = new Promise(function (resolve, reject) {
+    var interval = setInterval(function (_) {
+      var now = Date.now();
+      var deltaT = now - startTime;
+      if (deltaT >= ms) {
+        clearInterval(interval);
+        resolve(true);
+      }
+    }, 10);
+  });
+  var refresh = function refresh() {
+    return startTime = Date.now();
+  };
+  return { done: done, refresh: refresh };
+}
+
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
 } : function (obj) {
@@ -282,46 +322,6 @@ function copyObj(obj) {
   return newObj;
 }
 
-/**
- * Sets default values on an object
- *
- * @param {object} obj on which to set the default values
- * @param {object} defaultValues the default values
- */
-function setDefaultValues (obj, defaultValues) {
-  return merge(defaultValues, obj);
-}
-
-/**
- * debounce helper
- *
- * @author     Adam Dorling
- * @contact    https://codepen.io/naito
- */
-
-// USAGE:
-// let d = startDebounce(1000)
-// d.done.then(_ => handle())
-// d.refresh() // to refresh
-
-function startDebounce (ms) {
-  var startTime = Date.now();
-  var done = new Promise(function (resolve, reject) {
-    var interval = setInterval(function (_) {
-      var now = Date.now();
-      var deltaT = now - startTime;
-      if (deltaT >= ms) {
-        clearInterval(interval);
-        resolve(true);
-      }
-    }, 10);
-  });
-  var refresh = function refresh() {
-    return startTime = Date.now();
-  };
-  return { done: done, refresh: refresh };
-}
-
 function retrievePaths(object, path, result) {
   if (!isWhat.isObject(object) || !Object.keys(object).length) {
     if (!path) return object;
@@ -344,28 +344,105 @@ function flattenToPaths (object) {
 /**
  * Grab until the api limit (500), put the rest back in the syncStack.
  *
- * @export
  * @param {string} syncStackProp the prop of _sync.syncStack[syncStackProp]
  * @param {number} count the current count
+ * @param {number} maxCount the max count of the batch
  * @param {object} state the store's state, will be edited!
+ * @returns {array} the targets for the batch. Add this array length to the count
  */
-function grabUntilApiLimit(syncStackProp, count, state) {
+function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
   var targets = copyObj(state._sync.syncStack[syncStackProp]);
-  // Check if there are more than 500 batch items already
-  if (count >= 500) {
-    // already at 500 or more, leave items in syncstack, and don't add anything to batch
+  // Check if there are more than maxCount batch items already
+  if (count >= maxCount) {
+    // already at maxCount or more, leave items in syncstack, and don't add anything to batch
     targets = [];
   } else {
-    // Batch supports only until 500 items
-    var targetsAmount = 500 - count;
-    var targetsOK = targets.slice(0, targetsAmount);
-    var targetsLeft = targets.slice(targetsAmount);
-    // Put back the remaining items over 500
+    // Convert to array if targets is an object (eg. updates)
+    var targetIsObject = isWhat.isObject(targets);
+    if (targetIsObject) {
+      targets = Object.values(targets);
+    }
+    // Batch supports only until maxCount items
+    var grabCount = maxCount - count;
+    var targetsOK = targets.slice(0, grabCount);
+    var targetsLeft = targets.slice(grabCount);
+    // Put back the remaining items over maxCount
+    if (targetIsObject) {
+      targetsLeft = Object.values(targetsLeft).reduce(function (carry, update) {
+        var id = update.id;
+        carry[id] = update;
+        return carry;
+      }, {});
+    }
     state._sync.syncStack[syncStackProp] = targetsLeft;
     // Define the items we'll add below
     targets = targetsOK;
   }
   return targets;
+}
+
+/**
+ * Create a Firebase batch from a syncStack to be passed inside the state param.
+ *
+ * @export
+ * @param {object} state The state which should have this prop: `_sync.syncStack[syncStackProp]`. syncStackProp can be 'updates', 'propDeletions', 'deletions', 'inserts'.
+ * @param {object} dbRef The Firestore dbRef of the 'doc' or 'collection'
+ * @param {Bool} collectionMode Very important: is the firebase dbRef a 'collection' or 'doc'?
+ * @param {string} userId for `created_by`
+ * @param {number} batchMaxCount The max count of the batch. Defaults to 500 as per Firestore documentation.
+ * @returns {object} A Firebase firestore batch object.
+ */
+function makeBatchFromSyncstack(state, dbRef, collectionMode, userId) {
+  var batchMaxCount = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 500;
+
+  var batch = Firebase.firestore().batch();
+  var count = 0;
+  // Add 'updates' to batch
+  var updates = grabUntilApiLimit('updates', count, batchMaxCount, state);
+  count = count + updates.length;
+  // Add to batch
+  updates.forEach(function (item) {
+    var id = item.id;
+    var docRef = collectionMode ? dbRef.doc(id) : dbRef;
+    var itemToUpdate = flattenToPaths(item);
+    itemToUpdate.updated_at = Firebase.firestore.FieldValue.serverTimestamp();
+    batch.update(docRef, itemToUpdate);
+  });
+  // Add 'propDeletions' to batch
+  var propDeletions = grabUntilApiLimit('propDeletions', count, batchMaxCount, state);
+  count = count + propDeletions.length;
+  // Add to batch
+  propDeletions.forEach(function (path) {
+    var docRef = dbRef;
+    if (collectionMode) {
+      var id = path.substring(0, path.indexOf('.'));
+      path = path.substring(path.indexOf('.') + 1);
+      docRef = dbRef.doc(id);
+    }
+    var updateObj = {};
+    updateObj[path] = Firebase.firestore.FieldValue.delete();
+    updateObj.updated_at = Firebase.firestore.FieldValue.serverTimestamp();
+    batch.update(docRef, updateObj);
+  });
+  // Add 'deletions' to batch
+  var deletions = grabUntilApiLimit('deletions', count, batchMaxCount, state);
+  count = count + deletions.length;
+  // Add to batch
+  deletions.forEach(function (id) {
+    var docRef = dbRef.doc(id);
+    batch.delete(docRef);
+  });
+  // Add 'inserts' to batch
+  var inserts = grabUntilApiLimit('inserts', count, batchMaxCount, state);
+  count = count + inserts.length;
+  // Add to batch
+  inserts.forEach(function (item) {
+    item.created_at = Firebase.firestore.FieldValue.serverTimestamp();
+    item.created_by = userId;
+    var newRef = dbRef.doc(item.id);
+    batch.set(newRef, item);
+  });
+  return batch;
 }
 
 var errorMessages = {
@@ -536,88 +613,12 @@ var actions = {
 
     var collectionMode = getters.collectionMode;
     var dbRef = getters.dbRef;
-    var batch = Firebase$1.firestore().batch();
-    var count = 0;
-    // Add 'updates' to batch
-    var updatesOriginal = copyObj(state._sync.syncStack.updates);
-    var updates = Object.keys(updatesOriginal).map(function (k) {
-      var fields = updatesOriginal[k];
-      return { id: k, fields: fields };
-    });
-    // Check if there are more than 500 batch items already
-    if (updates.length >= 500) {
-      // Batch supports only until 500 items
-      count = 500;
-      var updatesOK = updates.slice(0, 500);
-      var updatesLeft = updates.slice(500);
-      // Put back the remaining items over 500
-      state._sync.syncStack.updates = updatesLeft.reduce(function (carry, item) {
-        carry[item.id] = item;
-        delete item.id;
-        return carry;
-      }, {});
-      updates = updatesOK;
-    } else {
-      state._sync.syncStack.updates = {};
-      count = updates.length;
-    }
-    // Add to batch
-    updates.forEach(function (item) {
-      var id = item.id;
-      var docRef = collectionMode ? dbRef.doc(id) : dbRef;
-      var fields = flattenToPaths(item.fields);
-      fields.updated_at = Firebase$1.firestore.FieldValue.serverTimestamp();
-      // console.log('fields → ', fields)
-      batch.update(docRef, fields);
-    });
-    // Add 'propDeletions' to batch
-    var propDeletions = grabUntilApiLimit('propDeletions', count, state);
-    count = count + propDeletions.length;
-    // Add to batch
-    propDeletions.forEach(function (path) {
-      var docRef = dbRef;
-      if (collectionMode) {
-        var id = path.substring(0, path.indexOf('.'));
-        path = path.substring(path.indexOf('.') + 1);
-        docRef = dbRef.doc(id);
-      }
-      var updateObj = {};
-      updateObj[path] = Firebase$1.firestore.FieldValue.delete();
-      updateObj.updated_at = Firebase$1.firestore.FieldValue.serverTimestamp();
-      batch.update(docRef, updateObj);
-    });
-    // Add 'deletions' to batch
-    var deletions = grabUntilApiLimit('deletions', count, state);
-    count = count + deletions.length;
-    // Add to batch
-    deletions.forEach(function (id) {
-      var docRef = dbRef.doc(id);
-      batch.delete(docRef);
-    });
-    // Add 'inserts' to batch
-    var inserts = grabUntilApiLimit('inserts', count, state);
-    count = count + inserts.length;
-    // Add to batch
-    inserts.forEach(function (item) {
-      item.created_at = Firebase$1.firestore.FieldValue.serverTimestamp();
-      item.created_by = rootGetters['user/id'];
-      var newRef = getters.dbRef.doc(item.id);
-      batch.set(newRef, item);
-    });
-    // Commit the batch:
-    // console.log(`[batchSync] START:
-    //   ${Object.keys(updates).length} updates,
-    //   ${deletions.length} deletions,
-    //   ${inserts.length} inserts`
-    // )
+    var userId = rootGetters['user/id'];
+    var batch = makeBatchFromSyncstack(state, dbRef, collectionMode, userId);
     dispatch('_startPatching');
     state._sync.syncStack.debounceTimer = null;
     return new Promise(function (resolve, reject) {
       batch.commit().then(function (res) {
-        if (Object.keys(updates).length) console.log('updates: ', updates);
-        if (deletions.length) console.log('deletions: ', deletions);
-        if (inserts.length) console.log('inserts: ', inserts);
-        if (propDeletions.length) console.log('propDeletions: ', propDeletions);
         var remainingSyncStack = Object.keys(state._sync.syncStack.updates).length + state._sync.syncStack.deletions.length + state._sync.syncStack.inserts.length + state._sync.syncStack.propDeletions.length;
         if (remainingSyncStack) {
           dispatch('batchSync');
@@ -626,8 +627,7 @@ var actions = {
         return resolve();
         // // Fetch the item if it was added as an Archived item:
         // if (item.archived) {
-        //   get_ters.dbRef.doc(res.id).get()
-        //   .then(doc => {
+        //   get_ters.dbRef.doc(res.id).get().then(doc => {
         //     let tempId = doc.data().id
         //     let id = doc.id
         //     let item = doc.data()
@@ -639,7 +639,7 @@ var actions = {
       }).catch(function (error$$1) {
         state._sync.patching = 'error';
         state._sync.syncStack.debounceTimer = null;
-        return reject();
+        return reject(error$$1);
       });
     });
   },
@@ -714,7 +714,7 @@ var actions = {
         if (docs.length < state._conf.fetch.docLimit) {
           state._sync.fetched[identifier].done = true;
         }
-        state._sync.fetched[identifier].retrievedFetchRefs.push(fetchRef);
+        state._sync.fetched[identifier].retrievedFetchRefs.push(fRef);
         // Get the last visible document
         resolve(querySnapshot);
         var lastVisible = docs[docs.length - 1];
@@ -905,26 +905,31 @@ var actions = {
         commit = _ref21.commit,
         dispatch = _ref21.dispatch;
 
+    if (!id) return;
+    var ids = !isWhat.isArray(id) ? [id] : id;
+    if (!ids.length) return;
     var store = this;
     // define the store update
-    function storeUpdateFn(_id) {
-      // id is a path
-      var pathDelete = _id.includes('.') || !getters.collectionMode;
-      if (pathDelete) {
-        var path = _id;
-        if (!path) return error('actionsDeleteMissingPath');
-        commit('DELETE_PROP', path);
-        return dispatch('deleteProp', path);
-      }
-      if (!_id) return error('actionsDeleteMissingId');
-      commit('DELETE_DOC', _id);
-      return dispatch('deleteDoc', _id);
+    function storeUpdateFn(_ids) {
+      _ids.forEach(function (_id) {
+        // id is a path
+        var pathDelete = _id.includes('.') || !getters.collectionMode;
+        if (pathDelete) {
+          var path = _id;
+          if (!path) return error('actionsDeleteMissingPath');
+          commit('DELETE_PROP', path);
+          return dispatch('deleteProp', path);
+        }
+        if (!_id) return error('actionsDeleteMissingId');
+        commit('DELETE_DOC', _id);
+        return dispatch('deleteDoc', _id);
+      });
     }
     // check for hooks
     if (state._conf.sync.deleteHook) {
-      return state._conf.sync.deleteHook(storeUpdateFn, id, store);
+      return state._conf.sync.deleteHook(storeUpdateFn, ids, store);
     }
-    return storeUpdateFn(id);
+    return storeUpdateFn(ids);
   },
   _stopPatching: function _stopPatching(_ref22) {
     var state = _ref22.state,
@@ -1026,6 +1031,7 @@ var getters = {
         }
         patchData = copyObj(patchData);
         patchData = checkFillables(patchData, state._conf.sync.fillables, state._conf.sync.guard);
+        patchData.id = id;
         carry[id] = patchData;
         return carry;
       }, {});
