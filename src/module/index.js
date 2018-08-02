@@ -5,7 +5,7 @@ import initialState from './state'
 import iniMutations from './mutations'
 import iniActions from './actions'
 import iniGetters from './getters'
-import errorCheck from './errorCheck'
+import errorCheck from './errorCheckConfig'
 
 /**
  * A function that returns a vuex module object with seamless 2-way sync for firestore.

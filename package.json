@@ -31,7 +31,7 @@
   "homepage": "https://github.com/mesqueeb/VuexEasyFirestore#readme",
   "dependencies": {
     "firebase": "^5.0.4",
-    "is-what": "^1.0.4",
+    "is-what": "^1.1.0",
     "nanomerge": "^0.2.0",
     "vuex-easy-access": "^2.3.0"
   },
