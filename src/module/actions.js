@@ -339,15 +339,17 @@ const actions = {
     const store = this
     if (!doc) return
     // define the store update
-    function storeUpdateFn (_doc) {
-      commit('PATCH_DOC', _doc)
-      return dispatch('patchDoc', {ids, doc: _doc})
+    function storeUpdateFn (_doc, _ids) {
+      _ids.forEach(_id => {
+        commit('PATCH_DOC', {id: _id, ..._doc})
+      })
+      return dispatch('patchDoc', {ids: _ids, doc: _doc})
     }
     // check for hooks
     if (state._conf.sync.patchBatchHook) {
-      return state._conf.sync.patchBatchHook(storeUpdateFn, doc, store)
+      return state._conf.sync.patchBatchHook(storeUpdateFn, doc, ids, store)
     }
-    return storeUpdateFn(doc)
+    return storeUpdateFn(doc, ids)
   },
   delete ({state, getters, commit, dispatch}, id) {
     if (!id) return

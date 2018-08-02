@@ -19,6 +19,9 @@ export default {
     insertHook: function (updateStore, doc, store) { return updateStore(doc) },
     patchHook: function (updateStore, doc, store) { return updateStore(doc) },
     deleteHook: function (updateStore, id, store) { return updateStore(id) },
+    // HOOKS for local batch changes:
+    patchBatchHook: function (updateStore, doc, ids, store) { return updateStore(doc, ids) },
+    deleteBatchHook: function (updateStore, ids, store) { return updateStore(ids) },
   },
 
   // When items on the server side are changed:
