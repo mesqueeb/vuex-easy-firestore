@@ -16,19 +16,19 @@ test('set & delete: collection', async t => {
   // ini set
   store.dispatch('pokemonBox/set', {name: 'Squirtle', id, type: ['water']})
   t.truthy(box.pokemon[id])
-  t.true(box.pokemon[id].name === 'Squirtle')
+  t.is(box.pokemon[id].name, 'Squirtle')
   // update
   store.dispatch('pokemonBox/set', {name: 'COOL Squirtle!', id: id})
   t.truthy(box.pokemon[id])
-  t.true(box.pokemon[id].name === 'COOL Squirtle!')
-  t.deepEqual(box.pokemon[id], {name: 'COOL Squirtle!', id, type: ['water']})
+  t.is(box.pokemon[id].name, 'COOL Squirtle!')
+  t.deepEqual(box.pokemon[id].type, ['water'])
   // deep update
   store.dispatch('pokemonBox/set', {type: ['water', 'normal'], id: id})
-  t.deepEqual(box.pokemon[id], {name: 'COOL Squirtle!', id, type: ['water', 'normal']})
+  t.deepEqual(box.pokemon[id].type, ['water', 'normal'])
   // ini set
   store.dispatch('pokemonBox/set', {name: 'Charmender', id: id2})
   t.truthy(box.pokemon[id2])
-  t.true(box.pokemon[id2].name === 'Charmender')
+  t.is(box.pokemon[id2].name, 'Charmender')
   // delete
   store.dispatch('pokemonBox/delete', id)
   t.falsy(box.pokemon[id])
@@ -70,34 +70,43 @@ test('patchBatch', async t => {
   // await wait()
 })
 
-test('Local: where', async t => {
+test('sync: where', async t => {
   t.pass()
   // await wait()
 })
-test('Local: orderBy', async t => {
+test('sync: orderBy', async t => {
   t.pass()
   // await wait()
 })
-test('Local: fillables', async t => {
-  t.pass()
-  // await wait()
-})
-test('Local: guard', async t => {
-  t.pass()
-  // await wait()
+test('sync: fillables & guard', async t => {
+  const id = store.getters['pokemonBox/dbRef'].doc().id
+  store.dispatch('pokemonBox/set', {name: 'Squirtle', id, type: ['water'], fillable: true, guarded: true})
+  t.truthy(box.pokemon[id])
+  t.is(box.pokemon[id].name, 'Squirtle')
+  t.is(box.pokemon[id].fillable, true)
+  // fetch from server to check if guarded is undefined or not
+  // t.is(box.pokemon[id].guarded, undefined)
 })
 
-test('Local: insertHook', async t => {
-  t.pass()
-  // await wait()
+test('sync: insertHook & patchHook', async t => {
+  const id = store.getters['pokemonBox/dbRef'].doc().id
+  store.dispatch('pokemonBox/set', {name: 'Horsea', id, type: ['water']})
+  t.truthy(box.pokemon[id])
+  t.is(box.pokemon[id].name, 'Horsea')
+  t.is(box.pokemon[id].addedBeforeInsert, true)
+  t.is(box.pokemon[id].addedBeforePatch, undefined)
+  store.dispatch('pokemonBox/set', {id, name: 'James'})
+  t.is(box.pokemon[id].addedBeforeInsert, true)
+  t.is(box.pokemon[id].addedBeforePatch, true)
+  store.dispatch('pokemonBox/delete', id)
+  t.falsy(box.pokemon[id])
 })
-test('Local: patchHook', async t => {
-  t.pass()
-  // await wait()
-})
-test('Local: deleteHook', async t => {
-  t.pass()
-  // await wait()
+test('sync: deleteHook', async t => {
+  const id = 'stopBeforeDelete'
+  store.dispatch('pokemonBox/set', {name: 'Ditto', id, type: ['normal']})
+  t.truthy(box.pokemon[id])
+  store.dispatch('pokemonBox/delete', id)
+  t.truthy(box.pokemon[id])
 })
 
 // store.dispatch('pokemonBox/set', {name: 'bulbasaur'})

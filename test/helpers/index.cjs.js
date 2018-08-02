@@ -47,6 +47,26 @@ var pokemonBox = {
   firestoreRefType: 'collection',
   moduleName: 'pokemonBox',
   statePropName: 'pokemon',
+  // Sync:
+  sync: {
+    where: [],
+    orderBy: [],
+    fillables: ['fillable', 'name', 'id', 'type'],
+    guard: ['guarded'],
+    // HOOKS for local changes:
+    insertHook: function insertHook(updateStore, doc, store) {
+      doc.addedBeforeInsert = true;
+      return updateStore(doc);
+    },
+    patchHook: function patchHook(updateStore, doc, store) {
+      doc.addedBeforePatch = true;
+      return updateStore(doc);
+    },
+    deleteHook: function deleteHook(updateStore, id, store) {
+      if (id === 'stopBeforeDelete') return;
+      return updateStore(id);
+    }
+  },
   // module
   state: initialState(),
   mutations: vuexEasyAccess.defaultMutations(initialState()),
@@ -126,6 +146,13 @@ var defaultConfig = {
     },
     deleteHook: function deleteHook(updateStore, id, store) {
       return updateStore(id);
+    },
+    // HOOKS for local batch changes:
+    patchBatchHook: function patchBatchHook(updateStore, doc, ids, store) {
+      return updateStore(doc, ids);
+    },
+    deleteBatchHook: function deleteBatchHook(updateStore, ids, store) {
+      return updateStore(ids);
     }
   },
 
@@ -275,6 +302,20 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
   return typeof obj;
 } : function (obj) {
   return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+};
+
+var _extends = Object.assign || function (target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i];
+
+    for (var key in source) {
+      if (Object.prototype.hasOwnProperty.call(source, key)) {
+        target[key] = source[key];
+      }
+    }
+  }
+
+  return target;
 };
 
 var toConsumableArray = function (arr) {
@@ -889,15 +930,17 @@ var actions = {
     var store = this;
     if (!doc) return;
     // define the store update
-    function storeUpdateFn(_doc) {
-      commit('PATCH_DOC', _doc);
-      return dispatch('patchDoc', { ids: ids, doc: _doc });
+    function storeUpdateFn(_doc, _ids) {
+      _ids.forEach(function (_id) {
+        commit('PATCH_DOC', _extends({ id: _id }, _doc));
+      });
+      return dispatch('patchDoc', { ids: _ids, doc: _doc });
     }
     // check for hooks
-    if (state._conf.sync.patchHook) {
-      return state._conf.sync.patchHook(storeUpdateFn, doc, store);
+    if (state._conf.sync.patchBatchHook) {
+      return state._conf.sync.patchBatchHook(storeUpdateFn, doc, ids, store);
     }
-    return storeUpdateFn(doc);
+    return storeUpdateFn(doc, ids);
   },
   delete: function _delete(_ref21, id) {
     var state = _ref21.state,
@@ -906,7 +949,33 @@ var actions = {
         dispatch = _ref21.dispatch;
 
     if (!id) return;
-    var ids = !isWhat.isArray(id) ? [id] : id;
+    var store = this;
+    function storeUpdateFn(_id) {
+      // id is a path
+      var pathDelete = _id.includes('.') || !getters.collectionMode;
+      if (pathDelete) {
+        var path = _id;
+        if (!path) return error('actionsDeleteMissingPath');
+        commit('DELETE_PROP', path);
+        return dispatch('deleteProp', path);
+      }
+      if (!_id) return error('actionsDeleteMissingId');
+      commit('DELETE_DOC', _id);
+      return dispatch('deleteDoc', _id);
+    }
+    // check for hooks
+    if (state._conf.sync.deleteHook) {
+      return state._conf.sync.deleteHook(storeUpdateFn, id, store);
+    }
+    return storeUpdateFn(id);
+  },
+  deleteBatch: function deleteBatch(_ref22, ids) {
+    var state = _ref22.state,
+        getters = _ref22.getters,
+        commit = _ref22.commit,
+        dispatch = _ref22.dispatch;
+
+    if (!isWhat.isArray(ids)) return;
     if (!ids.length) return;
     var store = this;
     // define the store update
@@ -926,14 +995,14 @@ var actions = {
       });
     }
     // check for hooks
-    if (state._conf.sync.deleteHook) {
-      return state._conf.sync.deleteHook(storeUpdateFn, ids, store);
+    if (state._conf.sync.deleteBatchHook) {
+      return state._conf.sync.deleteBatchHook(storeUpdateFn, ids, store);
     }
     return storeUpdateFn(ids);
   },
-  _stopPatching: function _stopPatching(_ref22) {
-    var state = _ref22.state,
-        commit = _ref22.commit;
+  _stopPatching: function _stopPatching(_ref23) {
+    var state = _ref23.state,
+        commit = _ref23.commit;
 
     if (state._sync.stopPatchingTimeout) {
       clearTimeout(state._sync.stopPatchingTimeout);
@@ -942,9 +1011,9 @@ var actions = {
       state._sync.patching = false;
     }, 300);
   },
-  _startPatching: function _startPatching(_ref23) {
-    var state = _ref23.state,
-        commit = _ref23.commit;
+  _startPatching: function _startPatching(_ref24) {
+    var state = _ref24.state,
+        commit = _ref24.commit;
 
     if (state._sync.stopPatchingTimeout) {
       clearTimeout(state._sync.stopPatchingTimeout);
@@ -1065,19 +1134,68 @@ function iniGetters () {
 }
 
 function errorCheck(config) {
+  var errors = [];
   var reqProps = ['firestorePath', 'moduleName'];
   reqProps.forEach(function (prop) {
     if (!config[prop]) {
-      console.error('Missing ' + prop + ' from your config!');
-      return false;
+      errors.push('Missing `' + prop + '` in your module!');
     }
   });
   if (/(\.|\/)/.test(config.statePropName)) {
-    console.error('statePropName must only include letters from [a-z]');
-    return false;
+    errors.push('statePropName must only include letters from [a-z]');
   }
   if (/\./.test(config.moduleName)) {
-    console.error('moduleName must only include letters from [a-z] and forward slashes \'/\'');
+    errors.push('moduleName must only include letters from [a-z] and forward slashes \'/\'');
+  }
+  var syncProps = ['where', 'orderBy', 'fillables', 'guard', 'insertHook', 'patchHook', 'deleteHook'];
+  syncProps.forEach(function (prop) {
+    if (config[prop]) {
+      errors.push('We found `' + prop + '` on your module, are you sure this shouldn\'t be inside a prop called `sync`?');
+    }
+  });
+  var serverChangeProps = ['modifiedHook', 'defaultValues', 'addedHook', 'removedHook'];
+  serverChangeProps.forEach(function (prop) {
+    if (config[prop]) {
+      errors.push('We found `' + prop + '` on your module, are you sure this shouldn\'t be inside a prop called `serverChange`?');
+    }
+  });
+  var fetchProps = ['docLimit'];
+  fetchProps.forEach(function (prop) {
+    if (config[prop]) {
+      errors.push('We found `' + prop + '` on your module, are you sure this shouldn\'t be inside a prop called `fetch`?');
+    }
+  });
+  var numberProps = ['docLimit'];
+  numberProps.forEach(function (prop) {
+    var _prop = config.fetch[prop];
+    if (!isWhat.isNumber(_prop)) errors.push('`' + prop + '` should be a Number, but is not.');
+  });
+  var functionProps = ['insertHook', 'patchHook', 'deleteHook', 'addedHook', 'modifiedHook', 'removedHook'];
+  functionProps.forEach(function (prop) {
+    var _prop = syncProps.includes(prop) ? config.sync[prop] : config.serverChange[prop];
+    if (!isWhat.isFunction(_prop)) errors.push('`' + prop + '` should be a Function, but is not.');
+  });
+  var objectProps = ['sync', 'serverChange', 'defaultValues', 'fetch'];
+  objectProps.forEach(function (prop) {
+    var _prop = prop === 'defaultValues' ? config.serverChange[prop] : config[prop];
+    if (!isWhat.isObject(_prop)) errors.push('`' + prop + '` should be an Object, but is not.');
+  });
+  var stringProps = ['firestorePath', 'firestoreRefType', 'moduleName', 'statePropName'];
+  stringProps.forEach(function (prop) {
+    var _prop = config[prop];
+    if (!isWhat.isString(_prop)) errors.push('`' + prop + '` should be a String, but is not.');
+  });
+  var arrayProps = ['where', 'orderBy', 'fillables', 'guard'];
+  arrayProps.forEach(function (prop) {
+    var _prop = config.sync[prop];
+    if (!isWhat.isArray(_prop)) errors.push('`' + prop + '` should be an Array, but is not.');
+  });
+  if (errors.length) {
+    console.error('[vuex-easy-firestore] ERRORS:');
+    errors.forEach(function (e) {
+      return console.error(' - ', e);
+    });
+    console.error('Please check your vuex-easy-firebase Module.');
     return false;
   }
   return true;

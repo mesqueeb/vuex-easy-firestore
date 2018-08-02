@@ -17,6 +17,26 @@ export default {
   firestoreRefType: 'collection',
   moduleName: 'pokemonBox',
   statePropName: 'pokemon',
+  // Sync:
+  sync: {
+    where: [],
+    orderBy: [],
+    fillables: ['fillable', 'name', 'id', 'type'],
+    guard: ['guarded'],
+    // HOOKS for local changes:
+    insertHook: function (updateStore, doc, store) {
+      doc.addedBeforeInsert = true
+      return updateStore(doc)
+    },
+    patchHook: function (updateStore, doc, store) {
+      doc.addedBeforePatch = true
+      return updateStore(doc)
+    },
+    deleteHook: function (updateStore, id, store) {
+      if (id === 'stopBeforeDelete') return
+      return updateStore(id)
+    }
+  },
   // module
   state: initialState(),
   mutations: defaultMutations(initialState()),
