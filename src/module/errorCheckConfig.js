@@ -62,9 +62,11 @@ export default function errorCheck (config) {
     if (!isArray(_prop)) errors.push(`\`${prop}\` should be an Array, but is not.`)
   })
   if (errors.length) {
-    console.error('[vuex-easy-firestore] ERRORS:')
+    console.group('[vuex-easy-firestore] ERRORS:')
+    console.error(`Module: ${config.moduleName}`)
     errors.forEach(e => console.error(' - ', e))
-    console.error('Please check your vuex-easy-firebase Module.')
+    console.groupEnd('Please check your vuex-easy-firebase Module.')
+    Error()
     return false
   }
   return true
