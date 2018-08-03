@@ -58,9 +58,11 @@ export function grabUntilApiLimit (syncStackProp, count, maxCount, state) {
  */
 export function makeBatchFromSyncstack (state, dbRef, collectionMode, userId, batchMaxCount = 500) {
   const batch = Firebase.firestore().batch()
+  const log = {}
   let count = 0
   // Add 'updates' to batch
   const updates = grabUntilApiLimit('updates', count, batchMaxCount, state)
+  log['updates: '] = updates
   count = count + updates.length
   // Add to batch
   updates.forEach(item => {
@@ -72,6 +74,7 @@ export function makeBatchFromSyncstack (state, dbRef, collectionMode, userId, ba
   })
   // Add 'propDeletions' to batch
   const propDeletions = grabUntilApiLimit('propDeletions', count, batchMaxCount, state)
+  log['prop deletions: '] = propDeletions
   count = count + propDeletions.length
   // Add to batch
   propDeletions.forEach(path => {
@@ -88,6 +91,7 @@ export function makeBatchFromSyncstack (state, dbRef, collectionMode, userId, ba
   })
   // Add 'deletions' to batch
   const deletions = grabUntilApiLimit('deletions', count, batchMaxCount, state)
+  log['deletions: '] = deletions
   count = count + deletions.length
   // Add to batch
   deletions.forEach(id => {
@@ -96,6 +100,7 @@ export function makeBatchFromSyncstack (state, dbRef, collectionMode, userId, ba
   })
   // Add 'inserts' to batch
   const inserts = grabUntilApiLimit('inserts', count, batchMaxCount, state)
+  log['inserts: '] = inserts
   count = count + inserts.length
   // Add to batch
   inserts.forEach(item => {
@@ -104,5 +109,12 @@ export function makeBatchFromSyncstack (state, dbRef, collectionMode, userId, ba
     const newRef = dbRef.doc(item.id)
     batch.set(newRef, item)
   })
+  // log the batch contents
+  console.group('Created a firestore batch with:')
+  Object.keys(log).forEach(key => {
+    console.log(key, log[key])
+  })
+  console.groupEnd()
+  //
   return batch
 }
