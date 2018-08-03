@@ -27,12 +27,11 @@ const mutations = {
     if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
       ref = ref[doc.id]
     }
-    const newDoc = (!isObject(ref) || !isObject(doc))
-      ? doc
-      : merge(ref, doc)
-    return Object.keys(newDoc).forEach(key => {
-      const newVal = newDoc[key]
+    return Object.keys(doc).forEach(key => {
       // Merge if exists
+      const newVal = (isObject(ref[key]) && isObject(doc[key]))
+        ? merge(ref[key], doc[key])
+        : doc[key]
       this._vm.$set(ref, key, newVal)
     })
   },
