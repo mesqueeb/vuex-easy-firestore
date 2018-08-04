@@ -98,10 +98,10 @@ const actions = {
     }
     state._sync.syncStack.debounceTimer.refresh()
   },
-  batchSync ({getters, commit, dispatch, state, rootGetters}) {
+  batchSync ({getters, commit, dispatch, state}) {
     const collectionMode = getters.collectionMode
     const dbRef = getters.dbRef
-    const userId = rootGetters['user/id']
+    const userId = state._sync.userId
     const batch = makeBatchFromSyncstack(state, dbRef, collectionMode, userId)
     dispatch('_startPatching')
     state._sync.syncStack.debounceTimer = null
@@ -220,7 +220,10 @@ const actions = {
   },
   openDBChannel ({getters, state, commit, dispatch}) {
     const store = this
-    if (Firebase.auth().currentUser) state._sync.signedIn = true
+    if (Firebase.auth().currentUser) {
+      state._sync.signedIn = true
+      state._sync.userId = Firebase.auth().currentUser.uid
+    }
     let dbRef = getters.dbRef
     // apply where filters and orderBy
     if (getters.collectionMode) {

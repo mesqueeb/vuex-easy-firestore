@@ -187,6 +187,7 @@ var defaultConfig = {
 var initialState$2 = {
   _sync: {
     signedIn: false,
+    userId: null,
     patching: false,
     syncStack: {
       inserts: [],
@@ -660,12 +661,11 @@ var actions = {
     var getters = _ref8.getters,
         commit = _ref8.commit,
         dispatch = _ref8.dispatch,
-        state = _ref8.state,
-        rootGetters = _ref8.rootGetters;
+        state = _ref8.state;
 
     var collectionMode = getters.collectionMode;
     var dbRef = getters.dbRef;
-    var userId = rootGetters['user/id'];
+    var userId = state._sync.userId;
     var batch = makeBatchFromSyncstack(state, dbRef, collectionMode, userId);
     dispatch('_startPatching');
     state._sync.syncStack.debounceTimer = null;
@@ -806,7 +806,10 @@ var actions = {
         dispatch = _ref15.dispatch;
 
     var store = this;
-    if (Firebase$1.auth().currentUser) state._sync.signedIn = true;
+    if (Firebase$1.auth().currentUser) {
+      state._sync.signedIn = true;
+      state._sync.userId = Firebase$1.auth().currentUser.uid;
+    }
     var dbRef = getters.dbRef;
     // apply where filters and orderBy
     if (getters.collectionMode) {
