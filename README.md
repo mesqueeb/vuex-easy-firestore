@@ -124,9 +124,10 @@ dispatch('moduleName/delete', id)
 
 The sync is fully robust and automatically makes api call "batches" per 1000 ms, so you can loop through things, make a lot of edits here and there and the **api calls are automatically optimised!** (it even stacks until the max batch limit of 500 and splits up the calls so it won't go over this limit)
 
-In cases you don't want to loop through items you can also use the special batch actions below. Sync-wise this won't make any difference though, they are all stacked in one sync batch, even if you make 1000 single patches.
+In cases you don't want to loop through items you can also use the special batch actions below. The main difference is you will have separate hooks (see [hooks](#hooks-before-insertpatchdelete)), and batches are optimised to update the vuex store first for all changes and the syncs to firestore last.
 
 ```js
+dispatch('moduleName/insertBatch', docs) // an array of docs
 dispatch('moduleName/patchBatch', {doc: {}, ids: []}) // `doc` is an object with the fields to patch, `ids` is an array
 dispatch('moduleName/deleteBatch', ids) // an array of ids
 ```
@@ -327,8 +328,8 @@ The filters set in `sync: {}` are applied before the DB Channel is openend. They
 ### Hooks before insert/patch/delete
 
 A function where you can check something or even change the doc before the store mutation occurs.
-! Must call `updateStore(doc)` to make the store mutation.
-May choose not to call this to abort the mutation.
+! **Must call `updateStore(doc)` to make the store mutation.**
+But you may choose not to call this to abort the mutation.
 
 ```js
 {
@@ -337,7 +338,8 @@ May choose not to call this to abort the mutation.
     insertHook: function (updateStore, doc, store) { updateStore(doc) },
     patchHook: function (updateStore, doc, store) { updateStore(doc) },
     deleteHook: function (updateStore, id, store) { updateStore(id) },
-    // for batches
+    // Batches have separate hooks!
+    insertBatchHook: function (updateStore, doc, store) { updateStore(doc) },
     patchBatchHook: function (updateStore, doc, ids, store) { updateStore(doc, ids) },
     deleteBatchHook: function (updateStore, ids, store) { updateStore(ids) },
   }
@@ -402,6 +404,7 @@ const firestoreModule = {
     patchHook: function (updateStore, doc, store) { return updateStore(doc) },
     deleteHook: function (updateStore, id, store) { return updateStore(id) },
     // for batches
+    insertBatchHook: function (updateStore, docs, store) { return updateStore(docs) },
     patchBatchHook: function (updateStore, doc, ids, store) { return updateStore(doc, ids) },
     deleteBatchHook: function (updateStore, ids, store) { return updateStore(ids) },
   },

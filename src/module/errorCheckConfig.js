@@ -14,7 +14,7 @@ export default function errorCheck (config) {
   if (/\./.test(config.moduleName)) {
     errors.push(`moduleName must only include letters from [a-z] and forward slashes '/'`)
   }
-  const syncProps = ['where', 'orderBy', 'fillables', 'guard', 'insertHook', 'patchHook', 'deleteHook']
+  const syncProps = ['where', 'orderBy', 'fillables', 'guard', 'insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook']
   syncProps.forEach(prop => {
     if (config[prop]) {
       errors.push(`We found \`${prop}\` on your module, are you sure this shouldn't be inside a prop called \`sync\`?`)
@@ -37,7 +37,7 @@ export default function errorCheck (config) {
     const _prop = config.fetch[prop]
     if (!isNumber(_prop)) errors.push(`\`${prop}\` should be a Number, but is not.`)
   })
-  const functionProps = ['insertHook', 'patchHook', 'deleteHook', 'addedHook', 'modifiedHook', 'removedHook']
+  const functionProps = ['insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook', 'addedHook', 'modifiedHook', 'removedHook']
   functionProps.forEach(prop => {
     const _prop = (syncProps.includes(prop))
       ? config.sync[prop]
