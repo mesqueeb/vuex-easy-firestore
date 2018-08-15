@@ -65,6 +65,9 @@ var defaultConfig = {
       return updateStore(id);
     },
     // HOOKS for local batch changes:
+    insertBatchHook: function insertBatchHook(updateStore, docs, store) {
+      return updateStore(docs);
+    },
     patchBatchHook: function patchBatchHook(updateStore, doc, ids, store) {
       return updateStore(doc, ids);
     },
@@ -676,9 +679,8 @@ var actions = {
         var docs = querySnapshot.docs;
         if (docs.length === 0) {
           state._sync.fetched[identifier].done = true;
-          resolve('fetchedAll');
-
-          return;
+          querySnapshot.done = true;
+          return resolve(querySnapshot);
         }
         if (docs.length < state._conf.fetch.docLimit) {
           state._sync.fetched[identifier].done = true;
@@ -825,11 +827,40 @@ var actions = {
     }
     return storeUpdateFn(newDoc);
   },
-  patch: function patch(_ref18, doc) {
+  insertBatch: function insertBatch(_ref18, docs) {
     var state = _ref18.state,
         getters = _ref18.getters,
         commit = _ref18.commit,
         dispatch = _ref18.dispatch;
+
+    var store = this;
+    if (!getters.signedIn) return 'auth/invalid-user-token';
+    if (!isWhat.isArray(docs) || !docs.length) return;
+
+    var newDocs = docs.reduce(function (carry, _doc) {
+      var newDoc = getValueFromPayloadPiece(_doc);
+      if (!newDoc.id) newDoc.id = getters.dbRef.doc().id;
+      carry.push(newDoc);
+      return carry;
+    }, []);
+    // define the store update
+    function storeUpdateFn(_docs) {
+      _docs.forEach(function (_doc) {
+        commit('INSERT_DOC', _doc);
+      });
+      return dispatch('insertDoc', _docs);
+    }
+    // check for hooks
+    if (state._conf.sync.insertBatchHook) {
+      return state._conf.sync.insertBatchHook(storeUpdateFn, newDocs, store);
+    }
+    return storeUpdateFn(newDocs);
+  },
+  patch: function patch(_ref19, doc) {
+    var state = _ref19.state,
+        getters = _ref19.getters,
+        commit = _ref19.commit,
+        dispatch = _ref19.dispatch;
 
     var store = this;
     if (!doc) return;
@@ -849,14 +880,14 @@ var actions = {
     }
     return storeUpdateFn(value);
   },
-  patchBatch: function patchBatch(_ref19, _ref20) {
-    var state = _ref19.state,
-        getters = _ref19.getters,
-        commit = _ref19.commit,
-        dispatch = _ref19.dispatch;
-    var doc = _ref20.doc,
-        _ref20$ids = _ref20.ids,
-        ids = _ref20$ids === undefined ? [] : _ref20$ids;
+  patchBatch: function patchBatch(_ref20, _ref21) {
+    var state = _ref20.state,
+        getters = _ref20.getters,
+        commit = _ref20.commit,
+        dispatch = _ref20.dispatch;
+    var doc = _ref21.doc,
+        _ref21$ids = _ref21.ids,
+        ids = _ref21$ids === undefined ? [] : _ref21$ids;
 
     var store = this;
     if (!doc) return;
@@ -873,11 +904,11 @@ var actions = {
     }
     return storeUpdateFn(doc, ids);
   },
-  delete: function _delete(_ref21, id) {
-    var state = _ref21.state,
-        getters = _ref21.getters,
-        commit = _ref21.commit,
-        dispatch = _ref21.dispatch;
+  delete: function _delete(_ref22, id) {
+    var state = _ref22.state,
+        getters = _ref22.getters,
+        commit = _ref22.commit,
+        dispatch = _ref22.dispatch;
 
     if (!id) return;
     var store = this;
@@ -900,11 +931,11 @@ var actions = {
     }
     return storeUpdateFn(id);
   },
-  deleteBatch: function deleteBatch(_ref22, ids) {
-    var state = _ref22.state,
-        getters = _ref22.getters,
-        commit = _ref22.commit,
-        dispatch = _ref22.dispatch;
+  deleteBatch: function deleteBatch(_ref23, ids) {
+    var state = _ref23.state,
+        getters = _ref23.getters,
+        commit = _ref23.commit,
+        dispatch = _ref23.dispatch;
 
     if (!isWhat.isArray(ids)) return;
     if (!ids.length) return;
@@ -931,9 +962,9 @@ var actions = {
     }
     return storeUpdateFn(ids);
   },
-  _stopPatching: function _stopPatching(_ref23) {
-    var state = _ref23.state,
-        commit = _ref23.commit;
+  _stopPatching: function _stopPatching(_ref24) {
+    var state = _ref24.state,
+        commit = _ref24.commit;
 
     if (state._sync.stopPatchingTimeout) {
       clearTimeout(state._sync.stopPatchingTimeout);
@@ -942,9 +973,9 @@ var actions = {
       state._sync.patching = false;
     }, 300);
   },
-  _startPatching: function _startPatching(_ref24) {
-    var state = _ref24.state,
-        commit = _ref24.commit;
+  _startPatching: function _startPatching(_ref25) {
+    var state = _ref25.state,
+        commit = _ref25.commit;
 
     if (state._sync.stopPatchingTimeout) {
       clearTimeout(state._sync.stopPatchingTimeout);
@@ -1078,7 +1109,7 @@ function errorCheck(config) {
   if (/\./.test(config.moduleName)) {
     errors.push('moduleName must only include letters from [a-z] and forward slashes \'/\'');
   }
-  var syncProps = ['where', 'orderBy', 'fillables', 'guard', 'insertHook', 'patchHook', 'deleteHook'];
+  var syncProps = ['where', 'orderBy', 'fillables', 'guard', 'insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook'];
   syncProps.forEach(function (prop) {
     if (config[prop]) {
       errors.push('We found `' + prop + '` on your module, are you sure this shouldn\'t be inside a prop called `sync`?');
@@ -1101,7 +1132,7 @@ function errorCheck(config) {
     var _prop = config.fetch[prop];
     if (!isWhat.isNumber(_prop)) errors.push('`' + prop + '` should be a Number, but is not.');
   });
-  var functionProps = ['insertHook', 'patchHook', 'deleteHook', 'addedHook', 'modifiedHook', 'removedHook'];
+  var functionProps = ['insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook', 'addedHook', 'modifiedHook', 'removedHook'];
   functionProps.forEach(function (prop) {
     var _prop = syncProps.includes(prop) ? config.sync[prop] : config.serverChange[prop];
     if (!isWhat.isFunction(_prop)) errors.push('`' + prop + '` should be a Function, but is not.');

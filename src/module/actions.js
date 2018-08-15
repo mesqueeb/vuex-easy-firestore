@@ -184,9 +184,8 @@ const actions = {
         const docs = querySnapshot.docs
         if (docs.length === 0) {
           state._sync.fetched[identifier].done = true
-          resolve('fetchedAll')
-
-          return
+          querySnapshot.done = true
+          return resolve(querySnapshot)
         }
         if (docs.length < state._conf.fetch.docLimit) {
           state._sync.fetched[identifier].done = true
@@ -315,6 +314,30 @@ const actions = {
       return state._conf.sync.insertHook(storeUpdateFn, newDoc, store)
     }
     return storeUpdateFn(newDoc)
+  },
+  insertBatch ({state, getters, commit, dispatch}, docs) {
+    const store = this
+    if (!getters.signedIn) return 'auth/invalid-user-token'
+    if (!isArray(docs) || !docs.length) return
+
+    const newDocs = docs.reduce((carry, _doc) => {
+      const newDoc = getValueFromPayloadPiece(_doc)
+      if (!newDoc.id) newDoc.id = getters.dbRef.doc().id
+      carry.push(newDoc)
+      return carry
+    }, [])
+    // define the store update
+    function storeUpdateFn (_docs) {
+      _docs.forEach(_doc => {
+        commit('INSERT_DOC', _doc)
+      })
+      return dispatch('insertDoc', _docs)
+    }
+    // check for hooks
+    if (state._conf.sync.insertBatchHook) {
+      return state._conf.sync.insertBatchHook(storeUpdateFn, newDocs, store)
+    }
+    return storeUpdateFn(newDocs)
   },
   patch ({state, getters, commit, dispatch}, doc) {
     const store = this
