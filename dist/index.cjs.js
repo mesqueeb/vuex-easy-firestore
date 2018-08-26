@@ -218,71 +218,6 @@ function startDebounce (ms) {
   return { done: done, refresh: refresh };
 }
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
-  return typeof obj;
-} : function (obj) {
-  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-};
-
-var _extends = Object.assign || function (target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i];
-
-    for (var key in source) {
-      if (Object.prototype.hasOwnProperty.call(source, key)) {
-        target[key] = source[key];
-      }
-    }
-  }
-
-  return target;
-};
-
-var toConsumableArray = function (arr) {
-  if (Array.isArray(arr)) {
-    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
-
-    return arr2;
-  } else {
-    return Array.from(arr);
-  }
-};
-
-/**
- * copyObj helper
- *
- * @author     Adam Dorling
- * @contact    https://codepen.io/naito
- */
-function copyObj(obj) {
-  var newObj = void 0;
-  if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) != 'object') {
-    return obj;
-  }
-  if (!obj) {
-    return obj;
-  }
-  if ('[object Object]' !== Object.prototype.toString.call(obj) || '[object Array]' !== Object.prototype.toString.call(obj)) {
-    return JSON.parse(JSON.stringify(obj));
-  }
-  // Object is an Array
-  if ('[object Array]' === Object.prototype.toString.call(obj)) {
-    newObj = [];
-    for (var i = 0, len = obj.length; i < len; i++) {
-      newObj[i] = copyObj(obj[i]);
-    }
-    return newObj;
-  }
-  // Object is an Object
-  newObj = {};
-  for (var _i in obj) {
-    if (obj.hasOwnProperty(_i)) {
-      newObj[_i] = copyObj(obj[_i]);
-    }
-  }
-  return newObj;
-}
-
 function retrievePaths(object, path, result) {
   if (!isWhat.isObject(object) || !Object.keys(object).length) {
     if (!path) return object;
@@ -312,7 +247,7 @@ function flattenToPaths (object) {
  * @returns {array} the targets for the batch. Add this array length to the count
  */
 function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
-  var targets = copyObj(state._sync.syncStack[syncStackProp]);
+  var targets = state._sync.syncStack[syncStackProp];
   // Check if there are more than maxCount batch items already
   if (count >= maxCount) {
     // already at maxCount or more, leave items in syncstack, and don't add anything to batch
@@ -460,6 +395,30 @@ function getValueFromPayloadPiece(payloadPiece) {
   }
   return payloadPiece;
 }
+
+var _extends = Object.assign || function (target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i];
+
+    for (var key in source) {
+      if (Object.prototype.hasOwnProperty.call(source, key)) {
+        target[key] = source[key];
+      }
+    }
+  }
+
+  return target;
+};
+
+var toConsumableArray = function (arr) {
+  if (Array.isArray(arr)) {
+    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+    return arr2;
+  } else {
+    return Array.from(arr);
+  }
+};
 
 var actions = {
   patchDoc: function patchDoc(_ref) {
@@ -1007,17 +966,13 @@ function checkFillables (obj) {
   var guard = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
 
   if (!isWhat.isObject(obj)) return obj;
-  if (fillables.length) {
-    Object.keys(obj).forEach(function (key) {
-      if (!fillables.includes(key)) {
-        delete obj[key];
-      }
-    });
-  }
-  guard.forEach(function (key) {
-    delete obj[key];
-  });
-  return obj;
+  return Object.keys(obj).reduce(function (carry, key) {
+    if (!fillables.includes(key) || guard.includes(key)) {
+      return carry;
+    }
+    carry[key] = obj[key];
+    return carry;
+  }, {});
 }
 
 var getters = {
@@ -1063,7 +1018,7 @@ var getters = {
         } else {
           patchData = doc;
         }
-        patchData = copyObj(patchData);
+        // patchData = copyObj(patchData)
         patchData = checkFillables(patchData, state._conf.sync.fillables, state._conf.sync.guard);
         patchData.id = id;
         carry[id] = patchData;
@@ -1075,7 +1030,7 @@ var getters = {
     return function () {
       var items = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
 
-      items = copyObj(items);
+      // items = copyObj(items)
       return items.reduce(function (carry, item) {
         item = checkFillables(item, state._conf.sync.fillables, state._conf.sync.guard);
         carry.push(item);
@@ -1085,7 +1040,7 @@ var getters = {
   },
   prepareInitialDocForInsert: function prepareInitialDocForInsert(state, getters, rootState, rootGetters) {
     return function (doc) {
-      doc = copyObj(doc);
+      // doc = copyObj(doc)
       doc = checkFillables(doc, state._conf.sync.fillables, state._conf.sync.guard);
       return doc;
     };

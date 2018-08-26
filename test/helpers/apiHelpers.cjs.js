@@ -8,47 +8,6 @@ var isWhat = require('is-what');
 var Firebase = _interopDefault(require('firebase/app'));
 require('firebase/firestore');
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
-  return typeof obj;
-} : function (obj) {
-  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-};
-
-/**
- * copyObj helper
- *
- * @author     Adam Dorling
- * @contact    https://codepen.io/naito
- */
-function copyObj(obj) {
-  var newObj = void 0;
-  if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) != 'object') {
-    return obj;
-  }
-  if (!obj) {
-    return obj;
-  }
-  if ('[object Object]' !== Object.prototype.toString.call(obj) || '[object Array]' !== Object.prototype.toString.call(obj)) {
-    return JSON.parse(JSON.stringify(obj));
-  }
-  // Object is an Array
-  if ('[object Array]' === Object.prototype.toString.call(obj)) {
-    newObj = [];
-    for (var i = 0, len = obj.length; i < len; i++) {
-      newObj[i] = copyObj(obj[i]);
-    }
-    return newObj;
-  }
-  // Object is an Object
-  newObj = {};
-  for (var _i in obj) {
-    if (obj.hasOwnProperty(_i)) {
-      newObj[_i] = copyObj(obj[_i]);
-    }
-  }
-  return newObj;
-}
-
 function retrievePaths(object, path, result) {
   if (!isWhat.isObject(object) || !Object.keys(object).length) {
     if (!path) return object;
@@ -78,7 +37,7 @@ function flattenToPaths (object) {
  * @returns {array} the targets for the batch. Add this array length to the count
  */
 function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
-  var targets = copyObj(state._sync.syncStack[syncStackProp]);
+  var targets = state._sync.syncStack[syncStackProp];
   // Check if there are more than maxCount batch items already
   if (count >= maxCount) {
     // already at maxCount or more, leave items in syncstack, and don't add anything to batch

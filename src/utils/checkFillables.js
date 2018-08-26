@@ -11,15 +11,11 @@ import { isObject } from 'is-what'
  */
 export default function (obj, fillables = [], guard = []) {
   if (!isObject(obj)) return obj
-  if (fillables.length) {
-    Object.keys(obj).forEach(key => {
-      if (!fillables.includes(key)) {
-        delete obj[key]
-      }
-    })
-  }
-  guard.forEach(key => {
-    delete obj[key]
-  })
-  return obj
+  return Object.keys(obj).reduce((carry, key) => {
+    if (!fillables.includes(key) || guard.includes(key)) {
+      return carry
+    }
+    carry[key] = obj[key]
+    return carry
+  }, {})
 }
