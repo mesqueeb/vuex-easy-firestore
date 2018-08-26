@@ -165,7 +165,7 @@ const actions = {
       // We're already done fetching everything:
       if (fRequest.done) {
         console.log('done fetching')
-        return resolve('fetchedAll')
+        return resolve({done: true})
       }
       // attach fetch filters
       let fRef = state._sync.fetched[identifier].ref
@@ -176,7 +176,7 @@ const actions = {
       fRef = fRef.limit(state._conf.fetch.docLimit)
       // Stop if all records already fetched
       if (fRequest.retrievedFetchRefs.includes(fRef)) {
-        console.log('Already retrieved this part.')
+        console.error('Already retrieved this part.')
         return resolve()
       }
       // make fetch request
@@ -219,14 +219,17 @@ const actions = {
   },
   openDBChannel ({getters, state, commit, dispatch}) {
     const store = this
+    let userId = null
     if (Firebase.auth().currentUser) {
       state._sync.signedIn = true
-      state._sync.userId = Firebase.auth().currentUser.uid
+      userId = Firebase.auth().currentUser.uid
+      state._sync.userId = userId
     }
     let dbRef = getters.dbRef
     // apply where filters and orderBy
     if (getters.collectionMode) {
       state._conf.sync.where.forEach(paramsArr => {
+        if (paramsArr[2] === '{userId}') paramsArr[2] = userId
         dbRef = dbRef.where(...paramsArr)
       })
       if (state._conf.sync.orderBy.length) {

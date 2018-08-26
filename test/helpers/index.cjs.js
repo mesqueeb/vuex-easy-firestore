@@ -199,7 +199,7 @@ var initialState$2 = {
       propDeletions: [],
       debounceTimer: null
     },
-    fetched: [],
+    fetched: {},
     stopPatchingTimeout: null
   }
 };
@@ -743,7 +743,7 @@ var actions = {
       // We're already done fetching everything:
       if (fRequest.done) {
         console.log('done fetching');
-        return resolve('fetchedAll');
+        return resolve({ done: true });
       }
       // attach fetch filters
       var fRef = state._sync.fetched[identifier].ref;
@@ -754,7 +754,7 @@ var actions = {
       fRef = fRef.limit(state._conf.fetch.docLimit);
       // Stop if all records already fetched
       if (fRequest.retrievedFetchRefs.includes(fRef)) {
-        console.log('Already retrieved this part.');
+        console.error('Already retrieved this part.');
         return resolve();
       }
       // make fetch request
@@ -808,9 +808,11 @@ var actions = {
         dispatch = _ref15.dispatch;
 
     var store = this;
+    var userId = null;
     if (Firebase$1.auth().currentUser) {
       state._sync.signedIn = true;
-      state._sync.userId = Firebase$1.auth().currentUser.uid;
+      userId = Firebase$1.auth().currentUser.uid;
+      state._sync.userId = userId;
     }
     var dbRef = getters.dbRef;
     // apply where filters and orderBy
@@ -818,6 +820,7 @@ var actions = {
       state._conf.sync.where.forEach(function (paramsArr) {
         var _dbRef;
 
+        if (paramsArr[2] === '{userId}') paramsArr[2] = userId;
         dbRef = (_dbRef = dbRef).where.apply(_dbRef, toConsumableArray(paramsArr));
       });
       if (state._conf.sync.orderBy.length) {
