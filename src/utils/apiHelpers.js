@@ -1,4 +1,3 @@
-import copyObj from './copyObj'
 import flattenToPaths from './objectFlattenToPaths'
 import { isObject } from 'is-what'
 import Firebase from 'firebase/app'
@@ -14,7 +13,7 @@ import 'firebase/firestore'
  * @returns {array} the targets for the batch. Add this array length to the count
  */
 export function grabUntilApiLimit (syncStackProp, count, maxCount, state) {
-  let targets = copyObj(state._sync.syncStack[syncStackProp])
+  let targets = state._sync.syncStack[syncStackProp]
   // Check if there are more than maxCount batch items already
   if (count >= maxCount) {
     // already at maxCount or more, leave items in syncstack, and don't add anything to batch

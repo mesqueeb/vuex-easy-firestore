@@ -1,7 +1,7 @@
 import Firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
-import copyObj from '../utils/copyObj'
+// import copyObj from '../utils/copyObj'
 import { getDeepRef } from 'vuex-easy-access'
 import checkFillables from '../utils/checkFillables'
 
@@ -51,7 +51,7 @@ const getters = {
         } else {
           patchData = doc
         }
-        patchData = copyObj(patchData)
+        // patchData = copyObj(patchData)
         patchData = checkFillables(patchData, state._conf.sync.fillables, state._conf.sync.guard)
         patchData.id = id
         carry[id] = patchData
@@ -60,7 +60,7 @@ const getters = {
     },
   prepareForInsert: (state, getters, rootState, rootGetters) =>
     (items = []) => {
-      items = copyObj(items)
+      // items = copyObj(items)
       return items.reduce((carry, item) => {
         item = checkFillables(item, state._conf.sync.fillables, state._conf.sync.guard)
         carry.push(item)
@@ -69,7 +69,7 @@ const getters = {
     },
   prepareInitialDocForInsert: (state, getters, rootState, rootGetters) =>
     (doc) => {
-      doc = copyObj(doc)
+      // doc = copyObj(doc)
       doc = checkFillables(doc, state._conf.sync.fillables, state._conf.sync.guard)
       return doc
     }
