@@ -112,8 +112,20 @@ To automatically edit your vuex store & have firebase always in sync you just ne
 
 ### Editing
 
-With these 6 actions below you can edit the docs in your vuex module.
-Any updates with these actions and your firestore stays in sync!
+Basically with just 4 actions (set, patch, insert, delete) you can make changes to your vuex store and **everything will automatically stay up to date with your firestore!**
+
+There are two ways to use vuex-easy-firestore, in 'collection' or 'doc' mode. You can only choose one because this points to the path you sync your vuex module to:
+
+- `firestoreRefType: 'collection'` for a firestore collection
+- `firestoreRefType: 'doc'` for a single firestore document
+
+Depending on which mode there are some small changes, but the syntax is mostly the same.
+
+The sync is fully robust and **automatically groups any api calls per 1000 ms**. You don't have to worry about optimising/limiting the api calls, it's all done automatically! (Only one api call per 1000ms will be made for a maximum of 500 changes, if there are more changes queued it will automatically be split over 2 api calls).
+
+#### Editing in 'collection' mode
+
+With these 4 actions: set, patch, insert and delete, you can edit **single docs** in your vuex module. Any updates made with these actions will keep your firestore in sync!
 
 ```js
 dispatch('moduleName/set', doc) // will choose to dispatch either `patch` OR `insert` automatically
@@ -122,21 +134,7 @@ dispatch('moduleName/insert', doc)
 dispatch('moduleName/delete', id)
 ```
 
-The sync is fully robust and automatically makes api call "batches" per 1000 ms, so you can loop through things, make a lot of edits here and there and the **api calls are automatically optimised!** (it even stacks until the max batch limit of 500 and splits up the calls so it won't go over this limit)
-
-In cases you don't want to loop through items you can also use the special batch actions below. The main difference is you will have separate hooks (see [hooks](#hooks-before-insertpatchdelete)), and batches are optimised to update the vuex store first for all changes and the syncs to firestore last.
-
-```js
-dispatch('moduleName/insertBatch', docs) // an array of docs
-dispatch('moduleName/patchBatch', {doc: {}, ids: []}) // `doc` is an object with the fields to patch, `ids` is an array
-dispatch('moduleName/deleteBatch', ids) // an array of ids
-```
-
-#### Editing in 'collection' mode
-
-In 'collection' mode (`firestoreRefType: 'collection'` in the config object), you can use the 4 actions like you see them above. Plus some extra:
-
-There are two ways you can give a payload to `set patch` or `insert`:
+There are two ways you can give a payload to `set`, `patch` or `insert`:
 
 ```js
 const id = '123'
@@ -168,9 +166,26 @@ dispatch('moduleName/delete', `${id}.tags.water`)
 
 In the above example you can see that you can delete a sub-property by passing a string and separate sub-props with `.`
 
+##### Batch updates/inserts/deletions
+
+In cases you don't want to loop through items you can also use the special batch actions below. The main difference is you will have separate hooks (see [hooks](#hooks-before-insertpatchdelete)), and batches are optimised to update the vuex store first for all changes and the syncs to firestore last.
+
+```js
+dispatch('moduleName/insertBatch', docs) // an array of docs
+dispatch('moduleName/patchBatch', {doc: {}, ids: []}) // `doc` is an object with the fields to patch, `ids` is an array
+dispatch('moduleName/deleteBatch', ids) // an array of ids
+```
+
+##### Auto-generated fields
+
+When working with collections, each document insert or update will automatically receive these fields:
+
+- `created_at` / `updated_at` both use: `Firebase.firestore.FieldValue.serverTimestamp()`
+- `created_by` / `updated_by` will automatically fill in the userId
+
 #### Editing in 'doc' mode
 
-In 'doc' mode (`firestoreRefType: 'doc'` in the config object), you can use the following actions:
+In 'doc' mode all changes will take effect on the single document you have passed in the firestorePath. You will be able to use these actions:
 
 ```js
 dispatch('moduleName/set', {name: 'my new name'}) // same as `patch`
@@ -304,10 +319,18 @@ The filters set in `sync: {}` are applied before the DB Channel is openend. They
 {
   // your other config...
   sync: {
-    where: [],
+    where: [], // an array of arrays
     orderBy: [],
   }
 }
+```
+
+You can also use `'{userId}'` as third param for a where filter. Eg.:
+
+```js
+where: [
+  ['created_by', '==', '{userId}']
+]
 ```
 
 ### Fillables and guard
