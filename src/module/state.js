@@ -11,7 +11,7 @@ export default {
       propDeletions: [],
       debounceTimer: null,
     },
-    fetched: [],
+    fetched: {},
     stopPatchingTimeout: null
   }
 }
