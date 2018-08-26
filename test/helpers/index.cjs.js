@@ -367,7 +367,7 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
  * @param {object} state The state which should have this prop: `_sync.syncStack[syncStackProp]`. syncStackProp can be 'updates', 'propDeletions', 'deletions', 'inserts'.
  * @param {object} dbRef The Firestore dbRef of the 'doc' or 'collection'
  * @param {Bool} collectionMode Very important: is the firebase dbRef a 'collection' or 'doc'?
- * @param {string} userId for `created_by`
+ * @param {string} userId for `created_by` / `updated_by`
  * @param {number} batchMaxCount The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {object} A Firebase firestore batch object.
  */
@@ -387,6 +387,7 @@ function makeBatchFromSyncstack(state, dbRef, collectionMode, userId) {
     var docRef = collectionMode ? dbRef.doc(id) : dbRef;
     var itemToUpdate = flattenToPaths(item);
     itemToUpdate.updated_at = Firebase.firestore.FieldValue.serverTimestamp();
+    itemToUpdate.updated_by = userId;
     batch.update(docRef, itemToUpdate);
   });
   // Add 'propDeletions' to batch
@@ -404,6 +405,7 @@ function makeBatchFromSyncstack(state, dbRef, collectionMode, userId) {
     var updateObj = {};
     updateObj[path] = Firebase.firestore.FieldValue.delete();
     updateObj.updated_at = Firebase.firestore.FieldValue.serverTimestamp();
+    updateObj.updated_by = userId;
     batch.update(docRef, updateObj);
   });
   // Add 'deletions' to batch
