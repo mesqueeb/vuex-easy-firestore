@@ -1,5 +1,5 @@
-
 import { isObject } from 'is-what'
+
 /**
  * Checks all props of an object and deletes guarded and non-fillables.
  *
@@ -12,7 +12,14 @@ import { isObject } from 'is-what'
 export default function (obj, fillables = [], guard = []) {
   if (!isObject(obj)) return obj
   return Object.keys(obj).reduce((carry, key) => {
-    if (!fillables.includes(key) || guard.includes(key)) {
+    // check fillables
+    if (fillables.length && !fillables.includes(key)) {
+      return carry
+    }
+    // check guard
+    guard.push('_conf')
+    guard.push('_sync')
+    if (guard.includes(key)) {
       return carry
     }
     carry[key] = obj[key]

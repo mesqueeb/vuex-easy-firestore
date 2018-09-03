@@ -1,4 +1,4 @@
-import { grabUntilApiLimit, makeBatchFromSyncstack } from './helpers/apiHelpers.cjs'
+import { grabUntilApiLimit, makeBatchFromSyncstack, isPathVar, pathVarKey } from './helpers/apiHelpers.cjs'
 import test from 'ava'
 
 const state = {
@@ -49,6 +49,38 @@ test('grabUntilApiLimit', t => {
   res = grabUntilApiLimit(syncStackProp, count, maxCount, state)
   t.is(res.length, 500)
   t.is(state._sync.syncStack.inserts.length, 100)
+})
+
+test('isPathVar', t => {
+  let res, piece
+  piece = '{groupId'
+  res = isPathVar(piece)
+  t.is(res, false)
+  piece = 'groupId}'
+  res = isPathVar(piece)
+  t.is(res, false)
+  piece = ' {groupId}'
+  res = isPathVar(piece)
+  t.is(res, false)
+  piece = '{groupId}'
+  res = isPathVar(piece)
+  t.is(res, true)
+})
+
+test('pathVarKey', t => {
+  let res, piece
+  piece = '{groupId'
+  res = pathVarKey(piece)
+  t.is(res, piece)
+  piece = 'groupId}'
+  res = pathVarKey(piece)
+  t.is(res, piece)
+  piece = '{groupId} '
+  res = pathVarKey(piece)
+  t.is(res, piece)
+  piece = '{groupId}'
+  res = pathVarKey(piece)
+  t.is(res, 'groupId')
 })
 
 test('makeBatchFromSyncstack', t => {

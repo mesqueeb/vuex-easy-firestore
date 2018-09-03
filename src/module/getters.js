@@ -13,6 +13,7 @@ const getters = {
   },
   dbRef: (state, getters, rootState, rootGetters) => {
     let path
+    // check for userId replacement
     const requireUser = state._conf.firestorePath.includes('{userId}')
     if (requireUser) {
       if (!getters.signedIn) return false
@@ -21,6 +22,13 @@ const getters = {
       path = state._conf.firestorePath.replace('{userId}', userId)
     } else {
       path = state._conf.firestorePath
+    }
+    // replace pathVariables
+    if (Object.keys(state._sync.pathVariables).length) {
+      Object.keys(state._sync.pathVariables).forEach(_pathVarKey => {
+        const pathVarVal = state._sync.pathVariables[_pathVarKey]
+        path = path.replace(`/{${_pathVarKey}}/`, `/${pathVarVal}/`)
+      })
     }
     return (getters.collectionMode)
       ? Firebase.firestore().collection(path)
