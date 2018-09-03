@@ -24,6 +24,8 @@ function checkFillables (obj) {
       return carry;
     }
     // check guard
+    guard.push('_conf');
+    guard.push('_sync');
     if (guard.includes(key)) {
       return carry;
     }

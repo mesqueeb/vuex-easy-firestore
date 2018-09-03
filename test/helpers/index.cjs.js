@@ -84,7 +84,7 @@ function initialState$1() {
 
 var mainCharacter = {
   // easy firestore config
-  firestorePath: 'playerCharacters/player5',
+  firestorePath: 'playerCharacters/player7',
   firestoreRefType: 'doc',
   moduleName: 'mainCharacter',
   statePropName: '',
@@ -1105,6 +1105,8 @@ function checkFillables (obj) {
       return carry;
     }
     // check guard
+    guard.push('_conf');
+    guard.push('_sync');
     if (guard.includes(key)) {
       return carry;
     }
@@ -1187,7 +1189,6 @@ var getters = {
   prepareInitialDocForInsert: function prepareInitialDocForInsert(state, getters, rootState, rootGetters) {
     return function (doc) {
       // doc = copyObj(doc)
-      console.log('doc, state._conf.sync.fillables, state._conf.sync.guard → ', doc, state._conf.sync.fillables, state._conf.sync.guard);
       doc = checkFillables(doc, state._conf.sync.fillables, state._conf.sync.guard);
       return doc;
     };
