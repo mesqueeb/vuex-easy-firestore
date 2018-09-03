@@ -145,5 +145,29 @@ function makeBatchFromSyncstack(state, dbRef, collectionMode, userId) {
   return batch;
 }
 
+/**
+ * Check if the string starts and ends with '{' and '}' to swap out for variable value saved in state.
+ *
+ * @export
+ * @param {string} pathPiece eg. 'groups' or '{groupId}'
+ * @returns {Bool}
+ */
+function isPathVar(pathPiece) {
+  return pathPiece[0] === '{' && pathPiece[pathPiece.length - 1] === '}';
+}
+
+/**
+ * Get the variable name of a piece of path: eg. return 'groupId' if pathPiece is '{groupId}'
+ *
+ * @export
+ * @param {string} pathPiece eg. 'groups' or '{groupId}'
+ * @returns {string} returns 'groupId' in case of '{groupId}'
+ */
+function pathVarKey(pathPiece) {
+  return isPathVar(pathPiece) ? pathPiece.slice(1, -1) : pathPiece;
+}
+
 exports.grabUntilApiLimit = grabUntilApiLimit;
 exports.makeBatchFromSyncstack = makeBatchFromSyncstack;
+exports.isPathVar = isPathVar;
+exports.pathVarKey = pathVarKey;

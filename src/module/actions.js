@@ -1,11 +1,11 @@
 import Firebase from 'firebase'
 import 'firebase/firestore'
 import 'firebase/auth'
-import { isArray } from 'is-what'
+import { isArray, isObject } from 'is-what'
 import merge from '../utils/deepmerge'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
-import { makeBatchFromSyncstack } from '../utils/apiHelpers'
+import { makeBatchFromSyncstack, isPathVar, pathVarKey } from '../utils/apiHelpers'
 import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
 import error from './errors'
 
@@ -87,6 +87,7 @@ const actions = {
     const doc = getters.prepareInitialDocForInsert(initialDoc)
 
     // 2. insert
+    console.log('doc → ', doc)
     return getters.dbRef.set(doc)
   },
   handleSyncStackDebounce ({state, commit, dispatch, getters}) {
@@ -217,19 +218,36 @@ const actions = {
         break
     }
   },
-  openDBChannel ({getters, state, commit, dispatch}) {
+  openDBChannel ({getters, state, commit, dispatch}, pathVariables) {
     const store = this
+    // set state for pathVariables
+    if (pathVariables && isObject(pathVariables)) commit('SET_PATHVARS', pathVariables)
+    // get userId
     let userId = null
     if (Firebase.auth().currentUser) {
       state._sync.signedIn = true
       userId = Firebase.auth().currentUser.uid
       state._sync.userId = userId
     }
+    // getters.dbRef should already have pathVariables swapped out
     let dbRef = getters.dbRef
     // apply where filters and orderBy
     if (getters.collectionMode) {
       state._conf.sync.where.forEach(paramsArr => {
-        if (paramsArr[2] === '{userId}') paramsArr[2] = userId
+        paramsArr.forEach((param, paramIndex) => {
+          if (isPathVar(param)) {
+            const _pathVarKey = pathVarKey(param)
+            if (_pathVarKey === 'userId') {
+              paramsArr[paramIndex] = userId
+              return
+            }
+            if (!Object.keys(state._sync.pathVariables).includes(_pathVarKey)) {
+              return error('missingPathVarKey')
+            }
+            const varVal = state._sync.pathVariables[_pathVarKey]
+            paramsArr[paramIndex] = varVal
+          }
+        })
         dbRef = dbRef.where(...paramsArr)
       })
       if (state._conf.sync.orderBy.length) {
@@ -258,7 +276,7 @@ const actions = {
         if (!getters.collectionMode) {
           if (!querySnapshot.data()) {
             // No initial doc found in docMode
-            console.log('insert initial doc')
+            console.log('inserting initial doc')
             return dispatch('insertInitialDoc')
           }
           const doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues)

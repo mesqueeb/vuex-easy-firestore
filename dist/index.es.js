@@ -102,6 +102,7 @@ var initialState = {
   _sync: {
     signedIn: false,
     userId: null,
+    pathVariables: {},
     patching: false,
     syncStack: {
       inserts: [],
@@ -116,6 +117,12 @@ var initialState = {
 };
 
 var mutations = {
+  SET_PATHVARS: function SET_PATHVARS(state, pathVars) {
+    var self = this;
+    Object.keys(pathVars).forEach(function (key) {
+      self._vm.$set(state._sync.pathVariables, key, pathVars[key]);
+    });
+  },
   resetSyncStack: function resetSyncStack(state) {
     state._sync.syncStack = {
       updates: {},
@@ -349,10 +356,33 @@ function makeBatchFromSyncstack(state, dbRef, collectionMode, userId) {
   return batch;
 }
 
+/**
+ * Check if the string starts and ends with '{' and '}' to swap out for variable value saved in state.
+ *
+ * @export
+ * @param {string} pathPiece eg. 'groups' or '{groupId}'
+ * @returns {Bool}
+ */
+function isPathVar(pathPiece) {
+  return pathPiece[0] === '{' && pathPiece[pathPiece.length - 1] === '}';
+}
+
+/**
+ * Get the variable name of a piece of path: eg. return 'groupId' if pathPiece is '{groupId}'
+ *
+ * @export
+ * @param {string} pathPiece eg. 'groups' or '{groupId}'
+ * @returns {string} returns 'groupId' in case of '{groupId}'
+ */
+function pathVarKey(pathPiece) {
+  return isPathVar(pathPiece) ? pathPiece.slice(1, -1) : pathPiece;
+}
+
 var errorMessages = {
   actionsDeleteMissingId: '\n    Missing Id of the Doc you want to delete!\n    Correct usage:\n      dispatch(\'delete\', id)\n  ',
   actionsDeleteMissingPath: '\n    Missing path to the prop you want to delete!\n    Correct usage:\n      dispatch(\'delete\', \'path.to.prop\')\n\n    Use `.` for sub props!\n  ',
-  missingId: '\n    Missing an id! Correct usage:\n\n    // `id` as prop of item:\n    dispatch(\'module/set\', {id: \'123\', name: \'best item name\'})\n\n    // or object with only 1 prop, which is the `id` as key, and item as its value:\n    dispatch(\'module/set\', {\'123\': {name: \'best item name\'}})\n  '
+  missingId: '\n    Missing an id! Correct usage:\n\n    // `id` as prop of item:\n    dispatch(\'module/set\', {id: \'123\', name: \'best item name\'})\n\n    // or object with only 1 prop, which is the `id` as key, and item as its value:\n    dispatch(\'module/set\', {\'123\': {name: \'best item name\'}})\n  ',
+  missingPathVarKey: '\n    A path variable was passed without defining it!\n    In VuexEasyFirestore you can create paths with variables:\n    eg: `groups/{groupId}/user/{userId}`\n\n    `userId` is automatically replaces with the userId of the firebase user.\n    `groupId` or any other variable that needs to be set after authentication needs to be passed upon the `openDBChannel` action.\n\n    // (in module config) Example path:\n    firestorePath: \'groups/{groupId}/user/{userId}\'\n\n    // Then before openDBChannel:\n    // retrieve the value\n    const groupId = someIdRetrievedAfterSignin\n    // pass as argument into openDBChannel:\n    dispatch(\'moduleName/openDBChannel\', {groupId})\n  '
 };
 
 function error (error) {
@@ -514,6 +544,7 @@ var actions = {
     var doc = getters.prepareInitialDocForInsert(initialDoc);
 
     // 2. insert
+    console.log('doc → ', doc);
     return getters.dbRef.set(doc);
   },
   handleSyncStackDebounce: function handleSyncStackDebounce(_ref7) {
@@ -673,26 +704,43 @@ var actions = {
         break;
     }
   },
-  openDBChannel: function openDBChannel(_ref15) {
+  openDBChannel: function openDBChannel(_ref15, pathVariables) {
     var getters = _ref15.getters,
         state = _ref15.state,
         commit = _ref15.commit,
         dispatch = _ref15.dispatch;
 
     var store = this;
+    // set state for pathVariables
+    if (pathVariables && isObject(pathVariables)) commit('SET_PATHVARS', pathVariables);
+    // get userId
     var userId = null;
     if (Firebase$1.auth().currentUser) {
       state._sync.signedIn = true;
       userId = Firebase$1.auth().currentUser.uid;
       state._sync.userId = userId;
     }
+    // getters.dbRef should already have pathVariables swapped out
     var dbRef = getters.dbRef;
     // apply where filters and orderBy
     if (getters.collectionMode) {
       state._conf.sync.where.forEach(function (paramsArr) {
         var _dbRef;
 
-        if (paramsArr[2] === '{userId}') paramsArr[2] = userId;
+        paramsArr.forEach(function (param, paramIndex) {
+          if (isPathVar(param)) {
+            var _pathVarKey = pathVarKey(param);
+            if (_pathVarKey === 'userId') {
+              paramsArr[paramIndex] = userId;
+              return;
+            }
+            if (!Object.keys(state._sync.pathVariables).includes(_pathVarKey)) {
+              return error('missingPathVarKey');
+            }
+            var varVal = state._sync.pathVariables[_pathVarKey];
+            paramsArr[paramIndex] = varVal;
+          }
+        });
         dbRef = (_dbRef = dbRef).where.apply(_dbRef, toConsumableArray(paramsArr));
       });
       if (state._conf.sync.orderBy.length) {
@@ -723,7 +771,7 @@ var actions = {
         if (!getters.collectionMode) {
           if (!querySnapshot.data()) {
             // No initial doc found in docMode
-            console.log('insert initial doc');
+            console.log('inserting initial doc');
             return dispatch('insertInitialDoc');
           }
           var doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues);
@@ -963,7 +1011,12 @@ function checkFillables (obj) {
 
   if (!isObject(obj)) return obj;
   return Object.keys(obj).reduce(function (carry, key) {
-    if (!fillables.includes(key) || guard.includes(key)) {
+    // check fillables
+    if (fillables.length && !fillables.includes(key)) {
+      return carry;
+    }
+    // check guard
+    if (guard.includes(key)) {
       return carry;
     }
     carry[key] = obj[key];
@@ -979,6 +1032,7 @@ var getters = {
   },
   dbRef: function dbRef(state, getters, rootState, rootGetters) {
     var path = void 0;
+    // check for userId replacement
     var requireUser = state._conf.firestorePath.includes('{userId}');
     if (requireUser) {
       if (!getters.signedIn) return false;
@@ -987,6 +1041,13 @@ var getters = {
       path = state._conf.firestorePath.replace('{userId}', userId);
     } else {
       path = state._conf.firestorePath;
+    }
+    // replace pathVariables
+    if (Object.keys(state._sync.pathVariables).length) {
+      Object.keys(state._sync.pathVariables).forEach(function (_pathVarKey) {
+        var pathVarVal = state._sync.pathVariables[_pathVarKey];
+        path = path.replace('/{' + _pathVarKey + '}/', '/' + pathVarVal + '/');
+      });
     }
     return getters.collectionMode ? Firebase.firestore().collection(path) : Firebase.firestore().doc(path);
   },
@@ -1037,6 +1098,7 @@ var getters = {
   prepareInitialDocForInsert: function prepareInitialDocForInsert(state, getters, rootState, rootGetters) {
     return function (doc) {
       // doc = copyObj(doc)
+      console.log('doc, state._conf.sync.fillables, state._conf.sync.guard → ', doc, state._conf.sync.fillables, state._conf.sync.guard);
       doc = checkFillables(doc, state._conf.sync.fillables, state._conf.sync.guard);
       return doc;
     };

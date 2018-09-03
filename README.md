@@ -42,6 +42,7 @@ Other features include hooks, fillables (limit props to sync), default values (a
     - [Sync directly to module state](#sync-directly-to-module-state)
 - [Extra features](#extra-features)
     - [Filters](#filters)
+    - [Variables for firestorePath or filters](#variables-for-firestorepath-or-filters)
     - [Fillables and guard](#fillables-and-guard)
     - [Hooks before insert/patch/delete](#hooks-before-insertpatchdelete)
     - [Hooks after changes on the server](#hooks-after-changes-on-the-server)
@@ -331,6 +332,31 @@ You can also use `'{userId}'` as third param for a where filter. Eg.:
 where: [
   ['created_by', '==', '{userId}']
 ]
+```
+
+### Variables for firestorePath or filters
+
+Besides `'{userId}'` in your `firestorePath` in the config or in where filters, you can also use **any variable** in the `firestorePath` or the `where` filter.
+
+```js
+// your vuex module
+SpecificGroupUserModule: {
+  moduleName: 'groupUserData',
+  firestorePath: 'groups/{groupId}/users/{userId}'
+}
+// Just pass the groupId as a parameter to openDBChannel!
+dispatch('groupUserData/openDBChannel', {groupId: 'group-A'})
+```
+
+**Use case:** This is especially useful if you need to first retrieve the `groupId` from a userModule which is also synced. You can do so by using the Promise returned from `openDBChannel` on for example a userModule:
+
+```js
+store.dispatch('userModule/openDBChannel')
+  .then(_ => {
+    // in this example every user hase a groupId saved like so:
+    const userGroupId = store.state.user.groupId
+    store.dispatch('groupUserData/openDBChannel', {groupId: userGroupId})
+  })
 ```
 
 ### Fillables and guard

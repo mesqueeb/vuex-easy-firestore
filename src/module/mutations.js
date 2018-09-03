@@ -3,6 +3,12 @@ import { getDeepRef } from 'vuex-easy-access'
 import merge from '../utils/deepmerge'
 
 const mutations = {
+  SET_PATHVARS (state, pathVars) {
+    const self = this
+    Object.keys(pathVars).forEach(key => {
+      self._vm.$set(state._sync.pathVariables, key, pathVars[key])
+    })
+  },
   resetSyncStack (state) {
     state._sync.syncStack = {
       updates: {},
