@@ -147,6 +147,9 @@ dispatch('moduleName/set', {[id]: {name: 'my new name'}})
 // Please note that only the `name` will be updated, and other fields are left alone!
 ```
 
+> Note on insert:
+> If you had already added a doc in place with a custom ID which you also passed in as the ID of the doc to insert, the insert call will be made to the server, but the doc will not be inserted in the vuex store ('cause you already added it manually). If anyone requires other behaviour please let me know.
+
 There are two ways to delete things: the whole item **or just a sub-property!**
 
 ```js

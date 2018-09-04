@@ -140,8 +140,10 @@ var mutations = {
   INSERT_DOC: function INSERT_DOC(state, doc) {
     if (state._conf.firestoreRefType.toLowerCase() !== 'collection') return;
     if (state._conf.statePropName) {
+      if (state[state._conf.statePropName][doc.id]) return;
       this._vm.$set(state[state._conf.statePropName], doc.id, doc);
     } else {
+      if (state[doc.id]) return;
       this._vm.$set(state, doc.id, doc);
     }
   },
