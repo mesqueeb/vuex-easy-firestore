@@ -87,7 +87,6 @@ const actions = {
     const doc = getters.prepareInitialDocForInsert(initialDoc)
 
     // 2. insert
-    console.log('doc → ', doc)
     return getters.dbRef.set(doc)
   },
   handleSyncStackDebounce ({state, commit, dispatch, getters}) {
@@ -255,16 +254,16 @@ const actions = {
       }
     }
     // define handleDoc()
-    function handleDoc (change, id, doc, source) {
-      change = (!change) ? 'modified' : change.type
+    function handleDoc (_change, id, doc, source) {
+      _change = (!_change) ? 'modified' : _change.type
       // define storeUpdateFn()
       function storeUpdateFn (_doc) {
-        return dispatch('serverUpdate', {change, id, doc: _doc})
+        return dispatch('serverUpdate', {_change, id, doc: _doc})
       }
       // get user set sync hook function
-      const syncHookFn = state._conf.serverChange[change + 'Hook']
+      const syncHookFn = state._conf.serverChange[_change + 'Hook']
       if (syncHookFn) {
-        syncHookFn(storeUpdateFn, doc, id, store, source, change)
+        syncHookFn(storeUpdateFn, doc, id, store, source, _change)
       } else {
         storeUpdateFn(doc)
       }

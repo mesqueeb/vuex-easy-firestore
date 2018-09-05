@@ -134,10 +134,8 @@ var mutations = {
   INSERT_DOC: function INSERT_DOC(state, doc) {
     if (state._conf.firestoreRefType.toLowerCase() !== 'collection') return;
     if (state._conf.statePropName) {
-      if (state[state._conf.statePropName][doc.id]) return;
       this._vm.$set(state[state._conf.statePropName], doc.id, doc);
     } else {
-      if (state[doc.id]) return;
       this._vm.$set(state, doc.id, doc);
     }
   },
@@ -546,7 +544,6 @@ var actions = {
     var doc = getters.prepareInitialDocForInsert(initialDoc);
 
     // 2. insert
-    console.log('doc → ', doc);
     return getters.dbRef.set(doc);
   },
   handleSyncStackDebounce: function handleSyncStackDebounce(_ref7) {
@@ -752,16 +749,16 @@ var actions = {
       }
     }
     // define handleDoc()
-    function handleDoc(change, id, doc, source) {
-      change = !change ? 'modified' : change.type;
+    function handleDoc(_change, id, doc, source) {
+      _change = !_change ? 'modified' : _change.type;
       // define storeUpdateFn()
       function storeUpdateFn(_doc) {
-        return dispatch('serverUpdate', { change: change, id: id, doc: _doc });
+        return dispatch('serverUpdate', { _change: _change, id: id, doc: _doc });
       }
       // get user set sync hook function
-      var syncHookFn = state._conf.serverChange[change + 'Hook'];
+      var syncHookFn = state._conf.serverChange[_change + 'Hook'];
       if (syncHookFn) {
-        syncHookFn(storeUpdateFn, doc, id, store, source, change);
+        syncHookFn(storeUpdateFn, doc, id, store, source, _change);
       } else {
         storeUpdateFn(doc);
       }
