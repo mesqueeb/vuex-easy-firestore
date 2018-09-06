@@ -38,9 +38,13 @@ const errorMessages = {
     // pass as argument into openDBChannel:
     dispatch('moduleName/openDBChannel', {groupId})
   `,
+  patchNoRef: `
+    Something went wrong during the PATCH mutation:
+    The document it's trying to patch does not exist.
+  `,
 }
 
 export default function (error) {
-  console.error('[vuex-easy-firestore] Error!', errorMessages[error])
+  Error('[vuex-easy-firestore] Error!', errorMessages[error])
   return error
 }

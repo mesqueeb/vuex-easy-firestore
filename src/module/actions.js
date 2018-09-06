@@ -1,4 +1,4 @@
-import Firebase from 'firebase'
+import Firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
 import { isArray, isObject } from 'is-what'
@@ -254,16 +254,15 @@ const actions = {
       }
     }
     // define handleDoc()
-    function handleDoc (_change, id, doc, source) {
-      _change = (!_change) ? 'modified' : _change.type
+    function handleDoc (_changeType = 'modified', id, doc, source) {
       // define storeUpdateFn()
       function storeUpdateFn (_doc) {
-        return dispatch('serverUpdate', {_change, id, doc: _doc})
+        return dispatch('serverUpdate', {change: _changeType, id, doc: _doc})
       }
       // get user set sync hook function
-      const syncHookFn = state._conf.serverChange[_change + 'Hook']
+      const syncHookFn = state._conf.serverChange[_changeType + 'Hook']
       if (syncHookFn) {
-        syncHookFn(storeUpdateFn, doc, id, store, source, _change)
+        syncHookFn(storeUpdateFn, doc, id, store, source, _changeType)
       } else {
         storeUpdateFn(doc)
       }
@@ -276,7 +275,8 @@ const actions = {
           if (!querySnapshot.data()) {
             // No initial doc found in docMode
             console.log('inserting initial doc')
-            return dispatch('insertInitialDoc')
+            dispatch('insertInitialDoc')
+            return resolve()
           }
           const doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues)
           if (source === 'local') return resolve()
@@ -284,19 +284,20 @@ const actions = {
           return resolve()
         }
         querySnapshot.docChanges().forEach(change => {
+          const changeType = change.type
           // Don't do anything for local modifications & removals
           if (source === 'local' &&
-            (change.type === 'modified' || change.type === 'removed')
+            (changeType === 'modified' || changeType === 'removed')
           ) {
             return resolve()
           }
           const id = change.doc.id
-          const doc = (change.type === 'added')
+          const doc = (changeType === 'added')
             ? setDefaultValues(change.doc.data(), state._conf.serverChange.defaultValues)
             : change.doc.data()
-          handleDoc(change, id, doc, source)
-          return resolve()
+          handleDoc(changeType, id, doc, source)
         })
+        return resolve()
       }, error => {
         state._sync.patching = 'error'
         return reject(error)
