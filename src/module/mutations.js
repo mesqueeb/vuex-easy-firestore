@@ -1,5 +1,6 @@
 import { isObject } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
+import error from './errors'
 import merge from '../utils/deepmerge'
 
 const mutations = {
@@ -33,6 +34,7 @@ const mutations = {
     if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
       ref = ref[doc.id]
     }
+    if (!ref) return error('patchNoRef')
     return Object.keys(doc).forEach(key => {
       // Merge if exists
       const newVal = (isObject(ref[key]) && isObject(doc[key]))

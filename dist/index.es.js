@@ -3,7 +3,6 @@ import nanomerge from 'nanomerge';
 import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
 import Firebase from 'firebase/app';
 import 'firebase/firestore';
-import Firebase$1 from 'firebase';
 import 'firebase/auth';
 
 // import deepmerge from 'deepmerge'
@@ -116,6 +115,10 @@ var initialState = {
   }
 };
 
+function error (error) {
+  return error;
+}
+
 var mutations = {
   SET_PATHVARS: function SET_PATHVARS(state, pathVars) {
     var self = this;
@@ -147,6 +150,7 @@ var mutations = {
     if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
       ref = ref[doc.id];
     }
+    if (!ref) return error('patchNoRef');
     return Object.keys(doc).forEach(function (key) {
       // Merge if exists
       var newVal = isObject(ref[key]) && isObject(doc[key]) ? merge(ref[key], doc[key]) : doc[key];
@@ -378,18 +382,6 @@ function pathVarKey(pathPiece) {
   return isPathVar(pathPiece) ? pathPiece.slice(1, -1) : pathPiece;
 }
 
-var errorMessages = {
-  actionsDeleteMissingId: '\n    Missing Id of the Doc you want to delete!\n    Correct usage:\n      dispatch(\'delete\', id)\n  ',
-  actionsDeleteMissingPath: '\n    Missing path to the prop you want to delete!\n    Correct usage:\n      dispatch(\'delete\', \'path.to.prop\')\n\n    Use `.` for sub props!\n  ',
-  missingId: '\n    Missing an id! Correct usage:\n\n    // `id` as prop of item:\n    dispatch(\'module/set\', {id: \'123\', name: \'best item name\'})\n\n    // or object with only 1 prop, which is the `id` as key, and item as its value:\n    dispatch(\'module/set\', {\'123\': {name: \'best item name\'}})\n  ',
-  missingPathVarKey: '\n    A path variable was passed without defining it!\n    In VuexEasyFirestore you can create paths with variables:\n    eg: `groups/{groupId}/user/{userId}`\n\n    `userId` is automatically replaces with the userId of the firebase user.\n    `groupId` or any other variable that needs to be set after authentication needs to be passed upon the `openDBChannel` action.\n\n    // (in module config) Example path:\n    firestorePath: \'groups/{groupId}/user/{userId}\'\n\n    // Then before openDBChannel:\n    // retrieve the value\n    const groupId = someIdRetrievedAfterSignin\n    // pass as argument into openDBChannel:\n    dispatch(\'moduleName/openDBChannel\', {groupId})\n  '
-};
-
-function error (error) {
-  console.error('[vuex-easy-firestore] Error!', errorMessages[error]);
-  return error;
-}
-
 /**
  * gets an ID from a single piece of payload.
  *
@@ -405,7 +397,6 @@ function getId(payloadPiece, conf, path, fullPayload) {
     if (Object.keys(payloadPiece).length === 1) return Object.keys(payloadPiece)[0];
   }
   if (isString(payloadPiece)) return payloadPiece;
-  error('missingId');
   return false;
 }
 
@@ -714,9 +705,9 @@ var actions = {
     if (pathVariables && isObject(pathVariables)) commit('SET_PATHVARS', pathVariables);
     // get userId
     var userId = null;
-    if (Firebase$1.auth().currentUser) {
+    if (Firebase.auth().currentUser) {
       state._sync.signedIn = true;
-      userId = Firebase$1.auth().currentUser.uid;
+      userId = Firebase.auth().currentUser.uid;
       state._sync.userId = userId;
     }
     // getters.dbRef should already have pathVariables swapped out
@@ -749,16 +740,21 @@ var actions = {
       }
     }
     // define handleDoc()
-    function handleDoc(_change, id, doc, source) {
-      _change = !_change ? 'modified' : _change.type;
+    function handleDoc() {
+      var _changeType = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'modified';
+
+      var id = arguments[1];
+      var doc = arguments[2];
+      var source = arguments[3];
+
       // define storeUpdateFn()
       function storeUpdateFn(_doc) {
-        return dispatch('serverUpdate', { _change: _change, id: id, doc: _doc });
+        return dispatch('serverUpdate', { change: _changeType, id: id, doc: _doc });
       }
       // get user set sync hook function
-      var syncHookFn = state._conf.serverChange[_change + 'Hook'];
+      var syncHookFn = state._conf.serverChange[_changeType + 'Hook'];
       if (syncHookFn) {
-        syncHookFn(storeUpdateFn, doc, id, store, source, _change);
+        syncHookFn(storeUpdateFn, doc, id, store, source, _changeType);
       } else {
         storeUpdateFn(doc);
       }
@@ -771,7 +767,8 @@ var actions = {
           if (!querySnapshot.data()) {
             // No initial doc found in docMode
             console.log('inserting initial doc');
-            return dispatch('insertInitialDoc');
+            dispatch('insertInitialDoc');
+            return resolve();
           }
           var doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues);
           if (source === 'local') return resolve();
@@ -779,15 +776,16 @@ var actions = {
           return resolve();
         }
         querySnapshot.docChanges().forEach(function (change) {
+          var changeType = change.type;
           // Don't do anything for local modifications & removals
-          if (source === 'local' && (change.type === 'modified' || change.type === 'removed')) {
+          if (source === 'local' && (changeType === 'modified' || changeType === 'removed')) {
             return resolve();
           }
           var id = change.doc.id;
-          var doc = change.type === 'added' ? setDefaultValues(change.doc.data(), state._conf.serverChange.defaultValues) : change.doc.data();
-          handleDoc(change, id, doc, source);
-          return resolve();
+          var doc = changeType === 'added' ? setDefaultValues(change.doc.data(), state._conf.serverChange.defaultValues) : change.doc.data();
+          handleDoc(changeType, id, doc, source);
         });
+        return resolve();
       }, function (error$$1) {
         state._sync.patching = 'error';
         return reject(error$$1);
