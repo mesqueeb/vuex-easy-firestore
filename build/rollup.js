@@ -1,4 +1,31 @@
-// npm i -D babel-core babel-plugin-external-helpers babel-plugin-transform-object-rest-spread babel-preset-env rollup rollup-plugin-babel rollup-plugin-commonjs rollup-plugin-node-resolve rollup-plugin-terser
+/* eslint-disable */
+
+/* Required packages: */
+// npm i -D \
+// @babel/core \
+// @babel/plugin-external-helpers \
+// @babel/plugin-proposal-object-rest-spread \
+// @babel/preset-env \
+// rollup \
+// rollup-plugin-babel@latest \
+// rollup-plugin-commonjs \
+// rollup-plugin-node-resolve \
+// rollup-plugin-terser \
+// is-what
+
+/* Required .babelrc setup: */
+// {
+//   "presets": [
+//     ["@babel/preset-env", {
+//       "modules": false
+//     }]
+//   ],
+//   "plugins": [
+//     "@babel/plugin-external-helpers",
+//     "@babel/plugin-proposal-object-rest-spread"
+//   ]
+// }
+
 import babel from 'rollup-plugin-babel'
 import commonjs from 'rollup-plugin-commonjs'
 import { terser } from 'rollup-plugin-terser'

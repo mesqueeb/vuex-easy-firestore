@@ -26,7 +26,9 @@ var config = {
 };
 Firebase.initializeApp(config);
 var firestore$1 = Firebase.firestore();
-var settings = { timestampsInSnapshots: true };
+var settings = {
+  timestampsInSnapshots: true
+};
 firestore$1.settings(settings);
 
 function initialState() {
@@ -94,22 +96,23 @@ var mainCharacter = {
   getters: {}
 };
 
-// import deepmerge from 'deepmerge'
 // import deepAssign from 'deep-object-assign-with-reduce'
 // const mergeOptions = require('merge-options')
 
 function merge() {
   // check if all are objects
   var l = arguments.length;
+
   for (l; l > 0; l--) {
-    var item = arguments.length <= l - 1 ? undefined : arguments[l - 1];
+    var item = l - 1 < 0 || arguments.length <= l - 1 ? undefined : arguments[l - 1];
+
     if (!isWhat.isObject(item)) {
       console.error('trying to merge a non-object: ', item);
       return item;
     }
   }
-  return nanomerge.apply(undefined, arguments);
-  // settings for 'deepmerge'
+
+  return nanomerge.apply(void 0, arguments); // settings for 'deepmerge'
   // const overwriteMerge = (destinationArray, sourceArray, options) => sourceArray
   // const options = {arrayMerge: overwriteMerge}
   // if (params.length > 2) {
@@ -129,7 +132,6 @@ var defaultConfig = {
   // The module name. Can be nested, eg. `'user/items'`
   statePropName: '',
   // The name of the property where the docs or doc will be synced to. If left blank it will be synced on the state of the module. (Please see [Sync directly to module state](#sync-directly-to-module-state) for more info)
-
   // Related to the 2-way sync:
   sync: {
     where: [],
@@ -157,7 +159,6 @@ var defaultConfig = {
       return updateStore(ids);
     }
   },
-
   // When items on the server side are changed:
   serverChange: {
     defaultValues: {},
@@ -172,13 +173,11 @@ var defaultConfig = {
       return updateStore(doc);
     }
   },
-
   // When items are fetched through `dispatch('module/fetch', filters)`.
   fetch: {
     // The max amount of documents to be fetched. Defaults to 50.
     docLimit: 50
   },
-
   // You can also add custom state/getters/mutations/actions. These will be added to your module.
   state: {},
   getters: {},
@@ -225,6 +224,7 @@ var mutations = {
   },
   INSERT_DOC: function INSERT_DOC(state, doc) {
     if (state._conf.firestoreRefType.toLowerCase() !== 'collection') return;
+
     if (state._conf.statePropName) {
       this._vm.$set(state[state._conf.statePropName], doc.id, doc);
     } else {
@@ -236,18 +236,22 @@ var mutations = {
 
     // Get the state prop ref
     var ref = state._conf.statePropName ? state[state._conf.statePropName] : state;
+
     if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
       ref = ref[doc.id];
     }
+
     if (!ref) return error('patchNoRef');
     return Object.keys(doc).forEach(function (key) {
       // Merge if exists
       var newVal = isWhat.isObject(ref[key]) && isWhat.isObject(doc[key]) ? merge(ref[key], doc[key]) : doc[key];
+
       _this._vm.$set(ref, key, newVal);
     });
   },
   DELETE_DOC: function DELETE_DOC(state, id) {
     if (state._conf.firestoreRefType.toLowerCase() !== 'collection') return;
+
     if (state._conf.statePropName) {
       this._vm.$delete(state[state._conf.statePropName], id);
     } else {
@@ -258,18 +262,72 @@ var mutations = {
     var searchTarget = state._conf.statePropName ? state[state._conf.statePropName] : state;
     var propArr = path.split('.');
     var target = propArr.pop();
+
     if (!propArr.length) {
       return this._vm.$delete(searchTarget, target);
     }
+
     var ref = vuexEasyAccess.getDeepRef(searchTarget, propArr.join('.'));
     return this._vm.$delete(ref, target);
   }
 };
-
 function iniMutations () {
   var userMutations = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
   return Object.assign({}, mutations, userMutations);
+}
+
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+function _objectSpread(target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i] != null ? arguments[i] : {};
+    var ownKeys = Object.keys(source);
+
+    if (typeof Object.getOwnPropertySymbols === 'function') {
+      ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) {
+        return Object.getOwnPropertyDescriptor(source, sym).enumerable;
+      }));
+    }
+
+    ownKeys.forEach(function (key) {
+      _defineProperty(target, key, source[key]);
+    });
+  }
+
+  return target;
+}
+
+function _toConsumableArray(arr) {
+  return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread();
+}
+
+function _arrayWithoutHoles(arr) {
+  if (Array.isArray(arr)) {
+    for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+    return arr2;
+  }
+}
+
+function _iterableToArray(iter) {
+  if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+}
+
+function _nonIterableSpread() {
+  throw new TypeError("Invalid attempt to spread non-iterable instance");
 }
 
 /**
@@ -278,6 +336,7 @@ function iniMutations () {
  * @param {object} obj on which to set the default values
  * @param {object} defaultValues the default values
  */
+
 function setDefaultValues (obj, defaultValues) {
   return merge(defaultValues, obj);
 }
@@ -288,28 +347,32 @@ function setDefaultValues (obj, defaultValues) {
  * @author     Adam Dorling
  * @contact    https://codepen.io/naito
  */
-
 // USAGE:
 // let d = startDebounce(1000)
 // d.done.then(_ => handle())
 // d.refresh() // to refresh
-
 function startDebounce (ms) {
   var startTime = Date.now();
   var done = new Promise(function (resolve, reject) {
     var interval = setInterval(function (_) {
       var now = Date.now();
       var deltaT = now - startTime;
+
       if (deltaT >= ms) {
         clearInterval(interval);
         resolve(true);
       }
     }, 10);
   });
+
   var refresh = function refresh() {
     return startTime = Date.now();
   };
-  return { done: done, refresh: refresh };
+
+  return {
+    done: done,
+    refresh: refresh
+  };
 }
 
 function retrievePaths(object, path, result) {
@@ -318,6 +381,7 @@ function retrievePaths(object, path, result) {
     result[path] = object;
     return result;
   }
+
   return Object.keys(object).reduce(function (carry, key) {
     var pathUntilNow = path ? path + '.' : '';
     var newPath = pathUntilNow + key;
@@ -340,23 +404,26 @@ function flattenToPaths (object) {
  * @param {object} state the store's state, will be edited!
  * @returns {array} the targets for the batch. Add this array length to the count
  */
+
 function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
-  var targets = state._sync.syncStack[syncStackProp];
-  // Check if there are more than maxCount batch items already
+  var targets = state._sync.syncStack[syncStackProp]; // Check if there are more than maxCount batch items already
+
   if (count >= maxCount) {
     // already at maxCount or more, leave items in syncstack, and don't add anything to batch
     targets = [];
   } else {
     // Convert to array if targets is an object (eg. updates)
     var targetIsObject = isWhat.isObject(targets);
+
     if (targetIsObject) {
       targets = Object.values(targets);
-    }
-    // Batch supports only until maxCount items
+    } // Batch supports only until maxCount items
+
+
     var grabCount = maxCount - count;
     var targetsOK = targets.slice(0, grabCount);
-    var targetsLeft = targets.slice(grabCount);
-    // Put back the remaining items over maxCount
+    var targetsLeft = targets.slice(grabCount); // Put back the remaining items over maxCount
+
     if (targetIsObject) {
       targetsLeft = Object.values(targetsLeft).reduce(function (carry, update) {
         var id = update.id;
@@ -364,13 +431,14 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
         return carry;
       }, {});
     }
-    state._sync.syncStack[syncStackProp] = targetsLeft;
-    // Define the items we'll add below
+
+    state._sync.syncStack[syncStackProp] = targetsLeft; // Define the items we'll add below
+
     targets = targetsOK;
   }
+
   return targets;
 }
-
 /**
  * Create a Firebase batch from a syncStack to be passed inside the state param.
  *
@@ -382,17 +450,17 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
  * @param {number} batchMaxCount The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {object} A Firebase firestore batch object.
  */
+
 function makeBatchFromSyncstack(state, dbRef, collectionMode, userId) {
   var batchMaxCount = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 500;
-
   var batch = Firebase.firestore().batch();
   var log = {};
-  var count = 0;
-  // Add 'updates' to batch
+  var count = 0; // Add 'updates' to batch
+
   var updates = grabUntilApiLimit('updates', count, batchMaxCount, state);
   log['updates: '] = updates;
-  count = count + updates.length;
-  // Add to batch
+  count = count + updates.length; // Add to batch
+
   updates.forEach(function (item) {
     var id = item.id;
     var docRef = collectionMode ? dbRef.doc(id) : dbRef;
@@ -400,55 +468,56 @@ function makeBatchFromSyncstack(state, dbRef, collectionMode, userId) {
     itemToUpdate.updated_at = Firebase.firestore.FieldValue.serverTimestamp();
     itemToUpdate.updated_by = userId;
     batch.update(docRef, itemToUpdate);
-  });
-  // Add 'propDeletions' to batch
+  }); // Add 'propDeletions' to batch
+
   var propDeletions = grabUntilApiLimit('propDeletions', count, batchMaxCount, state);
   log['prop deletions: '] = propDeletions;
-  count = count + propDeletions.length;
-  // Add to batch
+  count = count + propDeletions.length; // Add to batch
+
   propDeletions.forEach(function (path) {
     var docRef = dbRef;
+
     if (collectionMode) {
       var id = path.substring(0, path.indexOf('.'));
       path = path.substring(path.indexOf('.') + 1);
       docRef = dbRef.doc(id);
     }
+
     var updateObj = {};
     updateObj[path] = Firebase.firestore.FieldValue.delete();
     updateObj.updated_at = Firebase.firestore.FieldValue.serverTimestamp();
     updateObj.updated_by = userId;
     batch.update(docRef, updateObj);
-  });
-  // Add 'deletions' to batch
+  }); // Add 'deletions' to batch
+
   var deletions = grabUntilApiLimit('deletions', count, batchMaxCount, state);
   log['deletions: '] = deletions;
-  count = count + deletions.length;
-  // Add to batch
+  count = count + deletions.length; // Add to batch
+
   deletions.forEach(function (id) {
     var docRef = dbRef.doc(id);
     batch.delete(docRef);
-  });
-  // Add 'inserts' to batch
+  }); // Add 'inserts' to batch
+
   var inserts = grabUntilApiLimit('inserts', count, batchMaxCount, state);
   log['inserts: '] = inserts;
-  count = count + inserts.length;
-  // Add to batch
+  count = count + inserts.length; // Add to batch
+
   inserts.forEach(function (item) {
     item.created_at = Firebase.firestore.FieldValue.serverTimestamp();
     item.created_by = userId;
     var newRef = dbRef.doc(item.id);
     batch.set(newRef, item);
-  });
-  // log the batch contents
+  }); // log the batch contents
+
   console.group('Created a firestore batch with:');
   Object.keys(log).forEach(function (key) {
     console.log(key, log[key]);
   });
-  console.groupEnd();
-  //
+  console.groupEnd(); //
+
   return batch;
 }
-
 /**
  * Check if the string starts and ends with '{' and '}' to swap out for variable value saved in state.
  *
@@ -456,10 +525,10 @@ function makeBatchFromSyncstack(state, dbRef, collectionMode, userId) {
  * @param {string} pathPiece eg. 'groups' or '{groupId}'
  * @returns {Bool}
  */
+
 function isPathVar(pathPiece) {
   return pathPiece[0] === '{' && pathPiece[pathPiece.length - 1] === '}';
 }
-
 /**
  * Get the variable name of a piece of path: eg. return 'groupId' if pathPiece is '{groupId}'
  *
@@ -467,6 +536,7 @@ function isPathVar(pathPiece) {
  * @param {string} pathPiece eg. 'groups' or '{groupId}'
  * @returns {string} returns 'groupId' in case of '{groupId}'
  */
+
 function pathVarKey(pathPiece) {
   return isPathVar(pathPiece) ? pathPiece.slice(1, -1) : pathPiece;
 }
@@ -480,51 +550,30 @@ function pathVarKey(pathPiece) {
  * @param {array|object|string} fullPayload (optional - for error handling) the full payload on which each was `getId()` called
  * @returns {string} the id
  */
+
 function getId(payloadPiece, conf, path, fullPayload) {
   if (isWhat.isObject(payloadPiece)) {
     if (payloadPiece.id) return payloadPiece.id;
     if (Object.keys(payloadPiece).length === 1) return Object.keys(payloadPiece)[0];
   }
+
   if (isWhat.isString(payloadPiece)) return payloadPiece;
   return false;
 }
-
 /**
  * Returns a value of a payload piece. Eg. {[id]: 'val'} will return 'val'
  *
  * @param {*} payloadPiece
  * @returns {*} the value
  */
+
 function getValueFromPayloadPiece(payloadPiece) {
   if (isWhat.isObject(payloadPiece) && !payloadPiece.id && Object.keys(payloadPiece).length === 1) {
     return Object.values(payloadPiece)[0];
   }
+
   return payloadPiece;
 }
-
-var _extends = Object.assign || function (target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i];
-
-    for (var key in source) {
-      if (Object.prototype.hasOwnProperty.call(source, key)) {
-        target[key] = source[key];
-      }
-    }
-  }
-
-  return target;
-};
-
-var toConsumableArray = function (arr) {
-  if (Array.isArray(arr)) {
-    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
-
-    return arr2;
-  } else {
-    return Array.from(arr);
-  }
-};
 
 var actions = {
   patchDoc: function patchDoc(_ref) {
@@ -533,28 +582,28 @@ var actions = {
         commit = _ref.commit,
         dispatch = _ref.dispatch;
 
-    var _ref2 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : { ids: [], doc: {} },
+    var _ref2 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
+      ids: [],
+      doc: {}
+    },
         _ref2$id = _ref2.id,
-        id = _ref2$id === undefined ? '' : _ref2$id,
+        id = _ref2$id === void 0 ? '' : _ref2$id,
         _ref2$ids = _ref2.ids,
-        ids = _ref2$ids === undefined ? [] : _ref2$ids,
+        ids = _ref2$ids === void 0 ? [] : _ref2$ids,
         doc = _ref2.doc;
 
     // 0. payload correction (only arrays)
     if (!isWhat.isArray(ids)) return console.error('ids needs to be an array');
     if (id) ids.push(id);
-    if (doc.id) delete doc.id;
+    if (doc.id) delete doc.id; // 1. Prepare for patching
 
-    // 1. Prepare for patching
-    var syncStackItems = getters.prepareForPatch(ids, doc);
+    var syncStackItems = getters.prepareForPatch(ids, doc); // 2. Push to syncStack
 
-    // 2. Push to syncStack
     Object.keys(syncStackItems).forEach(function (id) {
       var newVal = !state._sync.syncStack.updates[id] ? syncStackItems[id] : merge(state._sync.syncStack.updates[id], syncStackItems[id]);
       state._sync.syncStack.updates[id] = newVal;
-    });
+    }); // 3. Create or refresh debounce
 
-    // 3. Create or refresh debounce
     return dispatch('handleSyncStackDebounce');
   },
   deleteDoc: function deleteDoc(_ref3) {
@@ -563,17 +612,15 @@ var actions = {
         commit = _ref3.commit,
         dispatch = _ref3.dispatch;
     var ids = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-
     // 0. payload correction (only arrays)
-    if (!isWhat.isArray(ids)) ids = [ids];
-
-    // 1. Prepare for patching
+    if (!isWhat.isArray(ids)) ids = [ids]; // 1. Prepare for patching
     // 2. Push to syncStack
-    var deletions = state._sync.syncStack.deletions.concat(ids);
-    state._sync.syncStack.deletions = deletions;
 
-    if (!state._sync.syncStack.deletions.length) return;
-    // 3. Create or refresh debounce
+    var deletions = state._sync.syncStack.deletions.concat(ids);
+
+    state._sync.syncStack.deletions = deletions;
+    if (!state._sync.syncStack.deletions.length) return; // 3. Create or refresh debounce
+
     return dispatch('handleSyncStackDebounce');
   },
   deleteProp: function deleteProp(_ref4, path) {
@@ -586,8 +633,8 @@ var actions = {
     // 2. Push to syncStack
     state._sync.syncStack.propDeletions.push(path);
 
-    if (!state._sync.syncStack.propDeletions.length) return;
-    // 3. Create or refresh debounce
+    if (!state._sync.syncStack.propDeletions.length) return; // 3. Create or refresh debounce
+
     return dispatch('handleSyncStackDebounce');
   },
   insertDoc: function insertDoc(_ref5) {
@@ -596,18 +643,15 @@ var actions = {
         commit = _ref5.commit,
         dispatch = _ref5.dispatch;
     var docs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-
     // 0. payload correction (only arrays)
-    if (!isWhat.isArray(docs)) docs = [docs];
+    if (!isWhat.isArray(docs)) docs = [docs]; // 1. Prepare for patching
 
-    // 1. Prepare for patching
-    var syncStack = getters.prepareForInsert(docs);
+    var syncStack = getters.prepareForInsert(docs); // 2. Push to syncStack
 
-    // 2. Push to syncStack
     var inserts = state._sync.syncStack.inserts.concat(syncStack);
-    state._sync.syncStack.inserts = inserts;
 
-    // 3. Create or refresh debounce
+    state._sync.syncStack.inserts = inserts; // 3. Create or refresh debounce
+
     return dispatch('handleSyncStackDebounce');
   },
   insertInitialDoc: function insertInitialDoc(_ref6) {
@@ -615,15 +659,12 @@ var actions = {
         getters = _ref6.getters,
         commit = _ref6.commit,
         dispatch = _ref6.dispatch;
-
     // 0. only docMode
-    if (getters.collectionMode) return;
+    if (getters.collectionMode) return; // 1. Prepare for insert
 
-    // 1. Prepare for insert
     var initialDoc = getters.storeRef ? getters.storeRef : {};
-    var doc = getters.prepareInitialDocForInsert(initialDoc);
+    var doc = getters.prepareInitialDocForInsert(initialDoc); // 2. insert
 
-    // 2. insert
     return getters.dbRef.set(doc);
   },
   handleSyncStackDebounce: function handleSyncStackDebounce(_ref7) {
@@ -631,8 +672,8 @@ var actions = {
         commit = _ref7.commit,
         dispatch = _ref7.dispatch,
         getters = _ref7.getters;
-
     if (!getters.signedIn) return false;
+
     if (!state._sync.syncStack.debounceTimer) {
       var debounceTimer = startDebounce(1000);
       debounceTimer.done.then(function (_) {
@@ -640,6 +681,7 @@ var actions = {
       });
       state._sync.syncStack.debounceTimer = debounceTimer;
     }
+
     state._sync.syncStack.debounceTimer.refresh();
   },
   batchSync: function batchSync(_ref8) {
@@ -647,7 +689,6 @@ var actions = {
         commit = _ref8.commit,
         dispatch = _ref8.dispatch,
         state = _ref8.state;
-
     var collectionMode = getters.collectionMode;
     var dbRef = getters.dbRef;
     var userId = state._sync.userId;
@@ -657,12 +698,13 @@ var actions = {
     return new Promise(function (resolve, reject) {
       batch.commit().then(function (res) {
         var remainingSyncStack = Object.keys(state._sync.syncStack.updates).length + state._sync.syncStack.deletions.length + state._sync.syncStack.inserts.length + state._sync.syncStack.propDeletions.length;
+
         if (remainingSyncStack) {
           dispatch('batchSync');
         }
+
         dispatch('_stopPatching');
-        return resolve();
-        // // Fetch the item if it was added as an Archived item:
+        return resolve(); // // Fetch the item if it was added as an Archived item:
         // if (item.archived) {
         //   get_ters.dbRef.doc(res.id).get().then(doc => {
         //     let tempId = doc.data().id
@@ -686,34 +728,41 @@ var actions = {
         commit = _ref9.commit,
         dispatch = _ref9.dispatch;
 
-    var _ref10 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : { whereFilters: [], orderBy: []
-      // whereFilters: [['archived', '==', true]]
+    var _ref10 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
+      whereFilters: [],
+      orderBy: [] // whereFilters: [['archived', '==', true]]
       // orderBy: ['done_date', 'desc']
+
     },
         _ref10$whereFilters = _ref10.whereFilters,
-        whereFilters = _ref10$whereFilters === undefined ? [] : _ref10$whereFilters,
+        whereFilters = _ref10$whereFilters === void 0 ? [] : _ref10$whereFilters,
         _ref10$orderBy = _ref10.orderBy,
-        orderBy = _ref10$orderBy === undefined ? [] : _ref10$orderBy;
+        orderBy = _ref10$orderBy === void 0 ? [] : _ref10$orderBy;
 
     return new Promise(function (resolve, reject) {
       console.log('[fetch] starting');
       if (!getters.signedIn) return resolve();
-      var identifier = JSON.stringify({ whereFilters: whereFilters, orderBy: orderBy });
-      var fetched = state._sync.fetched[identifier];
-      // We've never fetched this before:
+      var identifier = JSON.stringify({
+        whereFilters: whereFilters,
+        orderBy: orderBy
+      });
+      var fetched = state._sync.fetched[identifier]; // We've never fetched this before:
+
       if (!fetched) {
-        var ref = getters.dbRef;
-        // apply where filters and orderBy
+        var ref = getters.dbRef; // apply where filters and orderBy
+
         whereFilters.forEach(function (paramsArr) {
           var _ref11;
 
-          ref = (_ref11 = ref).where.apply(_ref11, toConsumableArray(paramsArr));
+          ref = (_ref11 = ref).where.apply(_ref11, _toConsumableArray(paramsArr));
         });
+
         if (orderBy.length) {
           var _ref12;
 
-          ref = (_ref12 = ref).orderBy.apply(_ref12, toConsumableArray(orderBy));
+          ref = (_ref12 = ref).orderBy.apply(_ref12, _toConsumableArray(orderBy));
         }
+
         state._sync.fetched[identifier] = {
           ref: ref,
           done: false,
@@ -721,40 +770,51 @@ var actions = {
           nextFetchRef: null
         };
       }
-      var fRequest = state._sync.fetched[identifier];
-      // We're already done fetching everything:
+
+      var fRequest = state._sync.fetched[identifier]; // We're already done fetching everything:
+
       if (fRequest.done) {
         console.log('done fetching');
-        return resolve({ done: true });
-      }
-      // attach fetch filters
+        return resolve({
+          done: true
+        });
+      } // attach fetch filters
+
+
       var fRef = state._sync.fetched[identifier].ref;
+
       if (fRequest.nextFetchRef) {
         // get next ref if saved in state
         fRef = state._sync.fetched[identifier].nextFetchRef;
       }
-      fRef = fRef.limit(state._conf.fetch.docLimit);
-      // Stop if all records already fetched
+
+      fRef = fRef.limit(state._conf.fetch.docLimit); // Stop if all records already fetched
+
       if (fRequest.retrievedFetchRefs.includes(fRef)) {
         console.error('Already retrieved this part.');
         return resolve();
-      }
-      // make fetch request
+      } // make fetch request
+
+
       fRef.get().then(function (querySnapshot) {
         var docs = querySnapshot.docs;
+
         if (docs.length === 0) {
           state._sync.fetched[identifier].done = true;
           querySnapshot.done = true;
           return resolve(querySnapshot);
         }
+
         if (docs.length < state._conf.fetch.docLimit) {
           state._sync.fetched[identifier].done = true;
         }
-        state._sync.fetched[identifier].retrievedFetchRefs.push(fRef);
-        // Get the last visible document
+
+        state._sync.fetched[identifier].retrievedFetchRefs.push(fRef); // Get the last visible document
+
+
         resolve(querySnapshot);
-        var lastVisible = docs[docs.length - 1];
-        // get the next records.
+        var lastVisible = docs[docs.length - 1]; // get the next records.
+
         var next = fRef.startAfter(lastVisible);
         state._sync.fetched[identifier].nextFetchRef = next;
       }).catch(function (error$$1) {
@@ -768,16 +828,18 @@ var actions = {
     var change = _ref14.change,
         id = _ref14.id,
         _ref14$doc = _ref14.doc,
-        doc = _ref14$doc === undefined ? {} : _ref14$doc;
-
+        doc = _ref14$doc === void 0 ? {} : _ref14$doc;
     doc.id = id;
+
     switch (change) {
       case 'added':
         commit('INSERT_DOC', doc);
         break;
+
       case 'removed':
         commit('DELETE_DOC', id);
         break;
+
       default:
         commit('PATCH_DOC', doc);
         break;
@@ -788,20 +850,21 @@ var actions = {
         state = _ref15.state,
         commit = _ref15.commit,
         dispatch = _ref15.dispatch;
+    var store = this; // set state for pathVariables
 
-    var store = this;
-    // set state for pathVariables
-    if (pathVariables && isWhat.isObject(pathVariables)) commit('SET_PATHVARS', pathVariables);
-    // get userId
+    if (pathVariables && isWhat.isObject(pathVariables)) commit('SET_PATHVARS', pathVariables); // get userId
+
     var userId = null;
+
     if (Firebase.auth().currentUser) {
       state._sync.signedIn = true;
       userId = Firebase.auth().currentUser.uid;
       state._sync.userId = userId;
-    }
-    // getters.dbRef should already have pathVariables swapped out
-    var dbRef = getters.dbRef;
-    // apply where filters and orderBy
+    } // getters.dbRef should already have pathVariables swapped out
+
+
+    var dbRef = getters.dbRef; // apply where filters and orderBy
+
     if (getters.collectionMode) {
       state._conf.sync.where.forEach(function (paramsArr) {
         var _dbRef;
@@ -809,49 +872,62 @@ var actions = {
         paramsArr.forEach(function (param, paramIndex) {
           if (isPathVar(param)) {
             var _pathVarKey = pathVarKey(param);
+
             if (_pathVarKey === 'userId') {
               paramsArr[paramIndex] = userId;
               return;
             }
+
             if (!Object.keys(state._sync.pathVariables).includes(_pathVarKey)) {
               return error('missingPathVarKey');
             }
+
             var varVal = state._sync.pathVariables[_pathVarKey];
             paramsArr[paramIndex] = varVal;
           }
         });
-        dbRef = (_dbRef = dbRef).where.apply(_dbRef, toConsumableArray(paramsArr));
+        dbRef = (_dbRef = dbRef).where.apply(_dbRef, _toConsumableArray(paramsArr));
       });
+
       if (state._conf.sync.orderBy.length) {
         var _dbRef2;
 
-        dbRef = (_dbRef2 = dbRef).orderBy.apply(_dbRef2, toConsumableArray(state._conf.sync.orderBy));
+        dbRef = (_dbRef2 = dbRef).orderBy.apply(_dbRef2, _toConsumableArray(state._conf.sync.orderBy));
       }
-    }
-    // define handleDoc()
+    } // define handleDoc()
+
+
     function handleDoc() {
       var _changeType = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'modified';
 
-      var id = arguments[1];
-      var doc = arguments[2];
-      var source = arguments[3];
+      var id = arguments.length > 1 ? arguments[1] : undefined;
+      var doc = arguments.length > 2 ? arguments[2] : undefined;
+      var source = arguments.length > 3 ? arguments[3] : undefined;
 
       // define storeUpdateFn()
       function storeUpdateFn(_doc) {
-        return dispatch('serverUpdate', { change: _changeType, id: id, doc: _doc });
-      }
-      // get user set sync hook function
+        return dispatch('serverUpdate', {
+          change: _changeType,
+          id: id,
+          doc: _doc
+        });
+      } // get user set sync hook function
+
+
       var syncHookFn = state._conf.serverChange[_changeType + 'Hook'];
+
       if (syncHookFn) {
         syncHookFn(storeUpdateFn, doc, id, store, source, _changeType);
       } else {
         storeUpdateFn(doc);
       }
-    }
-    // make a promise
+    } // make a promise
+
+
     return new Promise(function (resolve, reject) {
       dbRef.onSnapshot(function (querySnapshot) {
         var source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server';
+
         if (!getters.collectionMode) {
           if (!querySnapshot.data()) {
             // No initial doc found in docMode
@@ -859,17 +935,20 @@ var actions = {
             dispatch('insertInitialDoc');
             return resolve();
           }
+
           var doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues);
           if (source === 'local') return resolve();
           handleDoc(null, null, doc, source);
           return resolve();
         }
+
         querySnapshot.docChanges().forEach(function (change) {
-          var changeType = change.type;
-          // Don't do anything for local modifications & removals
+          var changeType = change.type; // Don't do anything for local modifications & removals
+
           if (source === 'local' && (changeType === 'modified' || changeType === 'removed')) {
             return resolve();
           }
+
           var id = change.doc.id;
           var doc = changeType === 'added' ? setDefaultValues(change.doc.data(), state._conf.serverChange.defaultValues) : change.doc.data();
           handleDoc(changeType, id, doc, source);
@@ -881,20 +960,23 @@ var actions = {
       });
     });
   },
-  set: function set$$1(_ref16, doc) {
+  set: function set(_ref16, doc) {
     var commit = _ref16.commit,
         dispatch = _ref16.dispatch,
         getters = _ref16.getters,
         state = _ref16.state;
-
     if (!doc) return;
+
     if (!getters.collectionMode) {
       return dispatch('patch', doc);
     }
+
     var id = getId(doc);
+
     if (!id || !state._conf.statePropName && !state[id] || state._conf.statePropName && !state[state._conf.statePropName][id]) {
       return dispatch('insert', doc);
     }
+
     return dispatch('patch', doc);
   },
   insert: function insert(_ref17, doc) {
@@ -902,21 +984,22 @@ var actions = {
         getters = _ref17.getters,
         commit = _ref17.commit,
         dispatch = _ref17.dispatch;
-
     var store = this;
     if (!getters.signedIn) return 'auth/invalid-user-token';
     if (!doc) return;
     var newDoc = getValueFromPayloadPiece(doc);
-    if (!newDoc.id) newDoc.id = getters.dbRef.doc().id;
-    // define the store update
+    if (!newDoc.id) newDoc.id = getters.dbRef.doc().id; // define the store update
+
     function storeUpdateFn(_doc) {
       commit('INSERT_DOC', _doc);
       return dispatch('insertDoc', _doc);
-    }
-    // check for hooks
+    } // check for hooks
+
+
     if (state._conf.sync.insertHook) {
       return state._conf.sync.insertHook(storeUpdateFn, newDoc, store);
     }
+
     return storeUpdateFn(newDoc);
   },
   insertBatch: function insertBatch(_ref18, docs) {
@@ -924,28 +1007,29 @@ var actions = {
         getters = _ref18.getters,
         commit = _ref18.commit,
         dispatch = _ref18.dispatch;
-
     var store = this;
     if (!getters.signedIn) return 'auth/invalid-user-token';
     if (!isWhat.isArray(docs) || !docs.length) return;
-
     var newDocs = docs.reduce(function (carry, _doc) {
       var newDoc = getValueFromPayloadPiece(_doc);
       if (!newDoc.id) newDoc.id = getters.dbRef.doc().id;
       carry.push(newDoc);
       return carry;
-    }, []);
-    // define the store update
+    }, []); // define the store update
+
     function storeUpdateFn(_docs) {
       _docs.forEach(function (_doc) {
         commit('INSERT_DOC', _doc);
       });
+
       return dispatch('insertDoc', _docs);
-    }
-    // check for hooks
+    } // check for hooks
+
+
     if (state._conf.sync.insertBatchHook) {
       return state._conf.sync.insertBatchHook(storeUpdateFn, newDocs, store);
     }
+
     return storeUpdateFn(newDocs);
   },
   patch: function patch(_ref19, doc) {
@@ -953,23 +1037,27 @@ var actions = {
         getters = _ref19.getters,
         commit = _ref19.commit,
         dispatch = _ref19.dispatch;
-
     var store = this;
     if (!doc) return;
     var id = getters.collectionMode ? getId(doc) : undefined;
     var value = getters.collectionMode ? getValueFromPayloadPiece(doc) : doc;
-    if (!id && getters.collectionMode) return;
-    // add id to value
-    if (!value.id) value.id = id;
-    // define the store update
+    if (!id && getters.collectionMode) return; // add id to value
+
+    if (!value.id) value.id = id; // define the store update
+
     function storeUpdateFn(_val) {
       commit('PATCH_DOC', _val);
-      return dispatch('patchDoc', { id: id, doc: _val });
-    }
-    // check for hooks
+      return dispatch('patchDoc', {
+        id: id,
+        doc: _val
+      });
+    } // check for hooks
+
+
     if (state._conf.sync.patchHook) {
       return state._conf.sync.patchHook(storeUpdateFn, value, store);
     }
+
     return storeUpdateFn(value);
   },
   patchBatch: function patchBatch(_ref20, _ref21) {
@@ -979,21 +1067,28 @@ var actions = {
         dispatch = _ref20.dispatch;
     var doc = _ref21.doc,
         _ref21$ids = _ref21.ids,
-        ids = _ref21$ids === undefined ? [] : _ref21$ids;
-
+        ids = _ref21$ids === void 0 ? [] : _ref21$ids;
     var store = this;
-    if (!doc) return;
-    // define the store update
+    if (!doc) return; // define the store update
+
     function storeUpdateFn(_doc, _ids) {
       _ids.forEach(function (_id) {
-        commit('PATCH_DOC', _extends({ id: _id }, _doc));
+        commit('PATCH_DOC', _objectSpread({
+          id: _id
+        }, _doc));
       });
-      return dispatch('patchDoc', { ids: _ids, doc: _doc });
-    }
-    // check for hooks
+
+      return dispatch('patchDoc', {
+        ids: _ids,
+        doc: _doc
+      });
+    } // check for hooks
+
+
     if (state._conf.sync.patchBatchHook) {
       return state._conf.sync.patchBatchHook(storeUpdateFn, doc, ids, store);
     }
+
     return storeUpdateFn(doc, ids);
   },
   delete: function _delete(_ref22, id) {
@@ -1001,26 +1096,30 @@ var actions = {
         getters = _ref22.getters,
         commit = _ref22.commit,
         dispatch = _ref22.dispatch;
-
     if (!id) return;
     var store = this;
+
     function storeUpdateFn(_id) {
       // id is a path
       var pathDelete = _id.includes('.') || !getters.collectionMode;
+
       if (pathDelete) {
         var path = _id;
         if (!path) return error('actionsDeleteMissingPath');
         commit('DELETE_PROP', path);
         return dispatch('deleteProp', path);
       }
+
       if (!_id) return error('actionsDeleteMissingId');
       commit('DELETE_DOC', _id);
       return dispatch('deleteDoc', _id);
-    }
-    // check for hooks
+    } // check for hooks
+
+
     if (state._conf.sync.deleteHook) {
       return state._conf.sync.deleteHook(storeUpdateFn, id, store);
     }
+
     return storeUpdateFn(id);
   },
   deleteBatch: function deleteBatch(_ref23, ids) {
@@ -1028,30 +1127,33 @@ var actions = {
         getters = _ref23.getters,
         commit = _ref23.commit,
         dispatch = _ref23.dispatch;
-
     if (!isWhat.isArray(ids)) return;
     if (!ids.length) return;
-    var store = this;
-    // define the store update
+    var store = this; // define the store update
+
     function storeUpdateFn(_ids) {
       _ids.forEach(function (_id) {
         // id is a path
         var pathDelete = _id.includes('.') || !getters.collectionMode;
+
         if (pathDelete) {
           var path = _id;
           if (!path) return error('actionsDeleteMissingPath');
           commit('DELETE_PROP', path);
           return dispatch('deleteProp', path);
         }
+
         if (!_id) return error('actionsDeleteMissingId');
         commit('DELETE_DOC', _id);
         return dispatch('deleteDoc', _id);
       });
-    }
-    // check for hooks
+    } // check for hooks
+
+
     if (state._conf.sync.deleteBatchHook) {
       return state._conf.sync.deleteBatchHook(storeUpdateFn, ids, store);
     }
+
     return storeUpdateFn(ids);
   },
   _stopPatching: function _stopPatching(_ref24) {
@@ -1061,6 +1163,7 @@ var actions = {
     if (state._sync.stopPatchingTimeout) {
       clearTimeout(state._sync.stopPatchingTimeout);
     }
+
     state._sync.stopPatchingTimeout = setTimeout(function (_) {
       state._sync.patching = false;
     }, 300);
@@ -1072,13 +1175,12 @@ var actions = {
     if (state._sync.stopPatchingTimeout) {
       clearTimeout(state._sync.stopPatchingTimeout);
     }
+
     state._sync.patching = true;
   }
 };
-
 function iniActions () {
   var userActions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
   return Object.assign({}, actions, userActions);
 }
 
@@ -1091,22 +1193,25 @@ function iniActions () {
  *
  * @returns {object} the cleaned object after deleting guard and non-fillables
  */
+
 function checkFillables (obj) {
   var fillables = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
   var guard = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-
   if (!isWhat.isObject(obj)) return obj;
   return Object.keys(obj).reduce(function (carry, key) {
     // check fillables
     if (fillables.length && !fillables.includes(key)) {
       return carry;
-    }
-    // check guard
+    } // check guard
+
+
     guard.push('_conf');
     guard.push('_sync');
+
     if (guard.includes(key)) {
       return carry;
     }
+
     carry[key] = obj[key];
     return carry;
   }, {});
@@ -1115,13 +1220,15 @@ function checkFillables (obj) {
 var getters = {
   signedIn: function signedIn(state, getters, rootState, rootGetters) {
     var requireUser = state._conf.firestorePath.includes('{userId}');
+
     if (!requireUser) return true;
     return state._sync.signedIn;
   },
   dbRef: function dbRef(state, getters, rootState, rootGetters) {
-    var path = void 0;
-    // check for userId replacement
+    var path; // check for userId replacement
+
     var requireUser = state._conf.firestorePath.includes('{userId}');
+
     if (requireUser) {
       if (!getters.signedIn) return false;
       if (!Firebase.auth().currentUser) return false;
@@ -1129,18 +1236,20 @@ var getters = {
       path = state._conf.firestorePath.replace('{userId}', userId);
     } else {
       path = state._conf.firestorePath;
-    }
-    // replace pathVariables
+    } // replace pathVariables
+
+
     if (Object.keys(state._sync.pathVariables).length) {
       Object.keys(state._sync.pathVariables).forEach(function (_pathVarKey) {
         var pathVarVal = state._sync.pathVariables[_pathVarKey];
-        path = path.replace('/{' + _pathVarKey + '}/', '/' + pathVarVal + '/');
+        path = path.replace("/{".concat(_pathVarKey, "}/"), "/".concat(pathVarVal, "/"));
       });
     }
+
     return getters.collectionMode ? Firebase.firestore().collection(path) : Firebase.firestore().doc(path);
   },
   storeRef: function storeRef(state, getters, rootState) {
-    var path = state._conf.statePropName ? state._conf.moduleName + '/' + state._conf.statePropName : state._conf.moduleName;
+    var path = state._conf.statePropName ? "".concat(state._conf.moduleName, "/").concat(state._conf.statePropName) : state._conf.moduleName;
     return vuexEasyAccess.getDeepRef(rootState, path);
   },
   collectionMode: function collectionMode(state, getters, rootState) {
@@ -1150,20 +1259,20 @@ var getters = {
     return function () {
       var ids = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
       var doc = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
       // get relevant data from the storeRef
       var collectionMode = getters.collectionMode;
-      if (!collectionMode) ids.push('singleDoc');
-      // returns {object} -> {id: data}
+      if (!collectionMode) ids.push('singleDoc'); // returns {object} -> {id: data}
+
       return ids.reduce(function (carry, id) {
-        var patchData = {};
-        // retrieve full object
+        var patchData = {}; // retrieve full object
+
         if (!Object.keys(doc).length) {
           patchData = collectionMode ? getters.storeRef[id] : getters.storeRef;
         } else {
           patchData = doc;
-        }
-        // patchData = copyObj(patchData)
+        } // patchData = copyObj(patchData)
+
+
         patchData = checkFillables(patchData, state._conf.sync.fillables, state._conf.sync.guard);
         patchData.id = id;
         carry[id] = patchData;
@@ -1174,7 +1283,6 @@ var getters = {
   prepareForInsert: function prepareForInsert(state, getters, rootState, rootGetters) {
     return function () {
       var items = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-
       // items = copyObj(items)
       return items.reduce(function (carry, item) {
         item = checkFillables(item, state._conf.sync.fillables, state._conf.sync.guard);
@@ -1191,10 +1299,8 @@ var getters = {
     };
   }
 };
-
 function iniGetters () {
   var userGetters = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
   return Object.assign({}, getters, userGetters);
 }
 
@@ -1203,67 +1309,74 @@ function errorCheck(config) {
   var reqProps = ['firestorePath', 'moduleName'];
   reqProps.forEach(function (prop) {
     if (!config[prop]) {
-      errors.push('Missing `' + prop + '` in your module!');
+      errors.push("Missing `".concat(prop, "` in your module!"));
     }
   });
+
   if (/(\.|\/)/.test(config.statePropName)) {
-    errors.push('statePropName must only include letters from [a-z]');
+    errors.push("statePropName must only include letters from [a-z]");
   }
+
   if (/\./.test(config.moduleName)) {
-    errors.push('moduleName must only include letters from [a-z] and forward slashes \'/\'');
+    errors.push("moduleName must only include letters from [a-z] and forward slashes '/'");
   }
+
   var syncProps = ['where', 'orderBy', 'fillables', 'guard', 'insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook'];
   syncProps.forEach(function (prop) {
     if (config[prop]) {
-      errors.push('We found `' + prop + '` on your module, are you sure this shouldn\'t be inside a prop called `sync`?');
+      errors.push("We found `".concat(prop, "` on your module, are you sure this shouldn't be inside a prop called `sync`?"));
     }
   });
   var serverChangeProps = ['modifiedHook', 'defaultValues', 'addedHook', 'removedHook'];
   serverChangeProps.forEach(function (prop) {
     if (config[prop]) {
-      errors.push('We found `' + prop + '` on your module, are you sure this shouldn\'t be inside a prop called `serverChange`?');
+      errors.push("We found `".concat(prop, "` on your module, are you sure this shouldn't be inside a prop called `serverChange`?"));
     }
   });
   var fetchProps = ['docLimit'];
   fetchProps.forEach(function (prop) {
     if (config[prop]) {
-      errors.push('We found `' + prop + '` on your module, are you sure this shouldn\'t be inside a prop called `fetch`?');
+      errors.push("We found `".concat(prop, "` on your module, are you sure this shouldn't be inside a prop called `fetch`?"));
     }
   });
   var numberProps = ['docLimit'];
   numberProps.forEach(function (prop) {
     var _prop = config.fetch[prop];
-    if (!isWhat.isNumber(_prop)) errors.push('`' + prop + '` should be a Number, but is not.');
+    if (!isWhat.isNumber(_prop)) errors.push("`".concat(prop, "` should be a Number, but is not."));
   });
   var functionProps = ['insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook', 'addedHook', 'modifiedHook', 'removedHook'];
   functionProps.forEach(function (prop) {
     var _prop = syncProps.includes(prop) ? config.sync[prop] : config.serverChange[prop];
-    if (!isWhat.isFunction(_prop)) errors.push('`' + prop + '` should be a Function, but is not.');
+
+    if (!isWhat.isFunction(_prop)) errors.push("`".concat(prop, "` should be a Function, but is not."));
   });
   var objectProps = ['sync', 'serverChange', 'defaultValues', 'fetch'];
   objectProps.forEach(function (prop) {
     var _prop = prop === 'defaultValues' ? config.serverChange[prop] : config[prop];
-    if (!isWhat.isObject(_prop)) errors.push('`' + prop + '` should be an Object, but is not.');
+
+    if (!isWhat.isObject(_prop)) errors.push("`".concat(prop, "` should be an Object, but is not."));
   });
   var stringProps = ['firestorePath', 'firestoreRefType', 'moduleName', 'statePropName'];
   stringProps.forEach(function (prop) {
     var _prop = config[prop];
-    if (!isWhat.isString(_prop)) errors.push('`' + prop + '` should be a String, but is not.');
+    if (!isWhat.isString(_prop)) errors.push("`".concat(prop, "` should be a String, but is not."));
   });
   var arrayProps = ['where', 'orderBy', 'fillables', 'guard'];
   arrayProps.forEach(function (prop) {
     var _prop = config.sync[prop];
-    if (!isWhat.isArray(_prop)) errors.push('`' + prop + '` should be an Array, but is not.');
+    if (!isWhat.isArray(_prop)) errors.push("`".concat(prop, "` should be an Array, but is not."));
   });
+
   if (errors.length) {
     console.group('[vuex-easy-firestore] ERRORS:');
-    console.error('Module: ' + config.moduleName);
+    console.error("Module: ".concat(config.moduleName));
     errors.forEach(function (e) {
       return console.error(' - ', e);
     });
     console.groupEnd('Please check your vuex-easy-firebase Module.');
     return false;
   }
+
   return true;
 }
 
@@ -1273,6 +1386,7 @@ function errorCheck(config) {
  * @param {object} userConfig Takes a config object as per ...
  * @returns {object} the module ready to be included in your vuex store
  */
+
 function iniModule (userConfig) {
   var conf = merge(defaultConfig, userConfig);
   if (!errorCheck(conf)) return;
@@ -1284,10 +1398,11 @@ function iniModule (userConfig) {
   delete conf.mutations;
   delete conf.actions;
   delete conf.getters;
-
   var docContainer = {};
   if (conf.statePropName) docContainer[conf.statePropName] = {};
-  var state = merge(initialState$2, userState, docContainer, { _conf: conf });
+  var state = merge(initialState$2, userState, docContainer, {
+    _conf: conf
+  });
   return {
     namespaced: true,
     state: state,
@@ -1300,8 +1415,8 @@ function iniModule (userConfig) {
 function createFirestores (userConfig) {
   return function (store) {
     // Get an array of config files
-    if (!isWhat.isArray(userConfig)) userConfig = [userConfig];
-    // Create a module for each config file
+    if (!isWhat.isArray(userConfig)) userConfig = [userConfig]; // Create a module for each config file
+
     userConfig.forEach(function (config) {
       var moduleName = vuexEasyAccess.getKeysFromPath(config.moduleName);
       store.registerModule(moduleName, iniModule(config));
@@ -1310,7 +1425,6 @@ function createFirestores (userConfig) {
 }
 
 var easyFirestores = createFirestores([pokemonBox, mainCharacter]);
-
 var storeObj = {
   plugins: [easyFirestores]
 };
@@ -1322,8 +1436,10 @@ store.dispatch('mainCharacter/openDBChannel').then(function (_) {
   var userName = store.state.mainCharacter.name;
   console.log('userName → ', userName);
   console.log('store.getters[\'mainCharacter/storeRef\'] → ', store.getters['mainCharacter/storeRef']);
-  store.dispatch('pokemonBox/openDBChannel', { playerName: userName, pokeId: '1' }).then(function (_) {
-    // store.dispatch('pokemonBox/set', {name: 'a', id: '1', freed: true})
+  store.dispatch('pokemonBox/openDBChannel', {
+    playerName: userName,
+    pokeId: '1'
+  }).then(function (_) {// store.dispatch('pokemonBox/set', {name: 'a', id: '1', freed: true})
     // store.dispatch('pokemonBox/set', {name: 'x', id: '2', freed: true})
     // const a = store.state.pokemonBox.pokemon
     // console.log('storestate → ', a)

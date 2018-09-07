@@ -13,22 +13,25 @@ var isWhat = require('is-what');
  *
  * @returns {object} the cleaned object after deleting guard and non-fillables
  */
+
 function checkFillables (obj) {
   var fillables = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
   var guard = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-
   if (!isWhat.isObject(obj)) return obj;
   return Object.keys(obj).reduce(function (carry, key) {
     // check fillables
     if (fillables.length && !fillables.includes(key)) {
       return carry;
-    }
-    // check guard
+    } // check guard
+
+
     guard.push('_conf');
     guard.push('_sync');
+
     if (guard.includes(key)) {
       return carry;
     }
+
     carry[key] = obj[key];
     return carry;
   }, {});
