@@ -1,4 +1,5 @@
 import { isObject, isFunction, isString, isDate } from 'is-what'
+import findAndReplaceRecursively from './findAndReplaceRecursively'
 
 function mergeRecursively (defaultValues, obj) {
   if (!isObject(obj)) return obj
@@ -6,7 +7,8 @@ function mergeRecursively (defaultValues, obj) {
   const newObject = (isObject(defaultValues))
     ? Object.keys(defaultValues)
       .reduce((carry, key) => {
-        if (!Object.keys(obj).includes(key)) carry[key] = defaultValues[key]
+        const targetVal = findAndReplaceRecursively(defaultValues[key], '%convertTimestamp%', null)
+        if (!Object.keys(obj).includes(key)) carry[key] = targetVal
         return carry
       }, {})
     : {}
@@ -33,7 +35,7 @@ function mergeRecursively (defaultValues, obj) {
         }
       }
       // When newVal is an object do the merge recursively
-      if (isObject(newVal) && Object.keys(newVal).length) {
+      if (isObject(newVal)) {
         carry[key] = mergeRecursively(targetVal, newVal)
         return carry
       }

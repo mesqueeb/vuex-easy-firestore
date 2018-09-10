@@ -452,6 +452,9 @@ const docToBeInserted = {
 // '%convertTimestamp%' works also with date strings:
 const retrievedDoc = {date: '1990-06-22 17:35:00'} // date string
 const docToBeInserted = {date: new Date('1990-06-22 17:35:00')} // converted to new Date
+// in case the retrieved val is not present `null` will be added
+const retrievedDoc = {}
+const docToBeInserted = {date: null}
 ```
 
 To learn more about Firestore's Timestamp format see [here](https://firebase.google.com/docs/reference/js/firebase.firestore.Timestamp).
