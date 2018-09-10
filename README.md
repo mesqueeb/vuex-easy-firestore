@@ -34,12 +34,10 @@ Other features include hooks, fillables (limit props to sync), default values (a
 - [Usage](#usage)
     - [Automatic 2-way sync](#automatic-2-way-sync)
     - [Editing](#editing)
-        - [Editing in 'collection' mode](#editing-in-collection-mode)
-        - [Editing in 'doc' mode](#editing-in-doc-mode)
     - [Shortcut: set(path, doc)](#shortcut-setpath-doc)
-    - [Fetching](#fetching)
     - [Multiple modules with 2way sync](#multiple-modules-with-2way-sync)
     - [Sync directly to module state](#sync-directly-to-module-state)
+    - [Fetching docs (with different filters)](#fetching-docs-with-different-filters)
 - [Extra features](#extra-features)
     - [Filters](#filters)
     - [Variables for firestorePath or filters](#variables-for-firestorepath-or-filters)
@@ -219,21 +217,6 @@ For this shortcut usage, import the npm module '[vuex-easy-access](https://githu
 
 Please note that it is important to pass the 'vuex-easy-firestore' plugin first, and the 'vuex-easy-access' plugin second for it to work properly.
 
-### Fetching
-
-Say that you have a default filter set on the documents you are syncing when you `openDBChannel` (see [Filters](#filters)). And you want to fetch extra documents with other filters. (eg. archived posts) In this case you can use the fetch action to retrieve documents from the same firestore path your module is synced to:
-
-```js
-dispatch('user/favourites/fetch', {whereFilters = [], orderBy = []})
-  .then(console.log)
-  .catch(console.error)
-```
-
-- *whereFilters:* The same as firestore's `.where()`. An array of arrays with the filters you want. eg. `[['field', '==', false], ...]`
-- *orderBy:* The same as firestore's `.orderBy()`. eg. `['created_date']`
-
-You have to manually write the logic for what you want to do with the fetched documents.s
-
 ### Multiple modules with 2way sync
 
 Of course you can have multiple vuex modules, all in sync with different firestore paths.
@@ -307,6 +290,68 @@ const settingsModule = {
 }
 ```
 
+### Fetching docs (with different filters)
+
+Say that you have a default filter set on the documents you are syncing when you `openDBChannel` (see [Filters](#filters)). And you want to fetch extra documents with other filters. (eg. archived posts) In this case you can use the fetch actions to retrieve documents from the same firestore path your module is synced to:
+
+- `dispatch('fetch')` for manual handling the fetched docs
+- `dispatch('fetchAndAdd')` for fetching and automatically adding the docs to the module like your other docs
+
+You can have two extra parameters:
+
+- *whereFilters:* The same as firestore's `.where()`. An array of arrays with the filters you want. eg. `[['field', '==', false], ...]`
+- *orderBy:* The same as firestore's `.orderBy()`. eg. `['created_date']`
+
+#### Usage example `fetchAndAdd`:
+
+```js
+dispatch('pokemonBox/fetchAndAdd', {whereFilters: [['freed', '==', true]], orderBy: ['freedDate']})
+  .then(result => {
+    if (querySnapshot.done === true) {
+      // `{done: true}` is returned when everything is fetched:
+      return 'all docs retrieved'
+    }
+    // Nothing more needs to be done. Docs are automatically added to `pokemonBox`
+    // docs will also receive `defaultValues` you have set up. (see "defaultValues set after server retrieval" below)
+  })
+  .catch(console.error)
+```
+
+#### Usage example `fetch`:
+
+```js
+dispatch('pokemonBox/fetch', {whereFilters: [['freed', '==', true]], orderBy: ['freedDate']})
+  .then(querySnapshot => {
+    if (querySnapshot.done === true) {
+      // `{done: true}` is returned when everything is fetched:
+      return 'all docs retrieved'
+    }
+    // the Firestore `querySnapshot` as is
+    querySnapshot.forEach(doc => {
+      // you have to manually add the doc with `fetch`
+      const fetchedDoc = doc.data()
+      fetchedDoc.id = doc.id
+      commit('pokemonBox/INSERT_DOC', fetchedDoc)
+      // also don't forget that in this case `defaultValues` will not be applied
+    })
+  })
+  .catch(console.error)
+```
+
+#### A note on setting a fetch limit:
+
+The fetch limit defaults to 50 docs. If you watch to fetch *the next 50 docs* you just need to call the `fetch` or `fetchAndAdd` action again, and it will automatically retrieve the next docs! You can change the default fetch limit like so:
+
+```js
+{
+  // your other vuex-easy-fire config
+  fetch: {
+    // The max amount of documents to be fetched. Defaults to 50.
+    docLimit: 50,
+  },
+}
+```
+
 ## Extra features
 
 ### Filters
@@ -318,7 +363,7 @@ The filters set in `sync: {}` are applied before the DB Channel is openend. They
 
 ```js
 {
-  // your other config...
+  // your other vuex-easy-fire config...
   sync: {
     where: [], // an array of arrays
     orderBy: [],
@@ -366,7 +411,7 @@ store.dispatch('userModule/openDBChannel')
 
 ```js
 {
-  // your other config...
+  // your other vuex-easy-fire config...
   sync: {
     fillables: [],
     guard: [],
@@ -382,7 +427,7 @@ But you may choose not to call this to abort the mutation.
 
 ```js
 {
-  // your other config...
+  // your other vuex-easy-fire config...
   sync: {
     insertHook: function (updateStore, doc, store) { updateStore(doc) },
     patchHook: function (updateStore, doc, store) { updateStore(doc) },
@@ -405,7 +450,7 @@ Exactly the same as above, but for changes that have occured on the server. You 
 
 ```js
 {
-  // your other config...
+  // your other vuex-easy-fire config...
   serverChange: {
     addedHook: function (updateStore, doc, id, store, source, change) { updateStore(doc) },
     modifiedHook: function (updateStore, doc, id, store, source, change) { updateStore(doc) },

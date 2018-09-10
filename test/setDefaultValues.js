@@ -152,26 +152,31 @@ test('my recursive object assign', async t => {
 test('custom %convertTimestamp% defaultValue', async t => {
   let res, defaultValues, target
   const dateStr = '1990-06-22T17:35:00'
+  const dateStr2 = '2018-05-26T02:46:57.262Z'
   const nd = new Date(dateStr)
   defaultValues = {
     body: '%convertTimestamp%',
     body2: {nd: '%convertTimestamp%'},
+    dateStr2: '%convertTimestamp%',
     firebase: {specialTS: { _ts: '%convertTimestamp%' }}
   }
   target = {
     body: dateStr,
     body2: {nd},
+    dateStr2,
     firebase: {specialTS: { _ts: {toDate: _ => { return nd }} }}
   }
   res = setDefaultValues(target, defaultValues)
   t.deepEqual(res, {
     body: nd,
     body2: {nd},
+    dateStr2: new Date(dateStr2),
     firebase: {specialTS: { _ts: nd }}
   })
   t.deepEqual(defaultValues, {
     body: '%convertTimestamp%',
     body2: {nd: '%convertTimestamp%'},
+    dateStr2: '%convertTimestamp%',
     firebase: {specialTS: { _ts: '%convertTimestamp%' }}
   })
   t.is(target.body, dateStr)
