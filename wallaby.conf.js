@@ -13,8 +13,8 @@ module.exports = function (wallaby) {
     },
     compilers: {
       '+(src|test)/**/*.js': wallaby.compilers.babel({
-        presets: ['env', '@ava/babel-preset-stage-4'],
-        plugins: ['babel-plugin-transform-object-rest-spread']
+        presets: ['@babel/preset-env', '@ava/babel-preset-stage-4'],
+        plugins: ['@babel/plugin-proposal-object-rest-spread']
       })
     },
     testFramework: 'ava',

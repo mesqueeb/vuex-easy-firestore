@@ -1,4 +1,4 @@
-import { isObject, isString, isArray, isNumber, isFunction } from 'is-what';
+import { isObject, isFunction, isString, isDate, isArray, isNumber } from 'is-what';
 import nanomerge from 'nanomerge';
 import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
 import Firebase from 'firebase/app';
@@ -239,6 +239,48 @@ function _nonIterableSpread() {
   throw new TypeError("Invalid attempt to spread non-iterable instance");
 }
 
+function mergeRecursively(defaultValues, obj) {
+  if (!isObject(obj)) return obj; // define newObject to merge all values upon
+
+  var newObject = isObject(defaultValues) ? Object.keys(defaultValues).reduce(function (carry, key) {
+    if (!Object.keys(obj).includes(key)) carry[key] = defaultValues[key];
+    return carry;
+  }, {}) : {};
+  return Object.keys(obj).reduce(function (carry, key) {
+    var newVal = obj[key];
+    var targetVal = defaultValues[key]; // early return when targetVal === undefined
+
+    if (targetVal === undefined) {
+      carry[key] = newVal;
+      return carry;
+    } // convert to new Date() if defaultValue == '%convertTimestamp%'
+
+
+    if (targetVal === '%convertTimestamp%') {
+      // firestore timestamps
+      if (isObject(newVal) && isFunction(newVal.toDate)) {
+        carry[key] = newVal.toDate();
+        return carry;
+      } // strings
+
+
+      if (isString(newVal) && isDate(new Date(newVal))) {
+        carry[key] = new Date(newVal);
+        return carry;
+      }
+    } // When newVal is an object do the merge recursively
+
+
+    if (isObject(newVal) && Object.keys(newVal).length) {
+      carry[key] = mergeRecursively(targetVal, newVal);
+      return carry;
+    } // all the rest
+
+
+    carry[key] = newVal;
+    return carry;
+  }, newObject);
+}
 /**
  * Sets default values on an object
  *
@@ -246,8 +288,11 @@ function _nonIterableSpread() {
  * @param {object} defaultValues the default values
  */
 
+
 function setDefaultValues (obj, defaultValues) {
-  return merge(defaultValues, obj);
+  if (!isObject(defaultValues)) console.error('Trying to merge target:', obj, 'onto a non-object:', defaultValues);
+  if (!isObject(obj)) console.error('Trying to merge a non-object:', obj, 'onto:', defaultValues);
+  return mergeRecursively(defaultValues, obj); // return merge(defaultValues, obj)
 }
 
 /**

@@ -1,4 +1,47 @@
-import merge from './deepmerge'
+import { isObject, isFunction, isString, isDate } from 'is-what'
+
+function mergeRecursively (defaultValues, obj) {
+  if (!isObject(obj)) return obj
+  // define newObject to merge all values upon
+  const newObject = (isObject(defaultValues))
+    ? Object.keys(defaultValues)
+      .reduce((carry, key) => {
+        if (!Object.keys(obj).includes(key)) carry[key] = defaultValues[key]
+        return carry
+      }, {})
+    : {}
+  return Object.keys(obj)
+    .reduce((carry, key) => {
+      const newVal = obj[key]
+      const targetVal = defaultValues[key]
+      // early return when targetVal === undefined
+      if (targetVal === undefined) {
+        carry[key] = newVal
+        return carry
+      }
+      // convert to new Date() if defaultValue == '%convertTimestamp%'
+      if (targetVal === '%convertTimestamp%') {
+        // firestore timestamps
+        if (isObject(newVal) && isFunction(newVal.toDate)) {
+          carry[key] = newVal.toDate()
+          return carry
+        }
+        // strings
+        if (isString(newVal) && isDate(new Date(newVal))) {
+          carry[key] = new Date(newVal)
+          return carry
+        }
+      }
+      // When newVal is an object do the merge recursively
+      if (isObject(newVal) && Object.keys(newVal).length) {
+        carry[key] = mergeRecursively(targetVal, newVal)
+        return carry
+      }
+      // all the rest
+      carry[key] = newVal
+      return carry
+    }, newObject)
+}
 
 /**
  * Sets default values on an object
@@ -7,5 +50,8 @@ import merge from './deepmerge'
  * @param {object} defaultValues the default values
  */
 export default function (obj, defaultValues) {
-  return merge(defaultValues, obj)
+  if (!isObject(defaultValues)) console.error('Trying to merge target:', obj, 'onto a non-object:', defaultValues)
+  if (!isObject(obj)) console.error('Trying to merge a non-object:', obj, 'onto:', defaultValues)
+  return mergeRecursively(defaultValues, obj)
+  // return merge(defaultValues, obj)
 }

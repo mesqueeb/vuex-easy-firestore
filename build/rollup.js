@@ -45,7 +45,8 @@ const files = [
   {in: 'src/index.js', out: 'dist', formats: ['cjs', 'es']},
   {in: 'test/helpers/index.js', out: 'test/helpers', formats: 'cjs'},
   {in: 'src/utils/apiHelpers.js', out: 'test/helpers', formats: 'cjs'},
-  {in: 'src/utils/checkFillables.js', out: 'test/helpers', formats: 'cjs'}
+  {in: 'src/utils/checkFillables.js', out: 'test/helpers', formats: 'cjs'},
+  {in: 'src/utils/setDefaultValues.js', out: 'test/helpers', formats: 'cjs'}
 ]
 const minify = false
 const sourcemap = false
