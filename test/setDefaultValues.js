@@ -13,6 +13,16 @@ test('my recursive object assign', async t => {
   t.deepEqual(defaultValues, {body: 'a'})
   t.deepEqual(target, {dueDate: nd})
 
+  defaultValues = {
+    body: '',
+    head: null,
+    toes: {big: true},
+    fingers: {'12': false}
+  }
+  target = {body: {}, head: {}, toes: {}, fingers: null}
+  res = setDefaultValues(target, defaultValues)
+  t.deepEqual(res, {body: {}, head: {}, toes: {big: true}, fingers: null})
+
   defaultValues = {body: 'a'}
   target = {body: 'b'}
   res = setDefaultValues(target, defaultValues)
@@ -60,9 +70,7 @@ test('my recursive object assign', async t => {
       time: 'now',
       newDate,
       very: {
-        deep: {
-          prop: false
-        }
+        deep: {prop: false}
       }
     }
   })
@@ -70,13 +78,36 @@ test('my recursive object assign', async t => {
     info: {
       date: 'tomorrow',
       very: {
-        deep: {
-          prop: true
-        }
+        deep: {prop: true}
       }
     }
   })
   t.true(isDate(res.info.newDate))
+
+  defaultValues = {
+    info: {
+      time: {when: 'now'},
+      very: {
+        deep: {prop: false}
+      }
+    }
+  }
+  target = {
+    info: {
+      time: {},
+      very: {whole: 1}
+    }
+  }
+  res = setDefaultValues(target, defaultValues)
+  t.deepEqual(res, {
+    info: {
+      time: {when: 'now'},
+      very: {
+        deep: {prop: false},
+        whole: 1
+      }
+    }
+  })
 
   defaultValues = {
     body: 'a',
@@ -116,7 +147,6 @@ test('my recursive object assign', async t => {
     body2: {head: false},
     tail: {}
   })
-
 })
 
 test('custom %convertTimestamp% defaultValue', async t => {
@@ -147,4 +177,28 @@ test('custom %convertTimestamp% defaultValue', async t => {
   t.is(target.body, dateStr)
   t.deepEqual(target.body2, {nd})
   t.true(isFunction(target.firebase.specialTS._ts.toDate))
+
+  defaultValues = {
+    body: '%convertTimestamp%',
+    body2: {nd: '%convertTimestamp%'},
+    firebase: {specialTS: { _ts: '%convertTimestamp%' }}
+  }
+  target = {
+    body: '',
+    body2: {nd: null},
+    firebase: {specialTS: {}}
+  }
+  res = setDefaultValues(target, defaultValues)
+  t.deepEqual(res, {
+    body: '',
+    body2: {nd: null},
+    firebase: {specialTS: { _ts: null }}
+  })
+
+  defaultValues = {
+    body: '%convertTimestamp%',
+    soup: {time: '%convertTimestamp%'}
+  }
+  res = setDefaultValues({}, defaultValues)
+  t.deepEqual(res, {body: null, soup: {time: null}})
 })

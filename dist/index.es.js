@@ -239,11 +239,35 @@ function _nonIterableSpread() {
   throw new TypeError("Invalid attempt to spread non-iterable instance");
 }
 
+/**
+ * Goes through an object recursively and replaces all occurences of `findVal` with `replaceWith`. Also works no non-objects.
+ *
+ * @export
+ * @param {*} object Target object
+ * @param {*} find val to find
+ * @param {*} replaceWith val to replace
+ * @returns the object
+ */
+
+function findAndReplaceRecursively(object, find, replaceWith) {
+  if (!isObject(object)) {
+    if (object === find) return replaceWith;
+    return object;
+  }
+
+  return Object.keys(object).reduce(function (carry, key) {
+    var val = object[key];
+    carry[key] = findAndReplaceRecursively(val, find, replaceWith);
+    return carry;
+  }, {});
+}
+
 function mergeRecursively(defaultValues, obj) {
   if (!isObject(obj)) return obj; // define newObject to merge all values upon
 
   var newObject = isObject(defaultValues) ? Object.keys(defaultValues).reduce(function (carry, key) {
-    if (!Object.keys(obj).includes(key)) carry[key] = defaultValues[key];
+    var targetVal = findAndReplaceRecursively(defaultValues[key], '%convertTimestamp%', null);
+    if (!Object.keys(obj).includes(key)) carry[key] = targetVal;
     return carry;
   }, {}) : {};
   return Object.keys(obj).reduce(function (carry, key) {
@@ -271,7 +295,7 @@ function mergeRecursively(defaultValues, obj) {
     } // When newVal is an object do the merge recursively
 
 
-    if (isObject(newVal) && Object.keys(newVal).length) {
+    if (isObject(newVal)) {
       carry[key] = mergeRecursively(targetVal, newVal);
       return carry;
     } // all the rest
