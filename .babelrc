@@ -1,11 +1,10 @@
 {
   "presets": [
-    ["env", {
+    ["@babel/preset-env", {
       "modules": false
     }]
   ],
   "plugins": [
-    "external-helpers",
-    "babel-plugin-transform-object-rest-spread"
+    "@babel/plugin-proposal-object-rest-spread"
   ]
 }

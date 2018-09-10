@@ -1,4 +1,29 @@
-// npm i -D babel-core babel-plugin-external-helpers babel-plugin-transform-object-rest-spread babel-preset-env rollup rollup-plugin-babel rollup-plugin-commonjs rollup-plugin-node-resolve rollup-plugin-terser
+/* eslint-disable */
+
+/* Required packages: */
+// npm i -D \
+// @babel/core \
+// @babel/plugin-proposal-object-rest-spread \
+// @babel/preset-env \
+// rollup \
+// rollup-plugin-babel@latest \
+// rollup-plugin-commonjs \
+// rollup-plugin-node-resolve \
+// rollup-plugin-terser \
+// is-what
+
+/* Required .babelrc setup: */
+// {
+//   "presets": [
+//     ["@babel/preset-env", {
+//       "modules": false
+//     }]
+//   ],
+//   "plugins": [
+//     "@babel/plugin-proposal-object-rest-spread"
+//   ]
+// }
+
 import babel from 'rollup-plugin-babel'
 import commonjs from 'rollup-plugin-commonjs'
 import { terser } from 'rollup-plugin-terser'
@@ -20,7 +45,8 @@ const files = [
   {in: 'src/index.js', out: 'dist', formats: ['cjs', 'es']},
   {in: 'test/helpers/index.js', out: 'test/helpers', formats: 'cjs'},
   {in: 'src/utils/apiHelpers.js', out: 'test/helpers', formats: 'cjs'},
-  {in: 'src/utils/checkFillables.js', out: 'test/helpers', formats: 'cjs'}
+  {in: 'src/utils/checkFillables.js', out: 'test/helpers', formats: 'cjs'},
+  {in: 'src/utils/setDefaultValues.js', out: 'test/helpers', formats: 'cjs'}
 ]
 const minify = false
 const sourcemap = false
