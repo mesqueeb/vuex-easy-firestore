@@ -416,16 +416,45 @@ Exactly the same as above, but for changes that have occured on the server. You 
 
 ### defaultValues set after server retrieval
 
-`defaultValues` is an object with props that will be set on each doc that comes from the server. You HAVE to set the props you want to be reactive if some items in firestore don't have those props. The retrieved docs will be deep merged on top of these default values.
+If you create a `defaultValues` object, then each document from the server will be merged onto those default values!
 
+**Use case 1: Firestore Timestamp conversion**<br>
+Automatically convert Firestore Timestamps into `new Date()` objects! Do this by setting `'%convertTimestamp%'` as the value of a `defaultValues` prop. (see example below).
+
+**Use case 2: Reactivity**<br>
+With VueJS, if you need a prop on an item to be fully reactive with your vue templates, it needs to exist from the start. If some docs in your user's firestore doesn't have all props (because you added new functionality to your app at later dates), the *retrieved docs will have reactivity problems!*
+
+However, if you add these props to `defaultValues` with some value (or just `'null'`), vuex-easy-firestore will automatically add those props to the doc *before* inserting it into vuex!
+
+**Example:**
 ```js
-{
-  // your other config...
+const vuexModule = {
+  // your other vuex-easy-firestore config...
   serverChange: {
-    defaultValues: {},
+    defaultValues: {
+      defaultInt: 1,
+      propAddedLater: null,
+      date: '%convertTimestamp%',
+    },
   }
 }
+// Now an example of what happens to the docs which are retrieved from the server:
+const retrievedDoc = {
+  defaultInt: 2,
+  date: Timestamp // firestore Timestamp object
+}
+// This doc will be inserted into vuex like so:
+const docToBeInserted = {
+  defaultInt: 2, // stays 2
+  propAddedLater: null, // receives propAddedLater prop with default val
+  date: Timestamp.toDate() // will execute firestore's Timestamp.toDate()
+}
+// '%convertTimestamp%' works also with date strings:
+const retrievedDoc = {date: '1990-06-22 17:35:00'} // date string
+const docToBeInserted = {date: new Date('1990-06-22 17:35:00')} // converted to new Date
 ```
+
+To learn more about Firestore's Timestamp format see [here](https://firebase.google.com/docs/reference/js/firebase.firestore.Timestamp).
 
 ## All config options
 
