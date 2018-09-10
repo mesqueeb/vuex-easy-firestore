@@ -207,6 +207,48 @@ function error (error) {
   return error;
 }
 
+function mergeRecursively(origin, newComer) {
+  if (!isWhat.isObject(newComer)) return newComer; // define newObject to merge all values upon
+
+  var newObject = isWhat.isObject(origin) ? Object.keys(origin).reduce(function (carry, key) {
+    var targetVal = origin[key];
+    if (!Object.keys(newComer).includes(key)) carry[key] = targetVal;
+    return carry;
+  }, {}) : {};
+  return Object.keys(newComer).reduce(function (carry, key) {
+    var newVal = newComer[key];
+    var targetVal = origin[key]; // early return when targetVal === undefined
+
+    if (targetVal === undefined) {
+      carry[key] = newVal;
+      return carry;
+    } // When newVal is an object do the merge recursively
+
+
+    if (isWhat.isObject(newVal)) {
+      carry[key] = mergeRecursively(targetVal, newVal);
+      return carry;
+    } // all the rest
+
+
+    carry[key] = newVal;
+    return carry;
+  }, newObject);
+}
+/**
+ * Merge anything
+ *
+ * @param {object} origin the default values
+ * @param {object} newComer on which to set the default values
+ */
+
+
+function merge$1 (origin, newComer) {
+  if (!isWhat.isObject(origin)) console.error('Trying to merge target:', newComer, 'onto a non-object:', origin);
+  if (!isWhat.isObject(newComer)) console.error('Trying to merge a non-object:', newComer, 'onto:', origin);
+  return mergeRecursively(origin, newComer); // return merge(origin, newComer)
+}
+
 var mutations = {
   SET_PATHVARS: function SET_PATHVARS(state, pathVars) {
     var self = this;
@@ -244,7 +286,7 @@ var mutations = {
     if (!ref) return error('patchNoRef');
     return Object.keys(doc).forEach(function (key) {
       // Merge if exists
-      var newVal = isWhat.isObject(ref[key]) && isWhat.isObject(doc[key]) ? merge(ref[key], doc[key]) : doc[key];
+      var newVal = isWhat.isObject(ref[key]) && isWhat.isObject(doc[key]) ? merge$1(ref[key], doc[key]) : doc[key];
 
       _this._vm.$set(ref, key, newVal);
     });
@@ -353,7 +395,7 @@ function findAndReplaceRecursively(object, find, replaceWith) {
   }, {});
 }
 
-function mergeRecursively(defaultValues, obj) {
+function mergeRecursively$1(defaultValues, obj) {
   if (!isWhat.isObject(obj)) return obj; // define newObject to merge all values upon
 
   var newObject = isWhat.isObject(defaultValues) ? Object.keys(defaultValues).reduce(function (carry, key) {
@@ -387,7 +429,7 @@ function mergeRecursively(defaultValues, obj) {
 
 
     if (isWhat.isObject(newVal)) {
-      carry[key] = mergeRecursively(targetVal, newVal);
+      carry[key] = mergeRecursively$1(targetVal, newVal);
       return carry;
     } // all the rest
 
@@ -407,7 +449,7 @@ function mergeRecursively(defaultValues, obj) {
 function setDefaultValues (obj, defaultValues) {
   if (!isWhat.isObject(defaultValues)) console.error('Trying to merge target:', obj, 'onto a non-object:', defaultValues);
   if (!isWhat.isObject(obj)) console.error('Trying to merge a non-object:', obj, 'onto:', defaultValues);
-  return mergeRecursively(defaultValues, obj); // return merge(defaultValues, obj)
+  return mergeRecursively$1(defaultValues, obj); // return merge(defaultValues, obj)
 }
 
 /**
@@ -669,7 +711,7 @@ var actions = {
     var syncStackItems = getters.prepareForPatch(ids, doc); // 2. Push to syncStack
 
     Object.keys(syncStackItems).forEach(function (id) {
-      var newVal = !state._sync.syncStack.updates[id] ? syncStackItems[id] : merge(state._sync.syncStack.updates[id], syncStackItems[id]);
+      var newVal = !state._sync.syncStack.updates[id] ? syncStackItems[id] : merge$1(state._sync.syncStack.updates[id], syncStackItems[id]);
       state._sync.syncStack.updates[id] = newVal;
     }); // 3. Create or refresh debounce
 
