@@ -1,7 +1,7 @@
 import Firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
-import { isArray, isObject } from 'is-what'
+import { isArray, isObject, isFunction } from 'is-what'
 import merge from '../utils/deepmerge'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
@@ -202,6 +202,25 @@ const actions = {
         return reject(error)
       })
     })
+  },
+  fetchAndAdd (
+    {state, getters, commit, dispatch},
+    {whereFilters = [], orderBy = []} = {whereFilters: [], orderBy: []}
+    // whereFilters: [['archived', '==', true]]
+    // orderBy: ['done_date', 'desc']
+  ) {
+    return dispatch('fetch', {whereFilters, orderBy})
+      .then(querySnapshot => {
+        if (querySnapshot.done === true) return querySnapshot
+        if (isFunction(querySnapshot.forEach)) {
+          querySnapshot.forEach(_doc => {
+            const id = _doc.id
+            const doc = setDefaultValues(_doc.data(), state._conf.serverChange.defaultValues)
+            doc.id = id
+            commit('INSERT_DOC', doc)
+          })
+        }
+      })
   },
   serverUpdate ({commit}, {change, id, doc = {}}) {
     doc.id = id

@@ -807,12 +807,45 @@ var actions = {
       });
     });
   },
-  serverUpdate: function serverUpdate(_ref13, _ref14) {
-    var commit = _ref13.commit;
-    var change = _ref14.change,
-        id = _ref14.id,
-        _ref14$doc = _ref14.doc,
-        doc = _ref14$doc === void 0 ? {} : _ref14$doc;
+  fetchAndAdd: function fetchAndAdd(_ref13) {
+    var state = _ref13.state,
+        getters = _ref13.getters,
+        commit = _ref13.commit,
+        dispatch = _ref13.dispatch;
+
+    var _ref14 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
+      whereFilters: [],
+      orderBy: [] // whereFilters: [['archived', '==', true]]
+      // orderBy: ['done_date', 'desc']
+
+    },
+        _ref14$whereFilters = _ref14.whereFilters,
+        whereFilters = _ref14$whereFilters === void 0 ? [] : _ref14$whereFilters,
+        _ref14$orderBy = _ref14.orderBy,
+        orderBy = _ref14$orderBy === void 0 ? [] : _ref14$orderBy;
+
+    return dispatch('fetch', {
+      whereFilters: whereFilters,
+      orderBy: orderBy
+    }).then(function (querySnapshot) {
+      if (querySnapshot.done === true) return querySnapshot;
+
+      if (isWhat.isFunction(querySnapshot.forEach)) {
+        querySnapshot.forEach(function (_doc) {
+          var id = _doc.id;
+          var doc = setDefaultValues(_doc.data(), state._conf.serverChange.defaultValues);
+          doc.id = id;
+          commit('INSERT_DOC', doc);
+        });
+      }
+    });
+  },
+  serverUpdate: function serverUpdate(_ref15, _ref16) {
+    var commit = _ref15.commit;
+    var change = _ref16.change,
+        id = _ref16.id,
+        _ref16$doc = _ref16.doc,
+        doc = _ref16$doc === void 0 ? {} : _ref16$doc;
     doc.id = id;
 
     switch (change) {
@@ -829,11 +862,11 @@ var actions = {
         break;
     }
   },
-  openDBChannel: function openDBChannel(_ref15, pathVariables) {
-    var getters = _ref15.getters,
-        state = _ref15.state,
-        commit = _ref15.commit,
-        dispatch = _ref15.dispatch;
+  openDBChannel: function openDBChannel(_ref17, pathVariables) {
+    var getters = _ref17.getters,
+        state = _ref17.state,
+        commit = _ref17.commit,
+        dispatch = _ref17.dispatch;
     var store = this; // set state for pathVariables
 
     if (pathVariables && isWhat.isObject(pathVariables)) commit('SET_PATHVARS', pathVariables); // get userId
@@ -944,11 +977,11 @@ var actions = {
       });
     });
   },
-  set: function set(_ref16, doc) {
-    var commit = _ref16.commit,
-        dispatch = _ref16.dispatch,
-        getters = _ref16.getters,
-        state = _ref16.state;
+  set: function set(_ref18, doc) {
+    var commit = _ref18.commit,
+        dispatch = _ref18.dispatch,
+        getters = _ref18.getters,
+        state = _ref18.state;
     if (!doc) return;
 
     if (!getters.collectionMode) {
@@ -963,11 +996,11 @@ var actions = {
 
     return dispatch('patch', doc);
   },
-  insert: function insert(_ref17, doc) {
-    var state = _ref17.state,
-        getters = _ref17.getters,
-        commit = _ref17.commit,
-        dispatch = _ref17.dispatch;
+  insert: function insert(_ref19, doc) {
+    var state = _ref19.state,
+        getters = _ref19.getters,
+        commit = _ref19.commit,
+        dispatch = _ref19.dispatch;
     var store = this;
     if (!getters.signedIn) return 'auth/invalid-user-token';
     if (!doc) return;
@@ -986,11 +1019,11 @@ var actions = {
 
     return storeUpdateFn(newDoc);
   },
-  insertBatch: function insertBatch(_ref18, docs) {
-    var state = _ref18.state,
-        getters = _ref18.getters,
-        commit = _ref18.commit,
-        dispatch = _ref18.dispatch;
+  insertBatch: function insertBatch(_ref20, docs) {
+    var state = _ref20.state,
+        getters = _ref20.getters,
+        commit = _ref20.commit,
+        dispatch = _ref20.dispatch;
     var store = this;
     if (!getters.signedIn) return 'auth/invalid-user-token';
     if (!isWhat.isArray(docs) || !docs.length) return;
@@ -1016,11 +1049,11 @@ var actions = {
 
     return storeUpdateFn(newDocs);
   },
-  patch: function patch(_ref19, doc) {
-    var state = _ref19.state,
-        getters = _ref19.getters,
-        commit = _ref19.commit,
-        dispatch = _ref19.dispatch;
+  patch: function patch(_ref21, doc) {
+    var state = _ref21.state,
+        getters = _ref21.getters,
+        commit = _ref21.commit,
+        dispatch = _ref21.dispatch;
     var store = this;
     if (!doc) return;
     var id = getters.collectionMode ? getId(doc) : undefined;
@@ -1044,14 +1077,14 @@ var actions = {
 
     return storeUpdateFn(value);
   },
-  patchBatch: function patchBatch(_ref20, _ref21) {
-    var state = _ref20.state,
-        getters = _ref20.getters,
-        commit = _ref20.commit,
-        dispatch = _ref20.dispatch;
-    var doc = _ref21.doc,
-        _ref21$ids = _ref21.ids,
-        ids = _ref21$ids === void 0 ? [] : _ref21$ids;
+  patchBatch: function patchBatch(_ref22, _ref23) {
+    var state = _ref22.state,
+        getters = _ref22.getters,
+        commit = _ref22.commit,
+        dispatch = _ref22.dispatch;
+    var doc = _ref23.doc,
+        _ref23$ids = _ref23.ids,
+        ids = _ref23$ids === void 0 ? [] : _ref23$ids;
     var store = this;
     if (!doc) return; // define the store update
 
@@ -1075,11 +1108,11 @@ var actions = {
 
     return storeUpdateFn(doc, ids);
   },
-  delete: function _delete(_ref22, id) {
-    var state = _ref22.state,
-        getters = _ref22.getters,
-        commit = _ref22.commit,
-        dispatch = _ref22.dispatch;
+  delete: function _delete(_ref24, id) {
+    var state = _ref24.state,
+        getters = _ref24.getters,
+        commit = _ref24.commit,
+        dispatch = _ref24.dispatch;
     if (!id) return;
     var store = this;
 
@@ -1106,11 +1139,11 @@ var actions = {
 
     return storeUpdateFn(id);
   },
-  deleteBatch: function deleteBatch(_ref23, ids) {
-    var state = _ref23.state,
-        getters = _ref23.getters,
-        commit = _ref23.commit,
-        dispatch = _ref23.dispatch;
+  deleteBatch: function deleteBatch(_ref25, ids) {
+    var state = _ref25.state,
+        getters = _ref25.getters,
+        commit = _ref25.commit,
+        dispatch = _ref25.dispatch;
     if (!isWhat.isArray(ids)) return;
     if (!ids.length) return;
     var store = this; // define the store update
@@ -1140,9 +1173,9 @@ var actions = {
 
     return storeUpdateFn(ids);
   },
-  _stopPatching: function _stopPatching(_ref24) {
-    var state = _ref24.state,
-        commit = _ref24.commit;
+  _stopPatching: function _stopPatching(_ref26) {
+    var state = _ref26.state,
+        commit = _ref26.commit;
 
     if (state._sync.stopPatchingTimeout) {
       clearTimeout(state._sync.stopPatchingTimeout);
@@ -1152,9 +1185,9 @@ var actions = {
       state._sync.patching = false;
     }, 300);
   },
-  _startPatching: function _startPatching(_ref25) {
-    var state = _ref25.state,
-        commit = _ref25.commit;
+  _startPatching: function _startPatching(_ref27) {
+    var state = _ref27.state,
+        commit = _ref27.commit;
 
     if (state._sync.stopPatchingTimeout) {
       clearTimeout(state._sync.stopPatchingTimeout);
