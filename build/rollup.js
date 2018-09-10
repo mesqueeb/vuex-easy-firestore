@@ -3,7 +3,6 @@
 /* Required packages: */
 // npm i -D \
 // @babel/core \
-// @babel/plugin-external-helpers \
 // @babel/plugin-proposal-object-rest-spread \
 // @babel/preset-env \
 // rollup \
@@ -21,7 +20,6 @@
 //     }]
 //   ],
 //   "plugins": [
-//     "@babel/plugin-external-helpers",
 //     "@babel/plugin-proposal-object-rest-spread"
 //   ]
 // }
