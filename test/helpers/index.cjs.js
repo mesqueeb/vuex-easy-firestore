@@ -9,6 +9,8 @@ require('firebase/firestore');
 var vuexEasyAccess = require('vuex-easy-access');
 var isWhat = require('is-what');
 var nanomerge = _interopDefault(require('nanomerge'));
+var merge = _interopDefault(require('merge-anything'));
+var findAndReplace = _interopDefault(require('find-and-replace-anything'));
 require('firebase/auth');
 var Vue = _interopDefault(require('vue'));
 var Vuex = _interopDefault(require('vuex'));
@@ -99,7 +101,7 @@ var mainCharacter = {
 // import deepAssign from 'deep-object-assign-with-reduce'
 // const mergeOptions = require('merge-options')
 
-function merge() {
+function merge$1() {
   // check if all are objects
   var l = arguments.length;
 
@@ -330,34 +332,11 @@ function _nonIterableSpread() {
   throw new TypeError("Invalid attempt to spread non-iterable instance");
 }
 
-/**
- * Goes through an object recursively and replaces all occurences of `findVal` with `replaceWith`. Also works no non-objects.
- *
- * @export
- * @param {*} object Target object
- * @param {*} find val to find
- * @param {*} replaceWith val to replace
- * @returns the object
- */
-
-function findAndReplaceRecursively(object, find, replaceWith) {
-  if (!isWhat.isObject(object)) {
-    if (object === find) return replaceWith;
-    return object;
-  }
-
-  return Object.keys(object).reduce(function (carry, key) {
-    var val = object[key];
-    carry[key] = findAndReplaceRecursively(val, find, replaceWith);
-    return carry;
-  }, {});
-}
-
 function mergeRecursively(defaultValues, obj) {
   if (!isWhat.isObject(obj)) return obj; // define newObject to merge all values upon
 
   var newObject = isWhat.isObject(defaultValues) ? Object.keys(defaultValues).reduce(function (carry, key) {
-    var targetVal = findAndReplaceRecursively(defaultValues[key], '%convertTimestamp%', null);
+    var targetVal = findAndReplace(defaultValues[key], '%convertTimestamp%', null);
     if (!Object.keys(obj).includes(key)) carry[key] = targetVal;
     return carry;
   }, {}) : {};
@@ -445,7 +424,7 @@ function startDebounce (ms) {
 }
 
 function retrievePaths(object, path, result) {
-  if (!isWhat.isObject(object) || !Object.keys(object).length) {
+  if (!isWhat.isObject(object) || !Object.keys(object).length || object.methodName === 'FieldValue.serverTimestamp') {
     if (!path) return object;
     result[path] = object;
     return result;
@@ -1372,8 +1351,7 @@ var getters = {
           patchData = collectionMode ? getters.storeRef[id] : getters.storeRef;
         } else {
           patchData = doc;
-        } // patchData = copyObj(patchData)
-
+        }
 
         patchData = checkFillables(patchData, state._conf.sync.fillables, state._conf.sync.guard);
         patchData.id = id;
@@ -1385,7 +1363,6 @@ var getters = {
   prepareForInsert: function prepareForInsert(state, getters, rootState, rootGetters) {
     return function () {
       var items = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-      // items = copyObj(items)
       return items.reduce(function (carry, item) {
         item = checkFillables(item, state._conf.sync.fillables, state._conf.sync.guard);
         carry.push(item);
@@ -1395,7 +1372,6 @@ var getters = {
   },
   prepareInitialDocForInsert: function prepareInitialDocForInsert(state, getters, rootState, rootGetters) {
     return function (doc) {
-      // doc = copyObj(doc)
       doc = checkFillables(doc, state._conf.sync.fillables, state._conf.sync.guard);
       return doc;
     };
@@ -1490,7 +1466,7 @@ function errorCheck(config) {
  */
 
 function iniModule (userConfig) {
-  var conf = merge(defaultConfig, userConfig);
+  var conf = merge$1(defaultConfig, userConfig);
   if (!errorCheck(conf)) return;
   var userState = conf.state;
   var userMutations = conf.mutations;
@@ -1502,13 +1478,13 @@ function iniModule (userConfig) {
   delete conf.getters;
   var docContainer = {};
   if (conf.statePropName) docContainer[conf.statePropName] = {};
-  var state = merge(initialState$2, userState, docContainer, {
+  var state = merge$1(initialState$2, userState, docContainer, {
     _conf: conf
   });
   return {
     namespaced: true,
     state: state,
-    mutations: iniMutations(userMutations, merge(initialState$2, userState)),
+    mutations: iniMutations(userMutations, merge$1(initialState$2, userState)),
     actions: iniActions(userActions),
     getters: iniGetters(userGetters)
   };

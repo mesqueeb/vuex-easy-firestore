@@ -2,36 +2,16 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
 var isWhat = require('is-what');
-
-/**
- * Goes through an object recursively and replaces all occurences of `findVal` with `replaceWith`. Also works no non-objects.
- *
- * @export
- * @param {*} object Target object
- * @param {*} find val to find
- * @param {*} replaceWith val to replace
- * @returns the object
- */
-
-function findAndReplaceRecursively(object, find, replaceWith) {
-  if (!isWhat.isObject(object)) {
-    if (object === find) return replaceWith;
-    return object;
-  }
-
-  return Object.keys(object).reduce(function (carry, key) {
-    var val = object[key];
-    carry[key] = findAndReplaceRecursively(val, find, replaceWith);
-    return carry;
-  }, {});
-}
+var findAndReplace = _interopDefault(require('find-and-replace-anything'));
 
 function mergeRecursively(defaultValues, obj) {
   if (!isWhat.isObject(obj)) return obj; // define newObject to merge all values upon
 
   var newObject = isWhat.isObject(defaultValues) ? Object.keys(defaultValues).reduce(function (carry, key) {
-    var targetVal = findAndReplaceRecursively(defaultValues[key], '%convertTimestamp%', null);
+    var targetVal = findAndReplace(defaultValues[key], '%convertTimestamp%', null);
     if (!Object.keys(obj).includes(key)) carry[key] = targetVal;
     return carry;
   }, {}) : {};
