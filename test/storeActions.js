@@ -3,6 +3,17 @@ import store from './helpers/index.cjs.js'
 import wait from './helpers/wait.js'
 import test from 'ava'
 
+// Mock for Firebase.firestore.FieldValue.serverTimestamp()
+const Firebase = {
+  firestore: {
+    FieldValue: {
+      serverTimestamp: function () {
+        return {methodName: 'FieldValue.serverTimestamp'}
+      }
+    }
+  }
+}
+
 const box = store.state.pokemonBox
 const char = store.state.mainCharacter
 // actions
@@ -15,13 +26,26 @@ test('set & delete: collection', async t => {
   const id2 = store.getters['pokemonBox/dbRef'].doc().id
   const date = new Date()
   // ini set
-  store.dispatch('pokemonBox/set', {name: 'Squirtle', id, type: ['water'], meta: {date}})
+  const pokemonValues = {
+    id,
+    name: 'Squirtle',
+    type: ['water'],
+    meta: {date, firebaseServerTS: Firebase.firestore.FieldValue.serverTimestamp()}
+  }
+  store.dispatch('pokemonBox/insert', pokemonValues)
+  console.log('id → ', id)
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Squirtle')
   t.is(box.pokemon[id].meta.date, date)
+  t.deepEqual(box.pokemon[id].meta.firebaseServerTS, {methodName: 'FieldValue.serverTimestamp'})
   // update
   const date2 = new Date('1990-06-22')
-  store.dispatch('pokemonBox/set', {name: 'COOL Squirtle!', id, meta: {date: date2}})
+  const pokemonValuesNew = {
+    id,
+    name: 'COOL Squirtle!',
+    meta: {date: date2}
+  }
+  store.dispatch('pokemonBox/set', pokemonValuesNew)
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'COOL Squirtle!')
   t.deepEqual(box.pokemon[id].type, ['water'])
