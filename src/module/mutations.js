@@ -1,7 +1,7 @@
 import { isObject } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
 import error from './errors'
-import merge from '../utils/merge-anything'
+import merge from 'merge-anything'
 
 const mutations = {
   SET_PATHVARS (state, pathVars) {

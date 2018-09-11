@@ -7,6 +7,8 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var isWhat = require('is-what');
 var nanomerge = _interopDefault(require('nanomerge'));
 var vuexEasyAccess = require('vuex-easy-access');
+var merge = _interopDefault(require('merge-anything'));
+var findAndReplace = _interopDefault(require('find-and-replace-anything'));
 var Firebase = _interopDefault(require('firebase/app'));
 require('firebase/firestore');
 require('firebase/auth');
@@ -14,7 +16,7 @@ require('firebase/auth');
 // import deepAssign from 'deep-object-assign-with-reduce'
 // const mergeOptions = require('merge-options')
 
-function merge() {
+function merge$1() {
   // check if all are objects
   var l = arguments.length;
 
@@ -122,48 +124,6 @@ function error (error) {
   return error;
 }
 
-function mergeRecursively(origin, newComer) {
-  if (!isWhat.isObject(newComer)) return newComer; // define newObject to merge all values upon
-
-  var newObject = isWhat.isObject(origin) ? Object.keys(origin).reduce(function (carry, key) {
-    var targetVal = origin[key];
-    if (!Object.keys(newComer).includes(key)) carry[key] = targetVal;
-    return carry;
-  }, {}) : {};
-  return Object.keys(newComer).reduce(function (carry, key) {
-    var newVal = newComer[key];
-    var targetVal = origin[key]; // early return when targetVal === undefined
-
-    if (targetVal === undefined) {
-      carry[key] = newVal;
-      return carry;
-    } // When newVal is an object do the merge recursively
-
-
-    if (isWhat.isObject(newVal)) {
-      carry[key] = mergeRecursively(targetVal, newVal);
-      return carry;
-    } // all the rest
-
-
-    carry[key] = newVal;
-    return carry;
-  }, newObject);
-}
-/**
- * Merge anything
- *
- * @param {object} origin the default values
- * @param {object} newComer on which to set the default values
- */
-
-
-function merge$1 (origin, newComer) {
-  if (!isWhat.isObject(origin)) console.error('Trying to merge target:', newComer, 'onto a non-object:', origin);
-  if (!isWhat.isObject(newComer)) console.error('Trying to merge a non-object:', newComer, 'onto:', origin);
-  return mergeRecursively(origin, newComer); // return merge(origin, newComer)
-}
-
 var mutations = {
   SET_PATHVARS: function SET_PATHVARS(state, pathVars) {
     var self = this;
@@ -201,7 +161,7 @@ var mutations = {
     if (!ref) return error('patchNoRef');
     return Object.keys(doc).forEach(function (key) {
       // Merge if exists
-      var newVal = isWhat.isObject(ref[key]) && isWhat.isObject(doc[key]) ? merge$1(ref[key], doc[key]) : doc[key];
+      var newVal = isWhat.isObject(ref[key]) && isWhat.isObject(doc[key]) ? merge(ref[key], doc[key]) : doc[key];
 
       _this._vm.$set(ref, key, newVal);
     });
@@ -287,34 +247,11 @@ function _nonIterableSpread() {
   throw new TypeError("Invalid attempt to spread non-iterable instance");
 }
 
-/**
- * Goes through an object recursively and replaces all occurences of `findVal` with `replaceWith`. Also works no non-objects.
- *
- * @export
- * @param {*} object Target object
- * @param {*} find val to find
- * @param {*} replaceWith val to replace
- * @returns the object
- */
-
-function findAndReplaceRecursively(object, find, replaceWith) {
-  if (!isWhat.isObject(object)) {
-    if (object === find) return replaceWith;
-    return object;
-  }
-
-  return Object.keys(object).reduce(function (carry, key) {
-    var val = object[key];
-    carry[key] = findAndReplaceRecursively(val, find, replaceWith);
-    return carry;
-  }, {});
-}
-
-function mergeRecursively$1(defaultValues, obj) {
+function mergeRecursively(defaultValues, obj) {
   if (!isWhat.isObject(obj)) return obj; // define newObject to merge all values upon
 
   var newObject = isWhat.isObject(defaultValues) ? Object.keys(defaultValues).reduce(function (carry, key) {
-    var targetVal = findAndReplaceRecursively(defaultValues[key], '%convertTimestamp%', null);
+    var targetVal = findAndReplace(defaultValues[key], '%convertTimestamp%', null);
     if (!Object.keys(obj).includes(key)) carry[key] = targetVal;
     return carry;
   }, {}) : {};
@@ -344,7 +281,7 @@ function mergeRecursively$1(defaultValues, obj) {
 
 
     if (isWhat.isObject(newVal)) {
-      carry[key] = mergeRecursively$1(targetVal, newVal);
+      carry[key] = mergeRecursively(targetVal, newVal);
       return carry;
     } // all the rest
 
@@ -364,7 +301,7 @@ function mergeRecursively$1(defaultValues, obj) {
 function setDefaultValues (obj, defaultValues) {
   if (!isWhat.isObject(defaultValues)) console.error('Trying to merge target:', obj, 'onto a non-object:', defaultValues);
   if (!isWhat.isObject(obj)) console.error('Trying to merge a non-object:', obj, 'onto:', defaultValues);
-  return mergeRecursively$1(defaultValues, obj); // return merge(defaultValues, obj)
+  return mergeRecursively(defaultValues, obj); // return merge(defaultValues, obj)
 }
 
 /**
@@ -626,7 +563,7 @@ var actions = {
     var syncStackItems = getters.prepareForPatch(ids, doc); // 2. Push to syncStack
 
     Object.keys(syncStackItems).forEach(function (id) {
-      var newVal = !state._sync.syncStack.updates[id] ? syncStackItems[id] : merge$1(state._sync.syncStack.updates[id], syncStackItems[id]);
+      var newVal = !state._sync.syncStack.updates[id] ? syncStackItems[id] : merge(state._sync.syncStack.updates[id], syncStackItems[id]);
       state._sync.syncStack.updates[id] = newVal;
     }); // 3. Create or refresh debounce
 
@@ -1329,8 +1266,7 @@ var getters = {
           patchData = collectionMode ? getters.storeRef[id] : getters.storeRef;
         } else {
           patchData = doc;
-        } // patchData = copyObj(patchData)
-
+        }
 
         patchData = checkFillables(patchData, state._conf.sync.fillables, state._conf.sync.guard);
         patchData.id = id;
@@ -1342,7 +1278,6 @@ var getters = {
   prepareForInsert: function prepareForInsert(state, getters, rootState, rootGetters) {
     return function () {
       var items = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-      // items = copyObj(items)
       return items.reduce(function (carry, item) {
         item = checkFillables(item, state._conf.sync.fillables, state._conf.sync.guard);
         carry.push(item);
@@ -1352,7 +1287,6 @@ var getters = {
   },
   prepareInitialDocForInsert: function prepareInitialDocForInsert(state, getters, rootState, rootGetters) {
     return function (doc) {
-      // doc = copyObj(doc)
       doc = checkFillables(doc, state._conf.sync.fillables, state._conf.sync.guard);
       return doc;
     };
@@ -1447,7 +1381,7 @@ function errorCheck(config) {
  */
 
 function iniModule (userConfig) {
-  var conf = merge(defaultConfig, userConfig);
+  var conf = merge$1(defaultConfig, userConfig);
   if (!errorCheck(conf)) return;
   var userState = conf.state;
   var userMutations = conf.mutations;
@@ -1459,13 +1393,13 @@ function iniModule (userConfig) {
   delete conf.getters;
   var docContainer = {};
   if (conf.statePropName) docContainer[conf.statePropName] = {};
-  var state = merge(initialState, userState, docContainer, {
+  var state = merge$1(initialState, userState, docContainer, {
     _conf: conf
   });
   return {
     namespaced: true,
     state: state,
-    mutations: iniMutations(userMutations, merge(initialState, userState)),
+    mutations: iniMutations(userMutations, merge$1(initialState, userState)),
     actions: iniActions(userActions),
     getters: iniGetters(userGetters)
   };

@@ -47,7 +47,6 @@ const files = [
   {in: 'src/utils/apiHelpers.js', out: 'test/helpers', formats: 'cjs'},
   {in: 'src/utils/checkFillables.js', out: 'test/helpers', formats: 'cjs'},
   {in: 'src/utils/setDefaultValues.js', out: 'test/helpers', formats: 'cjs'},
-  {in: 'src/utils/findAndReplaceRecursively.js', out: 'test/helpers', formats: 'cjs'}
 ]
 const minify = false
 const sourcemap = false
