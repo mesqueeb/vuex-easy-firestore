@@ -5,40 +5,12 @@ Object.defineProperty(exports, '__esModule', { value: true });
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var isWhat = require('is-what');
-var nanomerge = _interopDefault(require('nanomerge'));
 var vuexEasyAccess = require('vuex-easy-access');
 var merge = _interopDefault(require('merge-anything'));
 var findAndReplace = _interopDefault(require('find-and-replace-anything'));
 var Firebase = _interopDefault(require('firebase/app'));
 require('firebase/firestore');
 require('firebase/auth');
-
-// import deepAssign from 'deep-object-assign-with-reduce'
-// const mergeOptions = require('merge-options')
-
-function merge$1() {
-  // check if all are objects
-  var l = arguments.length;
-
-  for (l; l > 0; l--) {
-    var item = l - 1 < 0 || arguments.length <= l - 1 ? undefined : arguments[l - 1];
-
-    if (!isWhat.isObject(item)) {
-      console.error('trying to merge a non-object: ', item);
-      return item;
-    }
-  }
-
-  return nanomerge.apply(void 0, arguments); // settings for 'deepmerge'
-  // const overwriteMerge = (destinationArray, sourceArray, options) => sourceArray
-  // const options = {arrayMerge: overwriteMerge}
-  // if (params.length > 2) {
-  //   return deepmerge.all([...params], options)
-  // }
-  // return deepmerge(...params, options)
-  // return deepAssign(...params)
-  // return mergeOptions(...params)
-}
 
 var defaultConfig = {
   firestorePath: '',
@@ -1381,7 +1353,7 @@ function errorCheck(config) {
  */
 
 function iniModule (userConfig) {
-  var conf = merge$1(defaultConfig, userConfig);
+  var conf = merge(defaultConfig, userConfig);
   if (!errorCheck(conf)) return;
   var userState = conf.state;
   var userMutations = conf.mutations;
@@ -1393,13 +1365,13 @@ function iniModule (userConfig) {
   delete conf.getters;
   var docContainer = {};
   if (conf.statePropName) docContainer[conf.statePropName] = {};
-  var state = merge$1(initialState, userState, docContainer, {
+  var state = merge(initialState, userState, docContainer, {
     _conf: conf
   });
   return {
     namespaced: true,
     state: state,
-    mutations: iniMutations(userMutations, merge$1(initialState, userState)),
+    mutations: iniMutations(userMutations, merge(initialState, userState)),
     actions: iniActions(userActions),
     getters: iniGetters(userGetters)
   };

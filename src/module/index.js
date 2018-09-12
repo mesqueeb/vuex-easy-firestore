@@ -1,4 +1,4 @@
-import merge from '../utils/deepmerge'
+import merge from 'merge-anything'
 // store
 import defaultConfig from './defaultConfig'
 import initialState from './state'
