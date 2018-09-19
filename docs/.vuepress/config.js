@@ -6,7 +6,6 @@ module.exports = {
   ga: 'UA-92965499-3',
   themeConfig: {
     displayAllHeaders: true,
-    // sidebar: 'auto',
     sidebar: [
       ['/setup', 'Installation & setup'],
       '/usage',
@@ -14,8 +13,14 @@ module.exports = {
       '/config-example',
       '/feedback',
     ],
-    // nav: [
-      // { text: 'Guide', link: '/Extra features' },
-    // ],
+    nav: [
+      { text: 'Changelog', link: 'https://github.com/mesqueeb/vuex-easy-firestore/releases' },
+    ],
+    repo: 'mesqueeb/vuex-easy-firestore',
+    repoLabel: 'Github',
+    docsDir: 'docs',
+    docsBranch: 'dev',
+    editLinks: true,
+    editLinkText: 'Suggest an edit on Github!'
   }
 }

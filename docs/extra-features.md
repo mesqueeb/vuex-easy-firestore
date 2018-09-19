@@ -4,15 +4,19 @@
 
 The filters set in `sync: {}` are applied before the DB Channel is openend. They are only available for syncing 'collections'.
 
-- *where:* The same as firestore's `.where()`. An array of arrays with the filters you want. eg. `[['field', '==', false], ...]`
-- *orderBy:* The same as firestore's `.orderBy()`. eg. `['created_date']`
+- *where:* The same as firestore's `.where()`
+- *orderBy:* The same as firestore's `.orderBy()`
 
 ```js
 {
   // your other vuex-easy-fire config...
   sync: {
-    where: [], // an array of arrays
-    orderBy: [],
+    where: [ // an array of arrays
+      ['certain_field', '==', false] // example
+    ],
+    orderBy: [
+      'created_date' // example
+    ],
   }
 }
 ```
@@ -67,9 +71,7 @@ store.dispatch('userModule/openDBChannel')
 
 ## Hooks before insert/patch/delete
 
-A function where you can check something or even change the doc before the store mutation occurs.
-! **Must call `updateStore(doc)` to make the store mutation.**
-But you may choose not to call this to abort the mutation.
+A function where you can check something or even change the doc (the doc object) before the store mutation occurs.
 
 ```js
 {
@@ -85,6 +87,10 @@ But you may choose not to call this to abort the mutation.
   }
 }
 ```
+
+::: warning You must call `updateStore(doc)` to make the store mutation.
+But you may choose not to call this to abort the mutation.
+:::
 
 ## Hooks after changes on the server
 
