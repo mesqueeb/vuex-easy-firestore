@@ -1,4 +1,19 @@
-# Vuex Easy Firestore 🔥
+---
+home: true
+# heroImage: /hero.png
+actionText: Get Started →
+actionLink: /setup
+features:
+- title: Simplicity First
+  details: Minimal setup to auto sync a vuex-module with firestore.
+- title: Powerful
+  details: Easy to use features include filtering, hooks, default values & much more.
+- title: Performant
+  details: Automatic sync to firestore is optimised through batches to be fully performant.
+footer: MIT Licensed | Copyright © 2018-present Luca Ban - Mesqueeb
+---
+
+# Overview
 
 In just 4 lines of code, get your vuex module in complete 2-way sync with firestore:
 
@@ -25,9 +40,3 @@ Other features include hooks, fillables (limit props to sync), default values (a
 I didn't like writing an entire an API wrapper from scratch for firestore every single project. If only a vuex module could be in perfect sync with firestore without having to code all the boilerplate yourself...
 
 And that's how Vuex Easy Firestore was born.
-
-# Documentation
-
-See the all new documentation made with VuePress!
-
-https://mesqueeb.github.io/vuex-easy-firestore
