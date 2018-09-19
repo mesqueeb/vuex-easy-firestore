@@ -11,7 +11,8 @@
     "rollup:watch": "rollup -c build/rollup.js --watch",
     "build": "npm run rollup && npm run test",
     "docs:dev": "vuepress dev docs",
-    "docs:build": "vuepress build docs"
+    "docs:build": "vuepress build docs",
+    "docs:deploy": "./docs/.vuepress/deploy.sh"
   },
   "repository": {
     "type": "git",

@@ -26,29 +26,7 @@ Other features include hooks, fillables (limit props to sync), default values (a
 
 ### Table of contents
 
-<!-- TOC -->
-
-- [Motivation](#motivation)
-- [Installation](#installation)
-- [Setup](#setup)
-- [Usage](#usage)
-    - [Automatic 2-way sync](#automatic-2-way-sync)
-    - [Editing](#editing)
-    - [Shortcut: set(path, doc)](#shortcut-setpath-doc)
-    - [Multiple modules with 2way sync](#multiple-modules-with-2way-sync)
-    - [Sync directly to module state](#sync-directly-to-module-state)
-    - [Fetching docs (with different filters)](#fetching-docs-with-different-filters)
-- [Extra features](#extra-features)
-    - [Filters](#filters)
-    - [Variables for firestorePath or filters](#variables-for-firestorepath-or-filters)
-    - [Fillables and guard](#fillables-and-guard)
-    - [Hooks before insert/patch/delete](#hooks-before-insertpatchdelete)
-    - [Hooks after changes on the server](#hooks-after-changes-on-the-server)
-    - [defaultValues set after server retrieval](#defaultvalues-set-after-server-retrieval)
-- [All config options](#all-config-options)
-- [Feedback](#feedback)
-
-<!-- /TOC -->
+[[toc]]
 
 ## Motivation
 
