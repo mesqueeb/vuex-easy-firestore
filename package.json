@@ -1,6 +1,6 @@
 {
   "name": "vuex-easy-firestore",
-  "version": "1.11.3",
+  "version": "1.11.4",
   "description": "Easy coupling of firestore and a vuex module. 2-way sync with 0 boilerplate!",
   "main": "dist/index.cjs.js",
   "module": "dist/index.es.js",
@@ -9,7 +9,9 @@
     "test": "ava",
     "rollup": "rollup -c build/rollup.js",
     "rollup:watch": "rollup -c build/rollup.js --watch",
-    "build": "npm run rollup && npm run test"
+    "build": "npm run rollup && npm run test",
+    "docs:dev": "vuepress dev docs",
+    "docs:build": "vuepress build docs"
   },
   "repository": {
     "type": "git",
@@ -59,6 +61,7 @@
     "rollup-plugin-node-resolve": "^3.4.0",
     "rollup-plugin-terser": "^2.0.2",
     "vue": "^2.5.16",
+    "vuepress": "^0.14.4",
     "vuex": "^3.0.1"
   }
 }

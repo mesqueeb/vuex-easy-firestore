@@ -65,6 +65,21 @@ test('set & delete: collection', async t => {
   store.commit('pokemonBox/DELETE_DOC', id2)
   t.falsy(box.pokemon[id2])
 })
+// test('set & delete: batches', async t => {
+//   // ini set
+//   await wait(3)
+//   console.log('start batch')
+//   const pokemonValues = [
+//     {name: 'Bulbasaur', type: {grass: true}},
+//     {name: 'Charmander', type: {fire: true}},
+//     {name: 'Squirtle', type: {water: true}},
+//   ]
+//   store.dispatch('pokemonBox/insertBatch', pokemonValues)
+//     .then(console.log).catch(console.error)
+//   await wait(5)
+//   console.log('finish batch')
+//   t.pass()
+// })
 test('set & delete: doc', async t => {
   // existing prop set
   store.dispatch('mainCharacter/set', {items: ['Pokeball']})
