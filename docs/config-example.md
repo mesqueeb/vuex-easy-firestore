@@ -1,5 +1,9 @@
+# Config example
 
-export default {
+Here is a list with all possible config options:
+
+```js
+const firestoreModule = {
   firestorePath: '',
     // The path to a collection or doc in firestore. You can use `{userId}` which will be replaced with the user Id.
   firestoreRefType: '',
@@ -19,7 +23,7 @@ export default {
     insertHook: function (updateStore, doc, store) { return updateStore(doc) },
     patchHook: function (updateStore, doc, store) { return updateStore(doc) },
     deleteHook: function (updateStore, id, store) { return updateStore(id) },
-    // HOOKS for local batch changes:
+    // for batches
     insertBatchHook: function (updateStore, docs, store) { return updateStore(docs) },
     patchBatchHook: function (updateStore, doc, ids, store) { return updateStore(doc, ids) },
     deleteBatchHook: function (updateStore, ids, store) { return updateStore(ids) },
@@ -46,3 +50,4 @@ export default {
   mutations: {},
   actions: {},
 }
+```
