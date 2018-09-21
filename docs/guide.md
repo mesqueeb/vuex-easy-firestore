@@ -104,7 +104,7 @@ dispatch('moduleName/delete', 'settings.banned')
 
 Inside Vue component templates you can also access the `set` action through a shortcut: `$store.set(path, doc)`. Or with our path: `$store.set('userData', doc)`.
 
-For this shortcut usage, import the npm module 'vuex-easy-access' and just add `{vuexEasyFirestore: true}` in its options. Please also check the relevant documentation [on the vuex-easy-access repository](https://github.com/mesqueeb/vuex-easy-access#vuex-easy-firestore-integration-for-google-firebase)!
+For this shortcut usage, import the npm module 'vuex-easy-access' and just add `{vuexEasyFirestore: true}` in its options. Please also check the relevant documentation [on the vuex-easy-access repository](https://mesqueeb.github.io/vuex-easy-access/advanced.html#firestore-integration-for-google-firebase)!
 
 Please note that **it is important to pass the 'vuex-easy-firestore' plugin first**, and the 'vuex-easy-access' plugin second for it to work properly.
 

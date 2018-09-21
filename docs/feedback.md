@@ -19,7 +19,7 @@ Planned future features:
 - Improve error handling
   - Warn when there is a `_conf` state prop
 
-Also be sure to check out the **sister vuex-plugin** [Vuex Easy Access](https://github.com/mesqueeb/vuex-easy-access)!
+Also be sure to check out the **sister vuex-plugin** [Vuex Easy Access](https://mesqueeb.github.io/vuex-easy-access)!
 
 --
 
