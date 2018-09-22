@@ -14,16 +14,13 @@ require('firebase/auth');
 var Vue = _interopDefault(require('vue'));
 var Vuex = _interopDefault(require('vuex'));
 
-process.env.apiKey = "AIzaSyDivMlXIuHqDFsTCCqBDTVL0h29xbltcL8";
-process.env.authDomain = "tests-firestore.firebaseapp.com";
-process.env.databaseURL = "https://tests-firestore.firebaseio.com";
-process.env.projectId = "tests-firestore";
-
 var config = {
-  apiKey: process.env.apiKey,
-  authDomain: process.env.authDomain,
-  databaseURL: process.env.databaseURL,
-  projectId: process.env.projectId
+  apiKey: 'AIzaSyDivMlXIuHqDFsTCCqBDTVL0h29xbltcL8',
+  authDomain: 'tests-firestore.firebaseapp.com',
+  databaseURL: 'https://tests-firestore.firebaseio.com',
+  projectId: 'tests-firestore' // storageBucket: 'tests-firestore.appspot.com',
+  // messagingSenderId: '743555674736'
+
 };
 Firebase.initializeApp(config);
 var firestore$1 = Firebase.firestore();
@@ -105,7 +102,7 @@ var defaultConfig = {
   moduleName: '',
   // The module name. Can be nested, eg. `'user/items'`
   statePropName: '',
-  // The name of the property where the docs or doc will be synced to. If left blank it will be synced on the state of the module. (Please see [Sync directly to module state](#sync-directly-to-module-state) for more info)
+  // The name of the property where the docs or doc will be synced to. If left blank it will be synced on the state of the module.
   // Related to the 2-way sync:
   sync: {
     where: [],

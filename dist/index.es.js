@@ -14,7 +14,7 @@ var defaultConfig = {
   moduleName: '',
   // The module name. Can be nested, eg. `'user/items'`
   statePropName: '',
-  // The name of the property where the docs or doc will be synced to. If left blank it will be synced on the state of the module. (Please see [Sync directly to module state](#sync-directly-to-module-state) for more info)
+  // The name of the property where the docs or doc will be synced to. If left blank it will be synced on the state of the module.
   // Related to the 2-way sync:
   sync: {
     where: [],

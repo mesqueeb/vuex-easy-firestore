@@ -1,13 +1,13 @@
-import '../../.env.js'
-
 import Firebase from 'firebase/app'
 import 'firebase/firestore'
 
 const config = {
-  apiKey: process.env.apiKey,
-  authDomain: process.env.authDomain,
-  databaseURL: process.env.databaseURL,
-  projectId: process.env.projectId
+  apiKey: 'AIzaSyDivMlXIuHqDFsTCCqBDTVL0h29xbltcL8',
+  authDomain: 'tests-firestore.firebaseapp.com',
+  databaseURL: 'https://tests-firestore.firebaseio.com',
+  projectId: 'tests-firestore',
+  // storageBucket: 'tests-firestore.appspot.com',
+  // messagingSenderId: '743555674736'
 }
 Firebase.initializeApp(config)
 const firestore = Firebase.firestore()
