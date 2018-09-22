@@ -213,61 +213,29 @@ function _nonIterableSpread() {
   throw new TypeError("Invalid attempt to spread non-iterable instance");
 }
 
-function mergeRecursively(defaultValues, obj) {
-  if (!isObject(obj)) return obj; // define newObject to merge all values upon
-
-  var newObject = isObject(defaultValues) ? Object.keys(defaultValues).reduce(function (carry, key) {
-    var targetVal = findAndReplace(defaultValues[key], '%convertTimestamp%', null);
-    if (!Object.keys(obj).includes(key)) carry[key] = targetVal;
-    return carry;
-  }, {}) : {};
-  return Object.keys(obj).reduce(function (carry, key) {
-    var newVal = obj[key];
-    var targetVal = defaultValues[key]; // early return when targetVal === undefined
-
-    if (targetVal === undefined) {
-      carry[key] = newVal;
-      return carry;
-    } // convert to new Date() if defaultValue == '%convertTimestamp%'
+function convertTimestamps(originVal, targetVal) {
+  if (originVal === '%convertTimestamp%') {
+    // firestore timestamps
+    if (isObject(targetVal) && isFunction(targetVal.toDate)) {
+      return targetVal.toDate();
+    } // strings
 
 
-    if (targetVal === '%convertTimestamp%') {
-      // firestore timestamps
-      if (isObject(newVal) && isFunction(newVal.toDate)) {
-        carry[key] = newVal.toDate();
-        return carry;
-      } // strings
+    if (isString(targetVal) && isDate(new Date(targetVal))) {
+      return new Date(targetVal);
+    }
+  }
 
-
-      if (isString(newVal) && isDate(new Date(newVal))) {
-        carry[key] = new Date(newVal);
-        return carry;
-      }
-    } // When newVal is an object do the merge recursively
-
-
-    if (isObject(newVal)) {
-      carry[key] = mergeRecursively(targetVal, newVal);
-      return carry;
-    } // all the rest
-
-
-    carry[key] = newVal;
-    return carry;
-  }, newObject);
+  return targetVal;
 }
-/**
- * Sets default values on an object
- *
- * @param {object} obj on which to set the default values
- * @param {object} defaultValues the default values
- */
-
 
 function setDefaultValues (obj, defaultValues) {
-  if (!isObject(defaultValues)) console.error('Trying to merge target:', obj, 'onto a non-object:', defaultValues);
-  if (!isObject(obj)) console.error('Trying to merge a non-object:', obj, 'onto:', defaultValues);
-  return mergeRecursively(defaultValues, obj); // return merge(defaultValues, obj)
+  if (!isObject(defaultValues)) console.error('Trying to merge target:', obj, 'onto a non-object (defaultValues):', defaultValues);
+  if (!isObject(obj)) console.error('Trying to merge a non-object:', obj, 'onto the defaultValues:', defaultValues);
+  var result = merge({
+    extensions: [convertTimestamps]
+  }, defaultValues, obj);
+  return findAndReplace(result, '%convertTimestamp%', null);
 }
 
 /**
