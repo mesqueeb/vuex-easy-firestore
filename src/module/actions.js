@@ -15,7 +15,7 @@ const actions = {
     {id = '', ids = [], doc} = {ids: [], doc: {}}
   ) {
     // 0. payload correction (only arrays)
-    if (!isArray(ids)) return console.error('ids needs to be an array')
+    if (!isArray(ids)) return console.error('[vuex-easy-firestore] ids needs to be an array')
     if (id) ids.push(id)
     if (doc.id) delete doc.id
 
@@ -114,17 +114,6 @@ const actions = {
         if (remainingSyncStack) { dispatch('batchSync') }
         dispatch('_stopPatching')
         return resolve()
-        // // Fetch the item if it was added as an Archived item:
-        // if (item.archived) {
-        //   get_ters.dbRef.doc(res.id).get().then(doc => {
-        //     let tempId = doc.data().id
-        //     let id = doc.id
-        //     let item = doc.data()
-        //     item.id = id
-        //     console.log('retrieved Archived new item: ', id, item)
-        //     dispatch('newItemFromServer', {item, tempId})
-        //   })
-        // }
       }).catch(error => {
         state._sync.patching = 'error'
         state._sync.syncStack.debounceTimer = null
@@ -140,7 +129,7 @@ const actions = {
     // orderBy: ['done_date', 'desc']
   ) {
     return new Promise((resolve, reject) => {
-      console.log('[fetch] starting')
+      if (state._conf.logging) console.log('[vuex-easy-firestore] Fetch starting')
       if (!getters.signedIn) return resolve()
       const identifier = JSON.stringify({whereFilters, orderBy})
       const fetched = state._sync.fetched[identifier]
@@ -164,7 +153,7 @@ const actions = {
       const fRequest = state._sync.fetched[identifier]
       // We're already done fetching everything:
       if (fRequest.done) {
-        console.log('done fetching')
+        if (state._conf.logging) console.log('[vuex-easy-firestore] done fetching')
         return resolve({done: true})
       }
       // attach fetch filters
@@ -176,7 +165,7 @@ const actions = {
       fRef = fRef.limit(state._conf.fetch.docLimit)
       // Stop if all records already fetched
       if (fRequest.retrievedFetchRefs.includes(fRef)) {
-        console.error('Already retrieved this part.')
+        console.error('[vuex-easy-firestore] Already retrieved this part.')
         return resolve()
       }
       // make fetch request
@@ -198,7 +187,7 @@ const actions = {
         const next = fRef.startAfter(lastVisible)
         state._sync.fetched[identifier].nextFetchRef = next
       }).catch(error => {
-        console.error(error)
+        console.error('[vuex-easy-firestore]', error)
         return reject(error)
       })
     })
@@ -293,7 +282,7 @@ const actions = {
         if (!getters.collectionMode) {
           if (!querySnapshot.data()) {
             // No initial doc found in docMode
-            console.log('inserting initial doc')
+            if (state._conf.logging) console.log('[vuex-easy-firestore] inserting initial doc')
             dispatch('insertInitialDoc')
             return resolve()
           }

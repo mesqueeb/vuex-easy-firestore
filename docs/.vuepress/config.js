@@ -8,7 +8,7 @@ module.exports = {
     displayAllHeaders: true,
     sidebar: [
       ['/setup', 'Installation & setup'],
-      '/usage',
+      '/guide',
       '/extra-features',
       '/config-example',
       '/feedback',
@@ -21,6 +21,5 @@ module.exports = {
     docsDir: 'docs',
     docsBranch: 'dev',
     editLinks: true,
-    editLinkText: 'Suggest an edit on Github!'
   }
 }

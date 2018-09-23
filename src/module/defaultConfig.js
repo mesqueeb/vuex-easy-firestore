@@ -8,7 +8,7 @@ export default {
     // The module name. Can be nested, eg. `'user/items'`
   statePropName: '',
     // The name of the property where the docs or doc will be synced to. If left blank it will be synced on the state of the module.
-
+  logging: false,
   // Related to the 2-way sync:
   sync: {
     where: [],

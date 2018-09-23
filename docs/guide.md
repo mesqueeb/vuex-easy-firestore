@@ -1,27 +1,6 @@
-# Usage
+# Guide
 
-## Automatic 2-way sync
-
-After Firebase finds a user through `onAuthStateChanged` you need to dispatch `openDBChannel` once to open the channel to your firestore:
-
-```js
-// Be sure to initialise Firebase first
-Firebase.auth().onAuthStateChanged(user => {
-  if (user) {
-    // user is logged in
-    store.dispatch('userData/openDBChannel')
-      .then(console.log)
-      .catch(console.error)
-  }
-})
-```
-
-This doesn't require any callback in particular; the results will be saved in your vuex store at the path you have set:<br>
-`moduleName` + `statePropName` which is in this example 'userData/docs'.
-
-To automatically edit your vuex store & have firebase always in sync you just need to use the actions that were set up for you:
-
-## Editing
+## Basic usage
 
 Basically with just 4 actions (set, patch, insert, delete) you can make changes to your vuex store and **everything will automatically stay up to date with your firestore!**
 
@@ -34,7 +13,7 @@ Depending on which mode there are some small changes, but the syntax is mostly t
 
 The sync is fully robust and **automatically groups any api calls per 1000 ms**. You don't have to worry about optimising/limiting the api calls, it's all done automatically! (Only one api call per 1000ms will be made for a maximum of 500 changes, if there are more changes queued it will automatically be split over 2 api calls).
 
-### Editing in 'collection' mode
+## 'collection' mode
 
 With these 4 actions: set, patch, insert and delete, you can edit **single docs** in your vuex module. Any updates made with these actions will keep your firestore in sync!
 
@@ -77,7 +56,7 @@ dispatch('moduleName/delete', `${id}.tags.water`)
 
 In the above example you can see that you can delete a sub-property by passing a string and separate sub-props with `.`
 
-#### Batch updates/inserts/deletions
+### Batch updates/inserts/deletions
 
 In cases you don't want to loop through items you can also use the special batch actions below. The main difference is you will have separate hooks (see [hooks](extra-features.html#hooks-before-insert-patch-delete)), and batches are optimised to update the vuex store first for all changes and the syncs to firestore last.
 
@@ -87,14 +66,14 @@ dispatch('moduleName/patchBatch', {doc: {}, ids: []}) // `doc` is an object with
 dispatch('moduleName/deleteBatch', ids) // an array of ids
 ```
 
-#### Auto-generated fields
+### Auto-generated fields
 
 When working with collections, each document insert or update will automatically receive these fields:
 
 - `created_at` / `updated_at` both use: `Firebase.firestore.FieldValue.serverTimestamp()`
 - `created_by` / `updated_by` will automatically fill in the userId
 
-### Editing in 'doc' mode
+## 'doc' mode
 
 In 'doc' mode all changes will take effect on the single document you have passed in the firestorePath. You will be able to use these actions:
 
@@ -125,7 +104,7 @@ dispatch('moduleName/delete', 'settings.banned')
 
 Inside Vue component templates you can also access the `set` action through a shortcut: `$store.set(path, doc)`. Or with our path: `$store.set('userData', doc)`.
 
-For this shortcut usage, import the npm module 'vuex-easy-access' and just add `{vuexEasyFirestore: true}` in its options. Please also check the relevant documentation [on the vuex-easy-access repository](https://github.com/mesqueeb/vuex-easy-access#vuex-easy-firestore-integration-for-google-firebase)!
+For this shortcut usage, import the npm module 'vuex-easy-access' and just add `{vuexEasyFirestore: true}` in its options. Please also check the relevant documentation [on the vuex-easy-access repository](https://mesqueeb.github.io/vuex-easy-access/advanced.html#firestore-integration-for-google-firebase)!
 
 Please note that **it is important to pass the 'vuex-easy-firestore' plugin first**, and the 'vuex-easy-access' plugin second for it to work properly.
 
@@ -138,13 +117,15 @@ const userDataModule = {/* config */}
 const anotherModule = {/* config */}
 const aThirdModule = {/* config */}
 // make sure you choose a different moduleName and firestorePath each time!
-const easyFirestores = createEasyFirestore([userDataModule, anotherModule, aThirdModule])
+const easyFirestores = createEasyFirestore([userDataModule, anotherModule, aThirdModule], {logging: true})
 // and include as PLUGIN in your vuex store:
 store: {
   // ... your store
   plugins: [easyFirestores]
 }
 ```
+
+Passing `{logging: true}` as second param will enable console.logging on each api call. This is recommended for debugging initially, but could be disabled on production.
 
 ## Sync directly to module state
 

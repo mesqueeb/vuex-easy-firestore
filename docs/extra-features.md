@@ -43,30 +43,62 @@ SpecificGroupUserModule: {
 dispatch('groupUserData/openDBChannel', {groupId: 'group-A'})
 ```
 
-**Use case:** This is especially useful if you need to first retrieve the `groupId` from a userModule which is also synced. You can do so by using the Promise returned from `openDBChannel` on for example a userModule:
+**Use case: Retrieve a variable from the user's Data**
+
+Custom variables are especially useful if you need to first retrieve eg. a `groupId` from the user's data also on firestore. You can do so by waiting for the Promise to resolve after `openDBChannel` to retrieve the user's data (eg. another vuex-easy-firestore module called `userData`):
 
 ```js
-store.dispatch('userModule/openDBChannel')
+// in this example the `userData` module will retrieve {userName: '', groupId: ''}
+store.dispatch('userData/openDBChannel')
   .then(_ => {
-    // in this example every user hase a groupId saved like so:
-    const userGroupId = store.state.user.groupId
+    // Then we can get the groupId:
+    const userGroupId = store.state.userData.groupId
+    // Then we can pass it as variable to the next openDBChannel:
     store.dispatch('groupUserData/openDBChannel', {groupId: userGroupId})
   })
 ```
 
 ## Fillables and guard
 
-- *Fillables:* Array of keys - the props which may be synced to the server. Any other props will not be synced!
+You can prevent props on your docs in 'collection' mode (or on your single doc in 'doc' mode) to be synced to the firestore server. For this you should use either `fillables` **or** `guard`:
+
+- *Fillables:* Array of keys - the props which may be synced to the server. Any other props will not be synced! All props will be synced if left blank.
 - *Guard:* Array of keys - the props which should not be synced to the server. (the opposite of 'fillables')
 
 ```js
 {
   // your other vuex-easy-fire config...
   sync: {
-    fillables: [],
-    guard: [],
+    fillables: [], // array of  keys
+    guard: [], // array of keys
   }
 }
+```
+
+**Example fillables:**
+
+```js
+// settings:
+fillables: ['name', 'age']
+
+// insert new doc:
+const newUser = {name: 'Ash', age: 10, email: 'ash@pokemon.com'}
+dispatch('user/set', newUser)
+
+// object which will be added to Vuex `user` module:
+{name: 'Ash', age: 10, email: 'ash@pokemon.com'}
+
+// object which will be synced to firestore:
+{name: 'Ash', age: 10}
+```
+
+**Example guard:**
+
+If you have only one prop you do not want to sync to firestore you can set `guard` instead of `fillables`.
+
+```js
+// the same example as above can also be achieved by doing:
+guard: ['email']
 ```
 
 ## Hooks before insert/patch/delete
@@ -98,7 +130,7 @@ Exactly the same as above, but for changes that have occured on the server. You 
 
 - *id:* the doc id returned in `change.doc.id` (see firestore documentation for more info)
 - *doc:* the doc returned in `change.doc.data()` (see firestore documentation for more info)
-- *source:* of the change. Can be 'local' or 'server'
+- *source:* of the change. Can be either `'local'` or `'server'`
 
 ```js
 {
@@ -113,7 +145,7 @@ Exactly the same as above, but for changes that have occured on the server. You 
 
 ## defaultValues set after server retrieval
 
-If you create a `defaultValues` object, then each document from the server will be merged onto those default values!
+If you create a `defaultValues` object, then each document from the server will receive those default values!
 
 **Use case 1: Firestore Timestamp conversion**<br>
 Automatically convert Firestore Timestamps into `new Date()` objects! Do this by setting `'%convertTimestamp%'` as the value of a `defaultValues` prop. (see example below).
@@ -135,20 +167,24 @@ const vuexModule = {
     },
   }
 }
+
 // Now an example of what happens to the docs which are retrieved from the server:
 const retrievedDoc = {
   defaultInt: 2,
   date: Timestamp // firestore Timestamp object
 }
+
 // This doc will be inserted into vuex like so:
 const docToBeInserted = {
   defaultInt: 2, // stays 2
   propAddedLater: null, // receives propAddedLater prop with default val
   date: Timestamp.toDate() // will execute firestore's Timestamp.toDate()
 }
+
 // '%convertTimestamp%' works also with date strings:
 const retrievedDoc = {date: '1990-06-22 17:35:00'} // date string
 const docToBeInserted = {date: new Date('1990-06-22 17:35:00')} // converted to new Date
+
 // in case the retrieved val is not present `null` will be added
 const retrievedDoc = {}
 const docToBeInserted = {date: null}

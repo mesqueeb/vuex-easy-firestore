@@ -149,7 +149,7 @@ test('my recursive object assign', async t => {
   })
 })
 
-test('custom %convertTimestamp% defaultValue', async t => {
+test('custom %convertTimestamp% defaultValue - fireBase', async t => {
   let res, defaultValues, target
   const dateStr = '1990-06-22T17:35:00'
   const dateStr2 = '2018-05-26T02:46:57.262Z'
@@ -182,7 +182,9 @@ test('custom %convertTimestamp% defaultValue', async t => {
   t.is(target.body, dateStr)
   t.deepEqual(target.body2, {nd})
   t.true(isFunction(target.firebase.specialTS._ts.toDate))
-
+})
+test('custom %convertTimestamp% defaultValue - delete %convertTimestamp%', async t => {
+  let res, defaultValues, target
   defaultValues = {
     body: '%convertTimestamp%',
     body2: {nd: '%convertTimestamp%'},
@@ -206,4 +208,27 @@ test('custom %convertTimestamp% defaultValue', async t => {
   }
   res = setDefaultValues({}, defaultValues)
   t.deepEqual(res, {body: null, soup: {time: null}})
+})
+
+test('overwrites null with empty object', t => {
+  let res, defaultValues, target
+  defaultValues = {
+    body: null
+  }
+  target = {
+    body: {}
+  }
+  res = setDefaultValues(target, defaultValues)
+  t.deepEqual(res, {body: {}})
+})
+test('overwrites null with object with props', t => {
+  let res, defaultValues, target
+  defaultValues = {
+    body: null
+  }
+  target = {
+    body: {props: true}
+  }
+  res = setDefaultValues(target, defaultValues)
+  t.deepEqual(res, {body: {props: true}})
 })
