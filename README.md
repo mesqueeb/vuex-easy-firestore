@@ -20,6 +20,8 @@ Now you just update and add docs with `dispatch('user/set', newItem)` and forget
 
 Other features include hooks, fillables (limit props to sync), default values (add props on sync), a fetch function and much more...
 
+[Installation and setup]　→
+
 # Motivation
 
 I didn't like writing an entire an API wrapper from scratch for firestore every single project. If only a vuex module could be in perfect sync with firestore without having to code all the boilerplate yourself...
@@ -30,4 +32,12 @@ And that's how Vuex Easy Firestore was born.
 
 See the all new documentation made with VuePress!
 
-https://mesqueeb.github.io/vuex-easy-firestore
+**[Full documentation](https://mesqueeb.github.io/vuex-easy-firestore)**
+
+# Support
+
+If you like what I built, you can say thanks by buying me a coffee! :)
+
+<a href="https://www.buymeacoffee.com/mesqueeb" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
+
+Thank you so much!! Every little bit helps.

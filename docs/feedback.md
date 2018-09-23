@@ -8,7 +8,6 @@ Planned future features:
 - Documentation
   - Add other documentation languages
   - Improve 'patching' documentation for loaders/spinners
-- Make a blog post
 - Improve tests
   - test different configurations
   - use a firestore mock
@@ -21,7 +20,15 @@ Planned future features:
 
 Also be sure to check out the **sister vuex-plugin** [Vuex Easy Access](https://mesqueeb.github.io/vuex-easy-access)!
 
+# Support
+
+If you like what I built, you can say thanks by buying me a coffee! :)
+
+<link href="https://fonts.googleapis.com/css?family=Cookie" rel="stylesheet"><a class="bmc-button" target="_blank" href="https://www.buymeacoffee.com/mesqueeb"><img src="https://www.buymeacoffee.com/assets/img/BMC-btn-logo.svg" alt="Buy me a coffee"><span style="margin-left:5px">Buy me a coffee</span></a>
+
+Thank you so much!! Every little bit helps.
+
 --
 
 Happy Vuexing!<br>
--Luca Ban - Mesqueeb
+-Luca Ban

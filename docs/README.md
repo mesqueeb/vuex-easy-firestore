@@ -48,3 +48,11 @@ I didn't like writing an entire an API wrapper from scratch for firestore every 
 And that's how Vuex Easy Firestore was born.
 
 <div style="text-align: right; margin-bottom: 1rem"><a href="setup.html">Installation and setup</a>　→</div>
+
+# Support
+
+If you like what I built, you can say thanks by buying me a coffee! :)
+
+<link href="https://fonts.googleapis.com/css?family=Cookie" rel="stylesheet"><a class="bmc-button" target="_blank" href="https://www.buymeacoffee.com/mesqueeb"><img src="https://www.buymeacoffee.com/assets/img/BMC-btn-logo.svg" alt="Buy me a coffee"><span style="margin-left:5px">Buy me a coffee</span></a>
+
+Thank you so much!! Every little bit helps.
