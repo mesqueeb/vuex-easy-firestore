@@ -35,7 +35,7 @@
   "homepage": "https://github.com/mesqueeb/vuex-easy-firestore#readme",
   "dependencies": {
     "find-and-replace-anything": "^1.0.0",
-    "firebase": "^5.4.2",
+    "firebase": "^5.5.1",
     "is-what": "^2.0.0",
     "merge-anything": "^2.0.1",
     "vuex-easy-access": "^2.3.0"
