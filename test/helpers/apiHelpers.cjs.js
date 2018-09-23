@@ -143,11 +143,14 @@ function makeBatchFromSyncstack(state, dbRef, collectionMode, userId) {
     batch.set(newRef, item);
   }); // log the batch contents
 
-  console.group('Created a firestore batch with:');
-  Object.keys(log).forEach(function (key) {
-    console.log(key, log[key]);
-  });
-  console.groupEnd(); //
+  if (state._conf.logging) {
+    console.group('[vuex-easy-firestore] api call batch:');
+    console.log("%cFirestore PATH: ".concat(state._conf.firestorePath), 'color: grey');
+    Object.keys(log).forEach(function (key) {
+      console.log(key, log[key]);
+    });
+    console.groupEnd();
+  }
 
   return batch;
 }

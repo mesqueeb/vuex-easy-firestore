@@ -21,6 +21,7 @@ var defaultConfig = {
   // The module name. Can be nested, eg. `'user/items'`
   statePropName: '',
   // The name of the property where the docs or doc will be synced to. If left blank it will be synced on the state of the module.
+  logging: false,
   // Related to the 2-way sync:
   sync: {
     where: [],
@@ -236,8 +237,8 @@ function convertTimestamps(originVal, targetVal) {
 }
 
 function setDefaultValues (obj, defaultValues) {
-  if (!isWhat.isObject(defaultValues)) console.error('Trying to merge target:', obj, 'onto a non-object (defaultValues):', defaultValues);
-  if (!isWhat.isObject(obj)) console.error('Trying to merge a non-object:', obj, 'onto the defaultValues:', defaultValues);
+  if (!isWhat.isObject(defaultValues)) console.error('[vuex-easy-firestore] Trying to merge target:', obj, 'onto a non-object (defaultValues):', defaultValues);
+  if (!isWhat.isObject(obj)) console.error('[vuex-easy-firestore] Trying to merge a non-object:', obj, 'onto the defaultValues:', defaultValues);
   var result = merge({
     extensions: [convertTimestamps]
   }, defaultValues, obj);
@@ -413,11 +414,14 @@ function makeBatchFromSyncstack(state, dbRef, collectionMode, userId) {
     batch.set(newRef, item);
   }); // log the batch contents
 
-  console.group('Created a firestore batch with:');
-  Object.keys(log).forEach(function (key) {
-    console.log(key, log[key]);
-  });
-  console.groupEnd(); //
+  if (state._conf.logging) {
+    console.group('[vuex-easy-firestore] api call batch:');
+    console.log("%cFirestore PATH: ".concat(state._conf.firestorePath), 'color: grey');
+    Object.keys(log).forEach(function (key) {
+      console.log(key, log[key]);
+    });
+    console.groupEnd();
+  }
 
   return batch;
 }
@@ -496,7 +500,7 @@ var actions = {
         doc = _ref2.doc;
 
     // 0. payload correction (only arrays)
-    if (!isWhat.isArray(ids)) return console.error('ids needs to be an array');
+    if (!isWhat.isArray(ids)) return console.error('[vuex-easy-firestore] ids needs to be an array');
     if (id) ids.push(id);
     if (doc.id) delete doc.id; // 1. Prepare for patching
 
@@ -607,17 +611,7 @@ var actions = {
         }
 
         dispatch('_stopPatching');
-        return resolve(); // // Fetch the item if it was added as an Archived item:
-        // if (item.archived) {
-        //   get_ters.dbRef.doc(res.id).get().then(doc => {
-        //     let tempId = doc.data().id
-        //     let id = doc.id
-        //     let item = doc.data()
-        //     item.id = id
-        //     console.log('retrieved Archived new item: ', id, item)
-        //     dispatch('newItemFromServer', {item, tempId})
-        //   })
-        // }
+        return resolve();
       }).catch(function (error$$1) {
         state._sync.patching = 'error';
         state._sync.syncStack.debounceTimer = null;
@@ -643,7 +637,7 @@ var actions = {
         orderBy = _ref10$orderBy === void 0 ? [] : _ref10$orderBy;
 
     return new Promise(function (resolve, reject) {
-      console.log('[fetch] starting');
+      if (state._conf.logging) console.log('[vuex-easy-firestore] Fetch starting');
       if (!getters.signedIn) return resolve();
       var identifier = JSON.stringify({
         whereFilters: whereFilters,
@@ -677,7 +671,7 @@ var actions = {
       var fRequest = state._sync.fetched[identifier]; // We're already done fetching everything:
 
       if (fRequest.done) {
-        console.log('done fetching');
+        if (state._conf.logging) console.log('[vuex-easy-firestore] done fetching');
         return resolve({
           done: true
         });
@@ -694,7 +688,7 @@ var actions = {
       fRef = fRef.limit(state._conf.fetch.docLimit); // Stop if all records already fetched
 
       if (fRequest.retrievedFetchRefs.includes(fRef)) {
-        console.error('Already retrieved this part.');
+        console.error('[vuex-easy-firestore] Already retrieved this part.');
         return resolve();
       } // make fetch request
 
@@ -721,7 +715,7 @@ var actions = {
         var next = fRef.startAfter(lastVisible);
         state._sync.fetched[identifier].nextFetchRef = next;
       }).catch(function (error$$1) {
-        console.error(error$$1);
+        console.error('[vuex-easy-firestore]', error$$1);
         return reject(error$$1);
       });
     });
@@ -867,7 +861,7 @@ var actions = {
         if (!getters.collectionMode) {
           if (!querySnapshot.data()) {
             // No initial doc found in docMode
-            console.log('inserting initial doc');
+            if (state._conf.logging) console.log('[vuex-easy-firestore] inserting initial doc');
             dispatch('insertInitialDoc');
             return resolve();
           }
@@ -1346,11 +1340,18 @@ function iniModule (userConfig) {
 }
 
 function index (userConfig) {
+  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
+    logging: false
+  },
+      _ref$logging = _ref.logging,
+      logging = _ref$logging === void 0 ? false : _ref$logging;
+
   return function (store) {
     // Get an array of config files
     if (!isWhat.isArray(userConfig)) userConfig = [userConfig]; // Create a module for each config file
 
     userConfig.forEach(function (config) {
+      config.logging = logging;
       var moduleName = vuexEasyAccess.getKeysFromPath(config.moduleName);
       store.registerModule(moduleName, iniModule(config));
     });

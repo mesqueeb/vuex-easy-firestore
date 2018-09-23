@@ -18,8 +18,8 @@ function convertTimestamps (originVal, targetVal) {
 }
 
 export default function (obj, defaultValues) {
-  if (!isObject(defaultValues)) console.error('Trying to merge target:', obj, 'onto a non-object (defaultValues):', defaultValues)
-  if (!isObject(obj)) console.error('Trying to merge a non-object:', obj, 'onto the defaultValues:', defaultValues)
+  if (!isObject(defaultValues)) console.error('[vuex-easy-firestore] Trying to merge target:', obj, 'onto a non-object (defaultValues):', defaultValues)
+  if (!isObject(obj)) console.error('[vuex-easy-firestore] Trying to merge a non-object:', obj, 'onto the defaultValues:', defaultValues)
   const result = merge({extensions: [convertTimestamps]}, defaultValues, obj)
   return findAndReplace(result, '%convertTimestamp%', null)
 }
