@@ -114,17 +114,6 @@ const actions = {
         if (remainingSyncStack) { dispatch('batchSync') }
         dispatch('_stopPatching')
         return resolve()
-        // // Fetch the item if it was added as an Archived item:
-        // if (item.archived) {
-        //   get_ters.dbRef.doc(res.id).get().then(doc => {
-        //     let tempId = doc.data().id
-        //     let id = doc.id
-        //     let item = doc.data()
-        //     item.id = id
-        //     console.log('retrieved Archived new item: ', id, item)
-        //     dispatch('newItemFromServer', {item, tempId})
-        //   })
-        // }
       }).catch(error => {
         state._sync.patching = 'error'
         state._sync.syncStack.debounceTimer = null
