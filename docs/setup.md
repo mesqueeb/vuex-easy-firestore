@@ -25,7 +25,7 @@ const userDataModule = {
 }
 
 // do the magic 🧙🏻‍♂️
-const easyFirestore = createEasyFirestore(userDataModule)
+const easyFirestore = createEasyFirestore(userDataModule, {logging: true})
 
 // include as PLUGIN in your vuex store:
 store: {
@@ -38,6 +38,10 @@ store.dispatch('userData/openDBChannel')
 ```
 
 Now your `userData` module will automatically retrieve all docs from firestore and any mutations you make will be synced to Firestore! Please check the [guide](guide.html) for basic information how to properly use the actions/mutations.
+
+### Dev logging
+
+Passing `{logging: true}` as second param will enable console.logging on each api call. This is recommended for debugging initially, but could be disabled on production.
 
 ## Open DB channel
 

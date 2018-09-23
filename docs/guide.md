@@ -117,13 +117,15 @@ const userDataModule = {/* config */}
 const anotherModule = {/* config */}
 const aThirdModule = {/* config */}
 // make sure you choose a different moduleName and firestorePath each time!
-const easyFirestores = createEasyFirestore([userDataModule, anotherModule, aThirdModule])
+const easyFirestores = createEasyFirestore([userDataModule, anotherModule, aThirdModule], {logging: true})
 // and include as PLUGIN in your vuex store:
 store: {
   // ... your store
   plugins: [easyFirestores]
 }
 ```
+
+Passing `{logging: true}` as second param will enable console.logging on each api call. This is recommended for debugging initially, but could be disabled on production.
 
 ## Sync directly to module state
 
