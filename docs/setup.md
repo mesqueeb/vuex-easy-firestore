@@ -1,8 +1,12 @@
 ## Installation
 
 ```bash
-npm i --save vuex-easy-firestore
+npm i --save vuex-easy-firestore firebase
+# or
+yarn add vuex-easy-firestore firebase
 ```
+
+Firebase is a peer dependency; It will use your existing version.
 
 ## Setup
 
