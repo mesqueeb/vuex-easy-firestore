@@ -4163,11 +4163,11 @@ fill-range@^4.0.0:
     repeat-string "^1.6.1"
     to-regex-range "^2.1.0"
 
-find-and-replace-anything@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/find-and-replace-anything/-/find-and-replace-anything-1.0.0.tgz#3e80784d8eee9cd1bcc13170443734b5f25acf21"
+find-and-replace-anything@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/find-and-replace-anything/-/find-and-replace-anything-1.1.0.tgz#df27da299ffa59ee895323c68444ea41f79b0a88"
   dependencies:
-    is-what "^2.0.2"
+    is-what "^2.1.0"
 
 find-cache-dir@^0.1.1:
   version "0.1.1"
@@ -4705,9 +4705,15 @@ hullabaloo-config-manager@^1.1.0:
     resolve-from "^3.0.0"
     safe-buffer "^5.0.1"
 
-iconv-lite@^0.4.17, iconv-lite@^0.4.4, iconv-lite@~0.4.13:
+iconv-lite@^0.4.17, iconv-lite@^0.4.4:
   version "0.4.23"
   resolved "https://registry.yarnpkg.com/iconv-lite/-/iconv-lite-0.4.23.tgz#297871f63be507adcfbfca715d0cd0eed84e9a63"
+  dependencies:
+    safer-buffer ">= 2.1.2 < 3"
+
+iconv-lite@~0.4.13:
+  version "0.4.24"
+  resolved "https://registry.yarnpkg.com/iconv-lite/-/iconv-lite-0.4.24.tgz#2022b4b25fbddc21d2f524974a474aafe733908b"
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
@@ -5149,13 +5155,13 @@ is-what@^1.0.4:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/is-what/-/is-what-1.1.0.tgz#c841068a15731a7abb62852af7328e160c04e15c"
 
-is-what@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/is-what/-/is-what-2.0.0.tgz#c5d3874fbad3d15e8f56a0585c2e93d7f18f3bcc"
-
 is-what@^2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/is-what/-/is-what-2.0.2.tgz#16b3fe0e3fd18fcd378973bf2e1c3b3265d469c7"
+
+is-what@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/is-what/-/is-what-2.1.0.tgz#4772694462bfdf492175e1952ae81fe938388ac9"
 
 is-windows@^1.0.2:
   version "1.0.2"
@@ -6015,7 +6021,11 @@ mz@^2.6.0:
     object-assign "^4.0.1"
     thenify-all "^1.0.0"
 
-nan@^2.0.0, nan@^2.9.2:
+nan@^2.0.0:
+  version "2.11.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.11.0.tgz#574e360e4d954ab16966ec102c0c049fd961a099"
+
+nan@^2.9.2:
   version "2.10.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.10.0.tgz#96d0cd610ebd58d4b4de9cc0c6828cda99c7548f"
 
@@ -8729,9 +8739,13 @@ well-known-symbols@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/well-known-symbols/-/well-known-symbols-1.0.0.tgz#73c78ae81a7726a8fa598e2880801c8b16225518"
 
-whatwg-fetch@2.0.4, whatwg-fetch@>=0.10.0:
+whatwg-fetch@2.0.4:
   version "2.0.4"
   resolved "http://registry.npmjs.org/whatwg-fetch/-/whatwg-fetch-2.0.4.tgz#dde6a5df315f9d39991aa17621853d720b85566f"
+
+whatwg-fetch@>=0.10.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/whatwg-fetch/-/whatwg-fetch-3.0.0.tgz#fc804e458cc460009b1a2b966bc8817d2578aefb"
 
 when@~3.6.x:
   version "3.6.4"

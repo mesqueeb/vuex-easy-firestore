@@ -16,7 +16,14 @@ function convertTimestamps (originVal, targetVal) {
   }
   return targetVal
 }
-
+/**
+ * Merge an object onto defaultValues
+ *
+ * @export
+ * @param {object} obj
+ * @param {object} defaultValues
+ * @returns the new object
+ */
 export default function (obj, defaultValues) {
   if (!isObject(defaultValues)) console.error('[vuex-easy-firestore] Trying to merge target:', obj, 'onto a non-object (defaultValues):', defaultValues)
   if (!isObject(obj)) console.error('[vuex-easy-firestore] Trying to merge a non-object:', obj, 'onto the defaultValues:', defaultValues)
