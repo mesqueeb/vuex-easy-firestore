@@ -201,14 +201,16 @@ You can have two extra parameters:
 dispatch('pokemonBox/fetchAndAdd', {whereFilters: [['freed', '==', true]], orderBy: ['freedDate']})
   .then(result => {
     if (querySnapshot.done === true) {
-      // `{done: true}` is returned when everything is fetched:
-      return 'all docs retrieved'
+      // `{done: true}` is returned when everything is already fetched and there are 0 docs:
+      return '0 docs left to retrieve'
     }
-    // Nothing more needs to be done. Docs are automatically added to `pokemonBox`
-    // docs will also receive `defaultValues` you have set up. (see "defaultValues set after server retrieval" below)
+    // Nothing more needs to be done. Docs are automatically added to `pokemonBox` and can be patched, deleted, etc.
+    // docs will also receive `defaultValues` you have set up. (see "defaultValues set after server retrieval" under Extra features)
   })
   .catch(console.error)
 ```
+
+Using the `fetchAndAdd` method means your documents will be added to your vuex-module (at `moduleName`) in the `statePropName` you have set in your config. Then can thus also just be used with all other actions like `set`, `patch`, `insert` and `delete`.
 
 ### Usage example `fetch`:
 
@@ -216,10 +218,10 @@ dispatch('pokemonBox/fetchAndAdd', {whereFilters: [['freed', '==', true]], order
 dispatch('pokemonBox/fetch', {whereFilters: [['freed', '==', true]], orderBy: ['freedDate']})
   .then(querySnapshot => {
     if (querySnapshot.done === true) {
-      // `{done: true}` is returned when everything is fetched:
-      return 'all docs retrieved'
+      // `{done: true}` is returned when everything is already fetched and there are 0 docs:
+      return '0 docs left to retrieve'
     }
-    // the Firestore `querySnapshot` as is
+    // here you can the Firestore `querySnapshot` which is returned
     querySnapshot.forEach(doc => {
       // you have to manually add the doc with `fetch`
       const fetchedDoc = doc.data()
@@ -231,9 +233,24 @@ dispatch('pokemonBox/fetch', {whereFilters: [['freed', '==', true]], orderBy: ['
   .catch(console.error)
 ```
 
-### A note on setting a fetch limit:
+The `querySnapshot` that is returned is the same querySnapshot as the Firestore one. Please read the [Firestore documentation on querySnapshot](https://firebase.google.com/docs/reference/js/firebase.firestore.QuerySnapshot) to know what you can do with these. Only when all documents were already fetched (and the result is 0 docs) vuex-easy-firestore will return `{done: true}` instead. Please see the examples here above.
 
-The fetch limit defaults to 50 docs. If you watch to fetch *the next 50 docs* you just need to call the `fetch` or `fetchAndAdd` action again, and it will automatically retrieve the next docs! You can change the default fetch limit like so:
+### A note on fetch limit:
+
+The fetch limit defaults to 50 docs. If you watch to fetch *the next 50 docs* you just need to call the `fetch` or `fetchAndAdd` action again, and it will automatically retrieve the next docs! See the example below:
+
+```js
+function fetchFreedPokemon () {
+  dispatch('pokemonBox/fetchAndAdd', {whereFilters: [['freed', '==', true]], orderBy: ['freedDate']})
+}
+// call once to fetch the first 50:
+fetchFreedPokemon()
+// then just call again to fetch the next 50!
+fetchFreedPokemon()
+// and so on...
+```
+
+You can change the default fetch limit like so:
 
 ```js
 {
