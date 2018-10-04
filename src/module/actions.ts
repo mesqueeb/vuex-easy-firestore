@@ -1,18 +1,19 @@
-import Firebase from 'firebase/app'
+import * as Firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
 import { isArray, isObject, isFunction } from 'is-what'
 import merge from 'merge-anything'
+import { AnyObject, IPluginState } from '../declarations'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
 import { makeBatchFromSyncstack, isPathVar, pathVarKey } from '../utils/apiHelpers'
 import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
 import error from './errors'
 
-const actions = {
+export default {
   patchDoc (
     {state, getters, commit, dispatch},
-    {id = '', ids = [], doc} = {ids: [], doc: {}}
+    {id = '', ids = [], doc}: {id?: string, ids?: string[], doc?: AnyObject} = {ids: [], doc: {}}
   ) {
     // 0. payload correction (only arrays)
     if (!isArray(ids)) return console.error('[vuex-easy-firestore] ids needs to be an array')
@@ -117,7 +118,8 @@ const actions = {
       }).catch(error => {
         state._sync.patching = 'error'
         state._sync.syncStack.debounceTimer = null
-        Error('Error during synchronisation.', error)
+        console.error('Error during synchronisation ↓')
+        Error(error)
         return reject(error)
       })
     })
@@ -211,7 +213,10 @@ const actions = {
         }
       })
   },
-  serverUpdate ({commit}, {change, id, doc = {}}) {
+  serverUpdate (
+    {commit},
+    {change, id, doc = {}}: {change: string, id: string, doc: AnyObject}
+  ) {
     doc.id = id
     switch (change) {
       case 'added':
@@ -428,7 +433,10 @@ const actions = {
     }
     return storeUpdateFn(id)
   },
-  deleteBatch ({state, getters, commit, dispatch}, ids) {
+  deleteBatch (
+    {state, getters, commit, dispatch}: {state: IPluginState, getters: any, commit: any, dispatch: any},
+    ids)
+  {
     if (!isArray(ids)) return
     if (!ids.length) return
     const store = this
@@ -462,8 +470,4 @@ const actions = {
     if (state._sync.stopPatchingTimeout) { clearTimeout(state._sync.stopPatchingTimeout) }
     state._sync.patching = true
   }
-}
-
-export default function (userActions = {}) {
-  return Object.assign({}, actions, userActions)
 }

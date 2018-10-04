@@ -3,7 +3,7 @@ import { getDeepRef } from 'vuex-easy-access'
 import error from './errors'
 import merge from 'merge-anything'
 
-const mutations = {
+export default {
   SET_PATHVARS (state, pathVars) {
     const self = this
     Object.keys(pathVars).forEach(key => {
@@ -63,8 +63,4 @@ const mutations = {
     const ref = getDeepRef(searchTarget, propArr.join('.'))
     return this._vm.$delete(ref, target)
   }
-}
-
-export default function (userMutations = {}, state) {
-  return Object.assign({}, mutations, userMutations)
 }

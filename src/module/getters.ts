@@ -1,10 +1,21 @@
-import Firebase from 'firebase/app'
+import * as Firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
 import { getDeepRef } from 'vuex-easy-access'
 import checkFillables from '../utils/checkFillables'
+import { AnyObject } from '../declarations'
 
-const getters = {
+export type IPluginGetters = {
+  signedIn: (state: any, getters?: any, rootState?: any, rootGetters?: any) => boolean
+  dbRef: (state: any, getters?: any, rootState?: any, rootGetters?: any) => any
+  storeRef: (state: any, getters?: any, rootState?: any, rootGetters?: any) => AnyObject
+  collectionMode: (state: any, getters?: any, rootState?: any, rootGetters?: any) => boolean
+  prepareForPatch: (state: any, getters?: any, rootState?: any, rootGetters?: any) => (ids: string[], doc: AnyObject) => AnyObject
+  prepareForInsert: (state: any, getters?: any, rootState?: any, rootGetters?: any) => (items: any[]) => any[]
+  prepareInitialDocForInsert: (state: any, getters?: any, rootState?: any, rootGetters?: any) => (doc: AnyObject) => AnyObject
+}
+
+export default {
   signedIn: (state, getters, rootState, rootGetters) => {
     const requireUser = state._conf.firestorePath.includes('{userId}')
     if (!requireUser) return true
@@ -58,9 +69,9 @@ const getters = {
         } else {
           patchData = doc
         }
-        patchData = checkFillables(patchData, state._conf.sync.fillables, state._conf.sync.guard)
-        patchData.id = id
-        carry[id] = patchData
+        const cleanedPatchData = checkFillables(patchData, state._conf.sync.fillables, state._conf.sync.guard)
+        cleanedPatchData.id = id
+        carry[id] = cleanedPatchData
         return carry
       }, {})
     },
@@ -77,8 +88,4 @@ const getters = {
       doc = checkFillables(doc, state._conf.sync.fillables, state._conf.sync.guard)
       return doc
     }
-}
-
-export default function (userGetters = {}) {
-  return Object.assign({}, getters, userGetters)
 }
