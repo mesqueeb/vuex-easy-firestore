@@ -1,10 +1,11 @@
 import merge from 'merge-anything'
 // store
+import { IStore, IUserConfig, IPluginState } from '../declarations'
 import defaultConfig from './defaultConfig'
-import initialState from './state'
-import iniMutations from './mutations'
-import iniActions from './actions'
-import iniGetters from './getters'
+import pluginState from './state'
+import pluginMutations from './mutations'
+import pluginActions from './actions'
+import pluginGetters from './getters'
 import errorCheck from './errorCheckConfig'
 
 /**
@@ -13,8 +14,12 @@ import errorCheck from './errorCheckConfig'
  * @param {object} userConfig Takes a config object as per ...
  * @returns {object} the module ready to be included in your vuex store
  */
-export default function (userConfig) {
-  const conf = merge(defaultConfig, userConfig)
+export default function (userConfig: IUserConfig): IStore {
+  const conf: IUserConfig = merge(
+    {state: {}, mutations: {}, actions: {},getters: {}},
+    defaultConfig,
+    userConfig
+  )
   if (!errorCheck(conf)) return
   const userState = conf.state
   const userMutations = conf.mutations
@@ -27,12 +32,11 @@ export default function (userConfig) {
 
   const docContainer = {}
   if (conf.statePropName) docContainer[conf.statePropName] = {}
-  const state = merge(initialState, userState, docContainer, {_conf: conf})
   return {
     namespaced: true,
-    state,
-    mutations: iniMutations(userMutations, merge(initialState, userState)),
-    actions: iniActions(userActions),
-    getters: iniGetters(userGetters)
+    state: merge(pluginState, userState, docContainer, {_conf: conf}),
+    mutations: merge(userMutations, pluginMutations),
+    actions: merge(userActions, pluginActions),
+    getters: merge(userGetters, pluginGetters)
   }
 }

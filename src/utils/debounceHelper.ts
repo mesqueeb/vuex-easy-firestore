@@ -1,16 +1,17 @@
 /**
- * debounce helper
+ * Debounce helper
  *
- * @author     Adam Dorling
- * @contact    https://codepen.io/naito
+ * let wait = startDebounce(1000)
+ * wait.done.then(_ => handle())
+ * wait.refresh() // to refresh
+ *
+ * @export
+ * @param {number} ms
+ * @returns {{done: any, refresh: () => {}}}
+ * @author Adam Dorling
+ * @contact https://codepen.io/naito
  */
-
-// USAGE:
-// let d = startDebounce(1000)
-// d.done.then(_ => handle())
-// d.refresh() // to refresh
-
-export default function (ms) {
+export default function (ms: number): {done: any, refresh: () => {}} {
   let startTime = Date.now()
   const done = new Promise((resolve, reject) => {
     const interval = setInterval(_ => {

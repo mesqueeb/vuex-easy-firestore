@@ -1,3 +1,50 @@
+import { AnyObject } from '../declarations'
+
+export type HandleDoc = (doc: any) => any
+export type HandleId = (id: string) => any
+export type HandleDocs = (docs: any[]) => any
+export type HandleDocIds = (doc: any, ids: string[]) => any
+export type HandleIds = (ids: string[]) => any
+
+export type SyncHookDoc = (updateStore: HandleDoc, doc: any, store) => (void | HandleDoc)
+export type SyncHookId = (updateStore: HandleId, id: string, store) => (void | HandleId)
+export type InsertBatchHook = (updateStore: HandleDocs, docs: any[], store) => (void | HandleDocs)
+export type PatchBatchHook = (updateStore: HandleDocIds, doc: any, ids: string[], store) => (void | HandleDocIds)
+export type DeleteBatchHook = (updateStore: HandleIds, ids: string[], store) => (void | HandleIds)
+export type ServerChangeHook = (updateStore: HandleDoc, doc: any, id, store, source, change) => (void | HandleDoc)
+
+export type IConfig = {
+  firestorePath: string
+  firestoreRefType: string
+  moduleName: string
+  statePropName: string
+  logging?: boolean
+  sync?: {
+    where?: string[][]
+    orderBy?: string[]
+    fillables?: string[]
+    guard?: string[]
+    insertHook?: SyncHookDoc
+    patchHook?: SyncHookDoc
+    deleteHook?: SyncHookId
+    insertBatchHook?: InsertBatchHook
+    patchBatchHook?: PatchBatchHook
+    deleteBatchHook?: DeleteBatchHook
+  }
+  serverChange?: {
+    defaultValues?: AnyObject
+    addedHook?: ServerChangeHook
+    modifiedHook?: ServerChangeHook
+    removedHook?: ServerChangeHook
+  }
+  fetch?: {
+    docLimit?: number
+  }
+  state?: AnyObject
+  mutations?: AnyObject
+  actions?: AnyObject
+  getters?: AnyObject
+}
 
 export default {
   firestorePath: '',
@@ -38,11 +85,5 @@ export default {
   fetch: {
     // The max amount of documents to be fetched. Defaults to 50.
     docLimit: 50,
-  },
-
-  // You can also add custom state/getters/mutations/actions. These will be added to your module.
-  state: {},
-  getters: {},
-  mutations: {},
-  actions: {},
+  }
 }

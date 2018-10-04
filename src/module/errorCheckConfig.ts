@@ -1,6 +1,14 @@
 import { isNumber, isFunction, isObject, isArray, isString } from 'is-what'
+import { IUserConfig } from '../declarations'
 
-export default function errorCheck (config) {
+/**
+ * Check the config for type errors for non-TypeScript users
+ *
+ * @export
+ * @param {IUserConfig} config
+ * @returns {boolean} true if no errors, false if errors
+ */
+export default function (config: IUserConfig): boolean {
   const errors = []
   const reqProps = ['firestorePath', 'moduleName']
   reqProps.forEach(prop => {
@@ -65,7 +73,7 @@ export default function errorCheck (config) {
     console.group('[vuex-easy-firestore] ERRORS:')
     console.error(`Module: ${config.moduleName}`)
     errors.forEach(e => console.error(' - ', e))
-    console.groupEnd('Please check your vuex-easy-firebase Module.')
+    console.groupEnd()
     Error()
     return false
   }
