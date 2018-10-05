@@ -1324,9 +1324,9 @@
   version "0.7.0"
   resolved "https://registry.yarnpkg.com/@firebase/firestore-types/-/firestore-types-0.7.0.tgz#bded7892868cf6b189a121d0f0cec468f1609995"
 
-"@firebase/firestore@0.8.2":
-  version "0.8.2"
-  resolved "https://registry.yarnpkg.com/@firebase/firestore/-/firestore-0.8.2.tgz#2eb96a383206d3d793b17885507a301c323d9b64"
+"@firebase/firestore@0.8.3":
+  version "0.8.3"
+  resolved "https://registry.yarnpkg.com/@firebase/firestore/-/firestore-0.8.3.tgz#c62e3fc636425418f297fe72b23fcde86008424d"
   dependencies:
     "@firebase/firestore-types" "0.7.0"
     "@firebase/logger" "0.1.1"
@@ -4169,6 +4169,12 @@ find-and-replace-anything@^1.1.1:
   dependencies:
     is-what "^2.1.0"
 
+find-and-replace-anything@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/find-and-replace-anything/-/find-and-replace-anything-1.1.2.tgz#321a11bb5255d5bafa7c518ea839b50235044e1d"
+  dependencies:
+    is-what "^3.0.1"
+
 find-cache-dir@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/find-cache-dir/-/find-cache-dir-0.1.1.tgz#c8defae57c8a52a8a784f9e31c57c742e993a0b9"
@@ -4198,14 +4204,14 @@ find-up@^2.0.0, find-up@^2.1.0:
   dependencies:
     locate-path "^2.0.0"
 
-firebase@^5.5.2:
-  version "5.5.2"
-  resolved "https://registry.yarnpkg.com/firebase/-/firebase-5.5.2.tgz#05fa180c058941dcbfc248882e829f2945aa0568"
+firebase@^5.5.3:
+  version "5.5.3"
+  resolved "https://registry.yarnpkg.com/firebase/-/firebase-5.5.3.tgz#e4a1250899b57d5953eab02df9ac8b75452fbd9b"
   dependencies:
     "@firebase/app" "0.3.4"
     "@firebase/auth" "0.7.7"
     "@firebase/database" "0.3.6"
-    "@firebase/firestore" "0.8.2"
+    "@firebase/firestore" "0.8.3"
     "@firebase/functions" "0.3.1"
     "@firebase/messaging" "0.3.6"
     "@firebase/polyfill" "0.3.3"
@@ -5171,6 +5177,10 @@ is-what@^2.5.0:
   version "2.5.0"
   resolved "https://registry.yarnpkg.com/is-what/-/is-what-2.5.0.tgz#7b7adc57e3aba7343895b60fa888e4123c004435"
 
+is-what@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/is-what/-/is-what-3.0.1.tgz#babeb6d8aa78b9a3b3fb9607e36d94e5261481b1"
+
 is-windows@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/is-windows/-/is-windows-1.0.2.tgz#d1850eb9791ecd18e6182ce12a30f396634bb19d"
@@ -5806,6 +5816,12 @@ merge-anything@^2.1.1:
   resolved "https://registry.yarnpkg.com/merge-anything/-/merge-anything-2.1.1.tgz#a639b1eb5dc09b15e805c5b0cd664f2e93a62cc1"
   dependencies:
     is-what "^2.3.0"
+
+merge-anything@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/merge-anything/-/merge-anything-2.2.0.tgz#aeb2b1fc3c75946f4dcf6a4424807219a2a6942b"
+  dependencies:
+    is-what "^3.0.1"
 
 merge-options@^1.0.0, merge-options@^1.0.1:
   version "1.0.1"
