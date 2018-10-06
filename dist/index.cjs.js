@@ -217,7 +217,9 @@ require('@firebase/auth');
 function convertTimestamps(originVal, targetVal) {
     if (originVal === '%convertTimestamp%') {
         // firestore timestamps
-        if (isWhat.isObject(targetVal) && isWhat.isFunction(targetVal.toDate)) {
+        // @ts-ignore
+        if (isWhat.isAnyObject(targetVal) && !isWhat.isObject(targetVal) && isWhat.isFunction(targetVal.toDate)) {
+            // @ts-ignore
             return targetVal.toDate();
         }
         // strings

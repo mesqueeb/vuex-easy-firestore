@@ -16,7 +16,9 @@ var findAndReplace = _interopDefault(require('find-and-replace-anything'));
 function convertTimestamps(originVal, targetVal) {
     if (originVal === '%convertTimestamp%') {
         // firestore timestamps
-        if (isWhat.isObject(targetVal) && isWhat.isFunction(targetVal.toDate)) {
+        // @ts-ignore
+        if (isWhat.isAnyObject(targetVal) && !isWhat.isObject(targetVal) && isWhat.isFunction(targetVal.toDate)) {
+            // @ts-ignore
             return targetVal.toDate();
         }
         // strings

@@ -1,4 +1,4 @@
-import { isObject, isFunction, isString, isDate, isArray, isNumber } from 'is-what';
+import { isObject, isFunction, isString, isDate, isAnyObject, isArray, isNumber } from 'is-what';
 import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
 import merge from 'merge-anything';
 import findAndReplace from 'find-and-replace-anything';
@@ -213,7 +213,9 @@ require('@firebase/auth');
 function convertTimestamps(originVal, targetVal) {
     if (originVal === '%convertTimestamp%') {
         // firestore timestamps
-        if (isObject(targetVal) && isFunction(targetVal.toDate)) {
+        // @ts-ignore
+        if (isAnyObject(targetVal) && !isObject(targetVal) && isFunction(targetVal.toDate)) {
+            // @ts-ignore
             return targetVal.toDate();
         }
         // strings
