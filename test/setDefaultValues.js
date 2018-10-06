@@ -167,7 +167,7 @@ test('custom %convertTimestamp% defaultValue - fireBase', async t => {
     firebase: {specialTS: { _ts: {} }}
   }
   const TimestampProto = {toDate: _ => { return nd }}
-  Object.setPrototypeOf(target, TimestampProto)
+  Object.setPrototypeOf(target.firebase.specialTS._ts, TimestampProto)
   res = setDefaultValues(target, defaultValues)
   t.deepEqual(res, {
     body: nd,
