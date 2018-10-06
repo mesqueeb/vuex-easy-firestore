@@ -1,4 +1,4 @@
-import { isObject, isFunction, isString, isDate } from 'is-what'
+import { isObject, isFunction, isString, isDate, isAnyObject } from 'is-what'
 import merge from 'merge-anything'
 import findAndReplace from 'find-and-replace-anything'
 import { AnyObject } from '../declarations'
@@ -13,7 +13,9 @@ import { AnyObject } from '../declarations'
 function convertTimestamps (originVal: any, targetVal: any): Date {
   if (originVal === '%convertTimestamp%') {
     // firestore timestamps
-    if (isObject(targetVal) && isFunction(targetVal.toDate)) {
+    // @ts-ignore
+    if (isAnyObject(targetVal) && !isObject(targetVal) && isFunction(targetVal.toDate)) {
+      // @ts-ignore
       return targetVal.toDate()
     }
     // strings
