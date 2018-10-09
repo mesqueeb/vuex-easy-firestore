@@ -1,14 +1,14 @@
 import { isNumber, isFunction, isObject, isArray, isString } from 'is-what'
-import { IUserConfig } from '../declarations'
+import { IEasyFirestoreModule } from '../declarations'
 
 /**
  * Check the config for type errors for non-TypeScript users
  *
  * @export
- * @param {IUserConfig} config
+ * @param {IEasyFirestoreModule} config
  * @returns {boolean} true if no errors, false if errors
  */
-export default function (config: IUserConfig): boolean {
+export default function (config: IEasyFirestoreModule): boolean {
   const errors = []
   const reqProps = ['firestorePath', 'moduleName']
   reqProps.forEach(prop => {

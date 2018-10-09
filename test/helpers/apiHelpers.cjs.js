@@ -3,7 +3,6 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 var isWhat = require('is-what');
-var Firebase = require('firebase/app');
 
 function retrievePaths(object, path, result) {
     if (!isWhat.isObject(object) ||
@@ -34,24 +33,6 @@ function flattenToPaths (object) {
     var result = {};
     return retrievePaths(object, null, result);
 }
-
-require('@firebase/firestore');
-
-/**
- * Copyright 2017 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 /**
  * Grab until the api limit (500), put the rest back in the syncStack.
@@ -102,10 +83,11 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
  * @param {AnyObject} dbRef The Firestore dbRef of the 'doc' or 'collection'
  * @param {boolean} collectionMode Very important: is the firebase dbRef a 'collection' or 'doc'?
  * @param {string} userId for `created_by` / `updated_by`
+ * @param {any} Firebase dependency injection for Firebase & Firestore
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {*} A Firebase firestore batch object.
  */
-function makeBatchFromSyncstack(state, dbRef, collectionMode, userId, batchMaxCount) {
+function makeBatchFromSyncstack(state, dbRef, collectionMode, userId, Firebase, batchMaxCount) {
     if (batchMaxCount === void 0) { batchMaxCount = 500; }
     var batch = Firebase.firestore().batch();
     var log = {};

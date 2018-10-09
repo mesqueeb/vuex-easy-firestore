@@ -1,6 +1,6 @@
 import merge from 'merge-anything'
 // store
-import { IStore, IUserConfig, IPluginState } from '../declarations'
+import { IStore, IEasyFirestoreModule } from '../declarations'
 import defaultConfig from './defaultConfig'
 import pluginState from './state'
 import pluginMutations from './mutations'
@@ -11,11 +11,12 @@ import errorCheck from './errorCheckConfig'
 /**
  * A function that returns a vuex module object with seamless 2-way sync for firestore.
  *
- * @param {object} userConfig Takes a config object as per ...
- * @returns {object} the module ready to be included in your vuex store
+ * @param {IEasyFirestoreModule} userConfig Takes a config object per module
+ * @param {*} FirebaseDependency The Firebase dependency (non-instanciated), defaults to the Firebase peer dependency if left blank.
+ * @returns {IStore} the module ready to be included in your vuex store
  */
-export default function (userConfig: IUserConfig): IStore {
-  const conf: IUserConfig = merge(
+export default function (userConfig: IEasyFirestoreModule, FirebaseDependency: any): IStore {
+  const conf: IEasyFirestoreModule = merge(
     {state: {}, mutations: {}, actions: {},getters: {}},
     defaultConfig,
     userConfig
@@ -36,7 +37,7 @@ export default function (userConfig: IUserConfig): IStore {
     namespaced: true,
     state: merge(pluginState, userState, docContainer, {_conf: conf}),
     mutations: merge(userMutations, pluginMutations),
-    actions: merge(userActions, pluginActions),
-    getters: merge(userGetters, pluginGetters)
+    actions: merge(userActions, pluginActions(FirebaseDependency)),
+    getters: merge(userGetters, pluginGetters(FirebaseDependency))
   }
 }
