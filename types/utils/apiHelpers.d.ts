@@ -1,4 +1,3 @@
-import 'firebase/firestore';
 import { IPluginState, AnyObject } from '../declarations';
 /**
  * Grab until the api limit (500), put the rest back in the syncStack.
@@ -18,10 +17,11 @@ export declare function grabUntilApiLimit(syncStackProp: string, count: number, 
  * @param {AnyObject} dbRef The Firestore dbRef of the 'doc' or 'collection'
  * @param {boolean} collectionMode Very important: is the firebase dbRef a 'collection' or 'doc'?
  * @param {string} userId for `created_by` / `updated_by`
+ * @param {any} Firebase dependency injection for Firebase & Firestore
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {*} A Firebase firestore batch object.
  */
-export declare function makeBatchFromSyncstack(state: IPluginState, dbRef: AnyObject, collectionMode: boolean, userId: string, batchMaxCount?: number): any;
+export declare function makeBatchFromSyncstack(state: IPluginState, dbRef: AnyObject, collectionMode: boolean, userId: string, Firebase: any, batchMaxCount?: number): any;
 /**
  * Check if the string starts and ends with '{' and '}' to swap out for variable value saved in state.
  *

@@ -12,6 +12,6 @@ export type IStore = {
 }
 
 // plugin CONFIG
-export type IUserConfig = IConfig
+export type IEasyFirestoreModule = IConfig
 // plugin STATE
 export type IPluginState = IState & {_conf: IConfig}

@@ -10,7 +10,7 @@ export declare type IStore = {
     getters: AnyObject;
     [key: string]: any;
 };
-export declare type IUserConfig = IConfig;
+export declare type IEasyFirestoreModule = IConfig;
 export declare type IPluginState = IState & {
     _conf: IConfig;
 };
