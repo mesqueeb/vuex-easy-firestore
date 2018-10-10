@@ -7,8 +7,42 @@ var vuexEasyAccess = require('vuex-easy-access');
 var merge = _interopDefault(require('merge-anything'));
 var findAndReplace = _interopDefault(require('find-and-replace-anything'));
 var Firebase = require('firebase/app');
-require('firebase/firestore');
-require('firebase/auth');
+
+require('@firebase/firestore');
+
+/**
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+require('@firebase/auth');
+
+/**
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 var defaultConfig = {
     firestorePath: '',
@@ -460,6 +494,13 @@ function getValueFromPayloadPiece(payloadPiece) {
  */
 function pluginActions (Firebase$$1) {
     return {
+        duplicate: function (_a, id) {
+            var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
+            if (!getters.collectionMode)
+                return;
+            var doc = merge(getters.storeRef[id], { id: null });
+            return dispatch('insert', doc);
+        },
         patchDoc: function (_a, _b) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             var _c = _b === void 0 ? { ids: [], doc: {} } : _b, _d = _c.id, id = _d === void 0 ? '' : _d, _e = _c.ids, ids = _e === void 0 ? [] : _e, doc = _c.doc;
@@ -728,7 +769,6 @@ function pluginActions (Firebase$$1) {
                 if (_changeType === void 0) { _changeType = 'modified'; }
                 // define storeUpdateFn()
                 function storeUpdateFn(_doc) {
-                    console.log('_doc → ', _doc);
                     return dispatch('serverUpdate', { change: _changeType, id: id, doc: _doc });
                 }
                 // get user set sync hook function
@@ -754,9 +794,7 @@ function pluginActions (Firebase$$1) {
                         }
                         var doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues);
                         var id = state._conf.firestorePath.split('/').pop();
-                        console.log('id → ', id);
                         doc.id = id;
-                        console.log('doc → ', doc);
                         if (source === 'local')
                             return resolve();
                         handleDoc(null, id, doc, source);

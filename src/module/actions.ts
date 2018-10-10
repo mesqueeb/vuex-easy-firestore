@@ -16,6 +16,11 @@ import error from './errors'
  */
 export default function (Firebase: any): AnyObject {
   return {
+    duplicate ({state, getters, commit, dispatch}, id) {
+      if (!getters.collectionMode) return
+      const doc = merge(getters.storeRef[id], {id: null})
+      return dispatch('insert', doc)
+    },
     patchDoc (
       {state, getters, commit, dispatch},
       {id = '', ids = [], doc}: {id?: string, ids?: string[], doc?: AnyObject} = {ids: [], doc: {}}
