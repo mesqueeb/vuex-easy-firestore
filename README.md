@@ -20,7 +20,7 @@ Now you just update and add docs with `dispatch('user/set', newItem)` and forget
 
 Other features include hooks, fillables (limit props to sync), default values (add props on sync), a fetch function and much more...
 
-[Installation and setup]　→
+[Installation and setup](https://mesqueeb.github.io/vuex-easy-firestore/setup.html#installation)　→
 
 # Motivation
 

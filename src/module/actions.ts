@@ -297,8 +297,10 @@ export default function (Firebase: any): AnyObject {
               return resolve()
             }
             const doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues)
+            const id = state._conf.firestorePath.split('/').pop()
+            doc.id = id
             if (source === 'local') return resolve()
-            handleDoc(null, null, doc, source)
+            handleDoc(null, id, doc, source)
             return resolve()
           }
           querySnapshot.docChanges().forEach(change => {
