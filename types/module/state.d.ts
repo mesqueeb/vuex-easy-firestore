@@ -17,21 +17,10 @@ export declare type IState = {
     };
     [key: string]: any;
 };
-declare const _default: {
-    _sync: {
-        signedIn: boolean;
-        userId: any;
-        pathVariables: {};
-        patching: boolean;
-        syncStack: {
-            inserts: any[];
-            updates: {};
-            deletions: any[];
-            propDeletions: any[];
-            debounceTimer: any;
-        };
-        fetched: {};
-        stopPatchingTimeout: any;
-    };
-};
-export default _default;
+/**
+ * a function returning the state object
+ *
+ * @export
+ * @returns {IState} the state object
+ */
+export default function (): IState;

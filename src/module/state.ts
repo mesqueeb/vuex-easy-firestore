@@ -18,21 +18,28 @@ export type IState = {
   }
   [key: string]: any
 }
-
-export default {
-  _sync: {
-    signedIn: false,
-    userId: null,
-    pathVariables: {},
-    patching: false,
-    syncStack: {
-      inserts: [],
-      updates: {},
-      deletions: [],
-      propDeletions: [],
-      debounceTimer: null,
-    },
-    fetched: {},
-    stopPatchingTimeout: null
+/**
+ * a function returning the state object
+ *
+ * @export
+ * @returns {IState} the state object
+ */
+export default function (): IState {
+  return {
+    _sync: {
+      signedIn: false,
+      userId: null,
+      pathVariables: {},
+      patching: false,
+      syncStack: {
+        inserts: [],
+        updates: {},
+        deletions: [],
+        propDeletions: [],
+        debounceTimer: null,
+      },
+      fetched: {},
+      stopPatchingTimeout: null
+    }
   }
 }

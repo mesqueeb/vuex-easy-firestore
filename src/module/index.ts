@@ -35,8 +35,8 @@ export default function (userConfig: IEasyFirestoreModule, FirebaseDependency: a
   if (conf.statePropName) docContainer[conf.statePropName] = {}
   return {
     namespaced: true,
-    state: merge(pluginState, userState, docContainer, {_conf: conf}),
-    mutations: merge(userMutations, pluginMutations),
+    state: merge(pluginState(), userState, docContainer, {_conf: conf}),
+    mutations: merge(userMutations, pluginMutations()),
     actions: merge(userActions, pluginActions(FirebaseDependency)),
     getters: merge(userGetters, pluginGetters(FirebaseDependency))
   }

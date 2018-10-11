@@ -87,7 +87,8 @@ export default function (Firebase: any): AnyObject {
       state._sync.syncStack.inserts = inserts
 
       // 3. Create or refresh debounce
-      return dispatch('handleSyncStackDebounce')
+      dispatch('handleSyncStackDebounce')
+      return docs.map(d => d.id)
     },
     insertInitialDoc ({state, getters, commit, dispatch}) {
       // 0. only docMode
