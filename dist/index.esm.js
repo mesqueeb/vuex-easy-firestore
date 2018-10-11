@@ -3,8 +3,42 @@ import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
 import merge from 'merge-anything';
 import findAndReplace from 'find-and-replace-anything';
 import * as Firebase from 'firebase/app';
-import 'firebase/firestore';
-import 'firebase/auth';
+
+require('@firebase/firestore');
+
+/**
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+require('@firebase/auth');
+
+/**
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 var defaultConfig = {
     firestorePath: '',
@@ -46,23 +80,31 @@ var defaultConfig = {
     }
 };
 
-var pluginState = {
-    _sync: {
-        signedIn: false,
-        userId: null,
-        pathVariables: {},
-        patching: false,
-        syncStack: {
-            inserts: [],
-            updates: {},
-            deletions: [],
-            propDeletions: [],
-            debounceTimer: null,
-        },
-        fetched: {},
-        stopPatchingTimeout: null
-    }
-};
+/**
+ * a function returning the state object
+ *
+ * @export
+ * @returns {IState} the state object
+ */
+function pluginState () {
+    return {
+        _sync: {
+            signedIn: false,
+            userId: null,
+            pathVariables: {},
+            patching: false,
+            syncStack: {
+                inserts: [],
+                updates: {},
+                deletions: [],
+                propDeletions: [],
+                debounceTimer: null,
+            },
+            fetched: {},
+            stopPatchingTimeout: null
+        }
+    };
+}
 
 /**
  * execute Error() based on an error id string
@@ -75,73 +117,81 @@ function error (error) {
     return error;
 }
 
-var pluginMutations = {
-    SET_PATHVARS: function (state, pathVars) {
-        var self = this;
-        Object.keys(pathVars).forEach(function (key) {
-            self._vm.$set(state._sync.pathVariables, key, pathVars[key]);
-        });
-    },
-    resetSyncStack: function (state) {
-        state._sync.syncStack = {
-            updates: {},
-            deletions: [],
-            inserts: [],
-            debounceTimer: null
-        };
-    },
-    INSERT_DOC: function (state, doc) {
-        if (state._conf.firestoreRefType.toLowerCase() !== 'collection')
-            return;
-        if (state._conf.statePropName) {
-            this._vm.$set(state[state._conf.statePropName], doc.id, doc);
+/**
+ * a function returning the mutations object
+ *
+ * @export
+ * @returns {AnyObject} the mutations object
+ */
+function pluginMutations () {
+    return {
+        SET_PATHVARS: function (state, pathVars) {
+            var self = this;
+            Object.keys(pathVars).forEach(function (key) {
+                self._vm.$set(state._sync.pathVariables, key, pathVars[key]);
+            });
+        },
+        resetSyncStack: function (state) {
+            state._sync.syncStack = {
+                updates: {},
+                deletions: [],
+                inserts: [],
+                debounceTimer: null
+            };
+        },
+        INSERT_DOC: function (state, doc) {
+            if (state._conf.firestoreRefType.toLowerCase() !== 'collection')
+                return;
+            if (state._conf.statePropName) {
+                this._vm.$set(state[state._conf.statePropName], doc.id, doc);
+            }
+            else {
+                this._vm.$set(state, doc.id, doc);
+            }
+        },
+        PATCH_DOC: function (state, doc) {
+            var _this = this;
+            // Get the state prop ref
+            var ref = (state._conf.statePropName)
+                ? state[state._conf.statePropName]
+                : state;
+            if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
+                ref = ref[doc.id];
+            }
+            if (!ref)
+                return error('patchNoRef');
+            return Object.keys(doc).forEach(function (key) {
+                // Merge if exists
+                var newVal = (isObject(ref[key]) && isObject(doc[key]))
+                    ? merge(ref[key], doc[key])
+                    : doc[key];
+                _this._vm.$set(ref, key, newVal);
+            });
+        },
+        DELETE_DOC: function (state, id) {
+            if (state._conf.firestoreRefType.toLowerCase() !== 'collection')
+                return;
+            if (state._conf.statePropName) {
+                this._vm.$delete(state[state._conf.statePropName], id);
+            }
+            else {
+                this._vm.$delete(state, id);
+            }
+        },
+        DELETE_PROP: function (state, path) {
+            var searchTarget = (state._conf.statePropName)
+                ? state[state._conf.statePropName]
+                : state;
+            var propArr = path.split('.');
+            var target = propArr.pop();
+            if (!propArr.length) {
+                return this._vm.$delete(searchTarget, target);
+            }
+            var ref = getDeepRef(searchTarget, propArr.join('.'));
+            return this._vm.$delete(ref, target);
         }
-        else {
-            this._vm.$set(state, doc.id, doc);
-        }
-    },
-    PATCH_DOC: function (state, doc) {
-        var _this = this;
-        // Get the state prop ref
-        var ref = (state._conf.statePropName)
-            ? state[state._conf.statePropName]
-            : state;
-        if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
-            ref = ref[doc.id];
-        }
-        if (!ref)
-            return error('patchNoRef');
-        return Object.keys(doc).forEach(function (key) {
-            // Merge if exists
-            var newVal = (isObject(ref[key]) && isObject(doc[key]))
-                ? merge(ref[key], doc[key])
-                : doc[key];
-            _this._vm.$set(ref, key, newVal);
-        });
-    },
-    DELETE_DOC: function (state, id) {
-        if (state._conf.firestoreRefType.toLowerCase() !== 'collection')
-            return;
-        if (state._conf.statePropName) {
-            this._vm.$delete(state[state._conf.statePropName], id);
-        }
-        else {
-            this._vm.$delete(state, id);
-        }
-    },
-    DELETE_PROP: function (state, path) {
-        var searchTarget = (state._conf.statePropName)
-            ? state[state._conf.statePropName]
-            : state;
-        var propArr = path.split('.');
-        var target = propArr.pop();
-        if (!propArr.length) {
-            return this._vm.$delete(searchTarget, target);
-        }
-        var ref = getDeepRef(searchTarget, propArr.join('.'));
-        return this._vm.$delete(ref, target);
-    }
-};
+    };
+}
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation. All rights reserved.
@@ -456,6 +506,13 @@ function getValueFromPayloadPiece(payloadPiece) {
  */
 function pluginActions (Firebase$$1) {
     return {
+        duplicate: function (_a, id) {
+            var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
+            if (!getters.collectionMode)
+                return;
+            var doc = merge(getters.storeRef[id], { id: null });
+            return dispatch('insert', doc);
+        },
         patchDoc: function (_a, _b) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             var _c = _b === void 0 ? { ids: [], doc: {} } : _b, _d = _c.id, id = _d === void 0 ? '' : _d, _e = _c.ids, ids = _e === void 0 ? [] : _e, doc = _c.doc;
@@ -515,7 +572,8 @@ function pluginActions (Firebase$$1) {
             var inserts = state._sync.syncStack.inserts.concat(syncStack);
             state._sync.syncStack.inserts = inserts;
             // 3. Create or refresh debounce
-            return dispatch('handleSyncStackDebounce');
+            dispatch('handleSyncStackDebounce');
+            return docs.map(function (d) { return d.id; });
         },
         insertInitialDoc: function (_a) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
@@ -724,7 +782,6 @@ function pluginActions (Firebase$$1) {
                 if (_changeType === void 0) { _changeType = 'modified'; }
                 // define storeUpdateFn()
                 function storeUpdateFn(_doc) {
-                    console.log('_doc → ', _doc);
                     return dispatch('serverUpdate', { change: _changeType, id: id, doc: _doc });
                 }
                 // get user set sync hook function
@@ -750,9 +807,7 @@ function pluginActions (Firebase$$1) {
                         }
                         var doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues);
                         var id = state._conf.firestorePath.split('/').pop();
-                        console.log('id → ', id);
                         doc.id = id;
-                        console.log('doc → ', doc);
                         if (source === 'local')
                             return resolve();
                         handleDoc(null, id, doc, source);
@@ -1190,8 +1245,8 @@ function iniModule (userConfig, FirebaseDependency) {
         docContainer[conf.statePropName] = {};
     return {
         namespaced: true,
-        state: merge(pluginState, userState, docContainer, { _conf: conf }),
-        mutations: merge(userMutations, pluginMutations),
+        state: merge(pluginState(), userState, docContainer, { _conf: conf }),
+        mutations: merge(userMutations, pluginMutations()),
         actions: merge(userActions, pluginActions(FirebaseDependency)),
         getters: merge(userGetters, pluginGetters(FirebaseDependency))
     };

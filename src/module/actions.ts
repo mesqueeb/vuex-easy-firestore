@@ -16,6 +16,11 @@ import error from './errors'
  */
 export default function (Firebase: any): AnyObject {
   return {
+    duplicate ({state, getters, commit, dispatch}, id) {
+      if (!getters.collectionMode) return
+      const doc = merge(getters.storeRef[id], {id: null})
+      return dispatch('insert', doc)
+    },
     patchDoc (
       {state, getters, commit, dispatch},
       {id = '', ids = [], doc}: {id?: string, ids?: string[], doc?: AnyObject} = {ids: [], doc: {}}
@@ -82,7 +87,8 @@ export default function (Firebase: any): AnyObject {
       state._sync.syncStack.inserts = inserts
 
       // 3. Create or refresh debounce
-      return dispatch('handleSyncStackDebounce')
+      dispatch('handleSyncStackDebounce')
+      return docs.map(d => d.id)
     },
     insertInitialDoc ({state, getters, commit, dispatch}) {
       // 0. only docMode
