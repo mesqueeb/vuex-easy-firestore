@@ -255,7 +255,7 @@ function setDefaultValues (obj, defaultValues) {
     if (!isObject(obj))
         console.error('[vuex-easy-firestore] Trying to merge a non-object:', obj, 'onto the defaultValues:', defaultValues);
     var result = merge({ extensions: [convertTimestamps] }, defaultValues, obj);
-    return findAndReplace(result, '%convertTimestamp%', null);
+    return findAndReplace(result, '%convertTimestamp%', null, { onlyPlainObjects: true });
 }
 
 /**

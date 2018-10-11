@@ -4177,9 +4177,9 @@ find-and-replace-anything@^1.1.1:
   dependencies:
     is-what "^2.1.0"
 
-find-and-replace-anything@^1.1.2:
-  version "1.1.2"
-  resolved "https://registry.yarnpkg.com/find-and-replace-anything/-/find-and-replace-anything-1.1.2.tgz#321a11bb5255d5bafa7c518ea839b50235044e1d"
+find-and-replace-anything@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/find-and-replace-anything/-/find-and-replace-anything-1.2.0.tgz#d2f2b69718da4e7aee363441d42485274cf79a2d"
   dependencies:
     is-what "^3.0.1"
 
