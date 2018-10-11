@@ -38,5 +38,5 @@ export default function (obj: object, defaultValues: object): AnyObject {
   if (!isObject(defaultValues)) console.error('[vuex-easy-firestore] Trying to merge target:', obj, 'onto a non-object (defaultValues):', defaultValues)
   if (!isObject(obj)) console.error('[vuex-easy-firestore] Trying to merge a non-object:', obj, 'onto the defaultValues:', defaultValues)
   const result = merge({extensions: [convertTimestamps]}, defaultValues, obj)
-  return findAndReplace(result, '%convertTimestamp%', null)
+  return findAndReplace(result, '%convertTimestamp%', null, {onlyPlainObjects: true})
 }
