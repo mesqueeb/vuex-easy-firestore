@@ -56,21 +56,5 @@ export default [
   defaults({
     input: 'test/helpers/index.js',
     output: [ {file: 'test/helpers/index.cjs.js', format: 'cjs'} ]
-  }),
-  defaults({
-    input: 'src/utils/apiHelpers.ts',
-    output: [ {file: 'test/helpers/apiHelpers.cjs.js', format: 'cjs'} ]
-  }),
-  defaults({
-    input: 'src/utils/checkFillables.ts',
-    output: [ {file: 'test/helpers/checkFillables.cjs.js', format: 'cjs'} ]
-  }),
-  defaults({
-    input: 'src/utils/setDefaultValues.ts',
-    output: [ {file: 'test/helpers/setDefaultValues.cjs.js', format: 'cjs'} ]
-  }),
-  defaults({
-    input: 'src/utils/objectFlattenToPaths.ts',
-    output: [ {file: 'test/helpers/objectFlattenToPaths.cjs.js', format: 'cjs'} ]
   })
 ]

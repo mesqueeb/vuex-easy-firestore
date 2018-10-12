@@ -1,4 +1,4 @@
-import { grabUntilApiLimit, makeBatchFromSyncstack, isPathVar, pathVarKey } from './helpers/apiHelpers.cjs'
+import { grabUntilApiLimit, makeBatchFromSyncstack, isPathVar, pathVarKey } from '../src/utils/apiHelpers'
 import test from 'ava'
 
 const state = {
