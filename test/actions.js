@@ -1,7 +1,8 @@
-import { isObject, isArray, isDate } from 'is-what'
-import store from './helpers/index.cjs.js'
-import wait from './helpers/wait'
 import test from 'ava'
+import { isObject, isArray, isDate } from 'is-what'
+// import store from './helpers/index.cjs.js'
+import wait from './helpers/wait'
+const store = require('./helpers/index.cjs.js')
 import Firebase from './helpers/firestoreMock'
 
 // Mock for Firebase.firestore.FieldValue.serverTimestamp()
@@ -19,11 +20,20 @@ const box = store.state.pokemonBox
 const char = store.state.mainCharacter
 const boxRef = store.getters['pokemonBox/dbRef']
 const charRef = store.getters['mainCharacter/dbRef']
+
 // actions
 test('store set up', async t => {
   t.true(isObject(box.pokemon))
   t.true(isArray(char.items))
 })
+// test('test wait', async t => {
+//   console.log('_0')
+//   try { await wait() } catch (e) { console.error(e) }
+//   console.log('_1')
+//   try { await wait(2) } catch (e) { console.error(e) }
+//   console.log('_2')
+//   t.pass()
+// })
 test('set & delete: collection', async t => {
   const id = boxRef.doc().id
   const id2 = boxRef.doc().id
@@ -41,24 +51,15 @@ test('set & delete: collection', async t => {
   t.is(box.pokemon[id].name, 'Squirtle')
   t.is(box.pokemon[id].meta.date, date)
   t.true(isDate(box.pokemon[id].meta.firebaseServerTS)) // this is probably a feature of the firestore mock, but in reality will be different
-  console.log('0')
-  await wait(2)
-  console.log('1')
   let docR
   try {
-    console.log('2')
-    // docR = await boxRef.doc(id).get()
-    console.log('store.state.pokemonBox._conf.firestorePath → ', store.state.pokemonBox._conf.firestorePath)
-    await wait(2)
-    docR = await db.doc(`pokemonBoxes/Satoshi/pokemon/${id}`).get()
+    docR = await boxRef.doc(id).get()
   } catch (error) {
     return console.error(error)
   }
-  console.log('3')
-  await wait(2)
+  await wait()
   console.log('doc R → ', docR)
   const doc = docR.data()
-  await wait(2)
   console.log('doc.data() → ', doc)
   t.is(doc.name, 'Squirtle')
   t.falsy(doc.meta) // not a fillable

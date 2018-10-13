@@ -1,4 +1,5 @@
-import store from './helpers/index.cjs'
+// import store from './helpers/index.cjs.js'
+const store = require('./helpers/index.cjs.js')
 import test from 'ava'
 
 test('SET_PATHVARS', t => {
