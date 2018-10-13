@@ -128,7 +128,10 @@ function pluginMutations () {
         SET_PATHVARS: function (state, pathVars) {
             var self = this;
             Object.keys(pathVars).forEach(function (key) {
-                self._vm.$set(state._sync.pathVariables, key, pathVars[key]);
+                var pathPiece = pathVars[key];
+                self._vm.$set(state._sync.pathVariables, key, pathPiece);
+                var path = state._conf.firestorePath.replace("{" + key + "}", "" + pathPiece);
+                state._conf.firestorePath = path;
             });
         },
         resetSyncStack: function (state) {
@@ -1071,13 +1074,6 @@ function pluginGetters (Firebase$$1) {
             }
             else {
                 path = state._conf.firestorePath;
-            }
-            // replace pathVariables
-            if (Object.keys(state._sync.pathVariables).length) {
-                Object.keys(state._sync.pathVariables).forEach(function (_pathVarKey) {
-                    var pathVarVal = state._sync.pathVariables[_pathVarKey];
-                    path = path.replace("/{" + _pathVarKey + "}/", "/" + pathVarVal + "/");
-                });
             }
             return (getters.collectionMode)
                 ? Firebase$$1.firestore().collection(path)

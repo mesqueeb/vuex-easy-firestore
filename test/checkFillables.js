@@ -1,4 +1,4 @@
-import checkFillables from './helpers/checkFillables.cjs'
+import checkFillables from '../src/utils/checkFillables'
 import test from 'ava'
 
 test('checkFillables', t => {

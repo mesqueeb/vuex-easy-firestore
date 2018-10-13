@@ -1,6 +1,5 @@
 import test from 'ava'
-// import flatten from '../src/utils/objectFlattenToPaths'
-import flatten from './helpers/objectFlattenToPaths.cjs'
+import flatten from '../src/utils/objectFlattenToPaths'
 
 // Mock for Firebase.firestore.FieldValue.serverTimestamp()
 const Firebase = {

@@ -15,7 +15,10 @@ export default function (): AnyObject {
     SET_PATHVARS (state, pathVars) {
       const self = this
       Object.keys(pathVars).forEach(key => {
-        self._vm.$set(state._sync.pathVariables, key, pathVars[key])
+        const pathPiece = pathVars[key]
+        self._vm.$set(state._sync.pathVariables, key, pathPiece)
+        const path = state._conf.firestorePath.replace(`{${key}}`, `${pathPiece}`)
+        state._conf.firestorePath = path
       })
     },
     resetSyncStack (state) {

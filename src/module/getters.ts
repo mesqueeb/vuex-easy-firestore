@@ -37,13 +37,6 @@ export default function (Firebase: any): AnyObject {
       } else {
         path = state._conf.firestorePath
       }
-      // replace pathVariables
-      if (Object.keys(state._sync.pathVariables).length) {
-        Object.keys(state._sync.pathVariables).forEach(_pathVarKey => {
-          const pathVarVal = state._sync.pathVariables[_pathVarKey]
-          path = path.replace(`/{${_pathVarKey}}/`, `/${pathVarVal}/`)
-        })
-      }
       return (getters.collectionMode)
         ? Firebase.firestore().collection(path)
         : Firebase.firestore().doc(path)
