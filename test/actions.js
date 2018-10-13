@@ -1,29 +1,32 @@
-import { isObject, isArray } from 'is-what'
+import { isObject, isArray, isDate } from 'is-what'
 import store from './helpers/index.cjs.js'
-import wait from './helpers/wait.js'
+import wait from './helpers/wait'
 import test from 'ava'
+import Firebase from './helpers/firestoreMock'
 
 // Mock for Firebase.firestore.FieldValue.serverTimestamp()
-const Firebase = {
-  firestore: {
-    FieldValue: {
-      serverTimestamp: function () {
-        return {methodName: 'FieldValue.serverTimestamp'}
-      }
-    }
-  }
-}
-
+// const Firebase = {
+//   firestore: {
+//     FieldValue: {
+//       serverTimestamp: function () {
+//         return {methodName: 'FieldValue.serverTimestamp'}
+//       }
+//     }
+//   }
+// }
+const db = Firebase.firestore()
 const box = store.state.pokemonBox
 const char = store.state.mainCharacter
+const boxRef = store.getters['pokemonBox/dbRef']
+const charRef = store.getters['mainCharacter/dbRef']
 // actions
 test('store set up', async t => {
   t.true(isObject(box.pokemon))
   t.true(isArray(char.items))
 })
 test('set & delete: collection', async t => {
-  const id = store.getters['pokemonBox/dbRef'].doc().id
-  const id2 = store.getters['pokemonBox/dbRef'].doc().id
+  const id = boxRef.doc().id
+  const id2 = boxRef.doc().id
   const date = new Date()
   // ini set
   const pokemonValues = {
@@ -37,7 +40,28 @@ test('set & delete: collection', async t => {
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Squirtle')
   t.is(box.pokemon[id].meta.date, date)
-  t.deepEqual(box.pokemon[id].meta.firebaseServerTS, {methodName: 'FieldValue.serverTimestamp'})
+  t.true(isDate(box.pokemon[id].meta.firebaseServerTS)) // this is probably a feature of the firestore mock, but in reality will be different
+  console.log('0')
+  await wait(2)
+  console.log('1')
+  let docR
+  try {
+    console.log('2')
+    // docR = await boxRef.doc(id).get()
+    console.log('store.state.pokemonBox._conf.firestorePath → ', store.state.pokemonBox._conf.firestorePath)
+    await wait(2)
+    docR = await db.doc(`pokemonBoxes/Satoshi/pokemon/${id}`).get()
+  } catch (error) {
+    return console.error(error)
+  }
+  console.log('3')
+  await wait(2)
+  console.log('doc R → ', docR)
+  const doc = docR.data()
+  await wait(2)
+  console.log('doc.data() → ', doc)
+  t.is(doc.name, 'Squirtle')
+  t.falsy(doc.meta) // not a fillable
   // update
   const date2 = new Date('1990-06-22')
   const pokemonValuesNew = {
@@ -100,56 +124,3 @@ test('set & delete: doc', async t => {
   t.truthy(char.a.met)
   t.falsy(char.a.met.de)
 })
-test('insert & INSERT', async t => {
-  t.pass()
-  // await wait()
-})
-test('patch', async t => {
-  t.pass()
-  // await wait()
-})
-test('patchBatch', async t => {
-  t.pass()
-  // await wait()
-})
-
-test('sync: where', async t => {
-  t.pass()
-  // await wait()
-})
-test('sync: orderBy', async t => {
-  t.pass()
-  // await wait()
-})
-test('sync: fillables & guard', async t => {
-  const id = store.getters['pokemonBox/dbRef'].doc().id
-  store.dispatch('pokemonBox/set', {name: 'Squirtle', id, type: ['water'], fillable: true, guarded: true})
-  t.truthy(box.pokemon[id])
-  t.is(box.pokemon[id].name, 'Squirtle')
-  t.is(box.pokemon[id].fillable, true)
-  // fetch from server to check if guarded is undefined or not
-  // t.is(box.pokemon[id].guarded, undefined)
-})
-
-test('sync: insertHook & patchHook', async t => {
-  const id = store.getters['pokemonBox/dbRef'].doc().id
-  store.dispatch('pokemonBox/set', {name: 'Horsea', id, type: ['water']})
-  t.truthy(box.pokemon[id])
-  t.is(box.pokemon[id].name, 'Horsea')
-  t.is(box.pokemon[id].addedBeforeInsert, true)
-  t.is(box.pokemon[id].addedBeforePatch, undefined)
-  store.dispatch('pokemonBox/set', {id, name: 'James'})
-  t.is(box.pokemon[id].addedBeforeInsert, true)
-  t.is(box.pokemon[id].addedBeforePatch, true)
-  store.dispatch('pokemonBox/delete', id)
-  t.falsy(box.pokemon[id])
-})
-test('sync: deleteHook', async t => {
-  const id = 'stopBeforeDelete'
-  store.dispatch('pokemonBox/set', {name: 'Ditto', id, type: ['normal']})
-  t.truthy(box.pokemon[id])
-  store.dispatch('pokemonBox/delete', id)
-  t.truthy(box.pokemon[id])
-})
-
-// store.dispatch('pokemonBox/set', {name: 'bulbasaur'})
