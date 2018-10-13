@@ -51,16 +51,10 @@ test('set & delete: collection', async t => {
   t.is(box.pokemon[id].name, 'Squirtle')
   t.is(box.pokemon[id].meta.date, date)
   t.true(isDate(box.pokemon[id].meta.firebaseServerTS)) // this is probably a feature of the firestore mock, but in reality will be different
-  let docR
-  try {
-    docR = await boxRef.doc(id).get()
-  } catch (error) {
-    return console.error(error)
-  }
-  await wait()
-  console.log('doc R → ', docR)
-  const doc = docR.data()
-  console.log('doc.data() → ', doc)
+  await wait(2)
+  let docR, doc
+  docR = await boxRef.doc(id).get()
+  doc = docR.data()
   t.is(doc.name, 'Squirtle')
   t.falsy(doc.meta) // not a fillable
   // update
@@ -75,21 +69,44 @@ test('set & delete: collection', async t => {
   t.is(box.pokemon[id].name, 'COOL Squirtle!')
   t.deepEqual(box.pokemon[id].type, ['water'])
   t.is(box.pokemon[id].meta.date, date2)
+  await wait(2)
+  docR = await boxRef.doc(id).get()
+  t.is(docR.exists, true)
+  doc = docR.data()
+  t.is(doc.name, 'COOL Squirtle!')
+  t.deepEqual(doc.type, ['water'])
+
   // deep update
   store.dispatch('pokemonBox/set', {type: ['water', 'normal'], id})
   t.deepEqual(box.pokemon[id].type, ['water', 'normal'])
+  await wait(2)
+  docR = await boxRef.doc(id).get()
+  doc = docR.data()
+  t.deepEqual(doc.type, ['water', 'normal'])
+
   // ini set
   store.dispatch('pokemonBox/set', {name: 'Charmender', id: id2})
   t.truthy(box.pokemon[id2])
   t.is(box.pokemon[id2].name, 'Charmender')
+  await wait(2)
+  docR = await boxRef.doc(id2).get()
+  t.is(docR.exists, true)
+  doc = docR.data()
+  t.is(doc.name, 'Charmender')
+
   // delete
   store.dispatch('pokemonBox/delete', id)
   t.falsy(box.pokemon[id])
+  await wait(2)
+  docR = await boxRef.doc(id).get()
+  t.is(docR.exists, false)
+
   // DELETE
   t.truthy(box.pokemon[id2])
   store.commit('pokemonBox/DELETE_DOC', id2)
   t.falsy(box.pokemon[id2])
 })
+
 // test('set & delete: batches', async t => {
 //   // ini set
 //   await wait(3)
