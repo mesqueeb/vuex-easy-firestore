@@ -10,9 +10,9 @@ function initialState () {
 
 export default {
   // easy firestore config
-  firestorePath: 'playerCharacters/Satoshi',
+  firestorePath: 'coll/{name}',
   firestoreRefType: 'doc',
-  moduleName: 'mainCharacter',
+  moduleName: 'testPathVar',
   statePropName: '',
   // module
   state: initialState(),
