@@ -4,7 +4,6 @@ import wait from './helpers/wait'
 import Firebase from './helpers/firestoreMock'
 import store from './helpers/index.cjs.js'
 
-const db = Firebase.firestore()
 const box = store.state.pokemonBox
 const char = store.state.mainCharacter
 const boxRef = store.getters['pokemonBox/dbRef']
