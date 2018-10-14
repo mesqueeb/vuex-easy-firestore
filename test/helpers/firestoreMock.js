@@ -18,7 +18,31 @@ const fixtureData = {
             }
           }
         },
+        '{playerName}': {
+          name: 'Satoshi',
+          pokemonBelt: [],
+          items: [],
+
+          __collection__: {
+            pokemon: {
+              __doc__: {
+                '152___': {
+                  name: 'Chikorita___'
+                }
+              }
+            }
+          }
+        },
       }
+    },
+    playerCharacters: {
+      __doc__: {
+        Satoshi: {
+          name: 'Satoshi',
+          pokemonBelt: [],
+          items: [],
+        }
+      },
     }
   }
 }

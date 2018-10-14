@@ -4,19 +4,12 @@ Do you have questions, comments, suggestions or feedback? Or any feature that's 
 
 Planned future features:
 
-- Action to duplicate doc(s)
+- Create a YouTube video
 - Documentation
   - Add other documentation languages
   - Improve 'patching' documentation for loaders/spinners
-- Improve tests
-  - test different configurations
-  - use a firestore mock
-    - [expect-firestore](https://github.com/GitbookIO/expect-firestore)
-    - [mock-cloud-firestore](https://github.com/rmmmp/mock-cloud-firestore)
-    - [firebase-mock](https://github.com/soumak77/firebase-mock/blob/master/tutorials/client/firestore.md)
-- Improve under the hood syntax (`_dbConf` instead of `_conf`)
-- Improve error handling
-  - Warn when there is a `_conf` state prop
+- Improve under the hood syntax (consider using `_vuexEasyFirestoreConf` instead of `_conf`)
+- Warn when there are props that clash with this library
 
 Also be sure to check out the **sister vuex-plugin** [Vuex Easy Access](https://mesqueeb.github.io/vuex-easy-access)!
 

@@ -54,7 +54,11 @@ export default [
     ],
   }),
   defaults({
-    input: 'test/helpers/index.js',
+    input: 'test/helpers/index.ts',
     output: [ {file: 'test/helpers/index.cjs.js', format: 'cjs'} ]
+  }),
+  defaults({
+    input: 'src/utils/setDefaultValues.ts',
+    output: [ {file: 'test/helpers/utils/setDefaultValues.js', format: 'cjs'} ]
   })
 ]

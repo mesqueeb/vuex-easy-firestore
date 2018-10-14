@@ -1,4 +1,4 @@
-import './firestore'
+// import './firestore'
 import store from './store'
 
 // store.dispatch('mainCharacter/openDBChannel')

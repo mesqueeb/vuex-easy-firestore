@@ -103,7 +103,7 @@ guard: ['email']
 
 ## Hooks before insert/patch/delete
 
-A function where you can check something or even change the doc (the doc object) before the store mutation occurs.
+A function where you can check something or even change the doc (the doc object) before the store mutation occurs. The `doc` passed in these hooks will also have an `id` field which is the id with which it will be added to the store and to Firestore.
 
 ```js
 {
@@ -121,7 +121,7 @@ A function where you can check something or even change the doc (the doc object)
 ```
 
 ::: warning You must call `updateStore(doc)` to make the store mutation.
-But you may choose not to call this to abort the mutation.
+But you may choose not to call this to abort the mutation. If you do not call `updateStore(doc)` nothing will happen.
 :::
 
 ## Hooks after changes on the server
@@ -191,3 +191,20 @@ const docToBeInserted = {date: null}
 ```
 
 To learn more about Firestore's Timestamp format see [here](https://firebase.google.com/docs/reference/js/firebase.firestore.Timestamp).
+
+## Pass Firebase dependency
+
+Vuex Easy Firestore will automatically use Firebase as a peer dependency to access `Firebase.auth()` etc. If you want to pass a Firebase instance you have instantiated yourself you can do so like this:
+
+```js
+// make sure you import at least auth and firestore as well:
+import * as Firebase from 'firebase/app'
+import 'firebase/auth'
+import 'firebase/firestore'
+
+import createEasyFirestore from 'vuex-easy-firestore'
+const easyFirestore = createEasyFirestore(
+  userDataModule,
+  {logging: true, FirebaseDependency: Firebase} // pass Firebase like this. Mind the Capital F!
+)
+```

@@ -1,4 +1,4 @@
-import checkFillables from '../src/utils/checkFillables'
+import checkFillables from '../../src/utils/checkFillables'
 import test from 'ava'
 
 test('checkFillables', t => {

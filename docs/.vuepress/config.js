@@ -5,6 +5,7 @@ module.exports = {
   base: '/vuex-easy-firestore/',
   ga: 'UA-92965499-3',
   themeConfig: {
+    sidebarDepth: 1,
     displayAllHeaders: true,
     sidebar: [
       ['/setup', 'Installation & setup'],

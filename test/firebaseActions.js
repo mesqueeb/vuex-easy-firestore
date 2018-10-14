@@ -1,5 +1,14 @@
 import test from 'ava'
 
+test('sync: where', async t => {
+  t.pass()
+  // await wait()
+})
+test('sync: orderBy', async t => {
+  t.pass()
+  // await wait()
+})
+
 test('fetch', async t => {
   t.pass()
   // await wait()

@@ -6,8 +6,17 @@ Basically with just 4 actions (set, patch, insert, delete) you can make changes 
 
 There are two ways to use vuex-easy-firestore, in 'collection' or 'doc' mode. You can only choose one because this points to the path you sync your vuex module to:
 
-- `firestoreRefType: 'collection'` for a firestore collection
-- `firestoreRefType: 'doc'` for a single firestore document
+**Collection mode**
+- `firestoreRefType: 'collection'`
+- `firestorePath` should be a firestore collection
+- Use when working with multiple documents, all docs will automatically be retrieved and sync when making changes.
+- eg. when a user has multiple "items" like a to-do list
+
+**Doc mode**
+- `firestoreRefType: 'doc'`
+- `firestorePath` should be a single firestore document
+- Use when working with a single doc.
+- eg. the "settings" or "config" of a user.
 
 Depending on which mode there are some small changes, but the syntax is mostly the same.
 
@@ -15,22 +24,26 @@ The sync is fully robust and **automatically groups any api calls per 1000 ms**.
 
 ## 'collection' mode
 
-With these 4 actions: set, patch, insert and delete, you can edit **single docs** in your vuex module. Any updates made with these actions will keep your firestore in sync!
+Opening [the DB channel](setup.html#open-db-channel) will retrieve all docs in your collection and add them to the vuex-module.
+
+Then with these 4 actions: set, patch, insert and delete, you can edit **single docs** of your collection. These actions make sure Firestore will stay in sync.
 
 ```js
-dispatch('moduleName/set', doc) // will choose to dispatch either `patch` OR `insert` automatically
+dispatch('moduleName/set', doc)
+// 'set' will choose to dispatch either `patch` OR `insert` automatically
+
 dispatch('moduleName/patch', doc) // doc needs an 'id' prop
 dispatch('moduleName/insert', doc)
 dispatch('moduleName/delete', id)
 ```
 
-There are two ways you can give a payload to `set`, `patch` or `insert`:
+**Inserting will automatically add an ID**, but for patching you will need to add the `id` to the payload. There are two ways you can do this:
 
 ```js
 const id = '123'
 // Add the `id` as a prop to the item you want to set/update:
 dispatch('moduleName/set', {id, name: 'my new name'})
-// Or use the `id` as [key] and the item as its value:
+// OR use the `id` as [key] and the item as its value:
 dispatch('moduleName/set', {[id]: {name: 'my new name'}})
 
 // Please note that only the `name` will be updated, and other fields are left alone!
@@ -56,15 +69,7 @@ dispatch('moduleName/delete', `${id}.tags.water`)
 
 In the above example you can see that you can delete a sub-property by passing a string and separate sub-props with `.`
 
-### Batch updates/inserts/deletions
-
-In cases you don't want to loop through items you can also use the special batch actions below. The main difference is you will have separate hooks (see [hooks](extra-features.html#hooks-before-insert-patch-delete)), and batches are optimised to update the vuex store first for all changes and the syncs to firestore last.
-
-```js
-dispatch('moduleName/insertBatch', docs) // an array of docs
-dispatch('moduleName/patchBatch', {doc: {}, ids: []}) // `doc` is an object with the fields to patch, `ids` is an array
-dispatch('moduleName/deleteBatch', ids) // an array of ids
-```
+For batch actions see [here](#batch-updates-inserts-deletions).
 
 ### Auto-generated fields
 
@@ -73,9 +78,37 @@ When working with collections, each document insert or update will automatically
 - `created_at` / `updated_at` both use: `Firebase.firestore.FieldValue.serverTimestamp()`
 - `created_by` / `updated_by` will automatically fill in the userId
 
+### Manually assigning doc IDs
+
+You can, **but do not need to**, assign doc IDs manually.
+
+Every insert will automatically generate an ID and return a promise resolving in the ID of the doc added to the store and Firestore.
+
+This is how you can use the auto-generated ID:
+
+```js
+const id = await dispatch('moduleName/insert', newDoc) // returns id
+// mind the await!
+```
+
+**When assigning ID's manually** the recommended way to do so is:
+
+```js
+// assign manually
+const id = getters['moduleName/dbRef'].doc().id
+const newDoc = {id, /* and other fields */}
+dispatch('moduleName/insert', newDoc)
+```
+
+As you can see in the example above, each vuex-easy-firestore module has a getter called `dbRef` with the reference of your `firestorePath`. So when you add `.doc().id` to that reference you will "create" a new ID, just how Firestore would do it. This way you can do whatever you want with the ID before / after the insert.
+
+Please note you can also access the ID (even if you don't manually pass it) in the [hooks](extra-features.html#hooks-before-insert-patch-delete).
+
 ## 'doc' mode
 
-In 'doc' mode all changes will take effect on the single document you have passed in the firestorePath. You will be able to use these actions:
+In 'doc' mode all changes will take effect on the single document you have passed in the firestorePath.
+
+You will be able to use these actions:
 
 ```js
 dispatch('moduleName/set', {name: 'my new name'}) // same as `patch`
@@ -99,6 +132,13 @@ dispatch('moduleName/delete', 'settings.banned')
   }
 }
 ```
+
+### Auto-generated fields
+
+When working with a single doc, your document updates will automatically receive these fields:
+
+- `updated_at` uses: `Firebase.firestore.FieldValue.serverTimestamp()`
+- `updated_by` will automatically fill in the userId
 
 ## Shortcut: set(path, doc)
 
@@ -183,7 +223,23 @@ const settingsModule = {
 }
 ```
 
+## Batch updates/inserts/deletions
+
+> Only for collection mode.
+
+In cases you don't want to loop through items you can also use the special batch actions below. The main difference is you will have separate hooks (see [hooks](extra-features.html#hooks-before-insert-patch-delete)), and batches are optimised to update the vuex store first for all changes and the syncs to firestore last.
+
+```js
+dispatch('moduleName/insertBatch', docs) // an array of docs
+dispatch('moduleName/patchBatch', {doc: {}, ids: []}) // `doc` is an object with the fields to patch, `ids` is an array
+dispatch('moduleName/deleteBatch', ids) // an array of ids
+```
+
+> All batch actions will return a promise resolving to an array of the edited / added ids.
+
 ## Fetching docs (with different filters)
+
+> Only for collection mode.
 
 Say that you have a default filter set on the documents you are syncing when you `openDBChannel` (see [Filters](extra-features.html#filters)). And you want to fetch extra documents with other filters. (eg. archived posts) In this case you can use the fetch actions to retrieve documents from the same firestore path your module is synced to:
 
@@ -261,3 +317,41 @@ You can change the default fetch limit like so:
   },
 }
 ```
+
+## Duplicating docs
+
+> Only for collection mode.
+
+You can duplicate a document really simply by dispatching 'duplicate' like so:
+
+```js
+// let's duplicate Bulbasaur
+const docIdToDuplicate = '001'
+dispatch('pokemonBox/duplicate', docIdToDuplicate)
+// This will create a copy of Bulbasaur with a random ID
+```
+
+If you need to obtain the ID that was used for the duplicate you can do:
+
+```js
+const idMap = await dispatch('pokemonBox/duplicate', '001')
+// mind the await!
+// idMap will look like this:
+{'001': dupeId} // dupeId will be a string!!
+```
+
+The reason we return an object with the id of the new duplicated document as value is to streamline it with 'duplicateBatch'.
+
+This is how you duplicate a batch of ID's:
+
+```js
+const idMap = await dispatch('pokemonBox/duplicateBatch', ['001', '004', '007'])
+// idMap will look like this:
+{
+  '001': dupeIdBulbasaur,
+  '004': dupeIdCharmender,
+  '007': dupeIdSquirtle,
+}
+```
+
+This way you can use the result if you need to do extra things to your duplicated docs and you will know for each ID which new ID was used to make a duplication.
