@@ -65,14 +65,14 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.deepEqual(doc.type, ['water', 'normal'])
 
   // SECOND SET + set chooses insert appropriately
-  store.dispatch('pokemonBox/set', {name: 'Charmender', id: id2})
+  store.dispatch('pokemonBox/set', {name: 'Charmander', id: id2})
   t.truthy(box.pokemon[id2])
-  t.is(box.pokemon[id2].name, 'Charmender')
+  t.is(box.pokemon[id2].name, 'Charmander')
   await wait(2)
   docR = await boxRef.doc(id2).get()
   t.is(docR.exists, true)
   doc = docR.data()
-  t.is(doc.name, 'Charmender')
+  t.is(doc.name, 'Charmander')
 
   // delete
   store.dispatch('pokemonBox/delete', id)

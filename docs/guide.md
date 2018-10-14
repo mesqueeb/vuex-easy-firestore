@@ -349,7 +349,7 @@ const idMap = await dispatch('pokemonBox/duplicateBatch', ['001', '004', '007'])
 // idMap will look like this:
 {
   '001': dupeIdBulbasaur,
-  '004': dupeIdCharmender,
+  '004': dupeIdCharmander,
   '007': dupeIdSquirtle,
 }
 ```
