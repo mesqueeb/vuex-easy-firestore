@@ -62,6 +62,8 @@ You can, **but do not need to**, assign doc IDs manually.
 
 Every insert will automatically generate an ID and return a promise resolving in the ID of the doc added to the store and Firestore.
 
+This is how you can use the auto-generated ID:
+
 ```js
 const id = await dispatch('moduleName/insert', newDoc) // returns id
 // mind the await!
@@ -76,9 +78,9 @@ const newDoc = {id, /* and other fields */}
 dispatch('moduleName/insert', newDoc)
 ```
 
-As you can see in the example above, each vuex-easy-firestore module has a getter called `dbRef` with the reference of your `firestorePath`. So when you add `.doc().id` to that reference you will "create" a new ID, just how Firestore would do it.
+As you can see in the example above, each vuex-easy-firestore module has a getter called `dbRef` with the reference of your `firestorePath`. So when you add `.doc().id` to that reference you will "create" a new ID, just how Firestore would do it. This way you can do whatever you want with the ID before / after the insert.
 
-This way you can do whatever you want with the ID before / after the insert. Please note you can also access the ID (even if you don't manually pass it) in the [hooks](https://mesqueeb.github.io/vuex-easy-firestore/extra-features.html#hooks-before-insert-patch-delete).
+Please note you can also access the ID (even if you don't manually pass it) in the [hooks](https://mesqueeb.github.io/vuex-easy-firestore/extra-features.html#hooks-before-insert-patch-delete).
 
 ### Auto-generated fields
 
