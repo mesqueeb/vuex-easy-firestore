@@ -11,11 +11,24 @@ module.exports = function (wallaby) {
       type: 'node',
       runner: 'node'
     },
+    // compilers: {
+    //   '**/*.+(js|ts)': wallaby.compilers.typeScript({allowJs: true, outDir: './bin'}),
+    // },
+    // preprocessors: {
+    //   '**/*.jsts': file => file.changeExt('js').content
+    // },
     compilers: {
-      '**/*.+(js|ts)': wallaby.compilers.typeScript({allowJs: true, outDir: './bin'})
+      '**/*.js': wallaby.compilers.babel({
+        presets: ['@babel/env', '@ava/babel-preset-stage-4']
+      }),
     },
     preprocessors: {
-      '**/*.jsts': file => file.changeExt('js').content
+      '**/*.js': file => require('@babel/core').transform(
+        file.content,
+        {
+          sourceMap: true, compact: false, filename: file.path,
+          presets: ['@babel/env', '@ava/babel-preset-stage-4']
+        })
     },
     testFramework: 'ava',
     debug: true
