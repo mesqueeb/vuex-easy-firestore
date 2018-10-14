@@ -293,7 +293,7 @@ export default function (Firebase: any): AnyObject {
       }
       // make a promise
       return new Promise((resolve, reject) => {
-        dbRef.onSnapshot(querySnapshot => {
+        const unsubscribe = dbRef.onSnapshot(querySnapshot => {
           const source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
           if (!getters.collectionMode) {
             if (!querySnapshot.data()) {
@@ -328,7 +328,14 @@ export default function (Firebase: any): AnyObject {
           state._sync.patching = 'error'
           return reject(error)
         })
+        state._sync.unsubscribe = unsubscribe
       })
+    },
+    closeDBChannel ({getters, state, commit, dispatch}, { clearModule = false } = { clearModule: false }) {
+      if (clearModule) {
+        commit('RESET_VUEX_EASY_FIRESTORE_STATE')
+      }
+      if (isFunction(state._sync.unsubscribe)) return state._sync.unsubscribe()
     },
     set ({commit, dispatch, getters, state}, doc) {
       if (!doc) return

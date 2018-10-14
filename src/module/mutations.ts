@@ -8,9 +8,10 @@ import { AnyObject } from '../declarations'
  * a function returning the mutations object
  *
  * @export
+ * @param {object} userState
  * @returns {AnyObject} the mutations object
  */
-export default function (): AnyObject {
+export default function (userState: object): AnyObject {
   return {
     SET_PATHVARS (state, pathVars) {
       const self = this
@@ -20,6 +21,31 @@ export default function (): AnyObject {
         const path = state._conf.firestorePath.replace(`{${key}}`, `${pathPiece}`)
         state._conf.firestorePath = path
       })
+    },
+    RESET_VUEX_EASY_FIRESTORE_STATE (state) {
+      const self = this
+      const _sync = merge(state._sync, {
+        unsubscribe: null,
+        pathVariables: {},
+        patching: false,
+        syncStack: {
+          inserts: [],
+          updates: {},
+          deletions: [],
+          propDeletions: [],
+          debounceTimer: null,
+        },
+        fetched: {},
+        stopPatchingTimeout: null
+      })
+      const newState = merge(userState, {_sync})
+      if (state._conf.statePropName) {
+        Object.keys(newState).forEach(key => {
+          self._vm.$set(state, key, newState[key])
+        })
+        return self._vm.$set(state, state._conf.statePropName, {})
+      }
+      state = newState
     },
     resetSyncStack (state) {
       state._sync.syncStack = {
