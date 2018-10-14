@@ -21,7 +21,7 @@ export default {
   sync: {
     where: [['id', '==', '{pokeId}']],
     orderBy: [],
-    fillables: ['fillable', 'name', 'id', 'type', 'freed'],
+    fillables: ['fillable', 'name', 'id', 'type', 'freed', 'nested'],
     guard: ['guarded'],
     // HOOKS for local changes:
     insertHook: function (updateStore, doc, store) {

@@ -4,7 +4,10 @@ import mainCharacter from './mainCharacter'
 import createFirestores from '../../../src/index'
 import Firestore from '../firestoreMock'
 
-const easyFirestores = createFirestores([pokemonBox, mainCharacter, testPathVar], {logging: true, FirebaseDependency: Firestore})
+const easyFirestores = createFirestores(
+  [pokemonBox, mainCharacter, testPathVar],
+  {logging: false, FirebaseDependency: Firestore}
+)
 
 export default {
   plugins: [easyFirestores]

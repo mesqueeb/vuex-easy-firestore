@@ -1,20 +1,9 @@
 import test from 'ava'
 import { isObject, isArray, isDate } from 'is-what'
-// import store from './helpers/index.cjs.js'
 import wait from './helpers/wait'
-const store = require('./helpers/index.cjs.js')
 import Firebase from './helpers/firestoreMock'
+import store from './helpers/index.cjs.js'
 
-// Mock for Firebase.firestore.FieldValue.serverTimestamp()
-// const Firebase = {
-//   firestore: {
-//     FieldValue: {
-//       serverTimestamp: function () {
-//         return {methodName: 'FieldValue.serverTimestamp'}
-//       }
-//     }
-//   }
-// }
 const db = Firebase.firestore()
 const box = store.state.pokemonBox
 const char = store.state.mainCharacter
@@ -26,15 +15,8 @@ test('store set up', async t => {
   t.true(isObject(box.pokemon))
   t.true(isArray(char.items))
 })
-// test('test wait', async t => {
-//   console.log('_0')
-//   try { await wait() } catch (e) { console.error(e) }
-//   console.log('_1')
-//   try { await wait(2) } catch (e) { console.error(e) }
-//   console.log('_2')
-//   t.pass()
-// })
-test('set & delete: collection', async t => {
+
+test('[COLLECTION] set & delete: top lvl', async t => {
   const id = boxRef.doc().id
   const id2 = boxRef.doc().id
   const date = new Date()
@@ -50,7 +32,7 @@ test('set & delete: collection', async t => {
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Squirtle')
   t.is(box.pokemon[id].meta.date, date)
-  t.true(isDate(box.pokemon[id].meta.firebaseServerTS)) // this is probably a feature of the firestore mock, but in reality will be different
+  // t.true(isDate(box.pokemon[id].meta.firebaseServerTS.toDate())) // this is probably a feature of the firestore mock, but in reality will be different
   await wait(2)
   let docR, doc
   docR = await boxRef.doc(id).get()
@@ -76,7 +58,7 @@ test('set & delete: collection', async t => {
   t.is(doc.name, 'COOL Squirtle!')
   t.deepEqual(doc.type, ['water'])
 
-  // deep update
+  // update arrays
   store.dispatch('pokemonBox/set', {type: ['water', 'normal'], id})
   t.deepEqual(box.pokemon[id].type, ['water', 'normal'])
   await wait(2)
@@ -84,7 +66,7 @@ test('set & delete: collection', async t => {
   doc = docR.data()
   t.deepEqual(doc.type, ['water', 'normal'])
 
-  // ini set
+  // SECOND SET + set chooses insert appropriately
   store.dispatch('pokemonBox/set', {name: 'Charmender', id: id2})
   t.truthy(box.pokemon[id2])
   t.is(box.pokemon[id2].name, 'Charmender')
@@ -107,6 +89,33 @@ test('set & delete: collection', async t => {
   t.falsy(box.pokemon[id2])
 })
 
+// test('[COLLECTION] set & delete: deep', async t => {
+//   let docR, doc
+
+//   const id = boxRef.doc().id
+//   store.dispatch('pokemonBox/insert', {id})
+//   t.truthy(box.pokemon[id])
+//   await wait(2)
+//   docR = await boxRef.doc(id).get()
+//   doc = docR.data()
+//   t.truthy(doc)
+//   // update
+//   store.dispatch('pokemonBox/set', {[id]: {nested: {a: {met: {de: 'aba'}}}}})
+//   t.deepEqual(box.pokemon[id].nested, {a: {met: {de: 'aba'}}})
+//   await wait(2)
+//   docR = await boxRef.doc(id).get()
+//   doc = docR.data()
+//   t.deepEqual(doc.nested, {a: {met: {de: 'aba'}}})
+
+//   // delete
+//   store.dispatch('pokemonBox/set', {[id]: {nested: {a: {met: {de: Firebase.firestore.FieldValue.delete()}}}}})
+//   t.deepEqual(box.pokemon[id].nested, {a: {met: {}}})
+//   await wait(2)
+//   docR = await boxRef.doc(id).get()
+//   doc = docR.data()
+//   t.deepEqual(doc.nested, {a: {met: {}}})
+// })
+
 // test('set & delete: batches', async t => {
 //   // ini set
 //   await wait(3)
@@ -122,23 +131,48 @@ test('set & delete: collection', async t => {
 //   console.log('finish batch')
 //   t.pass()
 // })
-test('set & delete: doc', async t => {
-  // existing prop set
+
+test('[DOC] set & delete: top lvl', async t => {
+  // EXISTING prop set
   store.dispatch('mainCharacter/set', {items: ['Pokeball']})
   t.true(char.items.includes('Pokeball'))
   t.deepEqual(char.items, ['Pokeball'])
-  // new prop set
+  // NEW prop set
   store.dispatch('mainCharacter/set', {newProp: 'Klappie'})
   t.truthy(char.newProp)
   t.is(char.newProp, 'Klappie')
-  store.dispatch('mainCharacter/set', {a: {met: {de: 'aba'}}})
-  t.truthy(char.a.met.de)
-  t.is(char.a.met.de, 'aba')
+  await wait(2)
+  let docR, doc
+  docR = await charRef.get()
+  doc = docR.data()
+  t.truthy(doc.newProp)
+  t.is(doc.newProp, 'Klappie')
+
   // delete
   store.dispatch('mainCharacter/delete', 'newProp')
   t.falsy(char.newProp)
-  // DELETE
-  store.commit('mainCharacter/DELETE_PROP', 'a.met.de')
-  t.truthy(char.a.met)
-  t.falsy(char.a.met.de)
+  await wait(2)
+  docR = await charRef.get()
+  doc = docR.data()
+  t.truthy(doc)
+  t.falsy(doc.newProp)
 })
+
+// test('[DOC] set & delete: deep', async t => {
+//   store.dispatch('mainCharacter/set', {a: {met: {de: 'aba'}}})
+//   t.truthy(char.a.met.de)
+//   t.is(char.a.met.de, 'aba')
+//   await wait(2)
+//   let docR, doc
+//   docR = await charRef.get()
+//   console.log('docR → ', docR)
+//   doc = docR.data()
+//   console.log('doc → ', doc)
+//   t.truthy(doc.a.met.de)
+//   t.is(doc.a.met.de, 'aba')
+
+//   // delete
+//   store.dispatch('mainCharacter/delete', 'a.met.de')
+//   t.truthy(char.a.met)
+//   t.falsy(char.a.met.de)
+// })

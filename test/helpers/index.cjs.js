@@ -30,7 +30,7 @@ var pokemonBox = {
     sync: {
         where: [['id', '==', '{pokeId}']],
         orderBy: [],
-        fillables: ['fillable', 'name', 'id', 'type', 'freed'],
+        fillables: ['fillable', 'name', 'id', 'type', 'freed', 'nested'],
         guard: ['guarded'],
         // HOOKS for local changes:
         insertHook: function (updateStore, doc, store) {
@@ -181,6 +181,7 @@ function pluginState () {
         _sync: {
             signedIn: false,
             userId: null,
+            unsubscribe: null,
             pathVariables: {},
             patching: false,
             syncStack: {
@@ -211,9 +212,10 @@ function error (error) {
  * a function returning the mutations object
  *
  * @export
+ * @param {object} userState
  * @returns {AnyObject} the mutations object
  */
-function pluginMutations () {
+function pluginMutations (userState) {
     return {
         SET_PATHVARS: function (state, pathVars) {
             var self = this;
@@ -223,6 +225,31 @@ function pluginMutations () {
                 var path = state._conf.firestorePath.replace("{" + key + "}", "" + pathPiece);
                 state._conf.firestorePath = path;
             });
+        },
+        RESET_VUEX_EASY_FIRESTORE_STATE: function (state) {
+            var self = this;
+            var _sync = merge(state._sync, {
+                unsubscribe: null,
+                pathVariables: {},
+                patching: false,
+                syncStack: {
+                    inserts: [],
+                    updates: {},
+                    deletions: [],
+                    propDeletions: [],
+                    debounceTimer: null,
+                },
+                fetched: {},
+                stopPatchingTimeout: null
+            });
+            var newState = merge(userState, { _sync: _sync });
+            if (state._conf.statePropName) {
+                Object.keys(newState).forEach(function (key) {
+                    self._vm.$set(state, key, newState[key]);
+                });
+                return self._vm.$set(state, state._conf.statePropName, {});
+            }
+            state = newState;
         },
         resetSyncStack: function (state) {
             state._sync.syncStack = {
@@ -888,7 +915,7 @@ function pluginActions (Firebase$$1) {
             }
             // make a promise
             return new Promise(function (resolve, reject) {
-                dbRef.onSnapshot(function (querySnapshot) {
+                var unsubscribe = dbRef.onSnapshot(function (querySnapshot) {
                     var source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server';
                     if (!getters.collectionMode) {
                         if (!querySnapshot.data()) {
@@ -924,7 +951,17 @@ function pluginActions (Firebase$$1) {
                     state._sync.patching = 'error';
                     return reject(error$$1);
                 });
+                state._sync.unsubscribe = unsubscribe;
             });
+        },
+        closeDBChannel: function (_a, _b) {
+            var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
+            var _c = (_b === void 0 ? { clearModule: false } : _b).clearModule, clearModule = _c === void 0 ? false : _c;
+            if (clearModule) {
+                commit('RESET_VUEX_EASY_FIRESTORE_STATE');
+            }
+            if (isWhat.isFunction(state._sync.unsubscribe))
+                return state._sync.unsubscribe();
         },
         set: function (_a, doc) {
             var commit = _a.commit, dispatch = _a.dispatch, getters = _a.getters, state = _a.state;
@@ -1332,7 +1369,7 @@ function iniModule (userConfig, FirebaseDependency) {
     return {
         namespaced: true,
         state: merge(pluginState(), userState, docContainer, { _conf: conf }),
-        mutations: merge(userMutations, pluginMutations()),
+        mutations: merge(userMutations, pluginMutations(merge(userState, { _conf: conf }))),
         actions: merge(userActions, pluginActions(FirebaseDependency)),
         getters: merge(userGetters, pluginGetters(FirebaseDependency))
     };
@@ -1400,6 +1437,15 @@ const fixtureData = {
           }
         },
       }
+    },
+    playerCharacters: {
+      __doc__: {
+        Satoshi: {
+          name: 'Satoshi',
+          pokemonBelt: [],
+          items: [],
+        }
+      },
     }
   }
 };
@@ -1412,7 +1458,7 @@ Firebase$1.auth = function () {
   return { currentUser: {uid: 'Satoshi'} }
 };
 
-var easyFirestores = createFirestores([pokemonBox, mainCharacter, testPathVar], { logging: true, FirebaseDependency: Firebase$1 });
+var easyFirestores = createFirestores([pokemonBox, mainCharacter, testPathVar], { logging: false, FirebaseDependency: Firebase$1 });
 var storeObj = {
     plugins: [easyFirestores]
 };

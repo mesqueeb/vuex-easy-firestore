@@ -34,6 +34,15 @@ const fixtureData = {
           }
         },
       }
+    },
+    playerCharacters: {
+      __doc__: {
+        Satoshi: {
+          name: 'Satoshi',
+          pokemonBelt: [],
+          items: [],
+        }
+      },
     }
   }
 }

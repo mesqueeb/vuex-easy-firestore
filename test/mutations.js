@@ -1,5 +1,4 @@
-// import store from './helpers/index.cjs.js'
-const store = require('./helpers/index.cjs.js')
+import store from './helpers/index.cjs.js'
 import test from 'ava'
 import wait from './helpers/wait'
 

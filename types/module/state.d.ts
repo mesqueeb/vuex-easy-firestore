@@ -3,6 +3,7 @@ export declare type IState = {
     _sync: {
         signedIn: boolean;
         userId: any;
+        unsubscribe: () => any | null;
         pathVariables: AnyObject;
         patching: boolean;
         syncStack: {
