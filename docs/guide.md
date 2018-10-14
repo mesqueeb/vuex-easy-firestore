@@ -56,6 +56,13 @@ dispatch('moduleName/delete', `${id}.tags.water`)
 
 In the above example you can see that you can delete a sub-property by passing a string and separate sub-props with `.`
 
+### Auto-generated fields
+
+When working with collections, each document insert or update will automatically receive these fields:
+
+- `created_at` / `updated_at` both use: `Firebase.firestore.FieldValue.serverTimestamp()`
+- `created_by` / `updated_by` will automatically fill in the userId
+
 ### Manually assigning doc IDs
 
 You can, **but do not need to**, assign doc IDs manually.
@@ -81,13 +88,6 @@ dispatch('moduleName/insert', newDoc)
 As you can see in the example above, each vuex-easy-firestore module has a getter called `dbRef` with the reference of your `firestorePath`. So when you add `.doc().id` to that reference you will "create" a new ID, just how Firestore would do it. This way you can do whatever you want with the ID before / after the insert.
 
 Please note you can also access the ID (even if you don't manually pass it) in the [hooks](https://mesqueeb.github.io/vuex-easy-firestore/extra-features.html#hooks-before-insert-patch-delete).
-
-### Auto-generated fields
-
-When working with collections, each document insert or update will automatically receive these fields:
-
-- `created_at` / `updated_at` both use: `Firebase.firestore.FieldValue.serverTimestamp()`
-- `created_by` / `updated_by` will automatically fill in the userId
 
 ## 'doc' mode
 
