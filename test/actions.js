@@ -27,7 +27,6 @@ test('[COLLECTION] set & delete: top lvl', async t => {
     meta: {date, firebaseServerTS: Firebase.firestore.FieldValue.serverTimestamp()}
   }
   store.dispatch('pokemonBox/insert', pokemonValues)
-  console.log('id → ', id)
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Squirtle')
   t.is(box.pokemon[id].meta.date, date)
@@ -175,3 +174,35 @@ test('[DOC] set & delete: top lvl', async t => {
 //   t.truthy(char.a.met)
 //   t.falsy(char.a.met.de)
 // })
+
+test('[COLLECTION] duplicate', async t => {
+  let res
+  const id = boxRef.doc().id
+  store.dispatch('pokemonBox/insert', {id, name: 'Jamie Lannister'})
+  t.is(box.pokemon[id].name, 'Jamie Lannister')
+  // dupe 1
+  res = await store.dispatch('pokemonBox/duplicate', id)
+  t.deepEqual(Object.keys(res), [id])
+  const dId = res[id]
+  t.is(box.pokemon[dId].name, 'Jamie Lannister')
+  // dupe many
+  res = await store.dispatch('pokemonBox/duplicateBatch', [id, dId])
+  t.deepEqual(Object.keys(res), [id, dId])
+  t.is(box.pokemon[res[id]].name, 'Jamie Lannister')
+  t.is(box.pokemon[res[dId]].name, 'Jamie Lannister')
+  // check Firestore
+  await wait(2)
+  let docR, doc
+  docR = await boxRef.doc(id).get()
+  doc = docR.data()
+  t.is(doc.name, 'Jamie Lannister')
+  docR = await boxRef.doc(dId).get()
+  doc = docR.data()
+  t.is(doc.name, 'Jamie Lannister')
+  docR = await boxRef.doc(res[id]).get()
+  doc = docR.data()
+  t.is(doc.name, 'Jamie Lannister')
+  docR = await boxRef.doc(res[dId]).get()
+  doc = docR.data()
+  t.is(doc.name, 'Jamie Lannister')
+})

@@ -16,10 +16,23 @@ import error from './errors'
  */
 export default function (Firebase: any): AnyObject {
   return {
-    duplicate ({state, getters, commit, dispatch}, id) {
-      if (!getters.collectionMode) return
+    duplicate: async ({state, getters, commit, dispatch}, id) => {
+      if (!getters.collectionMode) return console.error('[vuex-easy-firestore] You can only duplicate in \'collection\' mode.')
+      if (!id) return {}
       const doc = merge(getters.storeRef[id], {id: null})
-      return dispatch('insert', doc)
+      const dId = await dispatch('insert', doc)
+      const idMap = {[id]: dId}
+      return idMap
+    },
+    duplicateBatch ({state, getters, commit, dispatch}, ids = []) {
+      if (!getters.collectionMode) return console.error('[vuex-easy-firestore] You can only duplicate in \'collection\' mode.')
+      if (!isArray(ids) || !ids.length) return {}
+      const idsMap = ids.reduce(async (carry, id) => {
+        const idMap = await dispatch('duplicate', id)
+        carry = await carry
+        return Object.assign(carry, idMap)
+      }, {})
+      return idsMap
     },
     patchDoc (
       {state, getters, commit, dispatch},
@@ -365,14 +378,16 @@ export default function (Firebase: any): AnyObject {
       }
       // check for hooks
       if (state._conf.sync.insertHook) {
-        return state._conf.sync.insertHook(storeUpdateFn, newDoc, store)
+        state._conf.sync.insertHook(storeUpdateFn, newDoc, store)
+        return newDoc.id
       }
-      return storeUpdateFn(newDoc)
+      storeUpdateFn(newDoc)
+      return newDoc.id
     },
     insertBatch ({state, getters, commit, dispatch}, docs) {
       const store = this
       if (!getters.signedIn) return 'auth/invalid-user-token'
-      if (!isArray(docs) || !docs.length) return
+      if (!isArray(docs) || !docs.length) return []
 
       const newDocs = docs.reduce((carry, _doc) => {
         const newDoc = getValueFromPayloadPiece(_doc)
@@ -389,9 +404,11 @@ export default function (Firebase: any): AnyObject {
       }
       // check for hooks
       if (state._conf.sync.insertBatchHook) {
-        return state._conf.sync.insertBatchHook(storeUpdateFn, newDocs, store)
+        state._conf.sync.insertBatchHook(storeUpdateFn, newDocs, store)
+        return newDocs.map(_doc => _doc.id)
       }
-      return storeUpdateFn(newDocs)
+      storeUpdateFn(newDocs)
+      return newDocs.map(_doc => _doc.id)
     },
     patch ({state, getters, commit, dispatch}, doc) {
       const store = this
@@ -408,16 +425,19 @@ export default function (Firebase: any): AnyObject {
       }
       // check for hooks
       if (state._conf.sync.patchHook) {
-        return state._conf.sync.patchHook(storeUpdateFn, value, store)
+        state._conf.sync.patchHook(storeUpdateFn, value, store)
+        return id
       }
-      return storeUpdateFn(value)
+      storeUpdateFn(value)
+      return id
     },
     patchBatch (
       {state, getters, commit, dispatch},
       {doc, ids = []}
     ) {
       const store = this
-      if (!doc) return
+      if (!doc) return []
+      if (!isArray(ids) || !ids.length) return []
       // define the store update
       function storeUpdateFn (_doc, _ids) {
         _ids.forEach(_id => {
@@ -427,9 +447,11 @@ export default function (Firebase: any): AnyObject {
       }
       // check for hooks
       if (state._conf.sync.patchBatchHook) {
-        return state._conf.sync.patchBatchHook(storeUpdateFn, doc, ids, store)
+        state._conf.sync.patchBatchHook(storeUpdateFn, doc, ids, store)
+        return ids
       }
-      return storeUpdateFn(doc, ids)
+      storeUpdateFn(doc, ids)
+      return ids
     },
     delete ({state, getters, commit, dispatch}, id) {
       if (!id) return
@@ -449,16 +471,17 @@ export default function (Firebase: any): AnyObject {
       }
       // check for hooks
       if (state._conf.sync.deleteHook) {
-        return state._conf.sync.deleteHook(storeUpdateFn, id, store)
+        state._conf.sync.deleteHook(storeUpdateFn, id, store)
+        return id
       }
-      return storeUpdateFn(id)
+      storeUpdateFn(id)
+      return id
     },
     deleteBatch (
       {state, getters, commit, dispatch}: {state: IPluginState, getters: any, commit: any, dispatch: any},
       ids)
     {
-      if (!isArray(ids)) return
-      if (!ids.length) return
+      if (!isArray(ids) || !ids.length) return []
       const store = this
       // define the store update
       function storeUpdateFn (_ids) {
@@ -478,9 +501,11 @@ export default function (Firebase: any): AnyObject {
       }
       // check for hooks
       if (state._conf.sync.deleteBatchHook) {
-        return state._conf.sync.deleteBatchHook(storeUpdateFn, ids, store)
+        state._conf.sync.deleteBatchHook(storeUpdateFn, ids, store)
+        return ids
       }
-      return storeUpdateFn(ids)
+      storeUpdateFn(ids)
+      return ids
     },
     _stopPatching ({state, commit}) {
       if (state._sync.stopPatchingTimeout) { clearTimeout(state._sync.stopPatchingTimeout) }
