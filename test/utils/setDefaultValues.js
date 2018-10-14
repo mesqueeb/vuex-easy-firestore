@@ -1,5 +1,6 @@
 import test from 'ava'
-import setDefaultValues from '../../src/utils/setDefaultValues'
+// import setDefaultValues from '../../src/utils/setDefaultValues'
+import setDefaultValues from '../helpers/utils/setDefaultValues'
 import { isDate, isFunction } from 'is-what'
 
 test('my recursive object assign', async t => {

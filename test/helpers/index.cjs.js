@@ -1365,46 +1365,51 @@ function createFirestores (easyFirestoreModule, _a) {
     };
 }
 
-var fixtureData = {
-    __collection__: {
-        pokemonBoxes: {
-            __doc__: {
-                Satoshi: {
-                    name: 'Satoshi',
-                    pokemonBelt: [],
-                    items: [],
-                    __collection__: {
-                        pokemon: {
-                            __doc__: {
-                                '152': {
-                                    name: 'Chikorita'
-                                }
-                            }
-                        }
-                    }
-                },
-                '{playerName}': {
-                    name: 'Satoshi',
-                    pokemonBelt: [],
-                    items: [],
-                    __collection__: {
-                        pokemon: {
-                            __doc__: {
-                                '152___': {
-                                    name: 'Chikorita___'
-                                }
-                            }
-                        }
-                    }
-                },
+const fixtureData = {
+  __collection__: {
+    pokemonBoxes: {
+      __doc__: {
+        Satoshi: {
+          name: 'Satoshi',
+          pokemonBelt: [],
+          items: [],
+
+          __collection__: {
+            pokemon: {
+              __doc__: {
+                '152': {
+                  name: 'Chikorita'
+                }
+              }
             }
-        }
+          }
+        },
+        '{playerName}': {
+          name: 'Satoshi',
+          pokemonBelt: [],
+          items: [],
+
+          __collection__: {
+            pokemon: {
+              __doc__: {
+                '152___': {
+                  name: 'Chikorita___'
+                }
+              }
+            }
+          }
+        },
+      }
     }
+  }
 };
-var MockFirestore = require('mock-cloud-firestore');
-var Firebase$1 = new MockFirestore(fixtureData);
+
+const MockFirestore = require('mock-cloud-firestore');
+
+const Firebase$1 = new MockFirestore(fixtureData);
+
 Firebase$1.auth = function () {
-    return { currentUser: { uid: 'Satoshi' } };
+  return { currentUser: {uid: 'Satoshi'} }
 };
 
 var easyFirestores = createFirestores([pokemonBox, mainCharacter, testPathVar], { logging: true, FirebaseDependency: Firebase$1 });
