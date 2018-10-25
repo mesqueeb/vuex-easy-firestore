@@ -235,6 +235,7 @@ export default function (Firebase: any): AnyObject {
               commit('INSERT_DOC', doc)
             })
           }
+          return querySnapshot
         })
     },
     serverUpdate (

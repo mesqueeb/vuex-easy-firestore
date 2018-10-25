@@ -917,6 +917,7 @@ function pluginActions (Firebase$$1) {
                         commit('INSERT_DOC', doc);
                     });
                 }
+                return querySnapshot;
             });
         },
         serverUpdate: function (_a, _b) {
