@@ -7,7 +7,8 @@ const boxRef = store.getters['pokemonBox/dbRef']
 
 test('[COLLECTION] sync: fillables & guard', async t => {
   const id = boxRef.doc().id
-  store.dispatch('pokemonBox/set', {name: 'Squirtle', id, type: ['water'], fillable: true, guarded: true, unmentionedProp: true})
+  store.dispatch('pokemonBox/insert', {name: 'Squirtle', id, type: ['water'], fillable: true, guarded: true, unmentionedProp: true})
+    .catch(console.error)
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Squirtle')
   t.is(box.pokemon[id].fillable, true)
@@ -16,7 +17,7 @@ test('[COLLECTION] sync: fillables & guard', async t => {
   // fetch from server to check if guarded is undefined or not
   await wait(2)
   const docR = await boxRef.doc(id).get()
-  console.log('doc Reference → ', docR)
+  // console.log('doc Reference → ', docR)
   const doc = docR.data()
   console.log('doc → ', doc)
   t.truthy(doc)

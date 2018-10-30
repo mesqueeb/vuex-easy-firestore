@@ -24,13 +24,12 @@ test('[COLLECTION] set & delete: top lvl', async t => {
     id,
     name: 'Squirtle',
     type: ['water'],
-    meta: {date, firebaseServerTS: Firebase.firestore.FieldValue.serverTimestamp()}
+    meta: {date}
   }
   store.dispatch('pokemonBox/insert', pokemonValues)
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Squirtle')
   t.is(box.pokemon[id].meta.date, date)
-  // t.true(isDate(box.pokemon[id].meta.firebaseServerTS.toDate())) // this is probably a feature of the firestore mock, but in reality will be different
   await wait(2)
   let docR, doc
   docR = await boxRef.doc(id).get()
@@ -87,98 +86,158 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.falsy(box.pokemon[id2])
 })
 
-// test('[COLLECTION] set & delete: deep', async t => {
-//   let docR, doc
-
-//   const id = boxRef.doc().id
-//   store.dispatch('pokemonBox/insert', {id})
-//   t.truthy(box.pokemon[id])
-//   await wait(2)
-//   docR = await boxRef.doc(id).get()
-//   doc = docR.data()
-//   t.truthy(doc)
-//   // update
-//   store.dispatch('pokemonBox/set', {[id]: {nested: {a: {met: {de: 'aba'}}}}})
-//   t.deepEqual(box.pokemon[id].nested, {a: {met: {de: 'aba'}}})
-//   await wait(2)
-//   docR = await boxRef.doc(id).get()
-//   doc = docR.data()
-//   t.deepEqual(doc.nested, {a: {met: {de: 'aba'}}})
-
-//   // delete
-//   store.dispatch('pokemonBox/set', {[id]: {nested: {a: {met: {de: Firebase.firestore.FieldValue.delete()}}}}})
-//   t.deepEqual(box.pokemon[id].nested, {a: {met: {}}})
-//   await wait(2)
-//   docR = await boxRef.doc(id).get()
-//   doc = docR.data()
-//   t.deepEqual(doc.nested, {a: {met: {}}})
-// })
-
-// test('set & delete: batches', async t => {
-//   // ini set
-//   await wait(3)
-//   console.log('start batch')
-//   const pokemonValues = [
-//     {name: 'Bulbasaur', type: {grass: true}},
-//     {name: 'Charmander', type: {fire: true}},
-//     {name: 'Squirtle', type: {water: true}},
-//   ]
-//   store.dispatch('pokemonBox/insertBatch', pokemonValues)
-//     .then(console.log).catch(console.error)
-//   await wait(5)
-//   console.log('finish batch')
-//   t.pass()
-// })
-
-test('[DOC] set & delete: top lvl', async t => {
-  // EXISTING prop set
-  store.dispatch('mainCharacter/set', {items: ['Pokeball']})
-  t.true(char.items.includes('Pokeball'))
-  t.deepEqual(char.items, ['Pokeball'])
-  // NEW prop set
-  store.dispatch('mainCharacter/set', {newProp: 'Klappie'})
-  t.truthy(char.newProp)
-  t.is(char.newProp, 'Klappie')
-  await wait(2)
+test('[COLLECTION] set & delete: deep', async t => {
   let docR, doc
-  docR = await charRef.get()
+
+  const id = boxRef.doc().id
+  await store.dispatch('pokemonBox/insert', {id, nested: {a: {met: {de: 'aba'}}}})
+  t.truthy(box.pokemon[id])
+  t.deepEqual(box.pokemon[id].nested, {a: {met: {de: 'aba'}}})
+  await wait(2)
+  docR = await boxRef.doc(id).get()
   doc = docR.data()
-  t.truthy(doc.newProp)
-  t.is(doc.newProp, 'Klappie')
+  t.deepEqual(doc.nested, {a: {met: {de: 'aba'}}})
+
+  // update
+  await store.dispatch('pokemonBox/set', {id, nested: {a: {met: {de: 'ebe'}}}})
+  t.deepEqual(box.pokemon[id].nested, {a: {met: {de: 'ebe'}}})
+  await wait(2)
+  docR = await boxRef.doc(id).get()
+  doc = docR.data()
+  t.deepEqual(doc.nested.a.met, {de: 'ebe'})
+  t.deepEqual(doc.nested, {a: {met: {de: 'ebe'}}})
 
   // delete
-  store.dispatch('mainCharacter/delete', 'newProp')
+  await store.dispatch('pokemonBox/delete', `${id}.nested.a.met.de`)
+  t.deepEqual(box.pokemon[id].nested, {a: {met: {}}})
+  await wait(2)
+  docR = await boxRef.doc(id).get()
+  doc = docR.data()
+  // t.deepEqual(doc.nested, {a: {met: {}}})
+  t.deepEqual(doc.nested, {a: {met: {}}})
+  // todo: replace this when the bug is fixed in mock-cloud-firestore
+})
+
+test('[COLLECTION] set & delete: batches', async t => {
+  let docR1, doc1, docR2, doc2, docR3, doc3
+  // ini set
+  const id1 = boxRef.doc().id
+  const a = {id: id1, name: 'Bulbasaur', type: {grass: true}}
+  const id2 = boxRef.doc().id
+  const b = {id: id2, name: 'Charmander', type: {fire: true}}
+  const id3 = boxRef.doc().id
+  const c = {id: id3, name: 'Squirtle', type: {water: true}}
+  const pokemonValues = [a, b, c]
+  await store.dispatch('pokemonBox/insertBatch', pokemonValues)
+    .catch(console.error)
+  t.deepEqual(box.pokemon[id1], a)
+  t.deepEqual(box.pokemon[id2], b)
+  t.deepEqual(box.pokemon[id3], c)
+  await wait(2)
+  docR1 = await boxRef.doc(id1).get()
+  doc1 = docR1.data()
+  docR2 = await boxRef.doc(id2).get()
+  doc2 = docR2.data()
+  docR3 = await boxRef.doc(id3).get()
+  doc3 = docR3.data()
+  t.is(doc1.name, a.name)
+  t.deepEqual(doc1.type, a.type)
+  t.is(doc2.name, b.name)
+  t.deepEqual(doc2.type, b.type)
+  t.is(doc3.name, c.name)
+  t.deepEqual(doc3.type, c.type)
+})
+
+test('[DOC] set & delete: top lvl', async t => {
+  let docR, doc
+  // EXISTING prop set
+  await store.dispatch('mainCharacter/set', {items: ['Pokeball']})
+  // t.deepEqual(char.items, ['Pokeball'])
+  // const batch = Firebase.firestore().batch()
+  // batch.update(charRef, {items: ['Pokeball']})
+  // await batch.commit()
+  // await charRef.update({items: ['Pokeball']})
+  await wait(2)
+  docR = await charRef.get()
+  doc = docR.data()
+  t.deepEqual(doc.items, ['Pokeball'])
+
+  // NEW prop set string
+  await store.dispatch('mainCharacter/set', {newProp: 'Klappie'})
+  t.is(char.newProp, 'Klappie')
+  await wait(2)
+  docR = await charRef.get()
+  doc = docR.data()
+  t.is(doc.newProp, 'Klappie')
+
+  // delete prop with string
+  await store.dispatch('mainCharacter/delete', 'newProp')
   t.falsy(char.newProp)
   await wait(2)
   docR = await charRef.get()
   doc = docR.data()
-  t.truthy(doc)
   t.falsy(doc.newProp)
+
+  // NEW prop set to an object
+  await store.dispatch('mainCharacter/set', {newObjectProp: {deep: {object: true}}})
+  t.deepEqual(char.newObjectProp, {deep: {object: true}})
+  await wait(2)
+  docR = await charRef.get()
+  doc = docR.data()
+  console.log('[DOC] set & delete: top lvl.  the doc → ', doc)
+  t.deepEqual(doc.newObjectProp, {deep: {object: true}})
+
+  // delete object prop
+  await store.dispatch('mainCharacter/delete', 'newObjectProp')
+  t.falsy(char.newObjectProp)
+  await wait(3)
+  docR = await charRef.get()
+  doc = docR.data()
+  t.falsy(doc.newObjectProp)
 })
 
-// test('[DOC] set & delete: deep', async t => {
-//   store.dispatch('mainCharacter/set', {a: {met: {de: 'aba'}}})
-//   t.truthy(char.a.met.de)
-//   t.is(char.a.met.de, 'aba')
-//   await wait(2)
-//   let docR, doc
-//   docR = await charRef.get()
-//   console.log('docR → ', docR)
-//   doc = docR.data()
-//   console.log('doc → ', doc)
-//   t.truthy(doc.a.met.de)
-//   t.is(doc.a.met.de, 'aba')
+test('[DOC] set & delete: deep', async t => {
+  await wait(20)
+  let docR, doc
+  // set
+  store.dispatch('mainCharacter/set', {nestedInDoc: {a: {met: {de: 'aba'}}}})
+  t.deepEqual(char.nestedInDoc, {a: {met: {de: 'aba'}}})
+  await wait(2)
+  docR = await charRef.get()
+  doc = docR.data()
+  console.log('[DOC] set & delete: deep.  the doc → ', doc)
+  t.deepEqual(doc.nestedInDoc, {a: {met: {de: 'aba'}}})
 
-//   // delete
-//   store.dispatch('mainCharacter/delete', 'a.met.de')
-//   t.truthy(char.a.met)
-//   t.falsy(char.a.met.de)
-// })
+  // update
+  await store.dispatch('mainCharacter/set', {nestedInDoc: {a: {met: {de: 'ebe'}}}})
+  t.deepEqual(char.nestedInDoc, {a: {met: {de: 'ebe'}}})
+  await wait(2)
+  docR = await charRef.get()
+  doc = docR.data()
+  t.deepEqual(doc.nestedInDoc, {a: {met: {de: 'ebe'}}})
+
+  // delete 4 levels deep
+  await store.dispatch('mainCharacter/delete', 'nestedInDoc.a.met.de')
+  t.deepEqual(char.nestedInDoc, {a: {met: {}}})
+  await wait(2)
+  docR = await charRef.get()
+  doc = docR.data()
+  // t.deepEqual(doc.nestedInDoc, {a: {met: {}}})
+  t.deepEqual(doc.nestedInDoc, {a: {met: {}}})
+
+  // delete entire object prop
+  store.dispatch('mainCharacter/delete', 'nestedInDoc')
+  t.falsy(char.nestedInDoc)
+  await wait(2)
+  docR = await charRef.get()
+  doc = docR.data()
+  t.falsy(doc.nestedInDoc)
+})
 
 test('[COLLECTION] duplicate', async t => {
   let res
   const id = boxRef.doc().id
-  store.dispatch('pokemonBox/insert', {id, name: 'Jamie Lannister'})
+  await store.dispatch('pokemonBox/insert', {id, name: 'Jamie Lannister'})
   t.is(box.pokemon[id].name, 'Jamie Lannister')
   // dupe 1
   res = await store.dispatch('pokemonBox/duplicate', id)
