@@ -18,8 +18,6 @@ export default function (userState: object): AnyObject {
       Object.keys(pathVars).forEach(key => {
         const pathPiece = pathVars[key]
         self._vm.$set(state._sync.pathVariables, key, pathPiece)
-        const path = state._conf.firestorePath.replace(`{${key}}`, `${pathPiece}`)
-        state._conf.firestorePath = path
       })
     },
     RESET_VUEX_EASY_FIRESTORE_STATE (state) {

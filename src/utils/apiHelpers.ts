@@ -57,6 +57,7 @@ export function grabUntilApiLimit (
  * @param {boolean} collectionMode Very important: is the firebase dbRef a 'collection' or 'doc'?
  * @param {string} userId for `created_by` / `updated_by`
  * @param {any} Firebase dependency injection for Firebase & Firestore
+ * @param {string} firestorePathComplete the firestorePath with filled in variables for logging
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {*} A Firebase firestore batch object.
  */
@@ -66,6 +67,7 @@ export function makeBatchFromSyncstack (
   collectionMode: boolean,
   userId: string,
   Firebase: any,
+  firestorePathComplete: string,
   batchMaxCount: number = 500,
 ): any {
   const batch = Firebase.firestore().batch()
@@ -126,7 +128,7 @@ export function makeBatchFromSyncstack (
   // log the batch contents
   if (state._conf.logging) {
     console.group('[vuex-easy-firestore] api call batch:')
-    console.log(`%cFirestore PATH: ${state._conf.firestorePath}`, 'color: grey')
+    console.log(`%cFirestore PATH: ${firestorePathComplete} [${state._conf.firestorePath}]`, 'color: grey')
     Object.keys(log).forEach(key => {
       console.log(key, log[key])
     })

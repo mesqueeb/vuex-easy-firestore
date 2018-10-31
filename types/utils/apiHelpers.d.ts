@@ -18,10 +18,11 @@ export declare function grabUntilApiLimit(syncStackProp: string, count: number, 
  * @param {boolean} collectionMode Very important: is the firebase dbRef a 'collection' or 'doc'?
  * @param {string} userId for `created_by` / `updated_by`
  * @param {any} Firebase dependency injection for Firebase & Firestore
+ * @param {string} firestorePathComplete the firestorePath with filled in variables for logging
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {*} A Firebase firestore batch object.
  */
-export declare function makeBatchFromSyncstack(state: IPluginState, dbRef: AnyObject, collectionMode: boolean, userId: string, Firebase: any, batchMaxCount?: number): any;
+export declare function makeBatchFromSyncstack(state: IPluginState, dbRef: AnyObject, collectionMode: boolean, userId: string, Firebase: any, firestorePathComplete: string, batchMaxCount?: number): any;
 /**
  * Check if the string starts and ends with '{' and '}' to swap out for variable value saved in state.
  *

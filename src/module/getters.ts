@@ -11,6 +11,7 @@ export type IPluginGetters = {
   prepareForInsert: (state: any, getters?: any, rootState?: any, rootGetters?: any) => (items: any[]) => any[]
   prepareInitialDocForInsert: (state: any, getters?: any, rootState?: any, rootGetters?: any) => (doc: AnyObject) => AnyObject
 }
+
 /**
  * A function returning the getters object
  *
@@ -20,23 +21,28 @@ export type IPluginGetters = {
  */
 export default function (Firebase: any): AnyObject {
   return {
+    firestorePathComplete (state, getters) {
+      let path = state._conf.firestorePath
+      const requireUser = path.includes('{userId}')
+      if (requireUser) {
+        if (!getters.signedIn) return path
+        if (!Firebase.auth().currentUser) return path
+        const userId = Firebase.auth().currentUser.uid
+        path = path.replace('{userId}', userId)
+      }
+      Object.keys(state._sync.pathVariables).forEach(key => {
+        const pathPiece = state._sync.pathVariables[key]
+        path = path.replace(`{${key}}`, `${pathPiece}`)
+      })
+      return path
+    },
     signedIn: (state, getters, rootState, rootGetters) => {
       const requireUser = state._conf.firestorePath.includes('{userId}')
       if (!requireUser) return true
       return state._sync.signedIn
     },
     dbRef: (state, getters, rootState, rootGetters) => {
-      let path
-      // check for userId replacement
-      const requireUser = state._conf.firestorePath.includes('{userId}')
-      if (requireUser) {
-        if (!getters.signedIn) return false
-        if (!Firebase.auth().currentUser) return false
-        const userId = Firebase.auth().currentUser.uid
-        path = state._conf.firestorePath.replace('{userId}', userId)
-      } else {
-        path = state._conf.firestorePath
-      }
+      const path = getters.firestorePathComplete
       return (getters.collectionMode)
         ? Firebase.firestore().collection(path)
         : Firebase.firestore().doc(path)

@@ -127,11 +127,11 @@ export default function (Firebase: any): AnyObject {
       const collectionMode = getters.collectionMode
       const dbRef = getters.dbRef
       const userId = state._sync.userId
-      const batch = makeBatchFromSyncstack(state, dbRef, collectionMode, userId, Firebase)
+      const batch = makeBatchFromSyncstack(state, dbRef, collectionMode, userId, Firebase, getters.firestorePathComplete)
       dispatch('_startPatching')
       state._sync.syncStack.debounceTimer = null
       return new Promise((resolve, reject) => {
-        batch.commit().then(res => {
+        batch.commit().then(_ => {
           const remainingSyncStack = Object.keys(state._sync.syncStack.updates).length +
             state._sync.syncStack.deletions.length +
             state._sync.syncStack.inserts.length +

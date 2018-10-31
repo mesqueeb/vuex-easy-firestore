@@ -136,8 +136,6 @@ function pluginMutations (userState) {
             Object.keys(pathVars).forEach(function (key) {
                 var pathPiece = pathVars[key];
                 self._vm.$set(state._sync.pathVariables, key, pathPiece);
-                var path = state._conf.firestorePath.replace("{" + key + "}", "" + pathPiece);
-                state._conf.firestorePath = path;
             });
         },
         RESET_VUEX_EASY_FIRESTORE_STATE: function (state) {
@@ -438,10 +436,11 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
  * @param {boolean} collectionMode Very important: is the firebase dbRef a 'collection' or 'doc'?
  * @param {string} userId for `created_by` / `updated_by`
  * @param {any} Firebase dependency injection for Firebase & Firestore
+ * @param {string} firestorePathComplete the firestorePath with filled in variables for logging
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {*} A Firebase firestore batch object.
  */
-function makeBatchFromSyncstack(state, dbRef, collectionMode, userId, Firebase$$1, batchMaxCount) {
+function makeBatchFromSyncstack(state, dbRef, collectionMode, userId, Firebase$$1, firestorePathComplete, batchMaxCount) {
     if (batchMaxCount === void 0) { batchMaxCount = 500; }
     var batch = Firebase$$1.firestore().batch();
     var log = {};
@@ -501,7 +500,7 @@ function makeBatchFromSyncstack(state, dbRef, collectionMode, userId, Firebase$$
     // log the batch contents
     if (state._conf.logging) {
         console.group('[vuex-easy-firestore] api call batch:');
-        console.log("%cFirestore PATH: " + state._conf.firestorePath, 'color: grey');
+        console.log("%cFirestore PATH: " + firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: grey');
         Object.keys(log).forEach(function (key) {
             console.log(key, log[key]);
         });
@@ -712,11 +711,11 @@ function pluginActions (Firebase$$1) {
             var collectionMode = getters.collectionMode;
             var dbRef = getters.dbRef;
             var userId = state._sync.userId;
-            var batch = makeBatchFromSyncstack(state, dbRef, collectionMode, userId, Firebase$$1);
+            var batch = makeBatchFromSyncstack(state, dbRef, collectionMode, userId, Firebase$$1, getters.firestorePathComplete);
             dispatch('_startPatching');
             state._sync.syncStack.debounceTimer = null;
             return new Promise(function (resolve, reject) {
-                batch.commit().then(function (res) {
+                batch.commit().then(function (_) {
                     var remainingSyncStack = Object.keys(state._sync.syncStack.updates).length +
                         state._sync.syncStack.deletions.length +
                         state._sync.syncStack.inserts.length +
@@ -1184,6 +1183,23 @@ function checkFillables (obj, fillables, guard) {
  */
 function pluginGetters (Firebase$$1) {
     return {
+        firestorePathComplete: function (state, getters) {
+            var path = state._conf.firestorePath;
+            var requireUser = path.includes('{userId}');
+            if (requireUser) {
+                if (!getters.signedIn)
+                    return path;
+                if (!Firebase$$1.auth().currentUser)
+                    return path;
+                var userId = Firebase$$1.auth().currentUser.uid;
+                path = path.replace('{userId}', userId);
+            }
+            Object.keys(state._sync.pathVariables).forEach(function (key) {
+                var pathPiece = state._sync.pathVariables[key];
+                path = path.replace("{" + key + "}", "" + pathPiece);
+            });
+            return path;
+        },
         signedIn: function (state, getters, rootState, rootGetters) {
             var requireUser = state._conf.firestorePath.includes('{userId}');
             if (!requireUser)
@@ -1191,20 +1207,7 @@ function pluginGetters (Firebase$$1) {
             return state._sync.signedIn;
         },
         dbRef: function (state, getters, rootState, rootGetters) {
-            var path;
-            // check for userId replacement
-            var requireUser = state._conf.firestorePath.includes('{userId}');
-            if (requireUser) {
-                if (!getters.signedIn)
-                    return false;
-                if (!Firebase$$1.auth().currentUser)
-                    return false;
-                var userId = Firebase$$1.auth().currentUser.uid;
-                path = state._conf.firestorePath.replace('{userId}', userId);
-            }
-            else {
-                path = state._conf.firestorePath;
-            }
+            var path = getters.firestorePathComplete;
             return (getters.collectionMode)
                 ? Firebase$$1.firestore().collection(path)
                 : Firebase$$1.firestore().doc(path);
