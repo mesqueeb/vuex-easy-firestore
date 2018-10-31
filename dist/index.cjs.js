@@ -141,6 +141,11 @@ function pluginMutations (userState) {
         RESET_VUEX_EASY_FIRESTORE_STATE: function (state) {
             var self = this;
             var _sync = merge(state._sync, {
+                // make null once to be able to overwrite with empty object
+                pathVariables: null,
+                syncStack: { updates: null },
+                fetched: null,
+            }, {
                 unsubscribe: null,
                 pathVariables: {},
                 patching: false,
@@ -161,7 +166,13 @@ function pluginMutations (userState) {
                 });
                 return self._vm.$set(state, state._conf.statePropName, {});
             }
-            state = newState;
+            Object.keys(state).forEach(function (key) {
+                if (Object.keys(newState).includes(key)) {
+                    self._vm.$set(state, key, newState[key]);
+                    return;
+                }
+                self._vm.$delete(state, key);
+            });
         },
         resetSyncStack: function (state) {
             state._sync.syncStack = {

@@ -4,6 +4,8 @@ import wait from './helpers/wait'
 
 const box = store.state.pokemonBox
 const boxRef = store.getters['pokemonBox/dbRef']
+// const char = store.state.mainCharacter
+// const charRef = store.getters['mainCharacter/dbRef']
 
 test('[COLLECTION] sync: fillables & guard', async t => {
   const id = boxRef.doc().id
@@ -17,9 +19,7 @@ test('[COLLECTION] sync: fillables & guard', async t => {
   // fetch from server to check if guarded is undefined or not
   await wait(2)
   const docR = await boxRef.doc(id).get()
-  // console.log('doc Reference → ', docR)
   const doc = docR.data()
-  console.log('doc → ', doc)
   t.truthy(doc)
   t.is(doc.name, 'Squirtle')
   t.is(doc.fillable, true)
@@ -34,17 +34,35 @@ test('[DOC] sync: fillables & guard', async t => {
 })
 
 test('[COLLECTION] sync: insertHook & patchHook', async t => {
+  let doc, docR
   const id = boxRef.doc().id
-  store.dispatch('pokemonBox/set', {name: 'Horsea', id, type: ['water']})
+  await store.dispatch('pokemonBox/set', {name: 'Horsea', id, type: ['water']})
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Horsea')
   t.is(box.pokemon[id].addedBeforeInsert, true)
   t.is(box.pokemon[id].addedBeforePatch, undefined)
-  store.dispatch('pokemonBox/set', {id, name: 'James'})
+  await wait(2)
+  docR = await boxRef.doc(id).get()
+  doc = docR.data()
+  t.truthy(doc)
+  t.is(doc.name, 'Horsea')
+  t.is(doc.addedBeforeInsert, true)
+  t.is(doc.addedBeforePatch, undefined)
+
+  await store.dispatch('pokemonBox/set', {id, name: 'James'})
   t.is(box.pokemon[id].addedBeforeInsert, true)
   t.is(box.pokemon[id].addedBeforePatch, true)
-  store.dispatch('pokemonBox/delete', id)
+  await wait(2)
+  docR = await boxRef.doc(id).get()
+  doc = docR.data()
+  t.is(doc.addedBeforeInsert, true)
+  t.is(doc.addedBeforePatch, true)
+
+  await store.dispatch('pokemonBox/delete', id)
   t.falsy(box.pokemon[id])
+  await wait(2)
+  docR = await boxRef.doc(id).get()
+  t.falsy(docR.exists)
 })
 
 test('[COLLECTION] sync: deleteHook', async t => {

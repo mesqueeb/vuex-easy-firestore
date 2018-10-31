@@ -31,7 +31,7 @@ var pokemonBox = {
     sync: {
         where: [['id', '==', '{pokeId}']],
         orderBy: [],
-        fillables: ['fillable', 'name', 'id', 'type', 'freed', 'nested'],
+        fillables: ['fillable', 'name', 'id', 'type', 'freed', 'nested', 'addedBeforeInsert', 'addedBeforePatch'],
         guard: ['guarded'],
         // HOOKS for local changes:
         insertHook: function (updateStore, doc, store) {
@@ -82,6 +82,46 @@ function initialState$2() {
         items: []
     };
 }
+var testMutations1 = {
+    // easy firestore config
+    firestorePath: 'coll/{name}',
+    firestoreRefType: 'doc',
+    moduleName: 'testMutationsNoStateProp',
+    statePropName: '',
+    // module
+    state: initialState$2(),
+    mutations: createEasyAccess.defaultMutations(initialState$2()),
+    actions: {},
+    getters: {},
+};
+
+function initialState$3() {
+    return {
+        name: 'Satoshi',
+        pokemonBelt: [],
+        items: []
+    };
+}
+var testMutations2 = {
+    // easy firestore config
+    firestorePath: 'coll/{name}',
+    firestoreRefType: 'collection',
+    moduleName: 'testMutationsWithStateProp',
+    statePropName: 'putItHere',
+    // module
+    state: initialState$3(),
+    mutations: createEasyAccess.defaultMutations(initialState$3()),
+    actions: {},
+    getters: {},
+};
+
+function initialState$4() {
+    return {
+        name: 'Satoshi',
+        pokemonBelt: [],
+        items: []
+    };
+}
 var mainCharacter = {
     // easy firestore config
     firestorePath: 'playerCharacters/Satoshi',
@@ -89,8 +129,8 @@ var mainCharacter = {
     moduleName: 'mainCharacter',
     statePropName: '',
     // module
-    state: initialState$2(),
-    mutations: createEasyAccess.defaultMutations(initialState$2()),
+    state: initialState$4(),
+    mutations: createEasyAccess.defaultMutations(initialState$4()),
     actions: {},
     getters: {},
 };
@@ -228,6 +268,11 @@ function pluginMutations (userState) {
         RESET_VUEX_EASY_FIRESTORE_STATE: function (state) {
             var self = this;
             var _sync = merge(state._sync, {
+                // make null once to be able to overwrite with empty object
+                pathVariables: null,
+                syncStack: { updates: null },
+                fetched: null,
+            }, {
                 unsubscribe: null,
                 pathVariables: {},
                 patching: false,
@@ -248,7 +293,13 @@ function pluginMutations (userState) {
                 });
                 return self._vm.$set(state, state._conf.statePropName, {});
             }
-            state = newState;
+            Object.keys(state).forEach(function (key) {
+                if (Object.keys(newState).includes(key)) {
+                    self._vm.$set(state, key, newState[key]);
+                    return;
+                }
+                self._vm.$delete(state, key);
+            });
         },
         resetSyncStack: function (state) {
             state._sync.syncStack = {
@@ -1495,19 +1546,65 @@ function createFirestores (easyFirestoreModule, _a) {
     };
 }
 
-var config = {
-    apiKey: 'AIzaSyDivMlXIuHqDFsTCCqBDTVL0h29xbltcL8',
-    authDomain: 'tests-firestore.firebaseapp.com',
-    databaseURL: 'https://tests-firestore.firebaseio.com',
-    projectId: 'tests-firestore',
-};
-Firebase.initializeApp(config);
-var firestore = Firebase.firestore();
-var settings = { timestampsInSnapshots: true };
-firestore.settings(settings);
+const fixtureData = {
+  __collection__: {
+    pokemonBoxes: {
+      __doc__: {
+        Satoshi: {
+          name: 'Satoshi',
+          pokemonBelt: [],
+          items: [],
 
+          __collection__: {
+            pokemon: {
+              __doc__: {
+                '152': {
+                  name: 'Chikorita'
+                }
+              }
+            }
+          }
+        },
+        '{playerName}': {
+          name: 'Satoshi',
+          pokemonBelt: [],
+          items: [],
+
+          __collection__: {
+            pokemon: {
+              __doc__: {
+                '152___': {
+                  name: 'Chikorita___'
+                }
+              }
+            }
+          }
+        },
+      }
+    },
+    playerCharacters: {
+      __doc__: {
+        Satoshi: {
+          name: 'Satoshi',
+          pokemonBelt: [],
+          items: [],
+        }
+      },
+    }
+  }
+};
+
+const MockFirestore = require('mock-cloud-firestore');
+
+const Firebase$1 = new MockFirestore(fixtureData);
+
+Firebase$1.auth = function () {
+  return { currentUser: {uid: 'Satoshi'} }
+};
+
+// import Firestore from '../firestore'
 var easyAccess = createEasyAccess__default({ vuexEasyFirestore: true });
-var easyFirestores = createFirestores([pokemonBox, mainCharacter, testPathVar], { logging: false, FirebaseDependency: Firebase });
+var easyFirestores = createFirestores([pokemonBox, mainCharacter, testPathVar, testMutations1, testMutations2], { logging: false, FirebaseDependency: Firebase$1 });
 var storeObj = {
     plugins: [easyFirestores, easyAccess]
 };
