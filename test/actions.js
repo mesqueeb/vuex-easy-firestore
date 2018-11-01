@@ -36,6 +36,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   doc = docR.data()
   t.is(doc.name, 'Squirtle')
   t.falsy(doc.meta) // not a fillable
+
   // update
   const date2 = new Date('1990-06-22')
   const pokemonValuesNew = {
@@ -54,6 +55,14 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   doc = docR.data()
   t.is(doc.name, 'COOL Squirtle!')
   t.deepEqual(doc.type, ['water'])
+
+  // add a new prop (deep)
+  store.dispatch('pokemonBox/set', {id, nested: {new: {deep: {prop: true}}}})
+  t.deepEqual(box.pokemon[id].nested, {new: {deep: {prop: true}}})
+  await wait(2)
+  docR = await boxRef.doc(id).get()
+  doc = docR.data()
+  t.deepEqual(doc.nested, {new: {deep: {prop: true}}})
 
   // update arrays
   store.dispatch('pokemonBox/set', {type: ['water', 'normal'], id})
@@ -119,7 +128,6 @@ test('[COLLECTION] set & delete: deep', async t => {
 })
 
 test('[COLLECTION] set & delete: batches', async t => {
-  let docR1, doc1, docR2, doc2, docR3, doc3
   // ini set
   const id1 = boxRef.doc().id
   const a = {id: id1, name: 'Bulbasaur', type: {grass: true}}
@@ -134,12 +142,12 @@ test('[COLLECTION] set & delete: batches', async t => {
   t.deepEqual(box.pokemon[id2], b)
   t.deepEqual(box.pokemon[id3], c)
   await wait(2)
-  docR1 = await boxRef.doc(id1).get()
-  doc1 = docR1.data()
-  docR2 = await boxRef.doc(id2).get()
-  doc2 = docR2.data()
-  docR3 = await boxRef.doc(id3).get()
-  doc3 = docR3.data()
+  const docR1 = await boxRef.doc(id1).get()
+  const doc1 = docR1.data()
+  const docR2 = await boxRef.doc(id2).get()
+  const doc2 = docR2.data()
+  const docR3 = await boxRef.doc(id3).get()
+  const doc3 = docR3.data()
   t.is(doc1.name, a.name)
   t.deepEqual(doc1.type, a.type)
   t.is(doc2.name, b.name)
@@ -152,11 +160,7 @@ test('[DOC] set & delete: top lvl', async t => {
   let docR, doc
   // EXISTING prop set
   await store.dispatch('mainCharacter/set', {items: ['Pokeball']})
-  // t.deepEqual(char.items, ['Pokeball'])
-  // const batch = Firebase.firestore().batch()
-  // batch.update(charRef, {items: ['Pokeball']})
-  // await batch.commit()
-  // await charRef.update({items: ['Pokeball']})
+  t.deepEqual(char.items, ['Pokeball'])
   await wait(2)
   docR = await charRef.get()
   doc = docR.data()
@@ -184,7 +188,6 @@ test('[DOC] set & delete: top lvl', async t => {
   await wait(2)
   docR = await charRef.get()
   doc = docR.data()
-  console.log('[DOC] set & delete: top lvl.  the doc → ', doc)
   t.deepEqual(doc.newObjectProp, {deep: {object: true}})
 
   // delete object prop
@@ -205,7 +208,6 @@ test('[DOC] set & delete: deep', async t => {
   await wait(2)
   docR = await charRef.get()
   doc = docR.data()
-  console.log('[DOC] set & delete: deep.  the doc → ', doc)
   t.deepEqual(doc.nestedInDoc, {a: {met: {de: 'aba'}}})
 
   // update
@@ -222,7 +224,6 @@ test('[DOC] set & delete: deep', async t => {
   await wait(2)
   docR = await charRef.get()
   doc = docR.data()
-  // t.deepEqual(doc.nestedInDoc, {a: {met: {}}})
   t.deepEqual(doc.nestedInDoc, {a: {met: {}}})
 
   // delete entire object prop

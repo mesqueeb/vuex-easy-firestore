@@ -9,19 +9,19 @@ test('[openDBChannel] check path', async t => {
   t.is(store.getters['testPathVar/firestorePathComplete'], 'coll/{name}')
   // 1. open once
   store.dispatch('testPathVar/openDBChannel', {name: 'Luca'}).catch(console.error)
-  // await wait(2)
+  await wait(2)
   t.deepEqual(store.state.testPathVar._sync.pathVariables, {name: 'Luca'})
   t.is(store.state.testPathVar._conf.firestorePath, 'coll/{name}')
   t.is(store.getters['testPathVar/firestorePathComplete'], 'coll/Luca')
   // 2. close once
   store.dispatch('testPathVar/closeDBChannel', {clearModule: true}).catch(console.error)
-  // await wait(2)
+  await wait(2)
   t.deepEqual(store.state.testPathVar._sync.pathVariables, {})
   t.is(store.state.testPathVar._conf.firestorePath, 'coll/{name}')
   t.is(store.getters['testPathVar/firestorePathComplete'], 'coll/{name}')
   // 3. open again
   store.dispatch('testPathVar/openDBChannel', {name: 'Mesqueeb'}).catch(console.error)
-  // await wait(2)
+  await wait(2)
   t.deepEqual(store.state.testPathVar._sync.pathVariables, {name: 'Mesqueeb'})
   t.is(store.state.testPathVar._conf.firestorePath, 'coll/{name}')
   t.is(store.getters['testPathVar/firestorePathComplete'], 'coll/Mesqueeb')
