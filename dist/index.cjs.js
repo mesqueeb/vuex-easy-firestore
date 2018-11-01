@@ -442,17 +442,22 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
  * Create a Firebase batch from a syncStack to be passed inside the state param.
  *
  * @export
- * @param {IPluginState} state The state which should have this prop: `_sync.syncStack[syncStackProp]`. syncStackProp can be 'updates', 'propDeletions', 'deletions', 'inserts'.
- * @param {AnyObject} dbRef The Firestore dbRef of the 'doc' or 'collection'
- * @param {boolean} collectionMode Very important: is the firebase dbRef a 'collection' or 'doc'?
- * @param {string} userId for `created_by` / `updated_by`
+ * @param {IPluginState} state The state which should have `_sync.syncStack`, `_sync.userId`, `state._conf.firestorePath`
+ * @param {AnyObject} getters The getters which should have `dbRef`, `storeRef`, `collectionMode` and `firestorePathComplete`
  * @param {any} Firebase dependency injection for Firebase & Firestore
- * @param {string} firestorePathComplete the firestorePath with filled in variables for logging
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {*} A Firebase firestore batch object.
  */
-function makeBatchFromSyncstack(state, dbRef, collectionMode, userId, Firebase$$1, firestorePathComplete, batchMaxCount) {
+function makeBatchFromSyncstack(state, getters, Firebase$$1, batchMaxCount) {
     if (batchMaxCount === void 0) { batchMaxCount = 500; }
+    // get state & getter variables
+    var userId = state._sync.userId;
+    var firestorePath = state._conf.firestorePath;
+    var dbRef = getters.dbRef;
+    var storeRef = getters.storeRef;
+    var collectionMode = getters.collectionMode;
+    var firestorePathComplete = getters.firestorePathComplete;
+    // make batch
     var batch = Firebase$$1.firestore().batch();
     var log = {};
     var count = 0;
@@ -511,7 +516,7 @@ function makeBatchFromSyncstack(state, dbRef, collectionMode, userId, Firebase$$
     // log the batch contents
     if (state._conf.logging) {
         console.group('[vuex-easy-firestore] api call batch:');
-        console.log("%cFirestore PATH: " + firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: grey');
+        console.log("%cFirestore PATH: " + firestorePathComplete + " [" + firestorePath + "]", 'color: grey');
         Object.keys(log).forEach(function (key) {
             console.log(key, log[key]);
         });
@@ -719,10 +724,7 @@ function pluginActions (Firebase$$1) {
         },
         batchSync: function (_a) {
             var getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch, state = _a.state;
-            var collectionMode = getters.collectionMode;
-            var dbRef = getters.dbRef;
-            var userId = state._sync.userId;
-            var batch = makeBatchFromSyncstack(state, dbRef, collectionMode, userId, Firebase$$1, getters.firestorePathComplete);
+            var batch = makeBatchFromSyncstack(state, getters, Firebase$$1);
             dispatch('_startPatching');
             state._sync.syncStack.debounceTimer = null;
             return new Promise(function (resolve, reject) {

@@ -52,24 +52,26 @@ export function grabUntilApiLimit (
  * Create a Firebase batch from a syncStack to be passed inside the state param.
  *
  * @export
- * @param {IPluginState} state The state which should have this prop: `_sync.syncStack[syncStackProp]`. syncStackProp can be 'updates', 'propDeletions', 'deletions', 'inserts'.
- * @param {AnyObject} dbRef The Firestore dbRef of the 'doc' or 'collection'
- * @param {boolean} collectionMode Very important: is the firebase dbRef a 'collection' or 'doc'?
- * @param {string} userId for `created_by` / `updated_by`
+ * @param {IPluginState} state The state which should have `_sync.syncStack`, `_sync.userId`, `state._conf.firestorePath`
+ * @param {AnyObject} getters The getters which should have `dbRef`, `storeRef`, `collectionMode` and `firestorePathComplete`
  * @param {any} Firebase dependency injection for Firebase & Firestore
- * @param {string} firestorePathComplete the firestorePath with filled in variables for logging
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {*} A Firebase firestore batch object.
  */
 export function makeBatchFromSyncstack (
   state: IPluginState,
-  dbRef: AnyObject,
-  collectionMode: boolean,
-  userId: string,
+  getters: AnyObject,
   Firebase: any,
-  firestorePathComplete: string,
   batchMaxCount: number = 500,
 ): any {
+  // get state & getter variables
+  const userId = state._sync.userId
+  const firestorePath = state._conf.firestorePath
+  const dbRef = getters.dbRef
+  const storeRef = getters.storeRef
+  const collectionMode = getters.collectionMode
+  const firestorePathComplete = getters.firestorePathComplete
+  // make batch
   const batch = Firebase.firestore().batch()
   const log = {}
   let count = 0
@@ -128,7 +130,7 @@ export function makeBatchFromSyncstack (
   // log the batch contents
   if (state._conf.logging) {
     console.group('[vuex-easy-firestore] api call batch:')
-    console.log(`%cFirestore PATH: ${firestorePathComplete} [${state._conf.firestorePath}]`, 'color: grey')
+    console.log(`%cFirestore PATH: ${firestorePathComplete} [${firestorePath}]`, 'color: grey')
     Object.keys(log).forEach(key => {
       console.log(key, log[key])
     })
