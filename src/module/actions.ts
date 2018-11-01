@@ -304,6 +304,10 @@ export default function (Firebase: any): AnyObject {
       }
       // make a promise
       return new Promise((resolve, reject) => {
+        // log
+        if (state._conf.logging) {
+          console.log(`%c openDBChannel for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: blue')
+        }
         const unsubscribe = dbRef.onSnapshot(querySnapshot => {
           const source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
           if (!getters.collectionMode) {
