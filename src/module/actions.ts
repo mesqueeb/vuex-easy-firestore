@@ -317,10 +317,10 @@ export default function (Firebase: any): AnyObject {
               dispatch('insertInitialDoc')
               return resolve()
             }
+            if (source === 'local') return resolve()
             const doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues)
             const id = state._conf.firestorePath.split('/').pop()
             doc.id = id
-            if (source === 'local') return resolve()
             handleDoc(null, id, doc, source)
             return resolve()
           }

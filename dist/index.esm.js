@@ -914,6 +914,10 @@ function pluginActions (Firebase$$1) {
             }
             // make a promise
             return new Promise(function (resolve, reject) {
+                // log
+                if (state._conf.logging) {
+                    console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: blue');
+                }
                 var unsubscribe = dbRef.onSnapshot(function (querySnapshot) {
                     var source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server';
                     if (!getters.collectionMode) {
@@ -924,11 +928,11 @@ function pluginActions (Firebase$$1) {
                             dispatch('insertInitialDoc');
                             return resolve();
                         }
+                        if (source === 'local')
+                            return resolve();
                         var doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues);
                         var id = state._conf.firestorePath.split('/').pop();
                         doc.id = id;
-                        if (source === 'local')
-                            return resolve();
                         handleDoc(null, id, doc, source);
                         return resolve();
                     }

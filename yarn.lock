@@ -6043,10 +6043,10 @@ mkdirp@0.5.1, mkdirp@0.5.x, mkdirp@^0.5.0, mkdirp@^0.5.1, mkdirp@~0.5.0, mkdirp@
   dependencies:
     minimist "0.0.8"
 
-mock-cloud-firestore@^0.8.1:
-  version "0.8.1"
-  resolved "https://registry.yarnpkg.com/mock-cloud-firestore/-/mock-cloud-firestore-0.8.1.tgz#bf47f0df7026f0d7300c0ed4494aee8c3d63b736"
-  integrity sha512-w8JVwsyI+lGFmC1DWWqz6RS46RJhfVHnWUBKemV5yCh71rL1PbHLvF9RCjweaNCfpNw35S4tQXT4dHztKNgGtA==
+mock-cloud-firestore@^0.8.2:
+  version "0.8.2"
+  resolved "https://registry.yarnpkg.com/mock-cloud-firestore/-/mock-cloud-firestore-0.8.2.tgz#387c6bf504265b5fced23130f500cdbd6f128a51"
+  integrity sha512-3kgBhTImSHPnGWcIkLjoSnc0XK+m1/gfQ20enSGj0WunxhXb9kG4Zu2oMmSPuefUmmYgGMTXrRo8MLoBbgkALw==
 
 move-concurrently@^1.0.1:
   version "1.0.1"
