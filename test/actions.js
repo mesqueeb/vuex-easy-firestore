@@ -15,6 +15,20 @@ test('store set up', async t => {
   t.true(isArray(char.items))
 })
 
+test('[COLLECTION] set with no id', async t => {
+  await wait(2)
+  // ini set
+  const id = await store.dispatch('pokemonBox/insert', {name: 'Unown'})
+  console.log('id ntuobemoentub → ', id)
+  t.truthy(box.pokemon[id])
+  t.is(box.pokemon[id].name, 'Unown')
+  await wait(2)
+  let docR, doc
+  docR = await boxRef.doc(id).get()
+  doc = docR.data()
+  t.is(doc.name, 'Unown')
+})
+
 test('[COLLECTION] set & delete: top lvl', async t => {
   const id = boxRef.doc().id
   const id2 = boxRef.doc().id

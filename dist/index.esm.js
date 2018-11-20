@@ -554,14 +554,15 @@ function pathVarKey(pathPiece) {
  * @returns {string} the id
  */
 function getId(payloadPiece, conf, path, fullPayload) {
-    if (isObject(payloadPiece)) {
-        if (isObject(payloadPiece) && payloadPiece.id)
-            return payloadPiece.id;
-        if (Object.keys(payloadPiece).length === 1)
-            return Object.keys(payloadPiece)[0];
-    }
     if (isString(payloadPiece))
         return payloadPiece;
+    if (isObject(payloadPiece)) {
+        if ('id' in payloadPiece)
+            return payloadPiece.id;
+        var keys = Object.keys(payloadPiece);
+        if (keys.length === 1 && isString(payloadPiece[keys[0]]))
+            return keys[0];
+    }
     return '';
 }
 /**
@@ -573,7 +574,8 @@ function getId(payloadPiece, conf, path, fullPayload) {
 function getValueFromPayloadPiece(payloadPiece) {
     if (isObject(payloadPiece) &&
         !payloadPiece.id &&
-        Object.keys(payloadPiece).length === 1) {
+        Object.keys(payloadPiece).length === 1 &&
+        isObject(payloadPiece[Object.keys(payloadPiece)[0]])) {
         return Object.values(payloadPiece)[0];
     }
     return payloadPiece;
