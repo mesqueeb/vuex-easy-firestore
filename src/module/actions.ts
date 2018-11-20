@@ -124,14 +124,11 @@ export default function (Firebase: any): AnyObject {
       state._sync.syncStack.debounceTimer.refresh()
     },
     batchSync ({getters, commit, dispatch, state}) {
-      const collectionMode = getters.collectionMode
-      const dbRef = getters.dbRef
-      const userId = state._sync.userId
-      const batch = makeBatchFromSyncstack(state, dbRef, collectionMode, userId, Firebase)
+      const batch = makeBatchFromSyncstack(state, getters, Firebase)
       dispatch('_startPatching')
       state._sync.syncStack.debounceTimer = null
       return new Promise((resolve, reject) => {
-        batch.commit().then(res => {
+        batch.commit().then(_ => {
           const remainingSyncStack = Object.keys(state._sync.syncStack.updates).length +
             state._sync.syncStack.deletions.length +
             state._sync.syncStack.inserts.length +
@@ -235,6 +232,7 @@ export default function (Firebase: any): AnyObject {
               commit('INSERT_DOC', doc)
             })
           }
+          return querySnapshot
         })
     },
     serverUpdate (
@@ -306,6 +304,10 @@ export default function (Firebase: any): AnyObject {
       }
       // make a promise
       return new Promise((resolve, reject) => {
+        // log
+        if (state._conf.logging) {
+          console.log(`%c openDBChannel for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: blue')
+        }
         const unsubscribe = dbRef.onSnapshot(querySnapshot => {
           const source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
           if (!getters.collectionMode) {
@@ -315,10 +317,10 @@ export default function (Firebase: any): AnyObject {
               dispatch('insertInitialDoc')
               return resolve()
             }
+            if (source === 'local') return resolve()
             const doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues)
             const id = state._conf.firestorePath.split('/').pop()
             doc.id = id
-            if (source === 'local') return resolve()
             handleDoc(null, id, doc, source)
             return resolve()
           }

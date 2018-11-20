@@ -255,7 +255,7 @@ You can have two extra parameters:
 
 ```js
 dispatch('pokemonBox/fetchAndAdd', {whereFilters: [['freed', '==', true]], orderBy: ['freedDate']})
-  .then(result => {
+  .then(querySnapshot => {
     if (querySnapshot.done === true) {
       // `{done: true}` is returned when everything is already fetched and there are 0 docs:
       return '0 docs left to retrieve'
@@ -349,7 +349,7 @@ const idMap = await dispatch('pokemonBox/duplicateBatch', ['001', '004', '007'])
 // idMap will look like this:
 {
   '001': dupeIdBulbasaur,
-  '004': dupeIdCharmender,
+  '004': dupeIdCharmander,
   '007': dupeIdSquirtle,
 }
 ```

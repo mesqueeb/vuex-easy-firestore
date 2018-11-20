@@ -17,12 +17,12 @@ export function getId (
   path?: string,
   fullPayload?: object | any[] | string
 ): string {
-  if (isObject(payloadPiece)) {
-    if (isObject(payloadPiece) && payloadPiece.id) return payloadPiece.id
-    if (Object.keys(payloadPiece).length === 1) return Object.keys(payloadPiece)[0]
-  }
   if (isString(payloadPiece)) return payloadPiece
-  error('missingId')
+  if (isObject(payloadPiece)) {
+    if ('id' in payloadPiece) return payloadPiece.id
+    const keys = Object.keys(payloadPiece)
+    if (keys.length === 1 && isString(payloadPiece[keys[0]])) return keys[0]
+  }
   return ''
 }
 
@@ -36,7 +36,8 @@ export function getValueFromPayloadPiece (payloadPiece: any): any {
   if (
     isObject(payloadPiece) &&
     !payloadPiece.id &&
-    Object.keys(payloadPiece).length === 1
+    Object.keys(payloadPiece).length === 1 &&
+    isObject(payloadPiece[Object.keys(payloadPiece)[0]])
   ) {
     return Object.values(payloadPiece)[0]
   }

@@ -18,13 +18,16 @@ export default function (userState: object): AnyObject {
       Object.keys(pathVars).forEach(key => {
         const pathPiece = pathVars[key]
         self._vm.$set(state._sync.pathVariables, key, pathPiece)
-        const path = state._conf.firestorePath.replace(`{${key}}`, `${pathPiece}`)
-        state._conf.firestorePath = path
       })
     },
     RESET_VUEX_EASY_FIRESTORE_STATE (state) {
       const self = this
       const _sync = merge(state._sync, {
+         // make null once to be able to overwrite with empty object
+        pathVariables: null,
+        syncStack: { updates: null },
+        fetched: null,
+      }, {
         unsubscribe: null,
         pathVariables: {},
         patching: false,
@@ -45,7 +48,13 @@ export default function (userState: object): AnyObject {
         })
         return self._vm.$set(state, state._conf.statePropName, {})
       }
-      state = newState
+      Object.keys(state).forEach(key => {
+        if (Object.keys(newState).includes(key)) {
+          self._vm.$set(state, key, newState[key])
+          return
+        }
+        self._vm.$delete(state, key)
+      })
     },
     resetSyncStack (state) {
       state._sync.syncStack = {

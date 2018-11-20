@@ -2,7 +2,8 @@
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var vuexEasyAccess = require('vuex-easy-access');
+var createEasyAccess = require('vuex-easy-access');
+var createEasyAccess__default = _interopDefault(createEasyAccess);
 var isWhat = require('is-what');
 var merge = _interopDefault(require('merge-anything'));
 var findAndReplace = _interopDefault(require('find-and-replace-anything'));
@@ -30,7 +31,7 @@ var pokemonBox = {
     sync: {
         where: [['id', '==', '{pokeId}']],
         orderBy: [],
-        fillables: ['fillable', 'name', 'id', 'type', 'freed', 'nested'],
+        fillables: ['fillable', 'name', 'id', 'type', 'freed', 'nested', 'addedBeforeInsert', 'addedBeforePatch'],
         guard: ['guarded'],
         // HOOKS for local changes:
         insertHook: function (updateStore, doc, store) {
@@ -49,7 +50,7 @@ var pokemonBox = {
     },
     // module
     state: initialState(),
-    mutations: vuexEasyAccess.defaultMutations(initialState()),
+    mutations: createEasyAccess.defaultMutations(initialState()),
     actions: {},
     getters: {},
 };
@@ -69,12 +70,52 @@ var testPathVar = {
     statePropName: '',
     // module
     state: initialState$1(),
-    mutations: vuexEasyAccess.defaultMutations(initialState$1()),
+    mutations: createEasyAccess.defaultMutations(initialState$1()),
     actions: {},
     getters: {},
 };
 
 function initialState$2() {
+    return {
+        name: 'Satoshi',
+        pokemonBelt: [],
+        items: []
+    };
+}
+var testMutations1 = {
+    // easy firestore config
+    firestorePath: 'coll/{name}',
+    firestoreRefType: 'doc',
+    moduleName: 'testMutationsNoStateProp',
+    statePropName: '',
+    // module
+    state: initialState$2(),
+    mutations: createEasyAccess.defaultMutations(initialState$2()),
+    actions: {},
+    getters: {},
+};
+
+function initialState$3() {
+    return {
+        name: 'Satoshi',
+        pokemonBelt: [],
+        items: []
+    };
+}
+var testMutations2 = {
+    // easy firestore config
+    firestorePath: 'coll/{name}',
+    firestoreRefType: 'collection',
+    moduleName: 'testMutationsWithStateProp',
+    statePropName: 'putItHere',
+    // module
+    state: initialState$3(),
+    mutations: createEasyAccess.defaultMutations(initialState$3()),
+    actions: {},
+    getters: {},
+};
+
+function initialState$4() {
     return {
         name: 'Satoshi',
         pokemonBelt: [],
@@ -88,8 +129,8 @@ var mainCharacter = {
     moduleName: 'mainCharacter',
     statePropName: '',
     // module
-    state: initialState$2(),
-    mutations: vuexEasyAccess.defaultMutations(initialState$2()),
+    state: initialState$4(),
+    mutations: createEasyAccess.defaultMutations(initialState$4()),
     actions: {},
     getters: {},
 };
@@ -222,13 +263,16 @@ function pluginMutations (userState) {
             Object.keys(pathVars).forEach(function (key) {
                 var pathPiece = pathVars[key];
                 self._vm.$set(state._sync.pathVariables, key, pathPiece);
-                var path = state._conf.firestorePath.replace("{" + key + "}", "" + pathPiece);
-                state._conf.firestorePath = path;
             });
         },
         RESET_VUEX_EASY_FIRESTORE_STATE: function (state) {
             var self = this;
             var _sync = merge(state._sync, {
+                // make null once to be able to overwrite with empty object
+                pathVariables: null,
+                syncStack: { updates: null },
+                fetched: null,
+            }, {
                 unsubscribe: null,
                 pathVariables: {},
                 patching: false,
@@ -249,7 +293,13 @@ function pluginMutations (userState) {
                 });
                 return self._vm.$set(state, state._conf.statePropName, {});
             }
-            state = newState;
+            Object.keys(state).forEach(function (key) {
+                if (Object.keys(newState).includes(key)) {
+                    self._vm.$set(state, key, newState[key]);
+                    return;
+                }
+                self._vm.$delete(state, key);
+            });
         },
         resetSyncStack: function (state) {
             state._sync.syncStack = {
@@ -307,7 +357,7 @@ function pluginMutations (userState) {
             if (!propArr.length) {
                 return this._vm.$delete(searchTarget, target);
             }
-            var ref = vuexEasyAccess.getDeepRef(searchTarget, propArr.join('.'));
+            var ref = createEasyAccess.getDeepRef(searchTarget, propArr.join('.'));
             return this._vm.$delete(ref, target);
         }
     };
@@ -519,16 +569,22 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
  * Create a Firebase batch from a syncStack to be passed inside the state param.
  *
  * @export
- * @param {IPluginState} state The state which should have this prop: `_sync.syncStack[syncStackProp]`. syncStackProp can be 'updates', 'propDeletions', 'deletions', 'inserts'.
- * @param {AnyObject} dbRef The Firestore dbRef of the 'doc' or 'collection'
- * @param {boolean} collectionMode Very important: is the firebase dbRef a 'collection' or 'doc'?
- * @param {string} userId for `created_by` / `updated_by`
+ * @param {IPluginState} state The state which should have `_sync.syncStack`, `_sync.userId`, `state._conf.firestorePath`
+ * @param {AnyObject} getters The getters which should have `dbRef`, `storeRef`, `collectionMode` and `firestorePathComplete`
  * @param {any} Firebase dependency injection for Firebase & Firestore
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {*} A Firebase firestore batch object.
  */
-function makeBatchFromSyncstack(state, dbRef, collectionMode, userId, Firebase$$1, batchMaxCount) {
+function makeBatchFromSyncstack(state, getters, Firebase$$1, batchMaxCount) {
     if (batchMaxCount === void 0) { batchMaxCount = 500; }
+    // get state & getter variables
+    var userId = state._sync.userId;
+    var firestorePath = state._conf.firestorePath;
+    var dbRef = getters.dbRef;
+    var storeRef = getters.storeRef;
+    var collectionMode = getters.collectionMode;
+    var firestorePathComplete = getters.firestorePathComplete;
+    // make batch
     var batch = Firebase$$1.firestore().batch();
     var log = {};
     var count = 0;
@@ -587,7 +643,7 @@ function makeBatchFromSyncstack(state, dbRef, collectionMode, userId, Firebase$$
     // log the batch contents
     if (state._conf.logging) {
         console.group('[vuex-easy-firestore] api call batch:');
-        console.log("%cFirestore PATH: " + state._conf.firestorePath, 'color: grey');
+        console.log("%cFirestore PATH: " + firestorePathComplete + " [" + firestorePath + "]", 'color: grey');
         Object.keys(log).forEach(function (key) {
             console.log(key, log[key]);
         });
@@ -629,14 +685,15 @@ function pathVarKey(pathPiece) {
  * @returns {string} the id
  */
 function getId(payloadPiece, conf, path, fullPayload) {
-    if (isWhat.isObject(payloadPiece)) {
-        if (isWhat.isObject(payloadPiece) && payloadPiece.id)
-            return payloadPiece.id;
-        if (Object.keys(payloadPiece).length === 1)
-            return Object.keys(payloadPiece)[0];
-    }
     if (isWhat.isString(payloadPiece))
         return payloadPiece;
+    if (isWhat.isObject(payloadPiece)) {
+        if ('id' in payloadPiece)
+            return payloadPiece.id;
+        var keys = Object.keys(payloadPiece);
+        if (keys.length === 1 && isWhat.isString(payloadPiece[keys[0]]))
+            return keys[0];
+    }
     return '';
 }
 /**
@@ -648,7 +705,8 @@ function getId(payloadPiece, conf, path, fullPayload) {
 function getValueFromPayloadPiece(payloadPiece) {
     if (isWhat.isObject(payloadPiece) &&
         !payloadPiece.id &&
-        Object.keys(payloadPiece).length === 1) {
+        Object.keys(payloadPiece).length === 1 &&
+        isWhat.isObject(payloadPiece[Object.keys(payloadPiece)[0]])) {
         return Object.values(payloadPiece)[0];
     }
     return payloadPiece;
@@ -795,14 +853,11 @@ function pluginActions (Firebase$$1) {
         },
         batchSync: function (_a) {
             var getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch, state = _a.state;
-            var collectionMode = getters.collectionMode;
-            var dbRef = getters.dbRef;
-            var userId = state._sync.userId;
-            var batch = makeBatchFromSyncstack(state, dbRef, collectionMode, userId, Firebase$$1);
+            var batch = makeBatchFromSyncstack(state, getters, Firebase$$1);
             dispatch('_startPatching');
             state._sync.syncStack.debounceTimer = null;
             return new Promise(function (resolve, reject) {
-                batch.commit().then(function (res) {
+                batch.commit().then(function (_) {
                     var remainingSyncStack = Object.keys(state._sync.syncStack.updates).length +
                         state._sync.syncStack.deletions.length +
                         state._sync.syncStack.inserts.length +
@@ -917,6 +972,7 @@ function pluginActions (Firebase$$1) {
                         commit('INSERT_DOC', doc);
                     });
                 }
+                return querySnapshot;
             });
         },
         serverUpdate: function (_a, _b) {
@@ -991,6 +1047,10 @@ function pluginActions (Firebase$$1) {
             }
             // make a promise
             return new Promise(function (resolve, reject) {
+                // log
+                if (state._conf.logging) {
+                    console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: blue');
+                }
                 var unsubscribe = dbRef.onSnapshot(function (querySnapshot) {
                     var source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server';
                     if (!getters.collectionMode) {
@@ -1001,11 +1061,11 @@ function pluginActions (Firebase$$1) {
                             dispatch('insertInitialDoc');
                             return resolve();
                         }
+                        if (source === 'local')
+                            return resolve();
                         var doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues);
                         var id = state._conf.firestorePath.split('/').pop();
                         doc.id = id;
-                        if (source === 'local')
-                            return resolve();
                         handleDoc(null, id, doc, source);
                         return resolve();
                     }
@@ -1269,6 +1329,23 @@ function checkFillables (obj, fillables, guard) {
  */
 function pluginGetters (Firebase$$1) {
     return {
+        firestorePathComplete: function (state, getters) {
+            var path = state._conf.firestorePath;
+            var requireUser = path.includes('{userId}');
+            if (requireUser) {
+                if (!getters.signedIn)
+                    return path;
+                if (!Firebase$$1.auth().currentUser)
+                    return path;
+                var userId = Firebase$$1.auth().currentUser.uid;
+                path = path.replace('{userId}', userId);
+            }
+            Object.keys(state._sync.pathVariables).forEach(function (key) {
+                var pathPiece = state._sync.pathVariables[key];
+                path = path.replace("{" + key + "}", "" + pathPiece);
+            });
+            return path;
+        },
         signedIn: function (state, getters, rootState, rootGetters) {
             var requireUser = state._conf.firestorePath.includes('{userId}');
             if (!requireUser)
@@ -1276,20 +1353,7 @@ function pluginGetters (Firebase$$1) {
             return state._sync.signedIn;
         },
         dbRef: function (state, getters, rootState, rootGetters) {
-            var path;
-            // check for userId replacement
-            var requireUser = state._conf.firestorePath.includes('{userId}');
-            if (requireUser) {
-                if (!getters.signedIn)
-                    return false;
-                if (!Firebase$$1.auth().currentUser)
-                    return false;
-                var userId = Firebase$$1.auth().currentUser.uid;
-                path = state._conf.firestorePath.replace('{userId}', userId);
-            }
-            else {
-                path = state._conf.firestorePath;
-            }
+            var path = getters.firestorePathComplete;
             return (getters.collectionMode)
                 ? Firebase$$1.firestore().collection(path)
                 : Firebase$$1.firestore().doc(path);
@@ -1298,7 +1362,7 @@ function pluginGetters (Firebase$$1) {
             var path = (state._conf.statePropName)
                 ? state._conf.moduleName + "/" + state._conf.statePropName
                 : state._conf.moduleName;
-            return vuexEasyAccess.getDeepRef(rootState, path);
+            return createEasyAccess.getDeepRef(rootState, path);
         },
         collectionMode: function (state, getters, rootState) {
             return (state._conf.firestoreRefType.toLowerCase() === 'collection');
@@ -1484,7 +1548,7 @@ function createFirestores (easyFirestoreModule, _a) {
         // Create a module for each config file
         easyFirestoreModule.forEach(function (config) {
             config.logging = logging;
-            var moduleName = vuexEasyAccess.getKeysFromPath(config.moduleName);
+            var moduleName = createEasyAccess.getKeysFromPath(config.moduleName);
             store.registerModule(moduleName, iniModule(config, FirebaseDependency));
         });
     };
@@ -1546,9 +1610,11 @@ Firebase$1.auth = function () {
   return { currentUser: {uid: 'Satoshi'} }
 };
 
-var easyFirestores = createFirestores([pokemonBox, mainCharacter, testPathVar], { logging: false, FirebaseDependency: Firebase$1 });
+// import Firestore from '../firestore'
+var easyAccess = createEasyAccess__default({ vuexEasyFirestore: true });
+var easyFirestores = createFirestores([pokemonBox, mainCharacter, testPathVar, testMutations1, testMutations2], { logging: false, FirebaseDependency: Firebase$1 });
 var storeObj = {
-    plugins: [easyFirestores]
+    plugins: [easyFirestores, easyAccess]
 };
 
 Vue.use(Vuex);
