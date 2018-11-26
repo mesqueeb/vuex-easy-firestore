@@ -936,7 +936,7 @@ function pluginActions (Firebase$$1) {
                         if (source === 'local')
                             return resolve();
                         var doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues);
-                        var id = state._conf.firestorePath.split('/').pop();
+                        var id = getters.firestorePathComplete.split('/').pop();
                         doc.id = id;
                         handleDoc('modified', id, doc, source);
                         return resolve();

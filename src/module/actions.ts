@@ -319,7 +319,7 @@ export default function (Firebase: any): AnyObject {
             }
             if (source === 'local') return resolve()
             const doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues)
-            const id = state._conf.firestorePath.split('/').pop()
+            const id = getters.firestorePathComplete.split('/').pop()
             doc.id = id
             handleDoc('modified', id, doc, source)
             return resolve()
