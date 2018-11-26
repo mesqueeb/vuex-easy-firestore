@@ -289,7 +289,7 @@ export default function (Firebase: any): AnyObject {
         }
       }
       // define handleDoc()
-      function handleDoc (_changeType = 'modified', id, doc, source) {
+      function handleDoc (_changeType, id, doc, source) {
         // define storeUpdateFn()
         function storeUpdateFn (_doc) {
           return dispatch('serverUpdate', {change: _changeType, id, doc: _doc})
@@ -321,7 +321,7 @@ export default function (Firebase: any): AnyObject {
             const doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues)
             const id = state._conf.firestorePath.split('/').pop()
             doc.id = id
-            handleDoc(null, id, doc, source)
+            handleDoc('modified', id, doc, source)
             return resolve()
           }
           querySnapshot.docChanges().forEach(change => {

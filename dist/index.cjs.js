@@ -904,7 +904,6 @@ function pluginActions (Firebase$$1) {
             }
             // define handleDoc()
             function handleDoc(_changeType, id, doc, source) {
-                if (_changeType === void 0) { _changeType = 'modified'; }
                 // define storeUpdateFn()
                 function storeUpdateFn(_doc) {
                     return dispatch('serverUpdate', { change: _changeType, id: id, doc: _doc });
@@ -939,7 +938,7 @@ function pluginActions (Firebase$$1) {
                         var doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues);
                         var id = state._conf.firestorePath.split('/').pop();
                         doc.id = id;
-                        handleDoc(null, id, doc, source);
+                        handleDoc('modified', id, doc, source);
                         return resolve();
                     }
                     querySnapshot.docChanges().forEach(function (change) {
