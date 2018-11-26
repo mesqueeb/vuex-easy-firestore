@@ -143,6 +143,64 @@ Exactly the same as above, but for changes that have occured on the server. You 
 }
 ```
 
+## Execution timings of hooks
+
+**Collection mode**
+
+<table>
+  <tr>
+    <th>change type</th>
+    <th>local</th>
+    <th>server</th>
+  </tr>
+  <tr>
+    <td>insertion</td>
+    <td><code>sync.insertHook</code> & <code>serverChange.addedHook</code></td>
+    <td><code>serverChange.addedHook</code></td>
+  </tr>
+  <tr>
+    <td>modification</td>
+    <td><code>sync.patchHook</code> & <code>serverChange.modifiedHook</code></td>
+    <td><code>serverChange.modifiedHook</code></td>
+  </tr>
+  <tr>
+    <td>deletion</td>
+    <td><code>sync.deleteHook</code> & <code>serverChange.removedHook</code></td>
+    <td><code>serverChange.removedHook</code></td>
+  </tr>
+  <tr>
+    <td>after <code>openDBChannel</code></td>
+    <td colspan="2"><code>serverChange.addedHook</code> is executed once for each doc</td>
+  </tr>
+</table>
+
+**Doc mode**
+
+<table>
+  <tr>
+    <th>change type</th>
+    <th>local</th>
+    <th>server</th>
+  </tr>
+  <tr>
+    <td>modification</td>
+    <td><code>sync.patchHook</code> & <code>serverChange.modifiedHook</code></td>
+    <td><code>serverChange.modifiedHook</code></td>
+  </tr>
+  <tr>
+    <td>after <code>openDBChannel</code></td>
+    <td colspan="2"><code>serverChange.modifiedHook</code> is executed once</td>
+  </tr>
+</table>
+
+### Note about the serverChange hooks executing on local changes
+
+I have done my best to limit the hooks to only be executed on the proper events, but I cannot prevent the serverChange hook on being executed after each local change. The reason is because of how Firestore's [onSnapshot events](https://firebase.google.com/docs/firestore/query-data/listen) work. The reason being their explanation here:
+
+> **Events for metadata changes**
+>
+> 3. The backend notifies the client of the successful write. There is no change to the document data, but there is a metadata change because the "pending writes" flag is now `false`.
+
 ## defaultValues set after server retrieval
 
 If you create a `defaultValues` object, then each document from the server will receive those default values!
