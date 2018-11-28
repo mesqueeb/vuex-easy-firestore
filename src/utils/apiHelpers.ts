@@ -1,4 +1,3 @@
-import flattenToPaths from './objectFlattenToPaths'
 import { isObject } from 'is-what'
 import { IPluginState, AnyObject } from '../declarations'
 
@@ -65,12 +64,10 @@ export function makeBatchFromSyncstack (
   batchMaxCount: number = 500,
 ): any {
   // get state & getter variables
-  const userId = state._sync.userId
   const firestorePath = state._conf.firestorePath
-  const dbRef = getters.dbRef
-  const storeRef = getters.storeRef
-  const collectionMode = getters.collectionMode
   const firestorePathComplete = getters.firestorePathComplete
+  const dbRef = getters.dbRef
+  const collectionMode = getters.collectionMode
   // make batch
   const batch = Firebase.firestore().batch()
   const log = {}
@@ -83,29 +80,21 @@ export function makeBatchFromSyncstack (
   updates.forEach(item => {
     const id = item.id
     const docRef = (collectionMode) ? dbRef.doc(id) : dbRef
-    const itemToUpdate = flattenToPaths(item)
-    itemToUpdate.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
-    itemToUpdate.updated_by = userId
-    batch.update(docRef, itemToUpdate)
+    if (state._conf.sync.guard.includes('id')) delete item.id
+    // @ts-ignore
+    batch.update(docRef, item)
   })
   // Add 'propDeletions' to batch
   const propDeletions = grabUntilApiLimit('propDeletions', count, batchMaxCount, state)
   log['prop deletions: '] = propDeletions
   count = count + propDeletions.length
   // Add to batch
-  propDeletions.forEach(path => {
-    let docRef = dbRef
-    if (collectionMode) {
-      const id = path.substring(0, path.indexOf('.'))
-      path = path.substring(path.indexOf('.') + 1)
-      docRef = dbRef.doc(id)
-    }
-    const updateObj: AnyObject = {}
-    updateObj[path] = Firebase.firestore.FieldValue.delete()
-    updateObj.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
-    updateObj.updated_by = userId
+  propDeletions.forEach(item => {
+    const id = item.id
+    const docRef = (collectionMode) ? dbRef.doc(id) : dbRef
+    if (state._conf.sync.guard.includes('id')) delete item.id
     // @ts-ignore
-    batch.update(docRef, updateObj)
+    batch.update(docRef, item)
   })
   // Add 'deletions' to batch
   const deletions = grabUntilApiLimit('deletions', count, batchMaxCount, state)
@@ -122,8 +111,6 @@ export function makeBatchFromSyncstack (
   count = count + inserts.length
   // Add to batch
   inserts.forEach(item => {
-    item.created_at = Firebase.firestore.FieldValue.serverTimestamp()
-    item.created_by = userId
     const newRef = dbRef.doc(item.id)
     batch.set(newRef, item)
   })

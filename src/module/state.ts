@@ -10,8 +10,8 @@ export type IState = {
     syncStack: {
       inserts: any[]
       updates: AnyObject
+      propDeletions: AnyObject
       deletions: any[]
-      propDeletions: any[]
       debounceTimer: any
     }
     fetched: AnyObject
@@ -36,8 +36,8 @@ export default function (): IState {
       syncStack: {
         inserts: [],
         updates: {},
+        propDeletions: {},
         deletions: [],
-        propDeletions: [],
         debounceTimer: null,
       },
       fetched: {},

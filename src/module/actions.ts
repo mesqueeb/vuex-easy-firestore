@@ -78,10 +78,16 @@ export default function (Firebase: any): AnyObject {
       path
     ) {
       // 1. Prepare for patching
-      // 2. Push to syncStack
-      state._sync.syncStack.propDeletions.push(path)
+      const syncStackItem = getters.prepareForPropDeletion(path)
 
-      if (!state._sync.syncStack.propDeletions.length) return
+      // 2. Push to syncStack
+      Object.keys(syncStackItem).forEach(id => {
+        const newVal = (!state._sync.syncStack.propDeletions[id])
+          ? syncStackItem[id]
+          : merge(state._sync.syncStack.propDeletions[id], syncStackItem[id])
+        state._sync.syncStack.propDeletions[id] = newVal
+      })
+
       // 3. Create or refresh debounce
       return dispatch('handleSyncStackDebounce')
     },
@@ -371,7 +377,7 @@ export default function (Firebase: any): AnyObject {
       const store = this
       if (!getters.signedIn) return 'auth/invalid-user-token'
       if (!doc) return
-      const newDoc = getValueFromPayloadPiece(doc)
+      const newDoc = doc
       if (!newDoc.id) newDoc.id = getters.dbRef.doc().id
       // define the store update
       function storeUpdateFn (_doc) {

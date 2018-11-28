@@ -1,6 +1,6 @@
-import store from './helpers/index.cjs.js'
 import test from 'ava'
 import wait from './helpers/wait'
+import {storeSyncConfig as store} from './helpers/index.cjs.js'
 
 const box = store.state.pokemonBox
 const boxRef = store.getters['pokemonBox/dbRef']

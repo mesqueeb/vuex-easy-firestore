@@ -1,8 +1,10 @@
 import test from 'ava'
 import { isObject, isArray, isDate } from 'is-what'
 import wait from './helpers/wait'
-import Firebase from './helpers/firestoreMock'
-import store from './helpers/index.cjs.js'
+import {storeActions as store} from './helpers/index.cjs.js'
+
+import * as Firebase from 'firebase/app'
+import 'firebase/firestore'
 
 const box = store.state.pokemonBox
 const char = store.state.mainCharacter
@@ -16,17 +18,40 @@ test('store set up', async t => {
 })
 
 test('[COLLECTION] set with no id', async t => {
+  let id, docR, doc
   await wait(2)
-  // ini set
-  const id = await store.dispatch('pokemonBox/insert', {name: 'Unown'})
-  console.log('id ntuobemoentub → ', id)
+  // insert set
+  id = await store.dispatch('pokemonBox/insert', {name: 'Unown'})
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Unown')
   await wait(2)
-  let docR, doc
   docR = await boxRef.doc(id).get()
   doc = docR.data()
   t.is(doc.name, 'Unown')
+  // set set
+  id = await store.dispatch('pokemonBox/set', {name: 'Unown1'})
+  t.truthy(box.pokemon[id])
+  t.is(box.pokemon[id].name, 'Unown1')
+  await wait(2)
+  docR = await boxRef.doc(id).get()
+  doc = docR.data()
+  t.is(doc.name, 'Unown1')
+  // insert set
+  id = await store.dispatch('pokemonBox/insert', {name: {is: 'nested'}})
+  t.truthy(box.pokemon[id])
+  t.deepEqual(box.pokemon[id].name, {is: 'nested'})
+  await wait(2)
+  docR = await boxRef.doc(id).get()
+  doc = docR.data()
+  t.deepEqual(doc.name, {is: 'nested'})
+  // set set
+  id = await store.dispatch('pokemonBox/set', {name: {is: 'nested1'}})
+  t.truthy(box.pokemon[id])
+  t.deepEqual(box.pokemon[id].name, {is: 'nested1'})
+  await wait(2)
+  docR = await boxRef.doc(id).get()
+  doc = docR.data()
+  t.deepEqual(doc.name, {is: 'nested1'})
 })
 
 test('[COLLECTION] set & delete: top lvl', async t => {
@@ -69,6 +94,14 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   doc = docR.data()
   t.is(doc.name, 'COOL Squirtle!')
   t.deepEqual(doc.type, ['water'])
+
+  // update with {id: val}
+  store.dispatch('pokemonBox/set', {[id]: {name: 'very berry COOL Squirtle!'}})
+  t.is(box.pokemon[id].name, 'very berry COOL Squirtle!')
+  await wait(2)
+  docR = await boxRef.doc(id).get()
+  doc = docR.data()
+  t.is(doc.name, 'very berry COOL Squirtle!')
 
   // add a new prop (deep)
   store.dispatch('pokemonBox/set', {id, nested: {new: {deep: {prop: true}}}})
@@ -113,6 +146,7 @@ test('[COLLECTION] set & delete: deep', async t => {
   let docR, doc
 
   const id = boxRef.doc().id
+  console.log('id → [COLLECTION] set & delete: deep', id)
   await store.dispatch('pokemonBox/insert', {id, nested: {a: {met: {de: 'aba'}}}})
   t.truthy(box.pokemon[id])
   t.deepEqual(box.pokemon[id].nested, {a: {met: {de: 'aba'}}})
@@ -121,7 +155,7 @@ test('[COLLECTION] set & delete: deep', async t => {
   doc = docR.data()
   t.deepEqual(doc.nested, {a: {met: {de: 'aba'}}})
 
-  // update
+  // update {id, val}
   await store.dispatch('pokemonBox/set', {id, nested: {a: {met: {de: 'ebe'}}}})
   t.deepEqual(box.pokemon[id].nested, {a: {met: {de: 'ebe'}}})
   await wait(2)
@@ -130,15 +164,22 @@ test('[COLLECTION] set & delete: deep', async t => {
   t.deepEqual(doc.nested.a.met, {de: 'ebe'})
   t.deepEqual(doc.nested, {a: {met: {de: 'ebe'}}})
 
-  // delete
+  // update {id: val}
+  await store.dispatch('pokemonBox/patch', {[id]: {nested: {a: {met: {de: 'ibi'}}}}})
+  t.deepEqual(box.pokemon[id].nested, {a: {met: {de: 'ibi'}}})
+  await wait(2)
+  docR = await boxRef.doc(id).get()
+  doc = docR.data()
+  t.deepEqual(doc.nested.a.met, {de: 'ibi'})
+  t.deepEqual(doc.nested, {a: {met: {de: 'ibi'}}})
+
+  // delete via prop Delete
   await store.dispatch('pokemonBox/delete', `${id}.nested.a.met.de`)
   t.deepEqual(box.pokemon[id].nested, {a: {met: {}}})
   await wait(2)
   docR = await boxRef.doc(id).get()
   doc = docR.data()
-  // t.deepEqual(doc.nested, {a: {met: {}}})
   t.deepEqual(doc.nested, {a: {met: {}}})
-  // todo: replace this when the bug is fixed in mock-cloud-firestore
 })
 
 test('[COLLECTION] set & delete: batches', async t => {

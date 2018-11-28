@@ -1,2 +1,2 @@
-import store from './store';
-export default store;
+import * as stores from './store';
+export default stores;

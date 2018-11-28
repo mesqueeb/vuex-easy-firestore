@@ -1,5 +1,7 @@
-import store from './helpers/index.cjs'
 import test from 'ava'
+import {storeMutations as store} from './helpers/index.cjs.js'
+import * as Firebase from 'firebase/app'
+import 'firebase/firestore'
 
 test('test mutations synchronously', t => {
   // test('SET_PATHVARS', t => {
@@ -19,8 +21,8 @@ test('test mutations synchronously', t => {
     syncStack: {
       inserts: [],
       updates: {},
+      propDeletions: {},
       deletions: [],
-      propDeletions: [],
       debounceTimer: null,
     },
     fetched: {},
@@ -33,8 +35,8 @@ test('test mutations synchronously', t => {
     syncStack: {
       inserts: [{a: true}],
       updates: {a: true},
+      propDeletions: {'2': {'a': Firebase.firestore.FieldValue.delete()}},
       deletions: ['2'],
-      propDeletions: ['2.a'],
       debounceTimer: true,
     },
     fetched: {a: true},

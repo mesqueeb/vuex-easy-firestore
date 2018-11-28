@@ -78,6 +78,8 @@ When working with collections, each document insert or update will automatically
 - `created_at` / `updated_at` both use: `Firebase.firestore.FieldValue.serverTimestamp()`
 - `created_by` / `updated_by` will automatically fill in the userId
 
+You can disable these fields by adding them to your `guard` config. See the [related documentation on guard](extra-features.html#fillables-and-guard).
+
 ### Manually assigning doc IDs
 
 You can, **but do not need to**, assign doc IDs manually.

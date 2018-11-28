@@ -6,8 +6,8 @@ const state = {
     syncStack: {
       inserts: [],
       updates: {},
+      propDeletions: {},
       deletions: [],
-      propDeletions: [],
       debounceTimer: null,
     }
   }
