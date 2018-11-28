@@ -1,3 +1,4 @@
+import flattenToPaths from '../utils/objectFlattenToPaths'
 import { getDeepRef } from 'vuex-easy-access'
 import checkFillables from '../utils/checkFillables'
 import { AnyObject } from '../declarations'
@@ -64,7 +65,7 @@ export default function (Firebase: any): AnyObject {
         if (!collectionMode) ids.push('singleDoc')
         // returns {object} -> {id: data}
         return ids.reduce((carry, id) => {
-          let patchData = {}
+          let patchData: AnyObject = {}
           // retrieve full object
           if (!Object.keys(doc).length) {
             patchData = (collectionMode)
@@ -73,23 +74,75 @@ export default function (Firebase: any): AnyObject {
           } else {
             patchData = doc
           }
-          const cleanedPatchData = checkFillables(patchData, state._conf.sync.fillables, state._conf.sync.guard)
-          cleanedPatchData.id = id
-          carry[id] = cleanedPatchData
+          // set default fields
+          patchData.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
+          patchData.updated_by = state._sync.userId
+          // add fillable and guard defaults
+          let fillables = state._conf.sync.fillables
+          if (fillables.length) fillables = fillables.concat(['updated_at', 'updated_by'])
+          const guard = state._conf.sync.guard.concat(['_conf', '_sync'])
+          // clean up item
+          const cleanedPatchData = checkFillables(patchData, fillables, guard)
+          const itemToUpdate = flattenToPaths(cleanedPatchData)
+          // add id (required to get ref later at apiHelpers.ts)
+          itemToUpdate.id = id
+          carry[id] = itemToUpdate
           return carry
         }, {})
       },
+    prepareForPropDeletion: (state, getters, rootState, rootGetters) =>
+      (path = '') => {
+        const collectionMode = getters.collectionMode
+        const patchData: AnyObject = {}
+        // set default fields
+        patchData.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
+        patchData.updated_by = state._sync.userId
+        // add fillable and guard defaults
+        let fillables = state._conf.sync.fillables
+        if (fillables.length) fillables = fillables.concat(['updated_at', 'updated_by'])
+        const guard = state._conf.sync.guard.concat(['_conf', '_sync'])
+        // clean up item
+        const cleanedPatchData = checkFillables(patchData, fillables, guard)
+        // add id (required to get ref later at apiHelpers.ts)
+        let id, cleanedPath
+        if (collectionMode) {
+          id = path.substring(0, path.indexOf('.'))
+          cleanedPath = path.substring(path.indexOf('.') + 1)
+        } else {
+          id = 'singleDoc'
+          cleanedPath = path
+        }
+        cleanedPatchData[cleanedPath] = Firebase.firestore.FieldValue.delete()
+        cleanedPatchData.id = id
+        return {[id]: cleanedPatchData}
+      },
     prepareForInsert: (state, getters, rootState, rootGetters) =>
       (items = []) => {
+        // add fillable and guard defaults
+        let fillables = state._conf.sync.fillables
+        if (fillables.length) fillables = fillables.concat(['id', 'created_at', 'created_by'])
+        const guard = state._conf.sync.guard.concat(['_conf', '_sync'])
         return items.reduce((carry, item) => {
-          item = checkFillables(item, state._conf.sync.fillables, state._conf.sync.guard)
+          // set default fields
+          item.created_at = Firebase.firestore.FieldValue.serverTimestamp()
+          item.created_by = state._sync.userId
+          // clean up item
+          item = checkFillables(item, fillables, guard)
           carry.push(item)
           return carry
         }, [])
       },
     prepareInitialDocForInsert: (state, getters, rootState, rootGetters) =>
       (doc) => {
-        doc = checkFillables(doc, state._conf.sync.fillables, state._conf.sync.guard)
+        // add fillable and guard defaults
+        let fillables = state._conf.sync.fillables
+        if (fillables.length) fillables = fillables.concat(['id', 'created_at', 'created_by'])
+        const guard = state._conf.sync.guard.concat(['_conf', '_sync'])
+        // set default fields
+        doc.created_at = Firebase.firestore.FieldValue.serverTimestamp()
+        doc.created_by = state._sync.userId
+        // clean up item
+        doc = checkFillables(doc, fillables, guard)
         return doc
       }
   }

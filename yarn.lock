@@ -8920,10 +8920,10 @@ vuepress@^0.14.4:
     webpackbar "^2.6.1"
     workbox-build "^3.1.0"
 
-vuex-easy-access@^3.1.4:
-  version "3.1.4"
-  resolved "https://registry.yarnpkg.com/vuex-easy-access/-/vuex-easy-access-3.1.4.tgz#3beb4ed026861751cf92006c55899eca6812de91"
-  integrity sha512-ov4Z6+MERx/qopVjfAdbGru/Whupf1KsQOLE426Zwf0G1Tst208lynMkxglUT/xGxtAlPonSHpuFiSMpeHppng==
+vuex-easy-access@^3.1.5:
+  version "3.1.5"
+  resolved "https://registry.yarnpkg.com/vuex-easy-access/-/vuex-easy-access-3.1.5.tgz#131bc31eb0deb7b7a32a0ca4bcc3dbb6fb02421e"
+  integrity sha512-aZtj9F7L0KYHhWgEQoZ9F2PkYysu3+E9Zy41FgpiBzPqX+mTSiFL8yUlL2j175bBgD48WCi9Ah0OhCEqA57F+g==
   dependencies:
     find-and-replace-anything "^1.2.0"
     is-what "^3.0.1"

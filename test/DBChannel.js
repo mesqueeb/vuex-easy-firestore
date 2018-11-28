@@ -1,6 +1,6 @@
 import test from 'ava'
 import wait from './helpers/wait'
-import store from './helpers/index.cjs'
+import {storeDBChannel as store} from './helpers/index.cjs.js'
 
 test('[openDBChannel] check path', async t => {
   // 0. initial path

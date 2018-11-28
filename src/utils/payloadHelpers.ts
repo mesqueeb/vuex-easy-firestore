@@ -21,7 +21,7 @@ export function getId (
   if (isObject(payloadPiece)) {
     if ('id' in payloadPiece) return payloadPiece.id
     const keys = Object.keys(payloadPiece)
-    if (keys.length === 1 && isString(payloadPiece[keys[0]])) return keys[0]
+    if (keys.length === 1) return keys[0]
   }
   return ''
 }

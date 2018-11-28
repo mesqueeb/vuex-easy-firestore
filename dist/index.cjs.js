@@ -101,8 +101,8 @@ function pluginState () {
             syncStack: {
                 inserts: [],
                 updates: {},
+                propDeletions: {},
                 deletions: [],
-                propDeletions: [],
                 debounceTimer: null,
             },
             fetched: {},
@@ -143,7 +143,7 @@ function pluginMutations (userState) {
             var _sync = merge(state._sync, {
                 // make null once to be able to overwrite with empty object
                 pathVariables: null,
-                syncStack: { updates: null },
+                syncStack: { updates: null, propDeletions: null },
                 fetched: null,
             }, {
                 unsubscribe: null,
@@ -152,8 +152,8 @@ function pluginMutations (userState) {
                 syncStack: {
                     inserts: [],
                     updates: {},
+                    propDeletions: {},
                     deletions: [],
-                    propDeletions: [],
                     debounceTimer: null,
                 },
                 fetched: {},
@@ -367,36 +367,6 @@ function startDebounce (ms) {
     return { done: done, refresh: refresh };
 }
 
-function retrievePaths(object, path, result) {
-    if (!isWhat.isObject(object) ||
-        !Object.keys(object).length ||
-        object.methodName === 'FieldValue.serverTimestamp') {
-        if (!path)
-            return object;
-        result[path] = object;
-        return result;
-    }
-    return Object.keys(object).reduce(function (carry, key) {
-        var pathUntilNow = (path)
-            ? path + '.'
-            : '';
-        var newPath = pathUntilNow + key;
-        var extra = retrievePaths(object[key], newPath, result);
-        return Object.assign(carry, extra);
-    }, {});
-}
-/**
- * Flattens an object from {a: {b: {c: 'd'}}} to {'a.b.c': 'd'}
- *
- * @export
- * @param {object} object the object to flatten
- * @returns {AnyObject} the flattened object
- */
-function flattenToPaths (object) {
-    var result = {};
-    return retrievePaths(object, null, result);
-}
-
 /**
  * Grab until the api limit (500), put the rest back in the syncStack.
  *
@@ -451,12 +421,10 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
 function makeBatchFromSyncstack(state, getters, Firebase$$1, batchMaxCount) {
     if (batchMaxCount === void 0) { batchMaxCount = 500; }
     // get state & getter variables
-    var userId = state._sync.userId;
     var firestorePath = state._conf.firestorePath;
-    var dbRef = getters.dbRef;
-    var storeRef = getters.storeRef;
-    var collectionMode = getters.collectionMode;
     var firestorePathComplete = getters.firestorePathComplete;
+    var dbRef = getters.dbRef;
+    var collectionMode = getters.collectionMode;
     // make batch
     var batch = Firebase$$1.firestore().batch();
     var log = {};
@@ -469,29 +437,23 @@ function makeBatchFromSyncstack(state, getters, Firebase$$1, batchMaxCount) {
     updates.forEach(function (item) {
         var id = item.id;
         var docRef = (collectionMode) ? dbRef.doc(id) : dbRef;
-        var itemToUpdate = flattenToPaths(item);
-        itemToUpdate.updated_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
-        itemToUpdate.updated_by = userId;
-        batch.update(docRef, itemToUpdate);
+        if (state._conf.sync.guard.includes('id'))
+            delete item.id;
+        // @ts-ignore
+        batch.update(docRef, item);
     });
     // Add 'propDeletions' to batch
     var propDeletions = grabUntilApiLimit('propDeletions', count, batchMaxCount, state);
     log['prop deletions: '] = propDeletions;
     count = count + propDeletions.length;
     // Add to batch
-    propDeletions.forEach(function (path) {
-        var docRef = dbRef;
-        if (collectionMode) {
-            var id = path.substring(0, path.indexOf('.'));
-            path = path.substring(path.indexOf('.') + 1);
-            docRef = dbRef.doc(id);
-        }
-        var updateObj = {};
-        updateObj[path] = Firebase$$1.firestore.FieldValue.delete();
-        updateObj.updated_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
-        updateObj.updated_by = userId;
+    propDeletions.forEach(function (item) {
+        var id = item.id;
+        var docRef = (collectionMode) ? dbRef.doc(id) : dbRef;
+        if (state._conf.sync.guard.includes('id'))
+            delete item.id;
         // @ts-ignore
-        batch.update(docRef, updateObj);
+        batch.update(docRef, item);
     });
     // Add 'deletions' to batch
     var deletions = grabUntilApiLimit('deletions', count, batchMaxCount, state);
@@ -508,8 +470,6 @@ function makeBatchFromSyncstack(state, getters, Firebase$$1, batchMaxCount) {
     count = count + inserts.length;
     // Add to batch
     inserts.forEach(function (item) {
-        item.created_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
-        item.created_by = userId;
         var newRef = dbRef.doc(item.id);
         batch.set(newRef, item);
     });
@@ -564,7 +524,7 @@ function getId(payloadPiece, conf, path, fullPayload) {
         if ('id' in payloadPiece)
             return payloadPiece.id;
         var keys = Object.keys(payloadPiece);
-        if (keys.length === 1 && isWhat.isString(payloadPiece[keys[0]]))
+        if (keys.length === 1)
             return keys[0];
     }
     return '';
@@ -680,10 +640,14 @@ function pluginActions (Firebase$$1) {
         deleteProp: function (_a, path) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             // 1. Prepare for patching
+            var syncStackItem = getters.prepareForPropDeletion(path);
             // 2. Push to syncStack
-            state._sync.syncStack.propDeletions.push(path);
-            if (!state._sync.syncStack.propDeletions.length)
-                return;
+            Object.keys(syncStackItem).forEach(function (id) {
+                var newVal = (!state._sync.syncStack.propDeletions[id])
+                    ? syncStackItem[id]
+                    : merge(state._sync.syncStack.propDeletions[id], syncStackItem[id]);
+                state._sync.syncStack.propDeletions[id] = newVal;
+            });
             // 3. Create or refresh debounce
             return dispatch('handleSyncStackDebounce');
         },
@@ -993,7 +957,7 @@ function pluginActions (Firebase$$1) {
                 return 'auth/invalid-user-token';
             if (!doc)
                 return;
-            var newDoc = getValueFromPayloadPiece(doc);
+            var newDoc = doc;
             if (!newDoc.id)
                 newDoc.id = getters.dbRef.doc().id;
             // define the store update
@@ -1162,6 +1126,36 @@ function pluginActions (Firebase$$1) {
     };
 }
 
+function retrievePaths(object, path, result) {
+    if (!isWhat.isObject(object) ||
+        !Object.keys(object).length ||
+        object.methodName === 'FieldValue.serverTimestamp') {
+        if (!path)
+            return object;
+        result[path] = object;
+        return result;
+    }
+    return Object.keys(object).reduce(function (carry, key) {
+        var pathUntilNow = (path)
+            ? path + '.'
+            : '';
+        var newPath = pathUntilNow + key;
+        var extra = retrievePaths(object[key], newPath, result);
+        return Object.assign(carry, extra);
+    }, {});
+}
+/**
+ * Flattens an object from {a: {b: {c: 'd'}}} to {'a.b.c': 'd'}
+ *
+ * @export
+ * @param {object} object the object to flatten
+ * @returns {AnyObject} the flattened object
+ */
+function flattenToPaths (object) {
+    var result = {};
+    return retrievePaths(object, null, result);
+}
+
 /**
  * Checks all props of an object and deletes guarded and non-fillables.
  *
@@ -1182,8 +1176,6 @@ function checkFillables (obj, fillables, guard) {
             return carry;
         }
         // check guard
-        guard.push('_conf');
-        guard.push('_sync');
         if (guard.includes(key)) {
             return carry;
         }
@@ -1259,18 +1251,69 @@ function pluginGetters (Firebase$$1) {
                     else {
                         patchData = doc;
                     }
-                    var cleanedPatchData = checkFillables(patchData, state._conf.sync.fillables, state._conf.sync.guard);
-                    cleanedPatchData.id = id;
-                    carry[id] = cleanedPatchData;
+                    // set default fields
+                    patchData.updated_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
+                    patchData.updated_by = state._sync.userId;
+                    // add fillable and guard defaults
+                    var fillables = state._conf.sync.fillables;
+                    if (fillables.length)
+                        fillables = fillables.concat(['updated_at', 'updated_by']);
+                    var guard = state._conf.sync.guard.concat(['_conf', '_sync']);
+                    // clean up item
+                    var cleanedPatchData = checkFillables(patchData, fillables, guard);
+                    var itemToUpdate = flattenToPaths(cleanedPatchData);
+                    // add id (required to get ref later at apiHelpers.ts)
+                    itemToUpdate.id = id;
+                    carry[id] = itemToUpdate;
                     return carry;
                 }, {});
+            };
+        },
+        prepareForPropDeletion: function (state, getters, rootState, rootGetters) {
+            return function (path) {
+                if (path === void 0) { path = ''; }
+                var _a;
+                var collectionMode = getters.collectionMode;
+                var patchData = {};
+                // set default fields
+                patchData.updated_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
+                patchData.updated_by = state._sync.userId;
+                // add fillable and guard defaults
+                var fillables = state._conf.sync.fillables;
+                if (fillables.length)
+                    fillables = fillables.concat(['updated_at', 'updated_by']);
+                var guard = state._conf.sync.guard.concat(['_conf', '_sync']);
+                // clean up item
+                var cleanedPatchData = checkFillables(patchData, fillables, guard);
+                // add id (required to get ref later at apiHelpers.ts)
+                var id, cleanedPath;
+                if (collectionMode) {
+                    id = path.substring(0, path.indexOf('.'));
+                    cleanedPath = path.substring(path.indexOf('.') + 1);
+                }
+                else {
+                    id = 'singleDoc';
+                    cleanedPath = path;
+                }
+                cleanedPatchData[cleanedPath] = Firebase$$1.firestore.FieldValue.delete();
+                cleanedPatchData.id = id;
+                return _a = {}, _a[id] = cleanedPatchData, _a;
             };
         },
         prepareForInsert: function (state, getters, rootState, rootGetters) {
             return function (items) {
                 if (items === void 0) { items = []; }
+                // add fillable and guard defaults
+                var fillables = state._conf.sync.fillables;
+                if (fillables.length)
+                    fillables = fillables.concat(['id', 'created_at', 'created_by']);
+                var guard = state._conf.sync.guard.concat(['_conf', '_sync']);
                 return items.reduce(function (carry, item) {
-                    item = checkFillables(item, state._conf.sync.fillables, state._conf.sync.guard);
+                    // set default fields
+                    item.created_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
+                    item.created_by = state._sync.userId;
+                    // clean up item
+                    item = checkFillables(item, fillables, guard);
                     carry.push(item);
                     return carry;
                 }, []);
@@ -1278,7 +1321,16 @@ function pluginGetters (Firebase$$1) {
         },
         prepareInitialDocForInsert: function (state, getters, rootState, rootGetters) {
             return function (doc) {
-                doc = checkFillables(doc, state._conf.sync.fillables, state._conf.sync.guard);
+                // add fillable and guard defaults
+                var fillables = state._conf.sync.fillables;
+                if (fillables.length)
+                    fillables = fillables.concat(['id', 'created_at', 'created_by']);
+                var guard = state._conf.sync.guard.concat(['_conf', '_sync']);
+                // set default fields
+                doc.created_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
+                doc.created_by = state._sync.userId;
+                // clean up item
+                doc = checkFillables(doc, fillables, guard);
                 return doc;
             };
         }

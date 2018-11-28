@@ -25,7 +25,7 @@ export default function (userState: object): AnyObject {
       const _sync = merge(state._sync, {
          // make null once to be able to overwrite with empty object
         pathVariables: null,
-        syncStack: { updates: null },
+        syncStack: { updates: null, propDeletions: null },
         fetched: null,
       }, {
         unsubscribe: null,
@@ -34,8 +34,8 @@ export default function (userState: object): AnyObject {
         syncStack: {
           inserts: [],
           updates: {},
+          propDeletions: {},
           deletions: [],
-          propDeletions: [],
           debounceTimer: null,
         },
         fetched: {},

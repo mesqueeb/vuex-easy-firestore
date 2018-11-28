@@ -2,7 +2,7 @@ import test from 'ava'
 import { isObject, isArray, isDate } from 'is-what'
 import wait from './helpers/wait'
 import Firebase from './helpers/firestoreMock'
-import store from './helpers/index.cjs.js'
+import {storeVuexEasyAccess as store} from './helpers/index.cjs.js'
 
 const box = store.state.pokemonBox
 const char = store.state.mainCharacter
@@ -10,7 +10,7 @@ const boxRef = store.getters['pokemonBox/dbRef']
 const charRef = store.getters['mainCharacter/dbRef']
 
 test('[COLLECTION] set & delete: top lvl', async t => {
-  await wait(10)
+  await wait(2)
   const id = boxRef.doc().id
   const id2 = boxRef.doc().id
   const date = new Date()
@@ -21,7 +21,8 @@ test('[COLLECTION] set & delete: top lvl', async t => {
     type: ['water'],
     meta: {date, firebaseServerTS: Firebase.firestore.FieldValue.serverTimestamp()}
   }
-  store.set('pokemonBox/*', {[id]: pokemonValues})
+  await store.set('pokemonBox/pokemon.*', pokemonValues)
+  await wait(2)
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Squirtle')
   t.is(box.pokemon[id].meta.date, date)
@@ -39,7 +40,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
     name: 'COOL Squirtle!',
     meta: {date: date2}
   }
-  store.set('pokemonBox/*', pokemonValuesNew)
+  store.set('pokemonBox/pokemon.*', pokemonValuesNew)
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'COOL Squirtle!')
   t.deepEqual(box.pokemon[id].type, ['water'])
@@ -52,7 +53,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.deepEqual(doc.type, ['water'])
 
   // update arrays
-  store.set('pokemonBox/*', {type: ['water', 'normal'], id})
+  store.set('pokemonBox/pokemon.*', {type: ['water', 'normal'], id})
   t.deepEqual(box.pokemon[id].type, ['water', 'normal'])
   await wait(2)
   docR = await boxRef.doc(id).get()
@@ -60,7 +61,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.deepEqual(doc.type, ['water', 'normal'])
 
   // SECOND SET + set chooses insert appropriately
-  store.set('pokemonBox/*', {name: 'Charmander', id: id2})
+  store.set('pokemonBox/pokemon.*', {name: 'Charmander', id: id2})
   t.truthy(box.pokemon[id2])
   t.is(box.pokemon[id2].name, 'Charmander')
   await wait(2)
@@ -70,7 +71,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.is(doc.name, 'Charmander')
 
   // delete
-  store.delete('pokemonBox/*', id)
+  store.delete('pokemonBox/pokemon.*', id)
   t.falsy(box.pokemon[id])
   await wait(2)
   docR = await boxRef.doc(id).get()
@@ -83,11 +84,11 @@ test('[COLLECTION] set & delete: top lvl', async t => {
 })
 
 test('[COLLECTION] set & delete: deep', async t => {
-  await wait(10)
+  await wait(2)
   let docR, doc
 
   const id = boxRef.doc().id
-  await store.set('pokemonBox/*', {id, nested: {a: {met: {de: 'aba'}}}})
+  await store.set('pokemonBox/pokemon.*', {id, nested: {a: {met: {de: 'aba'}}}})
   t.truthy(box.pokemon[id])
   t.deepEqual(box.pokemon[id].nested, {a: {met: {de: 'aba'}}})
   await wait(2)
@@ -96,8 +97,8 @@ test('[COLLECTION] set & delete: deep', async t => {
   t.deepEqual(doc.nested, {a: {met: {de: 'aba'}}})
 
   // update
-  // await store.set('pokemonBox/pokemon.*.nested.a.met.de', [id, 'ebe'])
-  await store.set('pokemonBox/pokemon.*.nested.a.met.*', [id, {de: 'ebe'}])
+  await store.set('pokemonBox/pokemon.*.nested.a.met.de', [id, 'ebe'])
+  // await store.set('pokemonBox/pokemon.*.nested.a.met.*', [id, {de: 'ebe'}])
   t.deepEqual(box.pokemon[id].nested, {a: {met: {de: 'ebe'}}})
   await wait(2)
   docR = await boxRef.doc(id).get()
@@ -106,18 +107,16 @@ test('[COLLECTION] set & delete: deep', async t => {
   t.deepEqual(doc.nested, {a: {met: {de: 'ebe'}}})
 
   // delete
-  await store.delete('pokemonBox/pokemon.*.nested.a.met.de', id)
+  await store.delete('pokemonBox/pokemon.*.nested.a.met.de', [id])
   t.deepEqual(box.pokemon[id].nested, {a: {met: {}}})
   await wait(2)
   docR = await boxRef.doc(id).get()
   doc = docR.data()
-  // t.deepEqual(doc.nested, {a: {met: {}}})
   t.deepEqual(doc.nested, {a: {met: {}}})
-  // todo: replace this when the bug is fixed in mock-cloud-firestore
 })
 
 // test('[COLLECTION] set & delete: batches', async t => {
-//   await wait(10)
+//   await wait(2)
 //   let docR1, doc1, docR2, doc2, docR3, doc3
 //   // ini set
 //   const id1 = boxRef.doc().id
@@ -148,7 +147,7 @@ test('[COLLECTION] set & delete: deep', async t => {
 // })
 
 test('[DOC] set & delete: top lvl', async t => {
-  await wait(10)
+  await wait(2)
   // EXISTING prop set
   await store.set('mainCharacter/items', ['Pokeball'])
   t.true(char.items.includes('Pokeball'))
@@ -174,31 +173,29 @@ test('[DOC] set & delete: top lvl', async t => {
   t.falsy(doc.newProp)
 })
 
-// test('[DOC] set & delete: deep', async t => {
-//   await wait(10)
-//   await store.set('mainCharacter', {a: {met: {de: 'aba'}}})
-//   t.truthy(char.a.met.de)
-//   t.is(char.a.met.de, 'aba')
-//   await wait(2)
-//   let docR, doc
-//   docR = await charRef.get()
-//   console.log('docR → ', docR)
-//   doc = docR.data()
-//   console.log('doc → ', doc)
-//   t.truthy(doc.a.met.de)
-//   t.is(doc.a.met.de, 'aba')
+test('[DOC] set & delete: deep', async t => {
+  await wait(2)
+  await store.set('mainCharacter', {a: {met: {de: 'aba'}}})
+  t.truthy(char.a.met.de)
+  t.is(char.a.met.de, 'aba')
+  await wait(2)
+  let docR, doc
+  docR = await charRef.get()
+  doc = docR.data()
+  t.truthy(doc.a.met.de)
+  t.is(doc.a.met.de, 'aba')
 
-//   // delete
-//   await store.dispatch('mainCharacter/delete', 'a.met.de')
-//   t.truthy(char.a.met)
-//   t.falsy(char.a.met.de)
-// })
+  // delete
+  await store.delete('mainCharacter/a.met.de')
+  t.truthy(char.a.met)
+  t.falsy(char.a.met.de)
+})
 
 // test('[COLLECTION] duplicate', async t => {
-//   await wait(10)
+//   await wait(2)
 //   let res
 //   const id = boxRef.doc().id
-//   await store.set('pokemonBox/*', {id, name: 'Jamie Lannister'})
+//   await store.set('pokemonBox/pokemon.*', {id, name: 'Jamie Lannister'})
 //   t.is(box.pokemon[id].name, 'Jamie Lannister')
 //   // dupe 1
 //   res = await store.dispatch('pokemonBox/duplicate', id)

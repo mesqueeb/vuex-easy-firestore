@@ -9,8 +9,8 @@ export declare type IState = {
         syncStack: {
             inserts: any[];
             updates: AnyObject;
+            propDeletions: AnyObject;
             deletions: any[];
-            propDeletions: any[];
             debounceTimer: any;
         };
         fetched: AnyObject;
