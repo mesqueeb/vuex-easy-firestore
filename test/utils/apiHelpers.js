@@ -1,4 +1,5 @@
-import { grabUntilApiLimit, makeBatchFromSyncstack, getPathVarMatches } from '../../src/utils/apiHelpers'
+import { grabUntilApiLimit, makeBatchFromSyncstack, getPathVarMatches, createFetchIdentifier } from '../../src/utils/apiHelpers'
+import {storeGetters as store} from '../helpers/index.cjs.js'
 import test from 'ava'
 
 const state = {
@@ -12,6 +13,7 @@ const state = {
     }
   }
 }
+
 test('grabUntilApiLimit', t => {
   let res, syncStackProp, count, maxCount, ex
   count = 0
@@ -62,6 +64,19 @@ test('getPathVarMatches', t => {
   t.deepEqual(getPathVarMatches('{aa.{bb}'), ['bb'])
   t.deepEqual(getPathVarMatches('{aa}.bb}'), ['aa'])
   t.deepEqual(getPathVarMatches('{aa.bb}'), [])
+})
+
+test('createFetchIdentifier', t => {
+  let res
+  res = createFetchIdentifier({
+    whereFilters: [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']],
+    orderBy: ['date']
+  })
+  t.is(res, '[where]hi.{userId}.docs.{nr},==,{big},{userId},==,{userId}[orderBy]date')
+  res = createFetchIdentifier({
+    whereFilters: [['thatRef', '==', store.getters['mainCharacter/dbRef']]]
+  })
+  t.is(res, `[where]thatRef,==,DocumentReferenceSatoshi`)
 })
 
 test('makeBatchFromSyncstack', t => {

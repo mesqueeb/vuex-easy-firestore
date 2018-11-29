@@ -3,7 +3,7 @@ import merge from 'merge-anything'
 import { AnyObject, IPluginState } from '../declarations'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
-import { makeBatchFromSyncstack } from '../utils/apiHelpers'
+import { makeBatchFromSyncstack, createFetchIdentifier } from '../utils/apiHelpers'
 import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
 import error from './errors'
 
@@ -160,7 +160,7 @@ export default function (Firebase: any): AnyObject {
       return new Promise((resolve, reject) => {
         if (state._conf.logging) console.log('[vuex-easy-firestore] Fetch starting')
         if (!getters.signedIn) return resolve()
-        const identifier = JSON.stringify({whereFilters, orderBy})
+        const identifier = createFetchIdentifier({whereFilters, orderBy})
         const fetched = state._sync.fetched[identifier]
         // We've never fetched this before:
         if (!fetched) {

@@ -36,3 +36,11 @@ export declare function getPathVarMatches(pathPiece: string): string[];
  * @returns {string} returns 'groupId' in case of '{groupId}'
  */
 export declare function trimAccolades(pathPiece: string): string;
+/**
+ * Gets an object with {whereFilters, orderBy} filters and returns a unique identifier for that
+ *
+ * @export
+ * @param {AnyObject} [whereOrderBy={}] whereOrderBy {whereFilters, orderBy}
+ * @returns {string}
+ */
+export declare function createFetchIdentifier(whereOrderBy?: AnyObject): string;

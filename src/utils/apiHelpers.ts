@@ -1,4 +1,4 @@
-import { isObject } from 'is-what'
+import { isObject, isAnyObject } from 'is-what'
 import { IPluginState, AnyObject } from '../declarations'
 
 /**
@@ -148,4 +148,32 @@ export function getPathVarMatches (pathPiece: string): string[] {
  */
 export function trimAccolades (pathPiece: string): string {
   return pathPiece.slice(1, -1)
+}
+
+function stringifyParams (params: any[]): string {
+  return params.map(param => {
+    if (isAnyObject(param) && !isObject(param)) {
+      // @ts-ignore
+      return String(param.constructor.name) + String(param.id)
+    }
+    return String(param)
+  }).join()
+}
+
+/**
+ * Gets an object with {whereFilters, orderBy} filters and returns a unique identifier for that
+ *
+ * @export
+ * @param {AnyObject} [whereOrderBy={}] whereOrderBy {whereFilters, orderBy}
+ * @returns {string}
+ */
+export function createFetchIdentifier (whereOrderBy: AnyObject = {}): string {
+  let identifier = ''
+  if ('whereFilters' in whereOrderBy) {
+    identifier += '[where]' + whereOrderBy.whereFilters.map(where => stringifyParams(where)).join()
+  }
+  if ('orderBy' in whereOrderBy) {
+    identifier += '[orderBy]' + stringifyParams(whereOrderBy.orderBy)
+  }
+  return identifier
 }
