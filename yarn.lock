@@ -4080,6 +4080,13 @@ find-and-replace-anything@^1.2.0:
   dependencies:
     is-what "^3.0.1"
 
+find-and-replace-anything@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/find-and-replace-anything/-/find-and-replace-anything-2.0.0.tgz#2d5e6ff5d4790ca00bae53ec21dd1158e4786425"
+  integrity sha512-Sa4cD3Figdl7P6ZoVNpZOG/HBHjQEZ6vZqTteNzpdk6fFTq9fH6mb54zX05+jPVYZe2RsxFDCYUehp+z9vKTaQ==
+  dependencies:
+    is-what "^3.1.1"
+
 find-cache-dir@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/find-cache-dir/-/find-cache-dir-0.1.1.tgz#c8defae57c8a52a8a784f9e31c57c742e993a0b9"

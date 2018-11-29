@@ -1,5 +1,5 @@
 import error from '../module/errors'
-import { isObject, isString } from 'is-what'
+import { isPlainObject, isString } from 'is-what'
 
 /**
  * gets an ID from a single piece of payload.
@@ -18,7 +18,7 @@ export function getId (
   fullPayload?: object | any[] | string
 ): string {
   if (isString(payloadPiece)) return payloadPiece
-  if (isObject(payloadPiece)) {
+  if (isPlainObject(payloadPiece)) {
     if ('id' in payloadPiece) return payloadPiece.id
     const keys = Object.keys(payloadPiece)
     if (keys.length === 1) return keys[0]
@@ -34,10 +34,10 @@ export function getId (
  */
 export function getValueFromPayloadPiece (payloadPiece: any): any {
   if (
-    isObject(payloadPiece) &&
+    isPlainObject(payloadPiece) &&
     !payloadPiece.id &&
     Object.keys(payloadPiece).length === 1 &&
-    isObject(payloadPiece[Object.keys(payloadPiece)[0]])
+    isPlainObject(payloadPiece[Object.keys(payloadPiece)[0]])
   ) {
     return Object.values(payloadPiece)[0]
   }

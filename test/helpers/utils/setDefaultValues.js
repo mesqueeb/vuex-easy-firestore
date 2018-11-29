@@ -4,7 +4,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var isWhat = require('is-what');
 var merge = _interopDefault(require('merge-anything'));
-var findAndReplace = _interopDefault(require('find-and-replace-anything'));
+var findAndReplaceAnything = require('find-and-replace-anything');
 
 /**
  * convert to new Date() if defaultValue == '%convertTimestamp%'
@@ -17,7 +17,7 @@ function convertTimestamps(originVal, targetVal) {
     if (originVal === '%convertTimestamp%') {
         // firestore timestamps
         // @ts-ignore
-        if (isWhat.isAnyObject(targetVal) && !isWhat.isObject(targetVal) && isWhat.isFunction(targetVal.toDate)) {
+        if (isWhat.isAnyObject(targetVal) && !isWhat.isPlainObject(targetVal) && isWhat.isFunction(targetVal.toDate)) {
             // @ts-ignore
             return targetVal.toDate();
         }
@@ -37,12 +37,12 @@ function convertTimestamps(originVal, targetVal) {
  * @returns {AnyObject} the new object
  */
 function setDefaultValues (obj, defaultValues) {
-    if (!isWhat.isObject(defaultValues))
+    if (!isWhat.isPlainObject(defaultValues))
         console.error('[vuex-easy-firestore] Trying to merge target:', obj, 'onto a non-object (defaultValues):', defaultValues);
-    if (!isWhat.isObject(obj))
+    if (!isWhat.isPlainObject(obj))
         console.error('[vuex-easy-firestore] Trying to merge a non-object:', obj, 'onto the defaultValues:', defaultValues);
     var result = merge({ extensions: [convertTimestamps] }, defaultValues, obj);
-    return findAndReplace(result, '%convertTimestamp%', null, { onlyPlainObjects: true });
+    return findAndReplaceAnything.findAndReplace(result, '%convertTimestamp%', null, { onlyPlainObjects: true });
 }
 
 module.exports = setDefaultValues;

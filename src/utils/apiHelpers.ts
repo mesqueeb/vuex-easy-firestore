@@ -1,4 +1,4 @@
-import { isObject, isAnyObject } from 'is-what'
+import { isPlainObject, isAnyObject } from 'is-what'
 import { IPluginState, AnyObject } from '../declarations'
 
 /**
@@ -23,7 +23,7 @@ export function grabUntilApiLimit (
     targets = []
   } else {
     // Convert to array if targets is an object (eg. updates)
-    const targetIsObject = isObject(targets)
+    const targetIsObject = isPlainObject(targets)
     if (targetIsObject) {
       targets = Object.values(targets)
     }
@@ -152,7 +152,7 @@ export function trimAccolades (pathPiece: string): string {
 
 function stringifyParams (params: any[]): string {
   return params.map(param => {
-    if (isAnyObject(param) && !isObject(param)) {
+    if (isAnyObject(param) && !isPlainObject(param)) {
       // @ts-ignore
       return String(param.constructor.name) + String(param.id)
     }

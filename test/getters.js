@@ -1,5 +1,5 @@
 import test from 'ava'
-import { isObject, isArray, isDate } from 'is-what'
+import { isPlainObject, isArray, isDate } from 'is-what'
 import wait from './helpers/wait'
 import * as Firebase from 'firebase/app'
 import 'firebase/firestore'

@@ -1,4 +1,4 @@
-import { isNumber, isFunction, isObject, isArray, isString } from 'is-what'
+import { isNumber, isFunction, isPlainObject, isArray, isString } from 'is-what'
 import { IEasyFirestoreModule } from '../declarations'
 
 /**
@@ -57,7 +57,7 @@ export default function (config: IEasyFirestoreModule): boolean {
     const _prop = (prop === 'defaultValues')
       ? config.serverChange[prop]
       : config[prop]
-    if (!isObject(_prop)) errors.push(`\`${prop}\` should be an Object, but is not.`)
+    if (!isPlainObject(_prop)) errors.push(`\`${prop}\` should be an Object, but is not.`)
   })
   const stringProps = ['firestorePath', 'firestoreRefType', 'moduleName', 'statePropName']
   stringProps.forEach(prop => {
