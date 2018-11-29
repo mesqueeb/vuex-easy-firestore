@@ -1,4 +1,4 @@
-import { isObject } from 'is-what'
+import { isObject, isArray } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
 import error from './errors'
 import merge from 'merge-anything'
@@ -19,6 +19,10 @@ export default function (userState: object): AnyObject {
         const pathPiece = pathVars[key]
         self._vm.$set(state._sync.pathVariables, key, pathPiece)
       })
+    },
+    SET_SYNCFILTERS (state, {where, orderBy}) {
+      if (where && isArray(where)) state._conf.sync.where = where
+      if (orderBy && isArray(orderBy)) state._conf.sync.orderBy = orderBy
     },
     RESET_VUEX_EASY_FIRESTORE_STATE (state) {
       const self = this

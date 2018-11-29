@@ -1,4 +1,4 @@
-import { isObject, isFunction, isString, isDate, isAnyObject, isArray, isNumber } from 'is-what';
+import { isObject, isArray, isFunction, isString, isDate, isAnyObject, isNumber } from 'is-what';
 import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
 import merge from 'merge-anything';
 import findAndReplace from 'find-and-replace-anything';
@@ -133,6 +133,13 @@ function pluginMutations (userState) {
                 var pathPiece = pathVars[key];
                 self._vm.$set(state._sync.pathVariables, key, pathPiece);
             });
+        },
+        SET_SYNCFILTERS: function (state, _a) {
+            var where = _a.where, orderBy = _a.orderBy;
+            if (where && isArray(where))
+                state._conf.sync.where = where;
+            if (orderBy && isArray(orderBy))
+                state._conf.sync.orderBy = orderBy;
         },
         RESET_VUEX_EASY_FIRESTORE_STATE: function (state) {
             var self = this;
@@ -829,8 +836,12 @@ function pluginActions (Firebase$$1) {
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             var store = this;
             // set state for pathVariables
-            if (pathVariables && isObject(pathVariables))
+            if (pathVariables && isObject(pathVariables)) {
+                commit('SET_SYNCFILTERS', pathVariables);
+                delete pathVariables.where;
+                delete pathVariables.orderBy;
                 commit('SET_PATHVARS', pathVariables);
+            }
             // get userId
             var userId = null;
             if (Firebase$$1.auth().currentUser) {

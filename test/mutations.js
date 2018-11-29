@@ -86,3 +86,15 @@ test('test mutations synchronously', t => {
   t.falsy(noStatePropModule.umbrella)
   t.falsy(noStatePropModule.rain)
 })
+
+test('SET_SYNCFILTERS', t => {
+  const sync = store.state.mainCharacter._conf.sync
+  t.deepEqual(sync.where, [])
+  t.deepEqual(sync.orderBy, [])
+  store.commit('mainCharacter/SET_SYNCFILTERS', {
+    where: [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']],
+    orderBy: ['date']
+  })
+  t.deepEqual(sync.where, [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']])
+  t.deepEqual(sync.orderBy, ['date'])
+})

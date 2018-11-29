@@ -89,6 +89,8 @@ Firebase.auth().onAuthStateChanged(user => {
 
 Vuex-easy-firestore uses Firestore's [onSnapshot](https://firebase.google.com/docs/firestore/query-data/listen) to retrieve the doc(s) from the server and has added logic to save those doc(s) in a vuex module. If you do not want to open an `onSnapshot` listener you can also use [fetch](guide.html#fetching-docs-with-different-filters) instead.
 
+Also note that just like Firestore you can use `where` and `orderBy` filters (see [Filters](extra-features.html#filters)).
+
 ### Close DB channel
 
 In most cases you never need to close the connection to Firestore. But if you do want to close it (unsubscribe from Firestore's `onSnapshot`) you can do so like this:

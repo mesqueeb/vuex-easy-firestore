@@ -138,6 +138,13 @@ function pluginMutations (userState) {
                 self._vm.$set(state._sync.pathVariables, key, pathPiece);
             });
         },
+        SET_SYNCFILTERS: function (state, _a) {
+            var where = _a.where, orderBy = _a.orderBy;
+            if (where && isWhat.isArray(where))
+                state._conf.sync.where = where;
+            if (orderBy && isWhat.isArray(orderBy))
+                state._conf.sync.orderBy = orderBy;
+        },
         RESET_VUEX_EASY_FIRESTORE_STATE: function (state) {
             var self = this;
             var _sync = merge(state._sync, {
@@ -833,8 +840,12 @@ function pluginActions (Firebase$$1) {
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             var store = this;
             // set state for pathVariables
-            if (pathVariables && isWhat.isObject(pathVariables))
+            if (pathVariables && isWhat.isObject(pathVariables)) {
+                commit('SET_SYNCFILTERS', pathVariables);
+                delete pathVariables.where;
+                delete pathVariables.orderBy;
                 commit('SET_PATHVARS', pathVariables);
+            }
             // get userId
             var userId = null;
             if (Firebase$$1.auth().currentUser) {
