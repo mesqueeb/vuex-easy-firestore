@@ -641,6 +641,33 @@ function getPathVarMatches(pathPiece) {
 function trimAccolades(pathPiece) {
     return pathPiece.slice(1, -1);
 }
+function stringifyParams(params) {
+    return params.map(function (param) {
+        if (isWhat.isAnyObject(param) && !isWhat.isObject(param)) {
+            // @ts-ignore
+            return String(param.constructor.name) + String(param.id);
+        }
+        return String(param);
+    }).join();
+}
+/**
+ * Gets an object with {whereFilters, orderBy} filters and returns a unique identifier for that
+ *
+ * @export
+ * @param {AnyObject} [whereOrderBy={}] whereOrderBy {whereFilters, orderBy}
+ * @returns {string}
+ */
+function createFetchIdentifier(whereOrderBy) {
+    if (whereOrderBy === void 0) { whereOrderBy = {}; }
+    var identifier = '';
+    if ('whereFilters' in whereOrderBy) {
+        identifier += '[where]' + whereOrderBy.whereFilters.map(function (where) { return stringifyParams(where); }).join();
+    }
+    if ('orderBy' in whereOrderBy) {
+        identifier += '[orderBy]' + stringifyParams(whereOrderBy.orderBy);
+    }
+    return identifier;
+}
 
 /**
  * gets an ID from a single piece of payload.
@@ -861,7 +888,7 @@ function pluginActions (Firebase$$1) {
                     console.log('[vuex-easy-firestore] Fetch starting');
                 if (!getters.signedIn)
                     return resolve();
-                var identifier = JSON.stringify({ whereFilters: whereFilters, orderBy: orderBy });
+                var identifier = createFetchIdentifier({ whereFilters: whereFilters, orderBy: orderBy });
                 var fetched = state._sync.fetched[identifier];
                 // We've never fetched this before:
                 if (!fetched) {

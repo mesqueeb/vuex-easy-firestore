@@ -83,8 +83,11 @@ store.dispatch('userData/openDBChannel')
 
 You can prevent props on your docs in 'collection' mode (or on your single doc in 'doc' mode) to be synced to the firestore server. For this you should use either `fillables` **or** `guard`:
 
-- *Fillables:* Array of keys - the props which may be synced to the server. Any other props will not be synced! All props will be synced if left blank.
-- *Guard:* Array of keys - the props which should not be synced to the server. (the opposite of 'fillables')
+- *Fillables:* Array of keys - the props which **may be synced** to the server.
+  - 0 fillables = all props are synced
+  - 1 or more fillables = only those props are synced (any prop not in fillables is not synced)
+- *Guard:* Array of keys - the props which **should not be synced** to the server.
+  - adding any prop here will prevent it from being synced
 
 ```js
 {
