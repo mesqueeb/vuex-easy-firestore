@@ -21,18 +21,18 @@ export declare function grabUntilApiLimit(syncStackProp: string, count: number, 
  */
 export declare function makeBatchFromSyncstack(state: IPluginState, getters: AnyObject, Firebase: any, batchMaxCount?: number): any;
 /**
- * Check if the string starts and ends with '{' and '}' to swap out for variable value saved in state.
+ * Get the matches of path variables: eg. return ['groupId'] if pathPiece is '{groupId}'
  *
  * @export
  * @param {string} pathPiece eg. 'groups' or '{groupId}'
- * @returns {boolean}
+ * @returns {string[]} returns ['groupId'] in case of '{groupId}'
  */
-export declare function isPathVar(pathPiece: string): boolean;
+export declare function getPathVarMatches(pathPiece: string): string[];
 /**
  * Get the variable name of a piece of path: eg. return 'groupId' if pathPiece is '{groupId}'
  *
  * @export
- * @param {string} pathPiece eg. 'groups' or '{groupId}'
+ * @param {string} pathPiece eg. '{groupId}'
  * @returns {string} returns 'groupId' in case of '{groupId}'
  */
-export declare function pathVarKey(pathPiece: string): string;
+export declare function trimAccolades(pathPiece: string): string;

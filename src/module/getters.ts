@@ -2,6 +2,8 @@ import flattenToPaths from '../utils/objectFlattenToPaths'
 import { getDeepRef } from 'vuex-easy-access'
 import checkFillables from '../utils/checkFillables'
 import { AnyObject } from '../declarations'
+import { getPathVarMatches } from '../utils/apiHelpers'
+import error from './errors'
 
 export type IPluginGetters = {
   firestorePathComplete: (state: any, getters?: any, rootState?: any, rootGetters?: any) => string
@@ -144,6 +146,28 @@ export default function (Firebase: any): AnyObject {
         // clean up item
         doc = checkFillables(doc, fillables, guard)
         return doc
-      }
+      },
+    whereFilters: (state, getters) => {
+      const whereArrays = state._conf.sync.where
+      return whereArrays.map(paramsArr => {
+        paramsArr.forEach((param, paramIndex) => {
+          let pathCleaned = param
+          getPathVarMatches(param).forEach(key => {
+            const keyRegEx = new RegExp(`\{${key}\}`, 'g')
+            if (key === 'userId') {
+              pathCleaned = pathCleaned.replace(keyRegEx, state._sync.userId)
+              return
+            }
+            if (!Object.keys(state._sync.pathVariables).includes(key)) {
+              return error('missingPathVarKey')
+            }
+            const varVal = state._sync.pathVariables[key]
+            pathCleaned = pathCleaned.replace(keyRegEx, varVal)
+          })
+          paramsArr[paramIndex] = pathCleaned
+        })
+        return paramsArr
+      })
+    },
   }
 }

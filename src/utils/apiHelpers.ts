@@ -127,25 +127,25 @@ export function makeBatchFromSyncstack (
 }
 
 /**
- * Check if the string starts and ends with '{' and '}' to swap out for variable value saved in state.
+ * Get the matches of path variables: eg. return ['groupId'] if pathPiece is '{groupId}'
  *
  * @export
  * @param {string} pathPiece eg. 'groups' or '{groupId}'
- * @returns {boolean}
+ * @returns {string[]} returns ['groupId'] in case of '{groupId}'
  */
-export function isPathVar (pathPiece: string): boolean {
-  return (pathPiece[0] === '{' && pathPiece[pathPiece.length - 1] === '}')
+export function getPathVarMatches (pathPiece: string): string[] {
+  const matches = pathPiece.match(/\{([a-z]+)\}/gi)
+  if (!matches) return []
+  return matches.map(key => trimAccolades(key))
 }
 
 /**
  * Get the variable name of a piece of path: eg. return 'groupId' if pathPiece is '{groupId}'
  *
  * @export
- * @param {string} pathPiece eg. 'groups' or '{groupId}'
+ * @param {string} pathPiece eg. '{groupId}'
  * @returns {string} returns 'groupId' in case of '{groupId}'
  */
-export function pathVarKey (pathPiece: string): string {
-  return (isPathVar(pathPiece))
-    ? pathPiece.slice(1, -1)
-    : pathPiece
+export function trimAccolades (pathPiece: string): string {
+  return pathPiece.slice(1, -1)
 }

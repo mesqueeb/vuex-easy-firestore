@@ -612,26 +612,27 @@ function makeBatchFromSyncstack(state, getters, Firebase$$1, batchMaxCount) {
     return batch;
 }
 /**
- * Check if the string starts and ends with '{' and '}' to swap out for variable value saved in state.
+ * Get the matches of path variables: eg. return ['groupId'] if pathPiece is '{groupId}'
  *
  * @export
  * @param {string} pathPiece eg. 'groups' or '{groupId}'
- * @returns {boolean}
+ * @returns {string[]} returns ['groupId'] in case of '{groupId}'
  */
-function isPathVar(pathPiece) {
-    return (pathPiece[0] === '{' && pathPiece[pathPiece.length - 1] === '}');
+function getPathVarMatches(pathPiece) {
+    var matches = pathPiece.match(/\{([a-z]+)\}/gi);
+    if (!matches)
+        return [];
+    return matches.map(function (key) { return trimAccolades(key); });
 }
 /**
  * Get the variable name of a piece of path: eg. return 'groupId' if pathPiece is '{groupId}'
  *
  * @export
- * @param {string} pathPiece eg. 'groups' or '{groupId}'
+ * @param {string} pathPiece eg. '{groupId}'
  * @returns {string} returns 'groupId' in case of '{groupId}'
  */
-function pathVarKey(pathPiece) {
-    return (isPathVar(pathPiece))
-        ? pathPiece.slice(1, -1)
-        : pathPiece;
+function trimAccolades(pathPiece) {
+    return pathPiece.slice(1, -1);
 }
 
 /**
@@ -972,22 +973,8 @@ function pluginActions (Firebase$$1) {
             var dbRef = getters.dbRef;
             // apply where filters and orderBy
             if (getters.collectionMode) {
-                state._conf.sync.where.forEach(function (paramsArr) {
-                    paramsArr.forEach(function (param, paramIndex) {
-                        if (isPathVar(param)) {
-                            var _pathVarKey = pathVarKey(param);
-                            if (_pathVarKey === 'userId') {
-                                paramsArr[paramIndex] = userId;
-                                return;
-                            }
-                            if (!Object.keys(state._sync.pathVariables).includes(_pathVarKey)) {
-                                return error('missingPathVarKey');
-                            }
-                            var varVal = state._sync.pathVariables[_pathVarKey];
-                            paramsArr[paramIndex] = varVal;
-                        }
-                    });
-                    dbRef = dbRef.where.apply(dbRef, paramsArr);
+                getters.whereFilters.forEach(function (whereParams) {
+                    dbRef = dbRef.where.apply(dbRef, whereParams);
                 });
                 if (state._conf.sync.orderBy.length) {
                     dbRef = dbRef.orderBy.apply(dbRef, state._conf.sync.orderBy);
@@ -1460,7 +1447,29 @@ function pluginGetters (Firebase$$1) {
                 doc = checkFillables(doc, fillables, guard);
                 return doc;
             };
-        }
+        },
+        whereFilters: function (state, getters) {
+            var whereArrays = state._conf.sync.where;
+            return whereArrays.map(function (paramsArr) {
+                paramsArr.forEach(function (param, paramIndex) {
+                    var pathCleaned = param;
+                    getPathVarMatches(param).forEach(function (key) {
+                        var keyRegEx = new RegExp("{" + key + "}", 'g');
+                        if (key === 'userId') {
+                            pathCleaned = pathCleaned.replace(keyRegEx, state._sync.userId);
+                            return;
+                        }
+                        if (!Object.keys(state._sync.pathVariables).includes(key)) {
+                            return error('missingPathVarKey');
+                        }
+                        var varVal = state._sync.pathVariables[key];
+                        pathCleaned = pathCleaned.replace(keyRegEx, varVal);
+                    });
+                    paramsArr[paramIndex] = pathCleaned;
+                });
+                return paramsArr;
+            });
+        },
     };
 }
 

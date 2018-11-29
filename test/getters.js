@@ -73,3 +73,12 @@ test('[prepareForPatch] doc', async t => {
   t.is(res['singleDoc'].updated_by, undefined)
   t.is(res['singleDoc'].updated_at, undefined)
 })
+
+test('[whereFilters]', async t => {
+  let res
+  store.state.mainCharacter._conf.sync.where = [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']]
+  store.state.mainCharacter._sync.userId = 'charlie'
+  store.state.mainCharacter._sync.pathVariables = {nr: '1', big: 'shot'}
+  res = store.getters['mainCharacter/whereFilters']
+  t.deepEqual(res, [['hi.charlie.docs.1', '==', 'shot'], ['charlie', '==', 'charlie']])
+})

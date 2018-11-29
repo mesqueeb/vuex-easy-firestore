@@ -2,7 +2,7 @@ import test from 'ava'
 import wait from './helpers/wait'
 import {storeDBChannel as store} from './helpers/index.cjs.js'
 
-test('[openDBChannel] check path', async t => {
+test('[openDBChannel] check firestorePathComplete after openDBChannel', async t => {
   // 0. initial path
   t.deepEqual(store.state.testPathVar._sync.pathVariables, {})
   t.is(store.state.testPathVar._conf.firestorePath, 'coll/{name}')

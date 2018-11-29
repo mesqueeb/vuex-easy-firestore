@@ -3,7 +3,7 @@ import merge from 'merge-anything'
 import { AnyObject, IPluginState } from '../declarations'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
-import { makeBatchFromSyncstack, isPathVar, pathVarKey } from '../utils/apiHelpers'
+import { makeBatchFromSyncstack } from '../utils/apiHelpers'
 import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
 import error from './errors'
 
@@ -273,22 +273,8 @@ export default function (Firebase: any): AnyObject {
       let dbRef = getters.dbRef
       // apply where filters and orderBy
       if (getters.collectionMode) {
-        state._conf.sync.where.forEach(paramsArr => {
-          paramsArr.forEach((param, paramIndex) => {
-            if (isPathVar(param)) {
-              const _pathVarKey = pathVarKey(param)
-              if (_pathVarKey === 'userId') {
-                paramsArr[paramIndex] = userId
-                return
-              }
-              if (!Object.keys(state._sync.pathVariables).includes(_pathVarKey)) {
-                return error('missingPathVarKey')
-              }
-              const varVal = state._sync.pathVariables[_pathVarKey]
-              paramsArr[paramIndex] = varVal
-            }
-          })
-          dbRef = dbRef.where(...paramsArr)
+        getters.whereFilters.forEach(whereParams => {
+          dbRef = dbRef.where(...whereParams)
         })
         if (state._conf.sync.orderBy.length) {
           dbRef = dbRef.orderBy(...state._conf.sync.orderBy)
