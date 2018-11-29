@@ -324,35 +324,38 @@ You can change the default fetch limit like so:
 
 > Only for 'collection' mode.
 
-You can duplicate a document really simply by dispatching 'duplicate' like so:
+You can duplicate a document really simply by dispatching 'duplicate' and passing the id of the target document.
 
 ```js
-// let's duplicate Bulbasaur
-const docIdToDuplicate = '001'
-dispatch('pokemonBox/duplicate', docIdToDuplicate)
-// This will create a copy of Bulbasaur with a random ID
+// let's duplicate Bulbasaur who has the id '001'
+dispatch('pokemonBox/duplicate', '001')
 ```
 
-If you need to obtain the ID that was used for the duplicate you can do:
+This will create a copy of Bulbasaur (and all its props) with a random new ID. The duplicated doc will automatically be added to your vuex module and synced as well.
+
+If you need to know which new ID was generated for the duplicate, you can retrieve it from the action:
 
 ```js
 const idMap = await dispatch('pokemonBox/duplicate', '001')
 // mind the await!
 // idMap will look like this:
-{'001': dupeId} // dupeId will be a string!!
+{'001': dupeId}
+// dupeId will be a string with the ID of the duplicate!
 ```
 
-The reason we return an object with the id of the new duplicated document as value is to streamline it with 'duplicateBatch'.
+In the example above, if Bulbasaur ('001') was duplicated and the new document has random ID `'123abc'` the `idMap` will be `{'001': '123abc'}`.
 
-This is how you duplicate a batch of ID's:
+### Duplicate batch
+
+This is how you duplicate a batch of documents:
 
 ```js
 const idMap = await dispatch('pokemonBox/duplicateBatch', ['001', '004', '007'])
 // idMap will look like this:
 {
-  '001': dupeIdBulbasaur,
-  '004': dupeIdCharmander,
-  '007': dupeIdSquirtle,
+  '001': 'some-random-new-ID-1',
+  '004': 'some-random-new-ID-2',
+  '007': 'some-random-new-ID-3',
 }
 ```
 
