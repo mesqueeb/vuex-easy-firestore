@@ -227,7 +227,7 @@ const settingsModule = {
 
 ## Batch updates/inserts/deletions
 
-> Only for collection mode.
+> Only for 'collection' mode.
 
 In cases you don't want to loop through items you can also use the special batch actions below. The main difference is you will have separate hooks (see [hooks](extra-features.html#hooks-before-insert-patch-delete)), and batches are optimised to update the vuex store first for all changes and the syncs to firestore last.
 
@@ -241,7 +241,7 @@ dispatch('moduleName/deleteBatch', ids) // an array of ids
 
 ## Fetching docs (with different filters)
 
-> Only for collection mode.
+> Only for 'collection' mode.
 
 Say that you have a default filter set on the documents you are syncing when you `openDBChannel` (see [Filters](extra-features.html#filters)). And you want to fetch extra documents with other filters. (eg. archived posts) In this case you can use the fetch actions to retrieve documents from the same firestore path your module is synced to:
 
@@ -322,7 +322,7 @@ You can change the default fetch limit like so:
 
 ## Duplicating docs
 
-> Only for collection mode.
+> Only for 'collection' mode.
 
 You can duplicate a document really simply by dispatching 'duplicate' like so:
 

@@ -261,7 +261,12 @@ export default function (Firebase: any): AnyObject {
     openDBChannel ({getters, state, commit, dispatch}, pathVariables) {
       const store = this
       // set state for pathVariables
-      if (pathVariables && isObject(pathVariables)) commit('SET_PATHVARS', pathVariables)
+      if (pathVariables && isObject(pathVariables)) {
+        commit('SET_SYNCFILTERS', pathVariables)
+        delete pathVariables.where
+        delete pathVariables.orderBy
+        commit('SET_PATHVARS', pathVariables)
+      }
       // get userId
       let userId = null
       if (Firebase.auth().currentUser) {

@@ -2,32 +2,53 @@
 
 ## Filters
 
-The filters set in `sync: {}` are applied before the DB Channel is openend. They are only available for syncing 'collections'.
+> Only for 'collection' mode.
 
-- *where:* The same as firestore's `.where()`
-- *orderBy:* The same as firestore's `.orderBy()`
+Just as in Firestore's [onSnapshot](https://firebase.google.com/docs/firestore/query-data/listen) listener, you can set `where` and `orderBy` filters to filter which docs are retrieved and synced.
+
+- *where:* arrays of `parameters` that get passed on to firestore's `.where(...parameters)`
+- *orderBy:* a single `array` that gets passed on to firestore's `.orderBy(...array)`
+
+### Usage:
 
 ```js
-{
+const where = [ // an array of arrays
+  ['certain_field', '==', false],
+  ['another_field', '==', true],
+]
+const orderBy = ['created_date'] // or more params
+
+// Add to openDBChannel:
+store.dispatch('myModule/openDBChannel', {where, orderBy}) // like this
+
+// OR
+// Add to your vuex-easy-fire module in the config
+myModule = {
   // your other vuex-easy-fire config...
   sync: {
-    where: [ // an array of arrays
-      ['certain_field', '==', false] // example
-    ],
-    orderBy: [
-      'created_date' // example
-    ],
+    where,
+    orderBy
   }
 }
 ```
 
-You can also use `'{userId}'` as third param for a where filter. Eg.:
+You can also use all kind of variables like `'{userId}'` like so:
 
 ```js
-where: [
-  ['created_by', '==', '{userId}']
-]
+store.dispatch('myModule/openDBChannel', {
+  where: [
+    ['created_by', '==', '{userId}'],
+    ['some field', '==', '{pathVar}']
+  ],
+  pathVar: 'value'
+})
 ```
+
+What happens here above is:
+- `{userId}` will be automatically replaced with the authenticated user
+- `{pathVar}` is a custom variable that will be replaced with `'value'`
+
+For more information on custom variables, see the next chapter:
 
 ## Variables for firestorePath or filters
 
@@ -145,7 +166,7 @@ Exactly the same as above, but for changes that have occured on the server. You 
 
 ## Execution timings of hooks
 
-**Collection mode**
+**Collection mode hooks**
 
 <table>
   <tr>
@@ -174,7 +195,7 @@ Exactly the same as above, but for changes that have occured on the server. You 
   </tr>
 </table>
 
-**Doc mode**
+**Doc mode hooks**
 
 <table>
   <tr>
