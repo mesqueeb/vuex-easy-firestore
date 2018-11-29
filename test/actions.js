@@ -146,7 +146,6 @@ test('[COLLECTION] set & delete: deep', async t => {
   let docR, doc
 
   const id = boxRef.doc().id
-  console.log('id → [COLLECTION] set & delete: deep', id)
   await store.dispatch('pokemonBox/insert', {id, nested: {a: {met: {de: 'aba'}}}})
   t.truthy(box.pokemon[id])
   t.deepEqual(box.pokemon[id].nested, {a: {met: {de: 'aba'}}})

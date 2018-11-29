@@ -1,4 +1,4 @@
-import { grabUntilApiLimit, makeBatchFromSyncstack, isPathVar, pathVarKey } from '../../src/utils/apiHelpers'
+import { grabUntilApiLimit, makeBatchFromSyncstack, getPathVarMatches } from '../../src/utils/apiHelpers'
 import test from 'ava'
 
 const state = {
@@ -51,36 +51,17 @@ test('grabUntilApiLimit', t => {
   t.is(state._sync.syncStack.inserts.length, 100)
 })
 
-test('isPathVar', t => {
-  let res, piece
-  piece = '{groupId'
-  res = isPathVar(piece)
-  t.is(res, false)
-  piece = 'groupId}'
-  res = isPathVar(piece)
-  t.is(res, false)
-  piece = ' {groupId}'
-  res = isPathVar(piece)
-  t.is(res, false)
-  piece = '{groupId}'
-  res = isPathVar(piece)
-  t.is(res, true)
-})
-
-test('pathVarKey', t => {
-  let res, piece
-  piece = '{groupId'
-  res = pathVarKey(piece)
-  t.is(res, piece)
-  piece = 'groupId}'
-  res = pathVarKey(piece)
-  t.is(res, piece)
-  piece = '{groupId} '
-  res = pathVarKey(piece)
-  t.is(res, piece)
-  piece = '{groupId}'
-  res = pathVarKey(piece)
-  t.is(res, 'groupId')
+test('getPathVarMatches', t => {
+  t.deepEqual(getPathVarMatches('{groupId'), [])
+  t.deepEqual(getPathVarMatches('groupId}'), [])
+  t.deepEqual(getPathVarMatches('{groupId} '), ['groupId'])
+  t.deepEqual(getPathVarMatches('{groupId}'), ['groupId'])
+  t.deepEqual(getPathVarMatches('oeu.{groupId}.{aou}.oue'), ['groupId', 'aou'])
+  t.deepEqual(getPathVarMatches('{groupId}{oeuoeu}'), ['groupId', 'oeuoeu'])
+  t.deepEqual(getPathVarMatches('{a}.{b}'), ['a', 'b'])
+  t.deepEqual(getPathVarMatches('{aa.{bb}'), ['bb'])
+  t.deepEqual(getPathVarMatches('{aa}.bb}'), ['aa'])
+  t.deepEqual(getPathVarMatches('{aa.bb}'), [])
 })
 
 test('makeBatchFromSyncstack', t => {
