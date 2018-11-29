@@ -5,9 +5,10 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var createEasyAccess = require('vuex-easy-access');
 var createEasyAccess__default = _interopDefault(createEasyAccess);
 var isWhat = require('is-what');
+require('firebase');
 var merge = _interopDefault(require('merge-anything'));
-var findAndReplace = _interopDefault(require('find-and-replace-anything'));
-var Firebase = require('firebase/app');
+var findAndReplaceAnything = require('find-and-replace-anything');
+var Firebase$1 = require('firebase/app');
 var Vue = _interopDefault(require('vue'));
 var Vuex = _interopDefault(require('vuex'));
 
@@ -31,7 +32,7 @@ var pokemonBox = {
     sync: {
         where: [['id', '==', '{pokeId}']],
         orderBy: [],
-        fillables: ['fillable', 'name', 'id', 'type', 'freed', 'nested', 'addedBeforeInsert', 'addedBeforePatch'],
+        fillables: ['fillable', 'name', 'id', 'type', 'freed', 'nested', 'addedBeforeInsert', 'addedBeforePatch', 'arr1', 'arr2', 'guarded'],
         guard: ['guarded'],
         // HOOKS for local changes:
         insertHook: function (updateStore, doc, store) {
@@ -249,6 +250,18 @@ function error (error) {
     return error;
 }
 
+function isArrayHelper(value) {
+    // this is bugged in vuex actions, I DONT KNOW WHY
+    // return (
+    //   value instanceof ArrayUnion ||
+    //   value instanceof ArrayRemove
+    // )
+    return (isWhat.isAnyObject(value) &&
+        !isWhat.isPlainObject(value) &&
+        // @ts-ignore
+        (value.constructor.name === 'ArrayUnion' || value.constructor.name === 'ArrayRemove'));
+}
+
 /**
  * a function returning the mutations object
  *
@@ -326,22 +339,33 @@ function pluginMutations (userState) {
                 this._vm.$set(state, doc.id, doc);
             }
         },
-        PATCH_DOC: function (state, doc) {
+        PATCH_DOC: function (state, patches) {
             var _this = this;
             // Get the state prop ref
             var ref = (state._conf.statePropName)
                 ? state[state._conf.statePropName]
                 : state;
             if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
-                ref = ref[doc.id];
+                ref = ref[patches.id];
             }
             if (!ref)
                 return error('patchNoRef');
-            return Object.keys(doc).forEach(function (key) {
+            return Object.keys(patches).forEach(function (key) {
+                var newVal = patches[key];
+                // Array unions and deletions
+                if (isWhat.isArray(ref[key]) && isArrayHelper(patches[key])) {
+                    newVal = patches[key].executeOn(ref[key]);
+                }
                 // Merge if exists
-                var newVal = (isWhat.isObject(ref[key]) && isWhat.isObject(doc[key]))
-                    ? merge(ref[key], doc[key])
-                    : doc[key];
+                function arrayHelpers(originVal, newVal) {
+                    if (isWhat.isArray(originVal) && isArrayHelper(newVal)) {
+                        newVal = newVal.executeOn(originVal);
+                    }
+                    return newVal; // always return newVal as fallback!!
+                }
+                if (isWhat.isPlainObject(ref[key]) && isWhat.isPlainObject(patches[key])) {
+                    newVal = merge({ extensions: [arrayHelpers] }, ref[key], patches[key]);
+                }
                 _this._vm.$set(ref, key, newVal);
             });
         },
@@ -444,7 +468,7 @@ function convertTimestamps(originVal, targetVal) {
     if (originVal === '%convertTimestamp%') {
         // firestore timestamps
         // @ts-ignore
-        if (isWhat.isAnyObject(targetVal) && !isWhat.isObject(targetVal) && isWhat.isFunction(targetVal.toDate)) {
+        if (isWhat.isAnyObject(targetVal) && !isWhat.isPlainObject(targetVal) && isWhat.isFunction(targetVal.toDate)) {
             // @ts-ignore
             return targetVal.toDate();
         }
@@ -464,12 +488,12 @@ function convertTimestamps(originVal, targetVal) {
  * @returns {AnyObject} the new object
  */
 function setDefaultValues (obj, defaultValues) {
-    if (!isWhat.isObject(defaultValues))
+    if (!isWhat.isPlainObject(defaultValues))
         console.error('[vuex-easy-firestore] Trying to merge target:', obj, 'onto a non-object (defaultValues):', defaultValues);
-    if (!isWhat.isObject(obj))
+    if (!isWhat.isPlainObject(obj))
         console.error('[vuex-easy-firestore] Trying to merge a non-object:', obj, 'onto the defaultValues:', defaultValues);
     var result = merge({ extensions: [convertTimestamps] }, defaultValues, obj);
-    return findAndReplace(result, '%convertTimestamp%', null, { onlyPlainObjects: true });
+    return findAndReplaceAnything.findAndReplace(result, '%convertTimestamp%', null, { onlyPlainObjects: true });
 }
 
 /**
@@ -519,7 +543,7 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
     }
     else {
         // Convert to array if targets is an object (eg. updates)
-        var targetIsObject = isWhat.isObject(targets);
+        var targetIsObject = isWhat.isPlainObject(targets);
         if (targetIsObject) {
             targets = Object.values(targets);
         }
@@ -643,7 +667,7 @@ function trimAccolades(pathPiece) {
 }
 function stringifyParams(params) {
     return params.map(function (param) {
-        if (isWhat.isAnyObject(param) && !isWhat.isObject(param)) {
+        if (isWhat.isAnyObject(param) && !isWhat.isPlainObject(param)) {
             // @ts-ignore
             return String(param.constructor.name) + String(param.id);
         }
@@ -682,7 +706,7 @@ function createFetchIdentifier(whereOrderBy) {
 function getId(payloadPiece, conf, path, fullPayload) {
     if (isWhat.isString(payloadPiece))
         return payloadPiece;
-    if (isWhat.isObject(payloadPiece)) {
+    if (isWhat.isPlainObject(payloadPiece)) {
         if ('id' in payloadPiece)
             return payloadPiece.id;
         var keys = Object.keys(payloadPiece);
@@ -698,10 +722,10 @@ function getId(payloadPiece, conf, path, fullPayload) {
  * @returns {*} the value
  */
 function getValueFromPayloadPiece(payloadPiece) {
-    if (isWhat.isObject(payloadPiece) &&
+    if (isWhat.isPlainObject(payloadPiece) &&
         !payloadPiece.id &&
         Object.keys(payloadPiece).length === 1 &&
-        isWhat.isObject(payloadPiece[Object.keys(payloadPiece)[0]])) {
+        isWhat.isPlainObject(payloadPiece[Object.keys(payloadPiece)[0]])) {
         return Object.values(payloadPiece)[0];
     }
     return payloadPiece;
@@ -994,7 +1018,7 @@ function pluginActions (Firebase$$1) {
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             var store = this;
             // set state for pathVariables
-            if (pathVariables && isWhat.isObject(pathVariables)) {
+            if (pathVariables && isWhat.isPlainObject(pathVariables)) {
                 commit('SET_SYNCFILTERS', pathVariables);
                 delete pathVariables.where;
                 delete pathVariables.orderBy;
@@ -1279,7 +1303,7 @@ function pluginActions (Firebase$$1) {
 }
 
 function retrievePaths(object, path, result) {
-    if (!isWhat.isObject(object) ||
+    if (!isWhat.isPlainObject(object) ||
         !Object.keys(object).length ||
         object.methodName === 'FieldValue.serverTimestamp') {
         if (!path)
@@ -1320,7 +1344,7 @@ function flattenToPaths (object) {
 function checkFillables (obj, fillables, guard) {
     if (fillables === void 0) { fillables = []; }
     if (guard === void 0) { guard = []; }
-    if (!isWhat.isObject(obj))
+    if (!isWhat.isPlainObject(obj))
         return obj;
     return Object.keys(obj).reduce(function (carry, key) {
         // check fillables
@@ -1394,7 +1418,7 @@ function pluginGetters (Firebase$$1) {
                 // returns {object} -> {id: data}
                 return ids.reduce(function (carry, id) {
                     var patchData = {};
-                    // retrieve full object
+                    // retrieve full object in case there's an empty doc passed
                     if (!Object.keys(doc).length) {
                         patchData = (collectionMode)
                             ? getters.storeRef[id]
@@ -1406,6 +1430,14 @@ function pluginGetters (Firebase$$1) {
                     // set default fields
                     patchData.updated_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
                     patchData.updated_by = state._sync.userId;
+                    // replace arrayUnion and arrayRemove
+                    function checkFn(foundVal) {
+                        if (isArrayHelper(foundVal)) {
+                            return foundVal.getFirestoreFieldValue();
+                        }
+                        return foundVal;
+                    }
+                    patchData = findAndReplaceAnything.findAndReplaceIf(patchData, checkFn);
                     // add fillable and guard defaults
                     var fillables = state._conf.sync.fillables;
                     if (fillables.length)
@@ -1490,6 +1522,8 @@ function pluginGetters (Firebase$$1) {
             var whereArrays = state._conf.sync.where;
             return whereArrays.map(function (paramsArr) {
                 paramsArr.forEach(function (param, paramIndex) {
+                    if (!isWhat.isString(param))
+                        return;
                     var pathCleaned = param;
                     getPathVarMatches(param).forEach(function (key) {
                         var keyRegEx = new RegExp("{" + key + "}", 'g');
@@ -1501,6 +1535,11 @@ function pluginGetters (Firebase$$1) {
                             return error('missingPathVarKey');
                         }
                         var varVal = state._sync.pathVariables[key];
+                        // if path is only a param we need to just assign to avoid stringification
+                        if (param === "{" + key + "}") {
+                            pathCleaned = varVal;
+                            return;
+                        }
                         pathCleaned = pathCleaned.replace(keyRegEx, varVal);
                     });
                     paramsArr[paramIndex] = pathCleaned;
@@ -1569,7 +1608,7 @@ function errorCheck (config) {
         var _prop = (prop === 'defaultValues')
             ? config.serverChange[prop]
             : config[prop];
-        if (!isWhat.isObject(_prop))
+        if (!isWhat.isPlainObject(_prop))
             errors.push("`" + prop + "` should be an Object, but is not.");
     });
     var stringProps = ['firestorePath', 'firestoreRefType', 'moduleName', 'statePropName'];
@@ -1634,11 +1673,11 @@ function iniModule (userConfig, FirebaseDependency) {
  * @param {{logging?: boolean, FirebaseDependency?: any}} extraConfig An object with `logging` and `FirebaseDependency` props. `logging` enables console logs for debugging. `FirebaseDependency` is the non-instanciated Firebase class you can pass. (defaults to the Firebase peer dependency)
  * @returns {*}
  */
-function createFirestores (easyFirestoreModule, _a) {
+function vuexEasyFirestore(easyFirestoreModule, _a) {
     var _b = _a === void 0 ? {
         logging: false,
-        FirebaseDependency: Firebase
-    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.FirebaseDependency, FirebaseDependency = _d === void 0 ? Firebase : _d;
+        FirebaseDependency: Firebase$1
+    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.FirebaseDependency, FirebaseDependency = _d === void 0 ? Firebase$1 : _d;
     return function (store) {
         // Get an array of config files
         if (!isWhat.isArray(easyFirestoreModule))
@@ -1658,13 +1697,13 @@ var config = {
     databaseURL: 'https://tests-firestore.firebaseio.com',
     projectId: 'tests-firestore',
 };
-Firebase.initializeApp(config);
-var firestore = Firebase.firestore();
+Firebase$1.initializeApp(config);
+var firestore = Firebase$1.firestore();
 var settings = { timestampsInSnapshots: true };
 firestore.settings(settings);
 
 var easyAccess = createEasyAccess__default({ vuexEasyFirestore: true });
-var easyFirestores = createFirestores([pokemonBox, mainCharacter, testPathVar, testMutations1, testMutations2], { logging: false, FirebaseDependency: Firebase });
+var easyFirestores = vuexEasyFirestore([pokemonBox, mainCharacter, testPathVar, testMutations1, testMutations2], { logging: false, FirebaseDependency: Firebase$1 });
 var storeObj = {
     plugins: [easyFirestores, easyAccess]
 };

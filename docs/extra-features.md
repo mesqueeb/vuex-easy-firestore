@@ -1,5 +1,21 @@
 # Extra features
 
+## arrayUnion and arrayRemove
+
+Just like [Firestore](https://firebase.google.com/docs/firestore/manage-data/add-data#update_elements_in_an_array), Vuex Easy Firestore supports the usage of *arrayUnion* and *arrayRemove*.
+
+```js
+import { arrayUnion, arrayRemove } from 'vuex-easy-firestore'
+
+store.patch('myModule/patch', {
+  id: '001',
+  array1: arrayUnion('a new val'),
+  array2: arrayRemove('some val'),
+})
+```
+
+And as always, your vuex module & firestore will stay in sync!
+
 ## Filters
 
 > Only for 'collection' mode.

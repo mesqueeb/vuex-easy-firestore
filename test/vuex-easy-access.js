@@ -1,5 +1,5 @@
 import test from 'ava'
-import { isObject, isArray, isDate } from 'is-what'
+import { isPlainObject, isArray, isDate } from 'is-what'
 import wait from './helpers/wait'
 import Firebase from './helpers/firestoreMock'
 import {storeVuexEasyAccess as store} from './helpers/index.cjs.js'

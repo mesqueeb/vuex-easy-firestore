@@ -1,7 +1,8 @@
 import test from 'ava'
-import { isObject, isArray, isDate } from 'is-what'
+import { isPlainObject, isArray, isDate } from 'is-what'
 import wait from './helpers/wait'
 import {storeActions as store} from './helpers/index.cjs.js'
+import { arrayUnion, arrayRemove } from '../src/index'
 
 import * as Firebase from 'firebase/app'
 import 'firebase/firestore'
@@ -13,7 +14,7 @@ const charRef = store.getters['mainCharacter/dbRef']
 
 // actions
 test('store set up', async t => {
-  t.true(isObject(box.pokemon))
+  t.true(isPlainObject(box.pokemon))
   t.true(isArray(char.items))
 })
 
@@ -22,6 +23,7 @@ test('[COLLECTION] set with no id', async t => {
   await wait(2)
   // insert set
   id = await store.dispatch('pokemonBox/insert', {name: 'Unown'})
+  console.log('id  set with no id → ', id)
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Unown')
   await wait(2)

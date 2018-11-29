@@ -1,9 +1,9 @@
-import { isObject } from 'is-what'
+import { isPlainObject } from 'is-what'
 import { AnyObject } from '../declarations'
 
 function retrievePaths (object: object, path: string, result: object): object {
   if (
-    !isObject(object) ||
+    !isPlainObject(object) ||
     !Object.keys(object).length ||
     object.methodName === 'FieldValue.serverTimestamp'
   ) {

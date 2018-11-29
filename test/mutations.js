@@ -3,6 +3,8 @@ import {storeMutations as store} from './helpers/index.cjs.js'
 import * as Firebase from 'firebase/app'
 import 'firebase/firestore'
 
+const char = store.state.mainCharacter
+
 test('test mutations synchronously', t => {
   // test('SET_PATHVARS', t => {
   t.is(store.state.testMutationsNoStateProp._conf.firestorePath, 'coll/{name}')
@@ -88,7 +90,7 @@ test('test mutations synchronously', t => {
 })
 
 test('SET_SYNCFILTERS', t => {
-  const sync = store.state.mainCharacter._conf.sync
+  const sync = char._conf.sync
   t.deepEqual(sync.where, [])
   t.deepEqual(sync.orderBy, [])
   store.commit('mainCharacter/SET_SYNCFILTERS', {
@@ -97,4 +99,17 @@ test('SET_SYNCFILTERS', t => {
   })
   t.deepEqual(sync.where, [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']])
   t.deepEqual(sync.orderBy, ['date'])
+})
+
+test('SET_PATHVARS', t => {
+  let res
+  res = char._sync.pathVariables
+  t.deepEqual(res, {})
+  store.commit('mainCharacter/SET_PATHVARS', {name: 'Satoshi'})
+  res = char._sync.pathVariables
+  t.deepEqual(res, {name: 'Satoshi'})
+  const types = {nr: 1, nulll: null, undef: undefined, date: new Date(), obj: {}}
+  store.commit('mainCharacter/SET_PATHVARS', types)
+  res = char._sync.pathVariables
+  t.deepEqual(res, {name: 'Satoshi', ...types})
 })

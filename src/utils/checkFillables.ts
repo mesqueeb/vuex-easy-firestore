@@ -1,4 +1,4 @@
-import { isObject } from 'is-what'
+import { isPlainObject } from 'is-what'
 import { AnyObject } from '../declarations'
 
 /**
@@ -15,7 +15,7 @@ export default function (
   fillables: string[] = [],
   guard: string[] = []
 ): AnyObject {
-  if (!isObject(obj)) return obj
+  if (!isPlainObject(obj)) return obj
   return Object.keys(obj).reduce((carry, key) => {
     // check fillables
     if (fillables.length && !fillables.includes(key)) {

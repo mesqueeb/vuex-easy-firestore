@@ -1,8 +1,11 @@
-import flattenToPaths from '../utils/objectFlattenToPaths'
+import { isString, isPlainObject, isAnyObject } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
+import { findAndReplaceIf } from 'find-and-replace-anything'
+import flattenToPaths from '../utils/objectFlattenToPaths'
 import checkFillables from '../utils/checkFillables'
-import { AnyObject } from '../declarations'
 import { getPathVarMatches } from '../utils/apiHelpers'
+import { isArrayHelper } from '../utils/arrayHelpers'
+import { AnyObject } from '../declarations'
 import error from './errors'
 
 export type IPluginGetters = {
@@ -68,7 +71,7 @@ export default function (Firebase: any): AnyObject {
         // returns {object} -> {id: data}
         return ids.reduce((carry, id) => {
           let patchData: AnyObject = {}
-          // retrieve full object
+          // retrieve full object in case there's an empty doc passed
           if (!Object.keys(doc).length) {
             patchData = (collectionMode)
               ? getters.storeRef[id]
@@ -79,6 +82,14 @@ export default function (Firebase: any): AnyObject {
           // set default fields
           patchData.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
           patchData.updated_by = state._sync.userId
+          // replace arrayUnion and arrayRemove
+          function checkFn (foundVal) {
+            if (isArrayHelper(foundVal)) {
+              return foundVal.getFirestoreFieldValue()
+            }
+            return foundVal
+          }
+          patchData = findAndReplaceIf(patchData, checkFn)
           // add fillable and guard defaults
           let fillables = state._conf.sync.fillables
           if (fillables.length) fillables = fillables.concat(['updated_at', 'updated_by'])
@@ -151,6 +162,7 @@ export default function (Firebase: any): AnyObject {
       const whereArrays = state._conf.sync.where
       return whereArrays.map(paramsArr => {
         paramsArr.forEach((param, paramIndex) => {
+          if (!isString(param)) return
           let pathCleaned = param
           getPathVarMatches(param).forEach(key => {
             const keyRegEx = new RegExp(`\{${key}\}`, 'g')
@@ -162,6 +174,11 @@ export default function (Firebase: any): AnyObject {
               return error('missingPathVarKey')
             }
             const varVal = state._sync.pathVariables[key]
+            // if path is only a param we need to just assign to avoid stringification
+            if (param === `{${key}}`) {
+              pathCleaned = varVal
+              return
+            }
             pathCleaned = pathCleaned.replace(keyRegEx, varVal)
           })
           paramsArr[paramIndex] = pathCleaned

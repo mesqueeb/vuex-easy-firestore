@@ -1,8 +1,9 @@
-import { isObject, isArray } from 'is-what'
+import { isPlainObject, isAnyObject, isArray } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
 import error from './errors'
 import merge from 'merge-anything'
 import { AnyObject } from '../declarations'
+import { isArrayHelper, ArrayUnion } from '../utils/arrayHelpers'
 
 /**
  * a function returning the mutations object
@@ -76,20 +77,31 @@ export default function (userState: object): AnyObject {
         this._vm.$set(state, doc.id, doc)
       }
     },
-    PATCH_DOC (state, doc) {
+    PATCH_DOC (state, patches) {
       // Get the state prop ref
       let ref = (state._conf.statePropName)
         ? state[state._conf.statePropName]
         : state
       if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
-        ref = ref[doc.id]
+        ref = ref[patches.id]
       }
       if (!ref) return error('patchNoRef')
-      return Object.keys(doc).forEach(key => {
+      return Object.keys(patches).forEach(key => {
+        let newVal = patches[key]
+        // Array unions and deletions
+        if (isArray(ref[key]) && isArrayHelper(patches[key])) {
+          newVal = patches[key].executeOn(ref[key])
+        }
         // Merge if exists
-        const newVal = (isObject(ref[key]) && isObject(doc[key]))
-          ? merge(ref[key], doc[key])
-          : doc[key]
+        function arrayHelpers (originVal, newVal) {
+          if (isArray(originVal) && isArrayHelper(newVal)) {
+            newVal = newVal.executeOn(originVal)
+          }
+          return newVal // always return newVal as fallback!!
+        }
+        if (isPlainObject(ref[key]) && isPlainObject(patches[key])) {
+          newVal = merge({extensions: [arrayHelpers]}, ref[key], patches[key])
+        }
         this._vm.$set(ref, key, newVal)
       })
     },

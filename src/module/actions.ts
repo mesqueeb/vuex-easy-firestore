@@ -1,4 +1,4 @@
-import { isArray, isObject, isFunction } from 'is-what'
+import { isArray, isPlainObject, isAnyObject, isFunction } from 'is-what'
 import merge from 'merge-anything'
 import { AnyObject, IPluginState } from '../declarations'
 import setDefaultValues from '../utils/setDefaultValues'
@@ -261,7 +261,7 @@ export default function (Firebase: any): AnyObject {
     openDBChannel ({getters, state, commit, dispatch}, pathVariables) {
       const store = this
       // set state for pathVariables
-      if (pathVariables && isObject(pathVariables)) {
+      if (pathVariables && isPlainObject(pathVariables)) {
         commit('SET_SYNCFILTERS', pathVariables)
         delete pathVariables.where
         delete pathVariables.orderBy
