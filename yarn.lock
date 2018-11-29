@@ -5158,6 +5158,11 @@ is-what@^3.0.1:
   resolved "https://registry.yarnpkg.com/is-what/-/is-what-3.0.1.tgz#babeb6d8aa78b9a3b3fb9607e36d94e5261481b1"
   integrity sha512-qGtgcO0oEpJGU3hvhCUDC8UZsp5QwL3Rp/VWTdVVfRmH0R8VQqwBaKKP/ewn3VYuindPNHMeQcIVBzO8mdX7Og==
 
+is-what@^3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/is-what/-/is-what-3.1.1.tgz#3a22d7f38fc50ffa58cd29b29f0450c489afd65d"
+  integrity sha512-zJfgPtIFG4G9tdJraBhkYxKF7TtSBADu7FLqV544UlzCwfZxOV5lhvRcRpcoT+C/dRf4npOaBVFRHuqD3XXqJw==
+
 is-windows@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/is-windows/-/is-windows-1.0.2.tgz#d1850eb9791ecd18e6182ce12a30f396634bb19d"

@@ -1363,6 +1363,8 @@ function pluginGetters (Firebase$$1) {
             var whereArrays = state._conf.sync.where;
             return whereArrays.map(function (paramsArr) {
                 paramsArr.forEach(function (param, paramIndex) {
+                    if (!isWhat.isString(param))
+                        return;
                     var pathCleaned = param;
                     getPathVarMatches(param).forEach(function (key) {
                         var keyRegEx = new RegExp("{" + key + "}", 'g');
@@ -1374,6 +1376,11 @@ function pluginGetters (Firebase$$1) {
                             return error('missingPathVarKey');
                         }
                         var varVal = state._sync.pathVariables[key];
+                        // if path is only a param we need to just assign to avoid stringification
+                        if (param === "{" + key + "}") {
+                            pathCleaned = varVal;
+                            return;
+                        }
                         pathCleaned = pathCleaned.replace(keyRegEx, varVal);
                     });
                     paramsArr[paramIndex] = pathCleaned;

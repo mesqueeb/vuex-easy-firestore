@@ -1,3 +1,4 @@
+import { isString } from 'is-what'
 import flattenToPaths from '../utils/objectFlattenToPaths'
 import { getDeepRef } from 'vuex-easy-access'
 import checkFillables from '../utils/checkFillables'
@@ -151,6 +152,7 @@ export default function (Firebase: any): AnyObject {
       const whereArrays = state._conf.sync.where
       return whereArrays.map(paramsArr => {
         paramsArr.forEach((param, paramIndex) => {
+          if (!isString(param)) return
           let pathCleaned = param
           getPathVarMatches(param).forEach(key => {
             const keyRegEx = new RegExp(`\{${key}\}`, 'g')
@@ -162,6 +164,11 @@ export default function (Firebase: any): AnyObject {
               return error('missingPathVarKey')
             }
             const varVal = state._sync.pathVariables[key]
+            // if path is only a param we need to just assign to avoid stringification
+            if (param === `{${key}}`) {
+              pathCleaned = varVal
+              return
+            }
             pathCleaned = pathCleaned.replace(keyRegEx, varVal)
           })
           paramsArr[paramIndex] = pathCleaned
