@@ -957,7 +957,7 @@ function pluginActions (Firebase$$1) {
                 }
             }
             // define handleDoc()
-            function handleDoc(_changeType, id, doc, source) {
+            function handleDoc(_changeType, id, doc) {
                 // define storeUpdateFn()
                 function storeUpdateFn(_doc) {
                     return dispatch('serverUpdate', { change: _changeType, id: id, doc: _doc });
@@ -965,7 +965,7 @@ function pluginActions (Firebase$$1) {
                 // get user set sync hook function
                 var syncHookFn = state._conf.serverChange[_changeType + 'Hook'];
                 if (syncHookFn) {
-                    syncHookFn(storeUpdateFn, doc, id, store, source, _changeType);
+                    syncHookFn(storeUpdateFn, doc, id, store, 'server', _changeType);
                 }
                 else {
                     storeUpdateFn(doc);
@@ -992,21 +992,19 @@ function pluginActions (Firebase$$1) {
                         var doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues);
                         var id = getters.firestorePathComplete.split('/').pop();
                         doc.id = id;
-                        handleDoc('modified', id, doc, source);
+                        handleDoc('modified', id, doc);
                         return resolve();
                     }
                     querySnapshot.docChanges().forEach(function (change) {
                         var changeType = change.type;
                         // Don't do anything for local modifications & removals
-                        if (source === 'local' &&
-                            (changeType === 'modified' || changeType === 'removed')) {
+                        if (source === 'local')
                             return resolve();
-                        }
                         var id = change.doc.id;
                         var doc = (changeType === 'added')
                             ? setDefaultValues(change.doc.data(), state._conf.serverChange.defaultValues)
                             : change.doc.data();
-                        handleDoc(changeType, id, doc, source);
+                        handleDoc(changeType, id, doc);
                     });
                     return resolve();
                 }, function (error$$1) {

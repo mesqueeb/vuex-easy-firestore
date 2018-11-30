@@ -18,14 +18,14 @@ footer: MIT Licensed | Copyright © 2018-present Luca Ban - Mesqueeb
 In just 4 lines of code, get your vuex module in complete 2-way sync with firestore:
 
 ```js
-const userModule = {
+const userDataModule = {
   firestorePath: 'users/{userId}/data',
   firestoreRefType: 'collection', // or 'doc'
   moduleName: 'userData',
   statePropName: 'docs',
   // the rest of your module here
 }
-// add userModule as vuex plugin wrapped in vuex-easy-firestore
+// add userDataModule as vuex plugin wrapped in vuex-easy-firestore
 ```
 
 and Alakazam! Now you have a vuex module called `userData` with `state: {docs: {}}`.
@@ -35,9 +35,9 @@ Now you just update and add docs with `dispatch('userData/set', newItem)` and fo
 
 # Features
 
-- Complete 2-way sync between your Vuex module & Firestore
-- [Automatic Firestore Timestamp conversion](extra-features.html#defaultvalues-set-after-server-retrieval)
-- [Fillables](extra-features.html#fillables-and-guard) (limit props able to sync)
+- Automatic 2-way sync between your Vuex module & Firestore
+- [Timestamp conversion to Date()](extra-features.html#defaultvalues-set-after-server-retrieval)
+- [Fillables / guard](extra-features.html#fillables-and-guard) (limit fields which will sync)
 - [Hooks](extra-features.html#hooks-before-insert-patch-delete) (before / after sync)
 - [Where / orderBy filters](extra-features.html#filters)
 
