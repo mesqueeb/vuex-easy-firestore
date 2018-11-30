@@ -286,7 +286,7 @@ export default function (Firebase: any): AnyObject {
         }
       }
       // define handleDoc()
-      function handleDoc (_changeType, id, doc, source) {
+      function handleDoc (_changeType, id, doc) {
         // define storeUpdateFn()
         function storeUpdateFn (_doc) {
           return dispatch('serverUpdate', {change: _changeType, id, doc: _doc})
@@ -294,7 +294,7 @@ export default function (Firebase: any): AnyObject {
         // get user set sync hook function
         const syncHookFn = state._conf.serverChange[_changeType + 'Hook']
         if (syncHookFn) {
-          syncHookFn(storeUpdateFn, doc, id, store, source, _changeType)
+          syncHookFn(storeUpdateFn, doc, id, store, 'server', _changeType)
         } else {
           storeUpdateFn(doc)
         }
@@ -318,22 +318,18 @@ export default function (Firebase: any): AnyObject {
             const doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues)
             const id = getters.firestorePathComplete.split('/').pop()
             doc.id = id
-            handleDoc('modified', id, doc, source)
+            handleDoc('modified', id, doc)
             return resolve()
           }
           querySnapshot.docChanges().forEach(change => {
             const changeType = change.type
             // Don't do anything for local modifications & removals
-            if (source === 'local' &&
-              (changeType === 'modified' || changeType === 'removed')
-            ) {
-              return resolve()
-            }
+            if (source === 'local') return resolve()
             const id = change.doc.id
             const doc = (changeType === 'added')
               ? setDefaultValues(change.doc.data(), state._conf.serverChange.defaultValues)
               : change.doc.data()
-            handleDoc(changeType, id, doc, source)
+            handleDoc(changeType, id, doc)
           })
           return resolve()
         }, error => {
