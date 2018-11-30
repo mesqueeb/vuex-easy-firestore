@@ -5,7 +5,7 @@ import 'firebase/firestore'
 
 const char = store.state.mainCharacter
 
-test('test mutations synchronously', t => {
+test('RESET_VUEX_EASY_FIRESTORE_STATE', t => {
   // test('SET_PATHVARS', t => {
   t.is(store.state.testMutationsNoStateProp._conf.firestorePath, 'coll/{name}')
   t.deepEqual(store.state.testMutationsNoStateProp._sync.pathVariables, {})
@@ -112,4 +112,23 @@ test('SET_PATHVARS', t => {
   store.commit('mainCharacter/SET_PATHVARS', types)
   res = char._sync.pathVariables
   t.deepEqual(res, {name: 'Satoshi', ...types})
+})
+
+const box = store.state.pokemonBox
+
+test('SET_PATHVARS & where getter', async t => {
+  let res
+  box._conf.sync.where = [['hi.{userId}.docs.{name}', '==', '{big}']]
+  box._sync.userId = 'charlie'
+  // pokemonBox._sync.userId = 'charlie'
+  res = store.getters['pokemonBox/whereFilters']
+  t.deepEqual(box._sync.pathVariables, {})
+  t.deepEqual(box._conf.sync.where, [['hi.{userId}.docs.{name}', '==', '{big}']])
+  t.deepEqual(res, [['hi.charlie.docs.{name}', '==', '{big}']])
+
+  store.commit('pokemonBox/SET_PATHVARS', {name: 'Satoshi'})
+  res = store.getters['pokemonBox/whereFilters']
+  t.deepEqual(box._sync.pathVariables, {name: 'Satoshi'})
+  t.deepEqual(box._conf.sync.where, [['hi.{userId}.docs.{name}', '==', '{big}']])
+  t.deepEqual(res, [['hi.charlie.docs.Satoshi', '==', '{big}']])
 })
