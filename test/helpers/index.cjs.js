@@ -1520,15 +1520,15 @@ function pluginGetters (Firebase$$1) {
         },
         whereFilters: function (state, getters) {
             var whereArrays = state._conf.sync.where;
-            return whereArrays.map(function (paramsArr) {
-                paramsArr.forEach(function (param, paramIndex) {
+            return whereArrays.map(function (whereClause) {
+                return whereClause.map(function (param) {
                     if (!isWhat.isString(param))
-                        return;
-                    var pathCleaned = param;
+                        return param;
+                    var cleanedParam = param;
                     getPathVarMatches(param).forEach(function (key) {
                         var keyRegEx = new RegExp("{" + key + "}", 'g');
                         if (key === 'userId') {
-                            pathCleaned = pathCleaned.replace(keyRegEx, state._sync.userId);
+                            cleanedParam = cleanedParam.replace(keyRegEx, state._sync.userId);
                             return;
                         }
                         if (!Object.keys(state._sync.pathVariables).includes(key)) {
@@ -1537,14 +1537,13 @@ function pluginGetters (Firebase$$1) {
                         var varVal = state._sync.pathVariables[key];
                         // if path is only a param we need to just assign to avoid stringification
                         if (param === "{" + key + "}") {
-                            pathCleaned = varVal;
+                            cleanedParam = varVal;
                             return;
                         }
-                        pathCleaned = pathCleaned.replace(keyRegEx, varVal);
+                        cleanedParam = cleanedParam.replace(keyRegEx, varVal);
                     });
-                    paramsArr[paramIndex] = pathCleaned;
+                    return cleanedParam;
                 });
-                return paramsArr;
             });
         },
     };
