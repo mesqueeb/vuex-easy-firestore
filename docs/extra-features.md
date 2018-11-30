@@ -1,21 +1,5 @@
 # Extra features
 
-## arrayUnion and arrayRemove
-
-Just like [Firestore](https://firebase.google.com/docs/firestore/manage-data/add-data#update_elements_in_an_array), Vuex Easy Firestore supports the usage of *arrayUnion* and *arrayRemove*.
-
-```js
-import { arrayUnion, arrayRemove } from 'vuex-easy-firestore'
-
-store.patch('myModule/patch', {
-  id: '001',
-  array1: arrayUnion('a new val'),
-  array2: arrayRemove('some val'),
-})
-```
-
-And as always, your vuex module & firestore will stay in sync!
-
 ## Filters
 
 > Only for 'collection' mode.
@@ -145,6 +129,8 @@ guard: ['email']
 
 A function where you can check something or even change the doc (the doc object) before the store mutation occurs. The `doc` passed in these hooks will also have an `id` field which is the id with which it will be added to the store and to Firestore.
 
+Please make sure to check the overview of [execution timings of hooks](#execution-timings-of-hooks).
+
 ```js
 {
   // your other vuex-easy-fire config...
@@ -183,34 +169,67 @@ Exactly the same as above, but for changes that have occured on the server. You 
 }
 ```
 
+Please make sure to check the overview of execution timings of hooks, in the next chapter:
+
 ## Execution timings of hooks
+
+Notice that the `created_at` and `updated_at` fields mentioned below is used by default, but can be disabled. To disable just add them to your [guard config](#fillables-and-guard).
 
 **Collection mode hooks**
 
 <table>
   <tr>
     <th>change type</th>
-    <th>local</th>
+    <th colspan="2">local</th>
     <th>server</th>
   </tr>
   <tr>
     <td>insertion</td>
-    <td><code>sync.insertHook</code> & <code>serverChange.addedHook</code></td>
+    <td>
+      <b>without <code>created_at</code></b>
+      <ol>
+        <li><code>sync.insertHook</code></li>
+      </ol>
+    </td>
+    <td>
+      <b>with <code>created_at</code></b>
+      <ol>
+        <li><code>sync.insertHook</code></li>
+        <li><code>serverChange.modifiedHook</code></li>
+      </ol>
+    </td>
     <td><code>serverChange.addedHook</code></td>
   </tr>
   <tr>
     <td>modification</td>
-    <td><code>sync.patchHook</code> & <code>serverChange.modifiedHook</code></td>
+    <td>
+      <b>without <code>updated_at</code></b>
+      <ol>
+        <li><code>sync.patchHook</code></li>
+      </ol>
+    </td>
+    <td>
+      <b>with <code>updated_at</code></b>
+      <ol>
+        <li><code>sync.patchHook</code></li>
+        <li><code>serverChange.modifiedHook</code></li>
+      </ol>
+    </td>
     <td><code>serverChange.modifiedHook</code></td>
   </tr>
   <tr>
     <td>deletion</td>
-    <td><code>sync.deleteHook</code> & <code>serverChange.removedHook</code></td>
+    <td colspan="2">
+      <ol>
+        <li><code>sync.deleteHook</code></li>
+        <li><code>serverChange.removedHook</code></li>
+      </ol>
+    </td>
     <td><code>serverChange.removedHook</code></td>
   </tr>
   <tr>
     <td>after <code>openDBChannel</code></td>
-    <td colspan="2"><code>serverChange.addedHook</code> is executed once for each doc</td>
+    <td colspan="3"><code>serverChange.addedHook</code> is executed once for each doc</td>
   </tr>
 </table>
 
@@ -219,27 +238,37 @@ Exactly the same as above, but for changes that have occured on the server. You 
 <table>
   <tr>
     <th>change type</th>
-    <th>local</th>
+    <th colspan="2">local</th>
     <th>server</th>
   </tr>
   <tr>
     <td>modification</td>
-    <td><code>sync.patchHook</code> & <code>serverChange.modifiedHook</code></td>
+    <td>
+      <b>without <code>updated_at</code></b>
+      <ol>
+        <li><code>sync.patchHook</code></li>
+      </ol>
+    </td>
+    <td>
+      <b>with <code>updated_at</code></b>
+      <ol>
+        <li><code>sync.patchHook</code></li>
+        <li><code>serverChange.modifiedHook</code></li>
+      </ol>
+    </td>
     <td><code>serverChange.modifiedHook</code></td>
   </tr>
   <tr>
     <td>after <code>openDBChannel</code></td>
-    <td colspan="2"><code>serverChange.modifiedHook</code> is executed once</td>
+    <td colspan="3"><code>serverChange.modifiedHook</code> is executed once</td>
   </tr>
 </table>
 
 ### Note about the serverChange hooks executing on local changes
 
-I have done my best to limit the hooks to only be executed on the proper events, but I cannot prevent the serverChange hook on being executed after each local change. The reason is because of how Firestore's [onSnapshot events](https://firebase.google.com/docs/firestore/query-data/listen) work. The reason being their explanation here:
+I have done my best to limit the hooks to only be executed on the proper events. The server hooks are executed during Firestore's [onSnapshot events](https://firebase.google.com/docs/firestore/query-data/listen).
 
-> **Events for metadata changes**
->
-> 3. The backend notifies the client of the successful write. There is no change to the document data, but there is a metadata change because the "pending writes" flag is now `false`.
+The reason for `updated_at` to trigger `serverChange.modifiedHook` even on just a local change, is because `updated_at` uses Firestore's `firebase.firestore.FieldValue.serverTimestamp()` which is replaced by a timestamp on the server and therefor there is a "server change".
 
 ## defaultValues set after server retrieval
 

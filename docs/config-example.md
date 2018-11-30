@@ -1,6 +1,6 @@
 # Config example
 
-Here is a list with all possible config options:
+Here is a list with all possible config options. **Only the top 3 properties are required**, the rest may be left out if not used!
 
 ```js
 const firestoreModule = {
