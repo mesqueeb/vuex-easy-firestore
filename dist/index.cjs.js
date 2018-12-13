@@ -5,11 +5,10 @@ Object.defineProperty(exports, '__esModule', { value: true });
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var isWhat = require('is-what');
-var Firebase = require('firebase');
+var Firebase = require('firebase/app');
 var vuexEasyAccess = require('vuex-easy-access');
 var merge = _interopDefault(require('merge-anything'));
 var findAndReplaceAnything = require('find-and-replace-anything');
-var Firebase$1 = require('firebase/app');
 
 require('@firebase/firestore');
 
@@ -1587,8 +1586,8 @@ function iniModule (userConfig, FirebaseDependency) {
 function vuexEasyFirestore(easyFirestoreModule, _a) {
     var _b = _a === void 0 ? {
         logging: false,
-        FirebaseDependency: Firebase$1
-    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.FirebaseDependency, FirebaseDependency = _d === void 0 ? Firebase$1 : _d;
+        FirebaseDependency: Firebase
+    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.FirebaseDependency, FirebaseDependency = _d === void 0 ? Firebase : _d;
     return function (store) {
         // Get an array of config files
         if (!isWhat.isArray(easyFirestoreModule))
