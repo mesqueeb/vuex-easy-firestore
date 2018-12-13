@@ -5,10 +5,9 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var createEasyAccess = require('vuex-easy-access');
 var createEasyAccess__default = _interopDefault(createEasyAccess);
 var isWhat = require('is-what');
-require('firebase');
+var Firebase = require('firebase/app');
 var merge = _interopDefault(require('merge-anything'));
 var findAndReplaceAnything = require('find-and-replace-anything');
-var Firebase$1 = require('firebase/app');
 var Vue = _interopDefault(require('vue'));
 var Vuex = _interopDefault(require('vuex'));
 
@@ -1673,8 +1672,8 @@ function iniModule (userConfig, FirebaseDependency) {
 function vuexEasyFirestore(easyFirestoreModule, _a) {
     var _b = _a === void 0 ? {
         logging: false,
-        FirebaseDependency: Firebase$1
-    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.FirebaseDependency, FirebaseDependency = _d === void 0 ? Firebase$1 : _d;
+        FirebaseDependency: Firebase
+    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.FirebaseDependency, FirebaseDependency = _d === void 0 ? Firebase : _d;
     return function (store) {
         // Get an array of config files
         if (!isWhat.isArray(easyFirestoreModule))
@@ -1694,13 +1693,13 @@ var config = {
     databaseURL: 'https://tests-firestore.firebaseio.com',
     projectId: 'tests-firestore',
 };
-Firebase$1.initializeApp(config);
-var firestore = Firebase$1.firestore();
+Firebase.initializeApp(config);
+var firestore = Firebase.firestore();
 var settings = { timestampsInSnapshots: true };
 firestore.settings(settings);
 
 var easyAccess = createEasyAccess__default({ vuexEasyFirestore: true });
-var easyFirestores = vuexEasyFirestore([pokemonBox, mainCharacter, testPathVar, testMutations1, testMutations2], { logging: false, FirebaseDependency: Firebase$1 });
+var easyFirestores = vuexEasyFirestore([pokemonBox, mainCharacter, testPathVar, testMutations1, testMutations2], { logging: false, FirebaseDependency: Firebase });
 var storeObj = {
     plugins: [easyFirestores, easyAccess]
 };

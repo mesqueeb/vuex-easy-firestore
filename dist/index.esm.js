@@ -1,9 +1,9 @@
 import { isAnyObject, isPlainObject, isArray, isFunction, isString, isDate, isNumber } from 'is-what';
-import { firestore } from 'firebase';
+import * as Firebase from 'firebase/app';
+import { firestore } from 'firebase/app';
 import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
 import merge from 'merge-anything';
 import { findAndReplace, findAndReplaceIf } from 'find-and-replace-anything';
-import * as Firebase$1 from 'firebase/app';
 
 require('@firebase/firestore');
 
@@ -484,7 +484,7 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {*} A Firebase firestore batch object.
  */
-function makeBatchFromSyncstack(state, getters, Firebase, batchMaxCount) {
+function makeBatchFromSyncstack(state, getters, Firebase$$1, batchMaxCount) {
     if (batchMaxCount === void 0) { batchMaxCount = 500; }
     // get state & getter variables
     var firestorePath = state._conf.firestorePath;
@@ -492,7 +492,7 @@ function makeBatchFromSyncstack(state, getters, Firebase, batchMaxCount) {
     var dbRef = getters.dbRef;
     var collectionMode = getters.collectionMode;
     // make batch
-    var batch = Firebase.firestore().batch();
+    var batch = Firebase$$1.firestore().batch();
     var log = {};
     var count = 0;
     // Add 'updates' to batch
@@ -646,7 +646,7 @@ function getValueFromPayloadPiece(payloadPiece) {
  * @param {*} Firebase The Firebase dependency
  * @returns {AnyObject} the actions object
  */
-function pluginActions (Firebase) {
+function pluginActions (Firebase$$1) {
     var _this = this;
     return {
         duplicate: function (_a, id) {
@@ -784,7 +784,7 @@ function pluginActions (Firebase) {
         },
         batchSync: function (_a) {
             var getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch, state = _a.state;
-            var batch = makeBatchFromSyncstack(state, getters, Firebase);
+            var batch = makeBatchFromSyncstack(state, getters, Firebase$$1);
             dispatch('_startPatching');
             state._sync.syncStack.debounceTimer = null;
             return new Promise(function (resolve, reject) {
@@ -934,9 +934,9 @@ function pluginActions (Firebase) {
             }
             // get userId
             var userId = null;
-            if (Firebase.auth().currentUser) {
+            if (Firebase$$1.auth().currentUser) {
                 state._sync.signedIn = true;
-                userId = Firebase.auth().currentUser.uid;
+                userId = Firebase$$1.auth().currentUser.uid;
                 state._sync.userId = userId;
             }
             // getters.dbRef should already have pathVariables swapped out
@@ -1273,7 +1273,7 @@ function checkFillables (obj, fillables, guard) {
  * @param {*} Firebase The Firebase dependency
  * @returns {AnyObject} the getters object
  */
-function pluginGetters (Firebase) {
+function pluginGetters (Firebase$$1) {
     return {
         firestorePathComplete: function (state, getters) {
             var path = state._conf.firestorePath;
@@ -1281,9 +1281,9 @@ function pluginGetters (Firebase) {
             if (requireUser) {
                 if (!getters.signedIn)
                     return path;
-                if (!Firebase.auth().currentUser)
+                if (!Firebase$$1.auth().currentUser)
                     return path;
-                var userId = Firebase.auth().currentUser.uid;
+                var userId = Firebase$$1.auth().currentUser.uid;
                 path = path.replace('{userId}', userId);
             }
             Object.keys(state._sync.pathVariables).forEach(function (key) {
@@ -1301,8 +1301,8 @@ function pluginGetters (Firebase) {
         dbRef: function (state, getters, rootState, rootGetters) {
             var path = getters.firestorePathComplete;
             return (getters.collectionMode)
-                ? Firebase.firestore().collection(path)
-                : Firebase.firestore().doc(path);
+                ? Firebase$$1.firestore().collection(path)
+                : Firebase$$1.firestore().doc(path);
         },
         storeRef: function (state, getters, rootState) {
             var path = (state._conf.statePropName)
@@ -1334,7 +1334,7 @@ function pluginGetters (Firebase) {
                         patchData = doc;
                     }
                     // set default fields
-                    patchData.updated_at = Firebase.firestore.FieldValue.serverTimestamp();
+                    patchData.updated_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
                     patchData.updated_by = state._sync.userId;
                     // replace arrayUnion and arrayRemove
                     function checkFn(foundVal) {
@@ -1366,7 +1366,7 @@ function pluginGetters (Firebase) {
                 var collectionMode = getters.collectionMode;
                 var patchData = {};
                 // set default fields
-                patchData.updated_at = Firebase.firestore.FieldValue.serverTimestamp();
+                patchData.updated_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
                 patchData.updated_by = state._sync.userId;
                 // add fillable and guard defaults
                 var fillables = state._conf.sync.fillables;
@@ -1385,7 +1385,7 @@ function pluginGetters (Firebase) {
                     id = 'singleDoc';
                     cleanedPath = path;
                 }
-                cleanedPatchData[cleanedPath] = Firebase.firestore.FieldValue.delete();
+                cleanedPatchData[cleanedPath] = Firebase$$1.firestore.FieldValue.delete();
                 cleanedPatchData.id = id;
                 return _a = {}, _a[id] = cleanedPatchData, _a;
             };
@@ -1400,7 +1400,7 @@ function pluginGetters (Firebase) {
                 var guard = state._conf.sync.guard.concat(['_conf', '_sync']);
                 return items.reduce(function (carry, item) {
                     // set default fields
-                    item.created_at = Firebase.firestore.FieldValue.serverTimestamp();
+                    item.created_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
                     item.created_by = state._sync.userId;
                     // clean up item
                     item = checkFillables(item, fillables, guard);
@@ -1417,7 +1417,7 @@ function pluginGetters (Firebase) {
                     fillables = fillables.concat(['id', 'created_at', 'created_by']);
                 var guard = state._conf.sync.guard.concat(['_conf', '_sync']);
                 // set default fields
-                doc.created_at = Firebase.firestore.FieldValue.serverTimestamp();
+                doc.created_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
                 doc.created_by = state._sync.userId;
                 // clean up item
                 doc = checkFillables(doc, fillables, guard);
@@ -1581,8 +1581,8 @@ function iniModule (userConfig, FirebaseDependency) {
 function vuexEasyFirestore(easyFirestoreModule, _a) {
     var _b = _a === void 0 ? {
         logging: false,
-        FirebaseDependency: Firebase$1
-    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.FirebaseDependency, FirebaseDependency = _d === void 0 ? Firebase$1 : _d;
+        FirebaseDependency: Firebase
+    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.FirebaseDependency, FirebaseDependency = _d === void 0 ? Firebase : _d;
     return function (store) {
         // Get an array of config files
         if (!isArray(easyFirestoreModule))
