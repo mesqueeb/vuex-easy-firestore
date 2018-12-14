@@ -18,9 +18,11 @@ There are two ways to use vuex-easy-firestore, in 'collection' or 'doc' mode. Yo
 - Use when working with a single doc.
 - eg. the "settings" or "config" of a user.
 
-Depending on which mode there are some small changes, but the syntax is mostly the same.
+Whether a vuex module is set to 'doc' or 'collection' mode, will have small changes in the actions you can do, but the syntax is mostly the same.
 
 The sync is fully robust and **automatically groups any api calls per 1000 ms**. You don't have to worry about optimising/limiting the api calls, it's all done automatically! (Only one api call per 1000ms will be made for a maximum of 500 changes, if there are more changes queued it will automatically be split over 2 api calls).
+
+> If you still are confused how to set up your database structure when it comes to documents vs collections, I highly recommend to check [this guide from Firebase](https://firebase.google.com/docs/firestore/manage-data/structure-data) itself.
 
 ## 'collection' mode
 
@@ -41,33 +43,33 @@ dispatch('moduleName/delete', id)
 
 ```js
 const id = '123'
-// Add the `id` as a prop to the item you want to set/update:
+// Add the `id` as a prop to the document you want to set/update:
 dispatch('moduleName/set', {id, name: 'my new name'})
-// OR use the `id` as [key] and the item as its value:
+// OR use the `id` as [key] and the document as its value:
 dispatch('moduleName/set', {[id]: {name: 'my new name'}})
 
 // Please note that only the `name` will be updated, and other fields are left alone!
 ```
 
-There are two ways to delete things: the whole item **or just a sub-property!**
+There are two ways to delete things: the whole document **or just a field!** (A field is a property of that document)
 
 ```js
-// Delete the whole item:
+// Delete the whole document:
 dispatch('moduleName/delete', id)
-// Delete a sub-property of an item:
+// Delete a field of a document:
 dispatch('moduleName/delete', `${id}.tags.water`)
 
-// the items looks like:
+// the document looks like:
 {
   id: '123',
   tags: {
     fire: true,
-    water: true, // only `water` will be deleted from the item!
+    water: true, // only `water` will be deleted in this example!
   }
 }
 ```
 
-In the above example you can see that you can delete a sub-property by passing a string and separate sub-props with `.`
+In the above example you can see that you can delete a field (or property) by passing a string and separate sub-props with `.` (See [here](firestore-fields-and-functions.html#delete-fields) for more info on deleting fields)
 
 For batch actions see [here](#batch-updates-inserts-deletions).
 

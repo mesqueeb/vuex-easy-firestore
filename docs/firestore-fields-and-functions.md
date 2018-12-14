@@ -7,7 +7,7 @@ Just like Firestore, Vuex Easy Firestore supports the usage of *arrayUnion* and 
 ```js
 import { arrayUnion, arrayRemove } from 'vuex-easy-firestore'
 
-store.patch('myModule/patch', {
+store.dispatch('myModule/patch', {
   id: '001',
   array1: arrayUnion('a new val'),
   array2: arrayRemove('some val'),

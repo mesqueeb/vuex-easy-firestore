@@ -156,15 +156,14 @@ Exactly the same as above, but for changes that have occured on the server. You 
 
 - *id:* the doc id returned in `change.doc.id` (see firestore documentation for more info)
 - *doc:* the doc returned in `change.doc.data()` (see firestore documentation for more info)
-- *source:* of the change. Can be either `'local'` or `'server'`
 
 ```js
 {
   // your other vuex-easy-fire config...
   serverChange: {
-    addedHook: function (updateStore, doc, id, store, source, change) { updateStore(doc) },
-    modifiedHook: function (updateStore, doc, id, store, source, change) { updateStore(doc) },
-    removedHook: function (updateStore, doc, id, store, source, change) { updateStore(doc) },
+    addedHook: function (updateStore, doc, id, store) { updateStore(doc) },
+    modifiedHook: function (updateStore, doc, id, store) { updateStore(doc) },
+    removedHook: function (updateStore, doc, id, store) { updateStore(doc) },
   }
 }
 ```
@@ -278,7 +277,7 @@ If you create a `defaultValues` object, then each document from the server will 
 Automatically convert Firestore Timestamps into `new Date()` objects! Do this by setting `'%convertTimestamp%'` as the value of a `defaultValues` prop. (see example below).
 
 **Use case 2: Reactivity**<br>
-With VueJS, if you need a prop on an item to be fully reactive with your vue templates, it needs to exist from the start. If some docs in your user's firestore doesn't have all props (because you added new functionality to your app at later dates), the *retrieved docs will have reactivity problems!*
+With VueJS, if you need a prop on an object to be fully reactive with your vue templates, it needs to exist from the start. If some docs in your user's firestore doesn't have all props (because you added new functionality to your app at later dates), the *retrieved docs will have reactivity problems!*
 
 However, if you add these props to `defaultValues` with some value (or just `'null'`), vuex-easy-firestore will automatically add those props to the doc *before* inserting it into vuex!
 
