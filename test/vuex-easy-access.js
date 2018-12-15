@@ -10,7 +10,7 @@ const boxRef = store.getters['pokemonBox/dbRef']
 const charRef = store.getters['mainCharacter/dbRef']
 
 test('[COLLECTION] set & delete: top lvl', async t => {
-  await wait(2)
+  await wait(10)
   const id = boxRef.doc().id
   const id2 = boxRef.doc().id
   const date = new Date()
@@ -84,7 +84,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
 })
 
 test('[COLLECTION] set & delete: deep', async t => {
-  await wait(2)
+  await wait(10)
   let docR, doc
 
   const id = boxRef.doc().id
@@ -147,7 +147,7 @@ test('[COLLECTION] set & delete: deep', async t => {
 // })
 
 test('[DOC] set & delete: top lvl', async t => {
-  await wait(2)
+  await wait(10)
   // EXISTING prop set
   await store.set('mainCharacter/items', ['Pokeball'])
   t.true(char.items.includes('Pokeball'))
@@ -174,7 +174,7 @@ test('[DOC] set & delete: top lvl', async t => {
 })
 
 test('[DOC] set & delete: deep', async t => {
-  await wait(2)
+  await wait(10)
   await store.set('mainCharacter', {a: {met: {de: 'aba'}}})
   t.truthy(char.a.met.de)
   t.is(char.a.met.de, 'aba')

@@ -41,7 +41,6 @@ export default function (Firebase: any): AnyObject {
       // 0. payload correction (only arrays)
       if (!isArray(ids)) return console.error('[vuex-easy-firestore] ids needs to be an array')
       if (id) ids.push(id)
-      if (doc.id) delete doc.id
 
       // 1. Prepare for patching
       const syncStackItems = getters.prepareForPatch(ids, doc)

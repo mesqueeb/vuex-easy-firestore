@@ -793,8 +793,6 @@ function pluginActions (Firebase$$1) {
                 return console.error('[vuex-easy-firestore] ids needs to be an array');
             if (id)
                 ids.push(id);
-            if (doc.id)
-                delete doc.id;
             // 1. Prepare for patching
             var syncStackItems = getters.prepareForPatch(ids, doc);
             // 2. Push to syncStack
