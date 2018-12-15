@@ -135,6 +135,55 @@ var mainCharacter = {
     getters: {},
 };
 
+function initialState$5() {
+    return {
+        nested: {
+            fillables: {
+                yes: 0,
+                no: 0,
+            },
+        }
+    };
+}
+var testNestedFillables = {
+    // easy firestore config
+    firestorePath: 'configTests/nestedFillables',
+    firestoreRefType: 'doc',
+    moduleName: 'nestedFillables',
+    statePropName: '',
+    sync: {
+        fillables: ['nested.fillables.yes'],
+    },
+    // module
+    state: initialState$5(),
+    mutations: createEasyAccess.defaultMutations(initialState$5()),
+    actions: {},
+    getters: {},
+};
+
+function initialState$6() {
+    return {
+        nested: {
+            guard: true,
+        }
+    };
+}
+var testNestedGuard = {
+    // easy firestore config
+    firestorePath: 'configTests/nestedGuard',
+    firestoreRefType: 'doc',
+    moduleName: 'nestedGuard',
+    statePropName: '',
+    sync: {
+        guard: ['nested.guard'],
+    },
+    // module
+    state: initialState$6(),
+    mutations: createEasyAccess.defaultMutations(initialState$6()),
+    actions: {},
+    getters: {},
+};
+
 require('@firebase/firestore');
 
 /**
@@ -1327,6 +1376,46 @@ function flattenToPaths (object) {
     return retrievePaths(object, null, result);
 }
 
+function recursiveCheck(obj, fillables, guard, pathUntilNow) {
+    if (pathUntilNow === void 0) { pathUntilNow = ''; }
+    if (!isWhat.isPlainObject(obj)) {
+        console.log('obj → ', obj);
+        return obj;
+    }
+    return Object.keys(obj).reduce(function (carry, key) {
+        var path = pathUntilNow;
+        if (path)
+            path += '.';
+        path += key;
+        // check guard regardless
+        if (guard.includes(path)) {
+            return carry;
+        }
+        var value = obj[key];
+        // check fillables up to this point
+        if (fillables.length) {
+            var passed_1 = false;
+            fillables.forEach(function (fillable) {
+                var pathDepth = path.split('.').length;
+                var fillableDepth = fillable.split('.').length;
+                var fillableUpToNow = fillable.split('.').slice(0, pathDepth).join('.');
+                var pathUpToFillableDepth = path.split('.').slice(0, fillableDepth).join('.');
+                if (fillableUpToNow === pathUpToFillableDepth)
+                    passed_1 = true;
+            });
+            // there's not one fillable that allows up to now
+            if (!passed_1)
+                return carry;
+        }
+        // no fillables or fillables up to now allow it
+        if (!isWhat.isPlainObject(value)) {
+            carry[key] = value;
+            return carry;
+        }
+        carry[key] = recursiveCheck(obj[key], fillables, guard, path);
+        return carry;
+    }, {});
+}
 /**
  * Checks all props of an object and deletes guarded and non-fillables.
  *
@@ -1339,20 +1428,7 @@ function flattenToPaths (object) {
 function checkFillables (obj, fillables, guard) {
     if (fillables === void 0) { fillables = []; }
     if (guard === void 0) { guard = []; }
-    if (!isWhat.isPlainObject(obj))
-        return obj;
-    return Object.keys(obj).reduce(function (carry, key) {
-        // check fillables
-        if (fillables.length && !fillables.includes(key)) {
-            return carry;
-        }
-        // check guard
-        if (guard.includes(key)) {
-            return carry;
-        }
-        carry[key] = obj[key];
-        return carry;
-    }, {});
+    return recursiveCheck(obj, fillables, guard);
 }
 
 /**
@@ -1697,7 +1773,15 @@ var settings = { timestampsInSnapshots: true };
 firestore.settings(settings);
 
 var easyAccess = createEasyAccess__default({ vuexEasyFirestore: true });
-var easyFirestores = vuexEasyFirestore([pokemonBox, mainCharacter, testPathVar, testMutations1, testMutations2], { logging: false, FirebaseDependency: Firebase });
+var easyFirestores = vuexEasyFirestore([
+    pokemonBox,
+    mainCharacter,
+    testPathVar,
+    testMutations1,
+    testMutations2,
+    testNestedFillables,
+    testNestedGuard,
+], { logging: false, FirebaseDependency: Firebase });
 var storeObj = {
     plugins: [easyFirestores, easyAccess]
 };
