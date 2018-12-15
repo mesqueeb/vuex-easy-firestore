@@ -8,6 +8,7 @@ var isWhat = require('is-what');
 var Firebase = require('firebase/app');
 var merge = _interopDefault(require('merge-anything'));
 var findAndReplaceAnything = require('find-and-replace-anything');
+var filter = _interopDefault(require('filter-anything'));
 var Vue = _interopDefault(require('vue'));
 var Vuex = _interopDefault(require('vuex'));
 
@@ -1376,61 +1377,6 @@ function flattenToPaths (object) {
     return retrievePaths(object, null, result);
 }
 
-function recursiveCheck(obj, fillables, guard, pathUntilNow) {
-    if (pathUntilNow === void 0) { pathUntilNow = ''; }
-    if (!isWhat.isPlainObject(obj)) {
-        console.log('obj → ', obj);
-        return obj;
-    }
-    return Object.keys(obj).reduce(function (carry, key) {
-        var path = pathUntilNow;
-        if (path)
-            path += '.';
-        path += key;
-        // check guard regardless
-        if (guard.includes(path)) {
-            return carry;
-        }
-        var value = obj[key];
-        // check fillables up to this point
-        if (fillables.length) {
-            var passed_1 = false;
-            fillables.forEach(function (fillable) {
-                var pathDepth = path.split('.').length;
-                var fillableDepth = fillable.split('.').length;
-                var fillableUpToNow = fillable.split('.').slice(0, pathDepth).join('.');
-                var pathUpToFillableDepth = path.split('.').slice(0, fillableDepth).join('.');
-                if (fillableUpToNow === pathUpToFillableDepth)
-                    passed_1 = true;
-            });
-            // there's not one fillable that allows up to now
-            if (!passed_1)
-                return carry;
-        }
-        // no fillables or fillables up to now allow it
-        if (!isWhat.isPlainObject(value)) {
-            carry[key] = value;
-            return carry;
-        }
-        carry[key] = recursiveCheck(obj[key], fillables, guard, path);
-        return carry;
-    }, {});
-}
-/**
- * Checks all props of an object and deletes guarded and non-fillables.
- *
- * @export
- * @param {object} obj the target object to check
- * @param {string[]} [fillables=[]] an array of strings, with the props which should be allowed on returned object
- * @param {string[]} [guard=[]] an array of strings, with the props which should NOT be allowed on returned object
- * @returns {AnyObject} the cleaned object after deleting guard and non-fillables
- */
-function checkFillables (obj, fillables, guard) {
-    if (fillables === void 0) { fillables = []; }
-    if (guard === void 0) { guard = []; }
-    return recursiveCheck(obj, fillables, guard);
-}
-
 /**
  * A function returning the getters object
  *
@@ -1515,7 +1461,7 @@ function pluginGetters (Firebase$$1) {
                         fillables = fillables.concat(['updated_at', 'updated_by']);
                     var guard = state._conf.sync.guard.concat(['_conf', '_sync']);
                     // clean up item
-                    var cleanedPatchData = checkFillables(patchData, fillables, guard);
+                    var cleanedPatchData = filter(patchData, fillables, guard);
                     var itemToUpdate = flattenToPaths(cleanedPatchData);
                     // add id (required to get ref later at apiHelpers.ts)
                     itemToUpdate.id = id;
@@ -1539,7 +1485,7 @@ function pluginGetters (Firebase$$1) {
                     fillables = fillables.concat(['updated_at', 'updated_by']);
                 var guard = state._conf.sync.guard.concat(['_conf', '_sync']);
                 // clean up item
-                var cleanedPatchData = checkFillables(patchData, fillables, guard);
+                var cleanedPatchData = filter(patchData, fillables, guard);
                 // add id (required to get ref later at apiHelpers.ts)
                 var id, cleanedPath;
                 if (collectionMode) {
@@ -1568,7 +1514,7 @@ function pluginGetters (Firebase$$1) {
                     item.created_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
                     item.created_by = state._sync.userId;
                     // clean up item
-                    item = checkFillables(item, fillables, guard);
+                    item = filter(item, fillables, guard);
                     carry.push(item);
                     return carry;
                 }, []);
@@ -1585,7 +1531,7 @@ function pluginGetters (Firebase$$1) {
                 doc.created_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
                 doc.created_by = state._sync.userId;
                 // clean up item
-                doc = checkFillables(doc, fillables, guard);
+                doc = filter(doc, fillables, guard);
                 return doc;
             };
         },
