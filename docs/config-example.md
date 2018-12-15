@@ -29,16 +29,16 @@ const firestoreModule = {
     deleteBatchHook: function (updateStore, ids, store) { return updateStore(ids) },
   },
 
-  // When items on the server side are changed:
+  // When docs on the server side are changed:
   serverChange: {
     defaultValues: {},
     // HOOKS for changes on SERVER:
-    addedHook: function (updateStore, doc, id, store, source, change) { return updateStore(doc) },
-    modifiedHook: function (updateStore, doc, id, store, source, change) { return updateStore(doc) },
-    removedHook: function (updateStore, doc, id, store, source, change) { return updateStore(doc) },
+    addedHook: function (updateStore, doc, id, store) { return updateStore(doc) },
+    modifiedHook: function (updateStore, doc, id, store) { return updateStore(doc) },
+    removedHook: function (updateStore, doc, id, store) { return updateStore(doc) },
   },
 
-  // When items are fetched through `dispatch('module/fetch', filters)`.
+  // When docs are fetched through `dispatch('module/fetch', filters)`.
   fetch: {
     // The max amount of documents to be fetched. Defaults to 50.
     docLimit: 50,
