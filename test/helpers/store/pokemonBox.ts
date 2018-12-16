@@ -21,8 +21,24 @@ export default {
   sync: {
     where: [['id', '==', '{pokeId}']],
     orderBy: [],
-    fillables: ['fillable', 'name', 'id', 'type', 'freed', 'nested', 'addedBeforeInsert', 'addedBeforePatch', 'arr1', 'arr2', 'guarded'],
+    fillables: [
+      'fillable',
+      'name',
+      'id',
+      'type',
+      'freed',
+      'nested',
+      'addedBeforeInsert',
+      'addedBeforePatch',
+      'arr1',
+      'arr2',
+      'guarded',
+      'defaultVal'
+    ],
     guard: ['guarded'],
+    defaultValues: {
+      defaultVal: true
+    },
     // HOOKS for local changes:
     insertHook: function (updateStore, doc, store) {
       doc.addedBeforeInsert = true

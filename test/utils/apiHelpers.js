@@ -69,12 +69,12 @@ test('getPathVarMatches', t => {
 test('createFetchIdentifier', t => {
   let res
   res = createFetchIdentifier({
-    whereFilters: [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']],
+    where: [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']],
     orderBy: ['date']
   })
   t.is(res, '[where]hi.{userId}.docs.{nr},==,{big},{userId},==,{userId}[orderBy]date')
   res = createFetchIdentifier({
-    whereFilters: [['thatRef', '==', store.getters['mainCharacter/dbRef']]]
+    where: [['thatRef', '==', store.getters['mainCharacter/dbRef']]]
   })
   t.is(res, `[where]thatRef,==,DocumentReferenceSatoshi`)
 })

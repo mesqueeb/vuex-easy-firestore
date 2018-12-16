@@ -1,8 +1,8 @@
-import { isString, isPlainObject, isAnyObject } from 'is-what'
+import { isString, isArray } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
 import { findAndReplaceIf } from 'find-and-replace-anything'
+import filter from 'filter-anything'
 import flattenToPaths from '../utils/objectFlattenToPaths'
-import checkFillables from '../utils/checkFillables'
 import { getPathVarMatches } from '../utils/apiHelpers'
 import { isArrayHelper } from '../utils/arrayHelpers'
 import { AnyObject } from '../declarations'
@@ -63,11 +63,14 @@ export default function (Firebase: any): AnyObject {
     collectionMode: (state, getters, rootState) => {
       return (state._conf.firestoreRefType.toLowerCase() === 'collection')
     },
+    docModeId: (state, getters) => {
+      return getters.firestorePathComplete.split('/').pop()
+    },
     prepareForPatch: (state, getters, rootState, rootGetters) =>
       (ids = [], doc = {}) => {
         // get relevant data from the storeRef
         const collectionMode = getters.collectionMode
-        if (!collectionMode) ids.push('singleDoc')
+        if (!collectionMode) ids.push(getters.docModeId)
         // returns {object} -> {id: data}
         return ids.reduce((carry, id) => {
           let patchData: AnyObject = {}
@@ -95,7 +98,7 @@ export default function (Firebase: any): AnyObject {
           if (fillables.length) fillables = fillables.concat(['updated_at', 'updated_by'])
           const guard = state._conf.sync.guard.concat(['_conf', '_sync'])
           // clean up item
-          const cleanedPatchData = checkFillables(patchData, fillables, guard)
+          const cleanedPatchData = filter(patchData, fillables, guard)
           const itemToUpdate = flattenToPaths(cleanedPatchData)
           // add id (required to get ref later at apiHelpers.ts)
           itemToUpdate.id = id
@@ -115,14 +118,14 @@ export default function (Firebase: any): AnyObject {
         if (fillables.length) fillables = fillables.concat(['updated_at', 'updated_by'])
         const guard = state._conf.sync.guard.concat(['_conf', '_sync'])
         // clean up item
-        const cleanedPatchData = checkFillables(patchData, fillables, guard)
+        const cleanedPatchData = filter(patchData, fillables, guard)
         // add id (required to get ref later at apiHelpers.ts)
         let id, cleanedPath
         if (collectionMode) {
           id = path.substring(0, path.indexOf('.'))
           cleanedPath = path.substring(path.indexOf('.') + 1)
         } else {
-          id = 'singleDoc'
+          id = getters.docModeId
           cleanedPath = path
         }
         cleanedPatchData[cleanedPath] = Firebase.firestore.FieldValue.delete()
@@ -140,7 +143,7 @@ export default function (Firebase: any): AnyObject {
           item.created_at = Firebase.firestore.FieldValue.serverTimestamp()
           item.created_by = state._sync.userId
           // clean up item
-          item = checkFillables(item, fillables, guard)
+          item = filter(item, fillables, guard)
           carry.push(item)
           return carry
         }, [])
@@ -155,11 +158,15 @@ export default function (Firebase: any): AnyObject {
         doc.created_at = Firebase.firestore.FieldValue.serverTimestamp()
         doc.created_by = state._sync.userId
         // clean up item
-        doc = checkFillables(doc, fillables, guard)
+        doc = filter(doc, fillables, guard)
         return doc
       },
-    whereFilters: (state, getters) => {
-      const whereArrays = state._conf.sync.where
+    getWhereArrays: (state, getters) => (whereArrays) => {
+      if (!isArray(whereArrays)) whereArrays = state._conf.sync.where
+      if (Firebase.auth().currentUser) {
+        state._sync.signedIn = true
+        state._sync.userId = Firebase.auth().currentUser.uid
+      }
       return whereArrays.map(whereClause => {
         return whereClause.map(param => {
           if (!isString(param)) return param

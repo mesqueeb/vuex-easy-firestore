@@ -52,34 +52,35 @@ test('[prepareForPatch] doc', async t => {
   char._conf.sync.fillables = ['body', 'del', 'pathdel']
   char._conf.sync.guard = []
   // prepareForPatch
+  const docModeId = store.getters['mainCharacter/docModeId']
   res = store.getters['mainCharacter/prepareForPatch']([], {body: 'new', del: Firebase.firestore.FieldValue.delete()})
-  t.deepEqual(Object.keys(res), ['singleDoc'])
-  t.is(res['singleDoc'].body, 'new')
-  t.is(res['singleDoc'].del._methodName, 'FieldValue.delete')
-  t.is(res['singleDoc'].id, 'singleDoc')
-  t.is(res['singleDoc'].updated_by, 'charlie')
-  t.is(res['singleDoc'].updated_at._methodName, 'FieldValue.serverTimestamp')
+  t.deepEqual(Object.keys(res), [docModeId])
+  t.is(res[docModeId].body, 'new')
+  t.is(res[docModeId].del._methodName, 'FieldValue.delete')
+  t.is(res[docModeId].id, docModeId)
+  t.is(res[docModeId].updated_by, 'charlie')
+  t.is(res[docModeId].updated_at._methodName, 'FieldValue.serverTimestamp')
   // prepareForPropDeletion
   res = store.getters['mainCharacter/prepareForPropDeletion']('1.pathdel.a')
-  t.is(res['singleDoc'].id, 'singleDoc')
-  t.is(res['singleDoc']['1.pathdel.a']._methodName, 'FieldValue.delete')
-  t.is(res['singleDoc'].updated_by, 'charlie')
-  t.is(res['singleDoc'].updated_at._methodName, 'FieldValue.serverTimestamp')
+  t.is(res[docModeId].id, docModeId)
+  t.is(res[docModeId]['1.pathdel.a']._methodName, 'FieldValue.delete')
+  t.is(res[docModeId].updated_by, 'charlie')
+  t.is(res[docModeId].updated_at._methodName, 'FieldValue.serverTimestamp')
   // different fillables & guard
   char._conf.sync.guard = ['updated_at', 'updated_by', 'id']
   res = store.getters['mainCharacter/prepareForPropDeletion']('1.pathdel.a')
-  t.is(res['singleDoc'].id, 'singleDoc') // id stays even if it's added to guard
-  t.is(res['singleDoc']['1.pathdel.a']._methodName, 'FieldValue.delete')
-  t.is(res['singleDoc'].updated_by, undefined)
-  t.is(res['singleDoc'].updated_at, undefined)
+  t.is(res[docModeId].id, docModeId) // id stays even if it's added to guard
+  t.is(res[docModeId]['1.pathdel.a']._methodName, 'FieldValue.delete')
+  t.is(res[docModeId].updated_by, undefined)
+  t.is(res[docModeId].updated_at, undefined)
 })
 
-test('[whereFilters]', async t => {
+test('[where]', async t => {
   let res
   char._conf.sync.where = [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']]
   char._sync.userId = 'charlie'
   char._sync.pathVariables = {nr: '1', big: 'shot'}
-  res = store.getters['mainCharacter/whereFilters']
+  res = store.getters['mainCharacter/getWhereArrays']()
   t.deepEqual(res, [['hi.charlie.docs.1', '==', 'shot'], ['charlie', '==', 'charlie']])
   t.deepEqual(char._conf.sync.where, [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']])
   // accept other values than strings
@@ -87,12 +88,12 @@ test('[whereFilters]', async t => {
   char._sync.userId = ''
   const date = new Date()
   char._sync.pathVariables = {date, nulll: null, undef: undefined}
-  res = store.getters['mainCharacter/whereFilters']
+  res = store.getters['mainCharacter/getWhereArrays']()
   t.deepEqual(res, [[1, '==', true], ['', '==', date, null, undefined]])
   t.deepEqual(char._conf.sync.where, [[1, '==', true], ['{userId}', '==', '{date}', '{nulll}', '{undef}']])
   char._conf.sync.where = [[1, true, undefined, '{a}', NaN]]
   char._sync.pathVariables = {a: {}}
-  res = store.getters['mainCharacter/whereFilters']
+  res = store.getters['mainCharacter/getWhereArrays']()
   t.deepEqual(res, [[1, true, undefined, {}, NaN]])
   t.deepEqual(char._conf.sync.where, [[1, true, undefined, '{a}', NaN]])
 })

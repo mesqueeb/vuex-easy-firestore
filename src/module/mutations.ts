@@ -1,9 +1,9 @@
-import { isPlainObject, isAnyObject, isArray } from 'is-what'
+import { isPlainObject, isArray } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
 import error from './errors'
 import merge from 'merge-anything'
 import { AnyObject } from '../declarations'
-import { isArrayHelper, ArrayUnion } from '../utils/arrayHelpers'
+import { isArrayHelper } from '../utils/arrayHelpers'
 
 /**
  * a function returning the mutations object

@@ -35,21 +35,21 @@ test('[openDBChannel] check where filter after openDBChannel', async t => {
   char._conf.sync.where = [['hi.{userId}.docs.{name}', '==', '{big}']]
   char._sync.userId = 'charlie'
   // 0. initial path
-  res = store.getters['mainCharacter/whereFilters']
+  res = store.getters['mainCharacter/getWhereArrays']()
   t.deepEqual(char._sync.pathVariables, {})
   t.deepEqual(char._conf.sync.where, [['hi.{userId}.docs.{name}', '==', '{big}']])
   t.deepEqual(res, [['hi.charlie.docs.{name}', '==', '{big}']])
   // 1. open once
   store.dispatch('mainCharacter/openDBChannel', {name: 'Luca'}).catch(console.error)
   await wait(2)
-  res = store.getters['mainCharacter/whereFilters']
+  res = store.getters['mainCharacter/getWhereArrays']()
   t.deepEqual(char._sync.pathVariables, {name: 'Luca'})
   t.deepEqual(char._conf.sync.where, [['hi.{userId}.docs.{name}', '==', '{big}']])
   t.deepEqual(res, [['hi.charlie.docs.Luca', '==', '{big}']])
   // 2. open again
   store.dispatch('mainCharacter/openDBChannel', {name: 'Mesqueeb'}).catch(console.error)
   await wait(2)
-  res = store.getters['mainCharacter/whereFilters']
+  res = store.getters['mainCharacter/getWhereArrays']()
   t.deepEqual(char._sync.pathVariables, {name: 'Mesqueeb'})
   t.deepEqual(res, [['hi.charlie.docs.Mesqueeb', '==', '{big}']])
 })

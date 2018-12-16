@@ -10,8 +10,9 @@ module.exports = {
     sidebar: [
       ['/setup', 'Installation & setup'],
       '/guide',
-      '/extra-features',
       '/firestore-fields-and-functions',
+      '/hooks',
+      '/extra-features',
       '/config-example',
       '/feedback',
     ],

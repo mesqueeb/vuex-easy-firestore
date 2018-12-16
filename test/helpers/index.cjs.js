@@ -8,6 +8,7 @@ var isWhat = require('is-what');
 var Firebase = require('firebase/app');
 var merge = _interopDefault(require('merge-anything'));
 var findAndReplaceAnything = require('find-and-replace-anything');
+var filter = _interopDefault(require('filter-anything'));
 var Vue = _interopDefault(require('vue'));
 var Vuex = _interopDefault(require('vuex'));
 
@@ -31,8 +32,24 @@ var pokemonBox = {
     sync: {
         where: [['id', '==', '{pokeId}']],
         orderBy: [],
-        fillables: ['fillable', 'name', 'id', 'type', 'freed', 'nested', 'addedBeforeInsert', 'addedBeforePatch', 'arr1', 'arr2', 'guarded'],
+        fillables: [
+            'fillable',
+            'name',
+            'id',
+            'type',
+            'freed',
+            'nested',
+            'addedBeforeInsert',
+            'addedBeforePatch',
+            'arr1',
+            'arr2',
+            'guarded',
+            'defaultVal'
+        ],
         guard: ['guarded'],
+        defaultValues: {
+            defaultVal: true
+        },
         // HOOKS for local changes:
         insertHook: function (updateStore, doc, store) {
             doc.addedBeforeInsert = true;
@@ -236,6 +253,7 @@ var defaultConfig = {
         orderBy: [],
         fillables: [],
         guard: [],
+        defaultValues: {},
         // HOOKS for local changes:
         insertHook: function (updateStore, doc, store) { return updateStore(doc); },
         patchHook: function (updateStore, doc, store) { return updateStore(doc); },
@@ -248,10 +266,11 @@ var defaultConfig = {
     // When items on the server side are changed:
     serverChange: {
         defaultValues: {},
+        convertTimestamps: {},
         // HOOKS for changes on SERVER:
-        addedHook: function (updateStore, doc, id, store, source, change) { return updateStore(doc); },
-        modifiedHook: function (updateStore, doc, id, store, source, change) { return updateStore(doc); },
-        removedHook: function (updateStore, doc, id, store, source, change) { return updateStore(doc); },
+        addedHook: function (updateStore, doc, id, store) { return updateStore(doc); },
+        modifiedHook: function (updateStore, doc, id, store) { return updateStore(doc); },
+        removedHook: function (updateStore, doc, id, store) { return updateStore(doc); },
     },
     // When items are fetched through `dispatch('module/fetch', filters)`.
     fetch: {
@@ -723,17 +742,17 @@ function stringifyParams(params) {
     }).join();
 }
 /**
- * Gets an object with {whereFilters, orderBy} filters and returns a unique identifier for that
+ * Gets an object with {where, orderBy} filters and returns a unique identifier for that
  *
  * @export
- * @param {AnyObject} [whereOrderBy={}] whereOrderBy {whereFilters, orderBy}
+ * @param {AnyObject} [whereOrderBy={}] whereOrderBy {where, orderBy}
  * @returns {string}
  */
 function createFetchIdentifier(whereOrderBy) {
     if (whereOrderBy === void 0) { whereOrderBy = {}; }
     var identifier = '';
-    if ('whereFilters' in whereOrderBy) {
-        identifier += '[where]' + whereOrderBy.whereFilters.map(function (where) { return stringifyParams(where); }).join();
+    if ('where' in whereOrderBy) {
+        identifier += '[where]' + whereOrderBy.where.map(function (where) { return stringifyParams(where); }).join();
     }
     if ('orderBy' in whereOrderBy) {
         identifier += '[orderBy]' + stringifyParams(whereOrderBy.orderBy);
@@ -842,6 +861,20 @@ function pluginActions (Firebase$$1) {
                 return console.error('[vuex-easy-firestore] ids needs to be an array');
             if (id)
                 ids.push(id);
+            // EXTRA: check if doc is being inserted if so
+            state._sync.syncStack.inserts.forEach(function (newDoc, newDocIndex) {
+                // get the index of the id that is also in the insert stack
+                var indexIdInInsert = ids.indexOf(newDoc.id);
+                if (indexIdInInsert === -1)
+                    return;
+                // the doc trying to be synced is also in insert
+                // prepare the doc as new doc:
+                var patchDoc = getters.prepareForInsert([doc])[0];
+                // replace insert sync stack with merged item:
+                state._sync.syncStack.inserts[newDocIndex] = merge(newDoc, patchDoc);
+                // empty out the id that was to be patched:
+                ids.splice(indexIdInInsert, 1);
+            });
             // 1. Prepare for patching
             var syncStackItems = getters.prepareForPatch(ids, doc);
             // 2. Push to syncStack
@@ -945,26 +978,28 @@ function pluginActions (Firebase$$1) {
             });
         },
         fetch: function (_a, _b
-        // whereFilters: [['archived', '==', true]]
+        // where: [['archived', '==', true]]
         // orderBy: ['done_date', 'desc']
         ) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
-            var _c = _b === void 0 ? { whereFilters: [], orderBy: [] } : _b
-            // whereFilters: [['archived', '==', true]]
+            var _c = _b === void 0 ? { where: [], whereFilters: [], orderBy: [] } : _b
+            // where: [['archived', '==', true]]
             // orderBy: ['done_date', 'desc']
-            , _d = _c.whereFilters, whereFilters = _d === void 0 ? [] : _d, _e = _c.orderBy, orderBy = _e === void 0 ? [] : _e;
+            , _d = _c.where, where = _d === void 0 ? [] : _d, _e = _c.whereFilters, whereFilters = _e === void 0 ? [] : _e, _f = _c.orderBy, orderBy = _f === void 0 ? [] : _f;
+            if (whereFilters.length)
+                where = whereFilters;
             return new Promise(function (resolve, reject) {
                 if (state._conf.logging)
                     console.log('[vuex-easy-firestore] Fetch starting');
                 if (!getters.signedIn)
                     return resolve();
-                var identifier = createFetchIdentifier({ whereFilters: whereFilters, orderBy: orderBy });
+                var identifier = createFetchIdentifier({ where: where, orderBy: orderBy });
                 var fetched = state._sync.fetched[identifier];
                 // We've never fetched this before:
                 if (!fetched) {
                     var ref_1 = getters.dbRef;
                     // apply where filters and orderBy
-                    whereFilters.forEach(function (paramsArr) {
+                    getters.getWhereArrays(where).forEach(function (paramsArr) {
                         ref_1 = ref_1.where.apply(ref_1, paramsArr);
                     });
                     if (orderBy.length) {
@@ -1021,22 +1056,26 @@ function pluginActions (Firebase$$1) {
             });
         },
         fetchAndAdd: function (_a, _b
-        // whereFilters: [['archived', '==', true]]
+        // where: [['archived', '==', true]]
         // orderBy: ['done_date', 'desc']
         ) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
-            var _c = _b === void 0 ? { whereFilters: [], orderBy: [] } : _b
-            // whereFilters: [['archived', '==', true]]
+            var _c = _b === void 0 ? { where: [], whereFilters: [], orderBy: [] } : _b
+            // where: [['archived', '==', true]]
             // orderBy: ['done_date', 'desc']
-            , _d = _c.whereFilters, whereFilters = _d === void 0 ? [] : _d, _e = _c.orderBy, orderBy = _e === void 0 ? [] : _e;
-            return dispatch('fetch', { whereFilters: whereFilters, orderBy: orderBy })
+            , _d = _c.where, where = _d === void 0 ? [] : _d, _e = _c.whereFilters, whereFilters = _e === void 0 ? [] : _e, _f = _c.orderBy, orderBy = _f === void 0 ? [] : _f;
+            if (whereFilters.length)
+                where = whereFilters;
+            return dispatch('fetch', { where: where, orderBy: orderBy })
                 .then(function (querySnapshot) {
                 if (querySnapshot.done === true)
                     return querySnapshot;
                 if (isWhat.isFunction(querySnapshot.forEach)) {
                     querySnapshot.forEach(function (_doc) {
                         var id = _doc.id;
-                        var doc = setDefaultValues(_doc.data(), state._conf.serverChange.defaultValues);
+                        var defaultValues = merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues, // depreciated
+                        state._conf.serverChange.convertTimestamps);
+                        var doc = setDefaultValues(_doc.data(), defaultValues);
                         doc.id = id;
                         commit('INSERT_DOC', doc);
                     });
@@ -1070,18 +1109,11 @@ function pluginActions (Firebase$$1) {
                 delete pathVariables.orderBy;
                 commit('SET_PATHVARS', pathVariables);
             }
-            // get userId
-            var userId = null;
-            if (Firebase$$1.auth().currentUser) {
-                state._sync.signedIn = true;
-                userId = Firebase$$1.auth().currentUser.uid;
-                state._sync.userId = userId;
-            }
             // getters.dbRef should already have pathVariables swapped out
             var dbRef = getters.dbRef;
             // apply where filters and orderBy
             if (getters.collectionMode) {
-                getters.whereFilters.forEach(function (whereParams) {
+                getters.getWhereArrays().forEach(function (whereParams) {
                     dbRef = dbRef.where.apply(dbRef, whereParams);
                 });
                 if (state._conf.sync.orderBy.length) {
@@ -1121,8 +1153,10 @@ function pluginActions (Firebase$$1) {
                         }
                         if (source === 'local')
                             return resolve();
-                        var doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues);
-                        var id = getters.firestorePathComplete.split('/').pop();
+                        var defaultValues = merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues, // depreciated
+                        state._conf.serverChange.convertTimestamps);
+                        var doc = setDefaultValues(querySnapshot.data(), defaultValues);
+                        var id = getters.docModeId;
                         doc.id = id;
                         handleDoc('modified', id, doc);
                         return resolve();
@@ -1133,8 +1167,10 @@ function pluginActions (Firebase$$1) {
                         if (source === 'local')
                             return resolve();
                         var id = change.doc.id;
+                        var defaultValues = merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues, // depreciated
+                        state._conf.serverChange.convertTimestamps);
                         var doc = (changeType === 'added')
-                            ? setDefaultValues(change.doc.data(), state._conf.serverChange.defaultValues)
+                            ? setDefaultValues(change.doc.data(), defaultValues)
                             : change.doc.data();
                         handleDoc(changeType, id, doc);
                     });
@@ -1180,6 +1216,8 @@ function pluginActions (Firebase$$1) {
             var newDoc = doc;
             if (!newDoc.id)
                 newDoc.id = getters.dbRef.doc().id;
+            // apply default values
+            var newDocWithDefaults = setDefaultValues(newDoc, state._conf.sync.defaultValues);
             // define the store update
             function storeUpdateFn(_doc) {
                 commit('INSERT_DOC', _doc);
@@ -1187,11 +1225,11 @@ function pluginActions (Firebase$$1) {
             }
             // check for hooks
             if (state._conf.sync.insertHook) {
-                state._conf.sync.insertHook(storeUpdateFn, newDoc, store);
-                return newDoc.id;
+                state._conf.sync.insertHook(storeUpdateFn, newDocWithDefaults, store);
+                return newDocWithDefaults.id;
             }
-            storeUpdateFn(newDoc);
-            return newDoc.id;
+            storeUpdateFn(newDocWithDefaults);
+            return newDocWithDefaults.id;
         },
         insertBatch: function (_a, docs) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
@@ -1376,61 +1414,6 @@ function flattenToPaths (object) {
     return retrievePaths(object, null, result);
 }
 
-function recursiveCheck(obj, fillables, guard, pathUntilNow) {
-    if (pathUntilNow === void 0) { pathUntilNow = ''; }
-    if (!isWhat.isPlainObject(obj)) {
-        console.log('obj → ', obj);
-        return obj;
-    }
-    return Object.keys(obj).reduce(function (carry, key) {
-        var path = pathUntilNow;
-        if (path)
-            path += '.';
-        path += key;
-        // check guard regardless
-        if (guard.includes(path)) {
-            return carry;
-        }
-        var value = obj[key];
-        // check fillables up to this point
-        if (fillables.length) {
-            var passed_1 = false;
-            fillables.forEach(function (fillable) {
-                var pathDepth = path.split('.').length;
-                var fillableDepth = fillable.split('.').length;
-                var fillableUpToNow = fillable.split('.').slice(0, pathDepth).join('.');
-                var pathUpToFillableDepth = path.split('.').slice(0, fillableDepth).join('.');
-                if (fillableUpToNow === pathUpToFillableDepth)
-                    passed_1 = true;
-            });
-            // there's not one fillable that allows up to now
-            if (!passed_1)
-                return carry;
-        }
-        // no fillables or fillables up to now allow it
-        if (!isWhat.isPlainObject(value)) {
-            carry[key] = value;
-            return carry;
-        }
-        carry[key] = recursiveCheck(obj[key], fillables, guard, path);
-        return carry;
-    }, {});
-}
-/**
- * Checks all props of an object and deletes guarded and non-fillables.
- *
- * @export
- * @param {object} obj the target object to check
- * @param {string[]} [fillables=[]] an array of strings, with the props which should be allowed on returned object
- * @param {string[]} [guard=[]] an array of strings, with the props which should NOT be allowed on returned object
- * @returns {AnyObject} the cleaned object after deleting guard and non-fillables
- */
-function checkFillables (obj, fillables, guard) {
-    if (fillables === void 0) { fillables = []; }
-    if (guard === void 0) { guard = []; }
-    return recursiveCheck(obj, fillables, guard);
-}
-
 /**
  * A function returning the getters object
  *
@@ -1478,6 +1461,9 @@ function pluginGetters (Firebase$$1) {
         collectionMode: function (state, getters, rootState) {
             return (state._conf.firestoreRefType.toLowerCase() === 'collection');
         },
+        docModeId: function (state, getters) {
+            return getters.firestorePathComplete.split('/').pop();
+        },
         prepareForPatch: function (state, getters, rootState, rootGetters) {
             return function (ids, doc) {
                 if (ids === void 0) { ids = []; }
@@ -1485,7 +1471,7 @@ function pluginGetters (Firebase$$1) {
                 // get relevant data from the storeRef
                 var collectionMode = getters.collectionMode;
                 if (!collectionMode)
-                    ids.push('singleDoc');
+                    ids.push(getters.docModeId);
                 // returns {object} -> {id: data}
                 return ids.reduce(function (carry, id) {
                     var patchData = {};
@@ -1515,7 +1501,7 @@ function pluginGetters (Firebase$$1) {
                         fillables = fillables.concat(['updated_at', 'updated_by']);
                     var guard = state._conf.sync.guard.concat(['_conf', '_sync']);
                     // clean up item
-                    var cleanedPatchData = checkFillables(patchData, fillables, guard);
+                    var cleanedPatchData = filter(patchData, fillables, guard);
                     var itemToUpdate = flattenToPaths(cleanedPatchData);
                     // add id (required to get ref later at apiHelpers.ts)
                     itemToUpdate.id = id;
@@ -1539,7 +1525,7 @@ function pluginGetters (Firebase$$1) {
                     fillables = fillables.concat(['updated_at', 'updated_by']);
                 var guard = state._conf.sync.guard.concat(['_conf', '_sync']);
                 // clean up item
-                var cleanedPatchData = checkFillables(patchData, fillables, guard);
+                var cleanedPatchData = filter(patchData, fillables, guard);
                 // add id (required to get ref later at apiHelpers.ts)
                 var id, cleanedPath;
                 if (collectionMode) {
@@ -1547,7 +1533,7 @@ function pluginGetters (Firebase$$1) {
                     cleanedPath = path.substring(path.indexOf('.') + 1);
                 }
                 else {
-                    id = 'singleDoc';
+                    id = getters.docModeId;
                     cleanedPath = path;
                 }
                 cleanedPatchData[cleanedPath] = Firebase$$1.firestore.FieldValue.delete();
@@ -1568,7 +1554,7 @@ function pluginGetters (Firebase$$1) {
                     item.created_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
                     item.created_by = state._sync.userId;
                     // clean up item
-                    item = checkFillables(item, fillables, guard);
+                    item = filter(item, fillables, guard);
                     carry.push(item);
                     return carry;
                 }, []);
@@ -1585,12 +1571,17 @@ function pluginGetters (Firebase$$1) {
                 doc.created_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
                 doc.created_by = state._sync.userId;
                 // clean up item
-                doc = checkFillables(doc, fillables, guard);
+                doc = filter(doc, fillables, guard);
                 return doc;
             };
         },
-        whereFilters: function (state, getters) {
-            var whereArrays = state._conf.sync.where;
+        getWhereArrays: function (state, getters) { return function (whereArrays) {
+            if (!isWhat.isArray(whereArrays))
+                whereArrays = state._conf.sync.where;
+            if (Firebase$$1.auth().currentUser) {
+                state._sync.signedIn = true;
+                state._sync.userId = Firebase$$1.auth().currentUser.uid;
+            }
             return whereArrays.map(function (whereClause) {
                 return whereClause.map(function (param) {
                     if (!isWhat.isString(param))
@@ -1616,7 +1607,7 @@ function pluginGetters (Firebase$$1) {
                     return cleanedParam;
                 });
             });
-        },
+        }; },
     };
 }
 
@@ -1641,7 +1632,7 @@ function errorCheck (config) {
     if (/\./.test(config.moduleName)) {
         errors.push("moduleName must only include letters from [a-z] and forward slashes '/'");
     }
-    var syncProps = ['where', 'orderBy', 'fillables', 'guard', 'insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook'];
+    var syncProps = ['where', 'orderBy', 'fillables', 'guard', 'defaultValues', 'insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook'];
     syncProps.forEach(function (prop) {
         if (config[prop]) {
             errors.push("We found `" + prop + "` on your module, are you sure this shouldn't be inside a prop called `sync`?");
@@ -1676,7 +1667,7 @@ function errorCheck (config) {
     var objectProps = ['sync', 'serverChange', 'defaultValues', 'fetch'];
     objectProps.forEach(function (prop) {
         var _prop = (prop === 'defaultValues')
-            ? config.serverChange[prop]
+            ? config.sync[prop]
             : config[prop];
         if (!isWhat.isPlainObject(_prop))
             errors.push("`" + prop + "` should be an Object, but is not.");

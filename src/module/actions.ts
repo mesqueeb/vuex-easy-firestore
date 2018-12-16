@@ -1,4 +1,4 @@
-import { isArray, isPlainObject, isAnyObject, isFunction } from 'is-what'
+import { isArray, isPlainObject, isFunction } from 'is-what'
 import merge from 'merge-anything'
 import { AnyObject, IPluginState } from '../declarations'
 import setDefaultValues from '../utils/setDefaultValues'
@@ -6,6 +6,7 @@ import startDebounce from '../utils/debounceHelper'
 import { makeBatchFromSyncstack, createFetchIdentifier } from '../utils/apiHelpers'
 import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
 import error from './errors'
+import { createDiffieHellman } from 'crypto';
 
 /**
  * A function returning the actions object
@@ -41,6 +42,20 @@ export default function (Firebase: any): AnyObject {
       // 0. payload correction (only arrays)
       if (!isArray(ids)) return console.error('[vuex-easy-firestore] ids needs to be an array')
       if (id) ids.push(id)
+
+      // EXTRA: check if doc is being inserted if so
+      state._sync.syncStack.inserts.forEach((newDoc, newDocIndex) => {
+        // get the index of the id that is also in the insert stack
+        const indexIdInInsert = ids.indexOf(newDoc.id)
+        if (indexIdInInsert === -1) return
+        // the doc trying to be synced is also in insert
+        // prepare the doc as new doc:
+        const patchDoc = getters.prepareForInsert([doc])[0]
+        // replace insert sync stack with merged item:
+        state._sync.syncStack.inserts[newDocIndex] = merge(newDoc, patchDoc)
+        // empty out the id that was to be patched:
+        ids.splice(indexIdInInsert, 1)
+      })
 
       // 1. Prepare for patching
       const syncStackItems = getters.prepareForPatch(ids, doc)
@@ -152,20 +167,21 @@ export default function (Firebase: any): AnyObject {
     },
     fetch (
       {state, getters, commit, dispatch},
-      {whereFilters = [], orderBy = []} = {whereFilters: [], orderBy: []}
-      // whereFilters: [['archived', '==', true]]
+      {where = [], whereFilters = [], orderBy = []} = {where: [], whereFilters: [], orderBy: []}
+      // where: [['archived', '==', true]]
       // orderBy: ['done_date', 'desc']
     ) {
+      if (whereFilters.length) where = whereFilters
       return new Promise((resolve, reject) => {
         if (state._conf.logging) console.log('[vuex-easy-firestore] Fetch starting')
         if (!getters.signedIn) return resolve()
-        const identifier = createFetchIdentifier({whereFilters, orderBy})
+        const identifier = createFetchIdentifier({where, orderBy})
         const fetched = state._sync.fetched[identifier]
         // We've never fetched this before:
         if (!fetched) {
           let ref = getters.dbRef
           // apply where filters and orderBy
-          whereFilters.forEach(paramsArr => {
+          getters.getWhereArrays(where).forEach(paramsArr => {
             ref = ref.where(...paramsArr)
           })
           if (orderBy.length) {
@@ -222,17 +238,23 @@ export default function (Firebase: any): AnyObject {
     },
     fetchAndAdd (
       {state, getters, commit, dispatch},
-      {whereFilters = [], orderBy = []} = {whereFilters: [], orderBy: []}
-      // whereFilters: [['archived', '==', true]]
+      {where = [], whereFilters = [], orderBy = []} = {where: [], whereFilters: [], orderBy: []}
+      // where: [['archived', '==', true]]
       // orderBy: ['done_date', 'desc']
     ) {
-      return dispatch('fetch', {whereFilters, orderBy})
+      if (whereFilters.length) where = whereFilters
+      return dispatch('fetch', {where, orderBy})
         .then(querySnapshot => {
           if (querySnapshot.done === true) return querySnapshot
           if (isFunction(querySnapshot.forEach)) {
             querySnapshot.forEach(_doc => {
               const id = _doc.id
-              const doc = setDefaultValues(_doc.data(), state._conf.serverChange.defaultValues)
+              const defaultValues = merge(
+                state._conf.sync.defaultValues,
+                state._conf.serverChange.defaultValues, // depreciated
+                state._conf.serverChange.convertTimestamps,
+              )
+              const doc = setDefaultValues(_doc.data(), defaultValues)
               doc.id = id
               commit('INSERT_DOC', doc)
             })
@@ -266,18 +288,11 @@ export default function (Firebase: any): AnyObject {
         delete pathVariables.orderBy
         commit('SET_PATHVARS', pathVariables)
       }
-      // get userId
-      let userId = null
-      if (Firebase.auth().currentUser) {
-        state._sync.signedIn = true
-        userId = Firebase.auth().currentUser.uid
-        state._sync.userId = userId
-      }
       // getters.dbRef should already have pathVariables swapped out
       let dbRef = getters.dbRef
       // apply where filters and orderBy
       if (getters.collectionMode) {
-        getters.whereFilters.forEach(whereParams => {
+        getters.getWhereArrays().forEach(whereParams => {
           dbRef = dbRef.where(...whereParams)
         })
         if (state._conf.sync.orderBy.length) {
@@ -314,8 +329,13 @@ export default function (Firebase: any): AnyObject {
               return resolve()
             }
             if (source === 'local') return resolve()
-            const doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues)
-            const id = getters.firestorePathComplete.split('/').pop()
+            const defaultValues = merge(
+              state._conf.sync.defaultValues,
+              state._conf.serverChange.defaultValues, // depreciated
+              state._conf.serverChange.convertTimestamps,
+            )
+            const doc = setDefaultValues(querySnapshot.data(), defaultValues)
+            const id = getters.docModeId
             doc.id = id
             handleDoc('modified', id, doc)
             return resolve()
@@ -325,8 +345,13 @@ export default function (Firebase: any): AnyObject {
             // Don't do anything for local modifications & removals
             if (source === 'local') return resolve()
             const id = change.doc.id
+            const defaultValues = merge(
+              state._conf.sync.defaultValues,
+              state._conf.serverChange.defaultValues, // depreciated
+              state._conf.serverChange.convertTimestamps,
+            )
             const doc = (changeType === 'added')
-              ? setDefaultValues(change.doc.data(), state._conf.serverChange.defaultValues)
+              ? setDefaultValues(change.doc.data(), defaultValues)
               : change.doc.data()
             handleDoc(changeType, id, doc)
           })
@@ -365,6 +390,8 @@ export default function (Firebase: any): AnyObject {
       if (!doc) return
       const newDoc = doc
       if (!newDoc.id) newDoc.id = getters.dbRef.doc().id
+      // apply default values
+      const newDocWithDefaults = setDefaultValues(newDoc, state._conf.sync.defaultValues)
       // define the store update
       function storeUpdateFn (_doc) {
         commit('INSERT_DOC', _doc)
@@ -372,11 +399,11 @@ export default function (Firebase: any): AnyObject {
       }
       // check for hooks
       if (state._conf.sync.insertHook) {
-        state._conf.sync.insertHook(storeUpdateFn, newDoc, store)
-        return newDoc.id
+        state._conf.sync.insertHook(storeUpdateFn, newDocWithDefaults, store)
+        return newDocWithDefaults.id
       }
-      storeUpdateFn(newDoc)
-      return newDoc.id
+      storeUpdateFn(newDocWithDefaults)
+      return newDocWithDefaults.id
     },
     insertBatch ({state, getters, commit, dispatch}, docs) {
       const store = this

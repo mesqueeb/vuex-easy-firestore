@@ -7,7 +7,7 @@ features:
 - title: Simplicity First
   details: Minimal setup to get a vuex-module synced with Firestore automatically.
 - title: Powerful
-  details: Easy to use features include filtering, hooks, automatic Firestore Timestamp conversion & much more.
+  details: Easy to use features include filtering, hooks, default values, automatic Firestore Timestamp conversion & much more.
 - title: Performant
   details: Automatic 2-way sync is fully optimised through api call batches.
 footer: MIT Licensed | Copyright © 2018-present Luca Ban - Mesqueeb
@@ -36,10 +36,11 @@ Now you just update and add docs with `dispatch('userData/set', newItem)` and fo
 # Features
 
 - Automatic 2-way sync between your Vuex module & Firestore
-- [Timestamp conversion to Date()](extra-features.html#defaultvalues-set-after-server-retrieval)
+- [Default values](extra-features.html#default-values)
+- [Hooks](hooks.html#hooks) (before / after sync)
 - [Fillables / guard](extra-features.html#fillables-and-guard) (limit fields which will sync)
-- [Hooks](extra-features.html#hooks-before-insert-patch-delete) (before / after sync)
-- [Where / orderBy filters](extra-features.html#filters)
+- [Timestamp conversion to Date()](extra-features.html#firestore-timestamp-conversion)
+- [Where / orderBy filters](guide.html#query-data-filters)
 
 # Motivation
 
