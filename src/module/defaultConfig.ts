@@ -11,7 +11,7 @@ export type SyncHookId = (updateStore: HandleId, id: string, store) => (void | H
 export type InsertBatchHook = (updateStore: HandleDocs, docs: any[], store) => (void | HandleDocs)
 export type PatchBatchHook = (updateStore: HandleDocIds, doc: any, ids: string[], store) => (void | HandleDocIds)
 export type DeleteBatchHook = (updateStore: HandleIds, ids: string[], store) => (void | HandleIds)
-export type ServerChangeHook = (updateStore: HandleDoc, doc: any, id, store, source, change) => (void | HandleDoc)
+export type ServerChangeHook = (updateStore: HandleDoc, doc: any, id, store) => (void | HandleDoc)
 
 export type IConfig = {
   firestorePath: string
@@ -24,6 +24,7 @@ export type IConfig = {
     orderBy?: string[]
     fillables?: string[]
     guard?: string[]
+    defaultValues?: AnyObject
     insertHook?: SyncHookDoc
     patchHook?: SyncHookDoc
     deleteHook?: SyncHookId
@@ -33,6 +34,7 @@ export type IConfig = {
   }
   serverChange?: {
     defaultValues?: AnyObject
+    convertTimestamps?: AnyObject
     addedHook?: ServerChangeHook
     modifiedHook?: ServerChangeHook
     removedHook?: ServerChangeHook
@@ -62,6 +64,7 @@ export default {
     orderBy: [],
     fillables: [],
     guard: [],
+    defaultValues: {},
     // HOOKS for local changes:
     insertHook: function (updateStore, doc, store) { return updateStore(doc) },
     patchHook: function (updateStore, doc, store) { return updateStore(doc) },
@@ -74,11 +77,12 @@ export default {
 
   // When items on the server side are changed:
   serverChange: {
-    defaultValues: {},
+    defaultValues: {}, // depreciated
+    convertTimestamps: {},
     // HOOKS for changes on SERVER:
-    addedHook: function (updateStore, doc, id, store, source, change) { return updateStore(doc) },
-    modifiedHook: function (updateStore, doc, id, store, source, change) { return updateStore(doc) },
-    removedHook: function (updateStore, doc, id, store, source, change) { return updateStore(doc) },
+    addedHook: function (updateStore, doc, id, store) { return updateStore(doc) },
+    modifiedHook: function (updateStore, doc, id, store) { return updateStore(doc) },
+    removedHook: function (updateStore, doc, id, store) { return updateStore(doc) },
   },
 
   // When items are fetched through `dispatch('module/fetch', filters)`.

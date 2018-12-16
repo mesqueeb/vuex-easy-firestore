@@ -19,6 +19,7 @@ const firestoreModule = {
     orderBy: [],
     fillables: [],
     guard: [],
+    defaultValues: {},
     // HOOKS for local changes:
     insertHook: function (updateStore, doc, store) { return updateStore(doc) },
     patchHook: function (updateStore, doc, store) { return updateStore(doc) },
@@ -31,7 +32,7 @@ const firestoreModule = {
 
   // When docs on the server side are changed:
   serverChange: {
-    defaultValues: {},
+    convertTimestamps: {},
     // HOOKS for changes on SERVER:
     addedHook: function (updateStore, doc, id, store) { return updateStore(doc) },
     modifiedHook: function (updateStore, doc, id, store) { return updateStore(doc) },

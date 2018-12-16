@@ -31,7 +31,7 @@ store.dispatch('userData/openDBChannel')
 
 ## Fillables and guard
 
-You can prevent props on your docs in 'collection' mode (or on your single doc in 'doc' mode) to be synced to the firestore server. For this you should use either `fillables` **or** `guard`:
+You can prevent props on your docs to be synced to the firestore server. For this you should use either `fillables` **or** `guard`:
 
 - *Fillables:* Array of keys - the props which **may be synced** to the server.
   - 0 fillables = all props are synced
@@ -151,54 +151,52 @@ const idMap = await dispatch('pokemonBox/duplicateBatch', ['001', '004', '007'])
 
 This way you can use the result if you need to do extra things to your duplicated docs and you will know for each ID which new ID was used to make a duplication.
 
-## defaultValues set after server retrieval
+## Default values
 
-If you create a `defaultValues` object, then each document from the server will receive those default values!
+You can set up default values for your docs that will be added to the object on each insert.
 
-**Use case 1: Firestore Timestamp conversion**<br>
-Automatically convert Firestore Timestamps into `new Date()` objects! Do this by setting `'%convertTimestamp%'` as the value of a `defaultValues` prop. (see example below).
+**In 'doc' mode** this can just be done by adding those values to your module state. This is how's it's done regularly with Vuex.
 
-**Use case 2: Reactivity**<br>
-With VueJS, if you need a prop on an object to be fully reactive with your vue templates, it needs to exist from the start. If some docs in your user's firestore doesn't have all props (because you added new functionality to your app at later dates), the *retrieved docs will have reactivity problems!*
+**In 'collection' mode** the library takes care of applying these default values to each doc that's inserted. Default values should be set in your modules `sync` config:
 
-However, if you add these props to `defaultValues` with some value (or just `'null'`), vuex-easy-firestore will automatically add those props to the doc *before* inserting it into vuex!
-
-**Example:**
 ```js
-const vuexModule = {
+const pokemonBoxModule = {
   // your other vuex-easy-firestore config...
-  serverChange: {
+  sync: {
     defaultValues: {
-      defaultInt: 1,
-      propAddedLater: null,
-      date: '%convertTimestamp%',
+      freed: false,
     },
   }
 }
 
-// Now an example of what happens to the docs which are retrieved from the server:
-const retrievedDoc = {
-  defaultInt: 2,
-  date: Timestamp // firestore Timestamp object
-}
-
-// This doc will be inserted into vuex like so:
-const docToBeInserted = {
-  defaultInt: 2, // stays 2
-  propAddedLater: null, // receives propAddedLater prop with default val
-  date: Timestamp.toDate() // will execute firestore's Timestamp.toDate()
-}
-
-// '%convertTimestamp%' works also with date strings:
-const retrievedDoc = {date: '1990-06-22 17:35:00'} // date string
-const docToBeInserted = {date: new Date('1990-06-22 17:35:00')} // converted to new Date
-
-// in case the retrieved val is not present `null` will be added
-const retrievedDoc = {}
-const docToBeInserted = {date: null}
+// Now, when you add a new pokemon, it will automatically have `freed`
+dispatch('pokemonBox/insert', {name: 'Poliwag'})
+// This will appear in your module like so:
+// {name: 'Poliwag', freed: false}
 ```
 
-To learn more about Firestore's Timestamp format see [here](https://firebase.google.com/docs/reference/js/firebase.firestore.Timestamp).
+Also, to make sure there are no vue reactivity issues, these default values are also applied to any doc that doesn't have them that's retrieved from the server.
+
+## Firestore Timestamp conversion
+
+Firestore works with special "[timestamp](https://firebase.google.com/docs/reference/js/firebase.firestore.Timestamp)" fields rather than with `new Date()`. Vuex-easy-firestore also uses the timestamp fields for the auto-generated fields `created_at` and `updated_at` which are added to your docs.
+
+In your app, if you want to use these timestamps as a `new Date()` object you have to call `timestamp.toDate()` on each of these fields. **Luckily this can do this for you!**
+
+You just have to specify the fields in a `convertTimestamps` object in your module config like so:
+
+```js
+const vuexModule = {
+  // your other vuex-easy-firestore config...
+  serverChange: {
+    convertTimestamps: {
+      updated_at: '%convertTimestamp%'
+    },
+  }
+}
+```
+
+Now the Timestamp on `updated_at` will automatically trigger `Timestamp.toDate()` before being added to your vuex store!
 
 ## Shortcut: set(path, doc)
 

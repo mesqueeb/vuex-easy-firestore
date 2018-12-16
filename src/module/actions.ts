@@ -6,6 +6,7 @@ import startDebounce from '../utils/debounceHelper'
 import { makeBatchFromSyncstack, createFetchIdentifier } from '../utils/apiHelpers'
 import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
 import error from './errors'
+import { createDiffieHellman } from 'crypto';
 
 /**
  * A function returning the actions object
@@ -248,7 +249,12 @@ export default function (Firebase: any): AnyObject {
           if (isFunction(querySnapshot.forEach)) {
             querySnapshot.forEach(_doc => {
               const id = _doc.id
-              const doc = setDefaultValues(_doc.data(), state._conf.serverChange.defaultValues)
+              const defaultValues = merge(
+                state._conf.sync.defaultValues,
+                state._conf.serverChange.defaultValues, // depreciated
+                state._conf.serverChange.convertTimestamps,
+              )
+              const doc = setDefaultValues(_doc.data(), defaultValues)
               doc.id = id
               commit('INSERT_DOC', doc)
             })
@@ -323,7 +329,12 @@ export default function (Firebase: any): AnyObject {
               return resolve()
             }
             if (source === 'local') return resolve()
-            const doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues)
+            const defaultValues = merge(
+              state._conf.sync.defaultValues,
+              state._conf.serverChange.defaultValues, // depreciated
+              state._conf.serverChange.convertTimestamps,
+            )
+            const doc = setDefaultValues(querySnapshot.data(), defaultValues)
             const id = getters.docModeId
             doc.id = id
             handleDoc('modified', id, doc)
@@ -334,8 +345,13 @@ export default function (Firebase: any): AnyObject {
             // Don't do anything for local modifications & removals
             if (source === 'local') return resolve()
             const id = change.doc.id
+            const defaultValues = merge(
+              state._conf.sync.defaultValues,
+              state._conf.serverChange.defaultValues, // depreciated
+              state._conf.serverChange.convertTimestamps,
+            )
             const doc = (changeType === 'added')
-              ? setDefaultValues(change.doc.data(), state._conf.serverChange.defaultValues)
+              ? setDefaultValues(change.doc.data(), defaultValues)
               : change.doc.data()
             handleDoc(changeType, id, doc)
           })
@@ -374,6 +390,8 @@ export default function (Firebase: any): AnyObject {
       if (!doc) return
       const newDoc = doc
       if (!newDoc.id) newDoc.id = getters.dbRef.doc().id
+      // apply default values
+      const newDocWithDefaults = setDefaultValues(newDoc, state._conf.sync.defaultValues)
       // define the store update
       function storeUpdateFn (_doc) {
         commit('INSERT_DOC', _doc)
@@ -381,11 +399,11 @@ export default function (Firebase: any): AnyObject {
       }
       // check for hooks
       if (state._conf.sync.insertHook) {
-        state._conf.sync.insertHook(storeUpdateFn, newDoc, store)
-        return newDoc.id
+        state._conf.sync.insertHook(storeUpdateFn, newDocWithDefaults, store)
+        return newDocWithDefaults.id
       }
-      storeUpdateFn(newDoc)
-      return newDoc.id
+      storeUpdateFn(newDocWithDefaults)
+      return newDocWithDefaults.id
     },
     insertBatch ({state, getters, commit, dispatch}, docs) {
       const store = this

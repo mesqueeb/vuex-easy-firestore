@@ -22,7 +22,7 @@ export default function (config: IEasyFirestoreModule): boolean {
   if (/\./.test(config.moduleName)) {
     errors.push(`moduleName must only include letters from [a-z] and forward slashes '/'`)
   }
-  const syncProps = ['where', 'orderBy', 'fillables', 'guard', 'insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook']
+  const syncProps = ['where', 'orderBy', 'fillables', 'guard', 'defaultValues', 'insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook']
   syncProps.forEach(prop => {
     if (config[prop]) {
       errors.push(`We found \`${prop}\` on your module, are you sure this shouldn't be inside a prop called \`sync\`?`)
@@ -55,7 +55,7 @@ export default function (config: IEasyFirestoreModule): boolean {
   const objectProps = ['sync', 'serverChange', 'defaultValues', 'fetch']
   objectProps.forEach(prop => {
     const _prop = (prop === 'defaultValues')
-      ? config.serverChange[prop]
+      ? config.sync[prop]
       : config[prop]
     if (!isPlainObject(_prop)) errors.push(`\`${prop}\` should be an Object, but is not.`)
   })

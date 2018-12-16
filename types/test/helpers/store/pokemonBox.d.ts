@@ -8,6 +8,9 @@ declare const _default: {
         orderBy: any[];
         fillables: string[];
         guard: string[];
+        defaultValues: {
+            defaultVal: boolean;
+        };
         insertHook: (updateStore: any, doc: any, store: any) => any;
         patchHook: (updateStore: any, doc: any, store: any) => any;
         deleteHook: (updateStore: any, id: any, store: any) => any;

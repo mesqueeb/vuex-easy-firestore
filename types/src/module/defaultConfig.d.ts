@@ -9,7 +9,7 @@ export declare type SyncHookId = (updateStore: HandleId, id: string, store: any)
 export declare type InsertBatchHook = (updateStore: HandleDocs, docs: any[], store: any) => (void | HandleDocs);
 export declare type PatchBatchHook = (updateStore: HandleDocIds, doc: any, ids: string[], store: any) => (void | HandleDocIds);
 export declare type DeleteBatchHook = (updateStore: HandleIds, ids: string[], store: any) => (void | HandleIds);
-export declare type ServerChangeHook = (updateStore: HandleDoc, doc: any, id: any, store: any, source: any, change: any) => (void | HandleDoc);
+export declare type ServerChangeHook = (updateStore: HandleDoc, doc: any, id: any, store: any) => (void | HandleDoc);
 export declare type IConfig = {
     firestorePath: string;
     firestoreRefType: string;
@@ -21,6 +21,7 @@ export declare type IConfig = {
         orderBy?: string[];
         fillables?: string[];
         guard?: string[];
+        defaultValues?: AnyObject;
         insertHook?: SyncHookDoc;
         patchHook?: SyncHookDoc;
         deleteHook?: SyncHookId;
@@ -30,6 +31,7 @@ export declare type IConfig = {
     };
     serverChange?: {
         defaultValues?: AnyObject;
+        convertTimestamps?: AnyObject;
         addedHook?: ServerChangeHook;
         modifiedHook?: ServerChangeHook;
         removedHook?: ServerChangeHook;
@@ -53,6 +55,7 @@ declare const _default: {
         orderBy: any[];
         fillables: any[];
         guard: any[];
+        defaultValues: {};
         insertHook: (updateStore: any, doc: any, store: any) => any;
         patchHook: (updateStore: any, doc: any, store: any) => any;
         deleteHook: (updateStore: any, id: any, store: any) => any;
@@ -62,9 +65,10 @@ declare const _default: {
     };
     serverChange: {
         defaultValues: {};
-        addedHook: (updateStore: any, doc: any, id: any, store: any, source: any, change: any) => any;
-        modifiedHook: (updateStore: any, doc: any, id: any, store: any, source: any, change: any) => any;
-        removedHook: (updateStore: any, doc: any, id: any, store: any, source: any, change: any) => any;
+        convertTimestamps: {};
+        addedHook: (updateStore: any, doc: any, id: any, store: any) => any;
+        modifiedHook: (updateStore: any, doc: any, id: any, store: any) => any;
+        removedHook: (updateStore: any, doc: any, id: any, store: any) => any;
     };
     fetch: {
         docLimit: number;

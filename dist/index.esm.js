@@ -58,6 +58,7 @@ var defaultConfig = {
         orderBy: [],
         fillables: [],
         guard: [],
+        defaultValues: {},
         // HOOKS for local changes:
         insertHook: function (updateStore, doc, store) { return updateStore(doc); },
         patchHook: function (updateStore, doc, store) { return updateStore(doc); },
@@ -70,10 +71,11 @@ var defaultConfig = {
     // When items on the server side are changed:
     serverChange: {
         defaultValues: {},
+        convertTimestamps: {},
         // HOOKS for changes on SERVER:
-        addedHook: function (updateStore, doc, id, store, source, change) { return updateStore(doc); },
-        modifiedHook: function (updateStore, doc, id, store, source, change) { return updateStore(doc); },
-        removedHook: function (updateStore, doc, id, store, source, change) { return updateStore(doc); },
+        addedHook: function (updateStore, doc, id, store) { return updateStore(doc); },
+        modifiedHook: function (updateStore, doc, id, store) { return updateStore(doc); },
+        removedHook: function (updateStore, doc, id, store) { return updateStore(doc); },
     },
     // When items are fetched through `dispatch('module/fetch', filters)`.
     fetch: {
@@ -915,7 +917,9 @@ function pluginActions (Firebase$$1) {
                 if (isFunction(querySnapshot.forEach)) {
                     querySnapshot.forEach(function (_doc) {
                         var id = _doc.id;
-                        var doc = setDefaultValues(_doc.data(), state._conf.serverChange.defaultValues);
+                        var defaultValues = merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues, // depreciated
+                        state._conf.serverChange.convertTimestamps);
+                        var doc = setDefaultValues(_doc.data(), defaultValues);
                         doc.id = id;
                         commit('INSERT_DOC', doc);
                     });
@@ -993,7 +997,9 @@ function pluginActions (Firebase$$1) {
                         }
                         if (source === 'local')
                             return resolve();
-                        var doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues);
+                        var defaultValues = merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues, // depreciated
+                        state._conf.serverChange.convertTimestamps);
+                        var doc = setDefaultValues(querySnapshot.data(), defaultValues);
                         var id = getters.docModeId;
                         doc.id = id;
                         handleDoc('modified', id, doc);
@@ -1005,8 +1011,10 @@ function pluginActions (Firebase$$1) {
                         if (source === 'local')
                             return resolve();
                         var id = change.doc.id;
+                        var defaultValues = merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues, // depreciated
+                        state._conf.serverChange.convertTimestamps);
                         var doc = (changeType === 'added')
-                            ? setDefaultValues(change.doc.data(), state._conf.serverChange.defaultValues)
+                            ? setDefaultValues(change.doc.data(), defaultValues)
                             : change.doc.data();
                         handleDoc(changeType, id, doc);
                     });
@@ -1052,6 +1060,8 @@ function pluginActions (Firebase$$1) {
             var newDoc = doc;
             if (!newDoc.id)
                 newDoc.id = getters.dbRef.doc().id;
+            // apply default values
+            var newDocWithDefaults = setDefaultValues(newDoc, state._conf.sync.defaultValues);
             // define the store update
             function storeUpdateFn(_doc) {
                 commit('INSERT_DOC', _doc);
@@ -1059,11 +1069,11 @@ function pluginActions (Firebase$$1) {
             }
             // check for hooks
             if (state._conf.sync.insertHook) {
-                state._conf.sync.insertHook(storeUpdateFn, newDoc, store);
-                return newDoc.id;
+                state._conf.sync.insertHook(storeUpdateFn, newDocWithDefaults, store);
+                return newDocWithDefaults.id;
             }
-            storeUpdateFn(newDoc);
-            return newDoc.id;
+            storeUpdateFn(newDocWithDefaults);
+            return newDocWithDefaults.id;
         },
         insertBatch: function (_a, docs) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
@@ -1466,7 +1476,7 @@ function errorCheck (config) {
     if (/\./.test(config.moduleName)) {
         errors.push("moduleName must only include letters from [a-z] and forward slashes '/'");
     }
-    var syncProps = ['where', 'orderBy', 'fillables', 'guard', 'insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook'];
+    var syncProps = ['where', 'orderBy', 'fillables', 'guard', 'defaultValues', 'insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook'];
     syncProps.forEach(function (prop) {
         if (config[prop]) {
             errors.push("We found `" + prop + "` on your module, are you sure this shouldn't be inside a prop called `sync`?");
@@ -1501,7 +1511,7 @@ function errorCheck (config) {
     var objectProps = ['sync', 'serverChange', 'defaultValues', 'fetch'];
     objectProps.forEach(function (prop) {
         var _prop = (prop === 'defaultValues')
-            ? config.serverChange[prop]
+            ? config.sync[prop]
             : config[prop];
         if (!isPlainObject(_prop))
             errors.push("`" + prop + "` should be an Object, but is not.");
