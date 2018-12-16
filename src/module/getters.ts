@@ -63,11 +63,14 @@ export default function (Firebase: any): AnyObject {
     collectionMode: (state, getters, rootState) => {
       return (state._conf.firestoreRefType.toLowerCase() === 'collection')
     },
+    docModeId: (state, getters) => {
+      return getters.firestorePathComplete.split('/').pop()
+    },
     prepareForPatch: (state, getters, rootState, rootGetters) =>
       (ids = [], doc = {}) => {
         // get relevant data from the storeRef
         const collectionMode = getters.collectionMode
-        if (!collectionMode) ids.push('singleDoc')
+        if (!collectionMode) ids.push(getters.docModeId)
         // returns {object} -> {id: data}
         return ids.reduce((carry, id) => {
           let patchData: AnyObject = {}
@@ -122,7 +125,7 @@ export default function (Firebase: any): AnyObject {
           id = path.substring(0, path.indexOf('.'))
           cleanedPath = path.substring(path.indexOf('.') + 1)
         } else {
-          id = 'singleDoc'
+          id = getters.docModeId
           cleanedPath = path
         }
         cleanedPatchData[cleanedPath] = Firebase.firestore.FieldValue.delete()

@@ -1002,7 +1002,7 @@ function pluginActions (Firebase$$1) {
                         if (source === 'local')
                             return resolve();
                         var doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues);
-                        var id = getters.firestorePathComplete.split('/').pop();
+                        var id = getters.docModeId;
                         doc.id = id;
                         handleDoc('modified', id, doc);
                         return resolve();
@@ -1303,6 +1303,9 @@ function pluginGetters (Firebase$$1) {
         collectionMode: function (state, getters, rootState) {
             return (state._conf.firestoreRefType.toLowerCase() === 'collection');
         },
+        docModeId: function (state, getters) {
+            return getters.firestorePathComplete.split('/').pop();
+        },
         prepareForPatch: function (state, getters, rootState, rootGetters) {
             return function (ids, doc) {
                 if (ids === void 0) { ids = []; }
@@ -1310,7 +1313,7 @@ function pluginGetters (Firebase$$1) {
                 // get relevant data from the storeRef
                 var collectionMode = getters.collectionMode;
                 if (!collectionMode)
-                    ids.push('singleDoc');
+                    ids.push(getters.docModeId);
                 // returns {object} -> {id: data}
                 return ids.reduce(function (carry, id) {
                     var patchData = {};
@@ -1372,7 +1375,7 @@ function pluginGetters (Firebase$$1) {
                     cleanedPath = path.substring(path.indexOf('.') + 1);
                 }
                 else {
-                    id = 'singleDoc';
+                    id = getters.docModeId;
                     cleanedPath = path;
                 }
                 cleanedPatchData[cleanedPath] = Firebase$$1.firestore.FieldValue.delete();
