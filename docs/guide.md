@@ -106,7 +106,7 @@ dispatch('moduleName/insert', newDoc)
 
 As you can see in the example above, each vuex-easy-firestore module has a getter called `dbRef` with the reference of your `firestorePath`. So when you add `.doc().id` to that reference you will "create" a new ID, just how Firestore would do it. This way you can do whatever you want with the ID before / after the insert.
 
-Please note you can also access the ID (even if you don't manually pass it) in the [hooks](extra-features.html#hooks-before-insert-patch-delete).
+Please note you can also access the ID (even if you don't manually pass it) in the [hooks](hooks.html#hooks).
 
 ## 'doc' mode
 
@@ -143,14 +143,6 @@ When working with a single doc, your document updates will automatically receive
 
 - `updated_at` uses: `Firebase.firestore.FieldValue.serverTimestamp()`
 - `updated_by` will automatically fill in the userId
-
-## Shortcut: set(path, doc)
-
-Inside Vue component templates you can also access the `set` action through a shortcut: `$store.set(path, doc)`. Or with our path: `$store.set('userData', doc)`.
-
-For this shortcut usage, import the npm module 'vuex-easy-access' and just add `{vuexEasyFirestore: true}` in its options. Please also check the relevant documentation [on the vuex-easy-access repository](https://mesqueeb.github.io/vuex-easy-access/advanced.html#firestore-integration-for-google-firebase)!
-
-Please note that **it is important to pass the 'vuex-easy-firestore' plugin first**, and the 'vuex-easy-access' plugin second for it to work properly.
 
 ## Multiple modules with 2-way sync
 
@@ -231,7 +223,7 @@ const settingsModule = {
 
 > Only for 'collection' mode.
 
-In cases you don't want to loop through items you can also use the special batch actions below. The main difference is you will have separate hooks (see [hooks](extra-features.html#hooks-before-insert-patch-delete)), and batches are optimised to update the vuex store first for all changes and the syncs to firestore last.
+In cases you don't want to loop through items you can also use the special batch actions below. The main difference is you will have separate hooks (see [hooks](hooks.html#hooks)), and batches are optimised to update the vuex store first for all changes and the syncs to firestore last.
 
 ```js
 dispatch('moduleName/insertBatch', docs) // an array of docs
@@ -241,11 +233,61 @@ dispatch('moduleName/deleteBatch', ids) // an array of ids
 
 > All batch actions will return a promise resolving to an array of the edited / added ids.
 
+## Query data (filters)
+
+> Only for 'collection' mode.
+
+Just as in Firestore's [onSnapshot](https://firebase.google.com/docs/firestore/query-data/listen) listener, you can set `where` and `orderBy` filters to filter which docs are retrieved and synced.
+
+- *where:* arrays of `parameters` that get passed on to firestore's `.where(...parameters)`
+- *orderBy:* a single `array` that gets passed on to firestore's `.orderBy(...array)`
+
+### Usage:
+
+```js
+const where = [ // an array of arrays
+  ['certain_field', '==', false],
+  ['another_field', '==', true],
+]
+const orderBy = ['created_date'] // or more params
+
+// Add to openDBChannel:
+store.dispatch('myModule/openDBChannel', {where, orderBy}) // like this
+
+// OR
+// Add to your vuex-easy-fire module in the config
+myModule = {
+  // your other vuex-easy-fire config...
+  sync: {
+    where,
+    orderBy
+  }
+}
+```
+
+You can also use all kind of variables like `'{userId}'` like so:
+
+```js
+store.dispatch('myModule/openDBChannel', {
+  where: [
+    ['created_by', '==', '{userId}'],
+    ['some field', '==', '{pathVar}']
+  ],
+  pathVar: 'value' // the actual value to replace {pathVar} with above
+})
+```
+
+What happens here above is:
+- `{userId}` will be automatically replaced with the authenticated user
+- `{pathVar}` is a custom variable that will be replaced with `'value'`
+
+For more information on custom variables, see the chapter on [variables for firestorePath or filters](vuex-easy-firestore/extra-features.html#variables-for-firestorepath-or-filters).
+
 ## Fetching docs (with different filters)
 
 > Only for 'collection' mode.
 
-Say that you have a default filter set on the documents you are syncing when you `openDBChannel` (see [Filters](extra-features.html#filters)). And you want to fetch extra documents with other filters. (eg. archived posts) In this case you can use the fetch actions to retrieve documents from the same firestore path your module is synced to:
+Say that you have a default filter set on the documents you are syncing when you `openDBChannel` (see [Query data](#query-data-filters) above). And you want to fetch extra documents with other filters. (eg. archived posts) In this case you can use the fetch actions to retrieve documents from the same firestore path your module is synced to:
 
 - `dispatch('fetch')` for manual handling the fetched docs
 - `dispatch('fetchAndAdd')` for fetching and automatically adding the docs to the module like your other docs
@@ -321,44 +363,3 @@ You can change the default fetch limit like so:
   },
 }
 ```
-
-## Duplicating docs
-
-> Only for 'collection' mode.
-
-You can duplicate a document really simply by dispatching 'duplicate' and passing the id of the target document.
-
-```js
-// let's duplicate Bulbasaur who has the id '001'
-dispatch('pokemonBox/duplicate', '001')
-```
-
-This will create a copy of Bulbasaur (and all its props) with a random new ID. The duplicated doc will automatically be added to your vuex module and synced as well.
-
-If you need to know which new ID was generated for the duplicate, you can retrieve it from the action:
-
-```js
-const idMap = await dispatch('pokemonBox/duplicate', '001')
-// mind the await!
-// idMap will look like this:
-{'001': dupeId}
-// dupeId will be a string with the ID of the duplicate!
-```
-
-In the example above, if Bulbasaur ('001') was duplicated and the new document has random ID `'123abc'` the `idMap` will be `{'001': '123abc'}`.
-
-### Duplicate batch
-
-This is how you duplicate a batch of documents:
-
-```js
-const idMap = await dispatch('pokemonBox/duplicateBatch', ['001', '004', '007'])
-// idMap will look like this:
-{
-  '001': 'some-random-new-ID-1',
-  '004': 'some-random-new-ID-2',
-  '007': 'some-random-new-ID-3',
-}
-```
-
-This way you can use the result if you need to do extra things to your duplicated docs and you will know for each ID which new ID was used to make a duplication.

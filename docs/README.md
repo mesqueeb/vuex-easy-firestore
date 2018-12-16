@@ -37,9 +37,9 @@ Now you just update and add docs with `dispatch('userData/set', newItem)` and fo
 
 - Automatic 2-way sync between your Vuex module & Firestore
 - [Timestamp conversion to Date()](extra-features.html#defaultvalues-set-after-server-retrieval)
+- [Hooks](hooks.html#hooks) (before / after sync)
 - [Fillables / guard](extra-features.html#fillables-and-guard) (limit fields which will sync)
-- [Hooks](extra-features.html#hooks-before-insert-patch-delete) (before / after sync)
-- [Where / orderBy filters](extra-features.html#filters)
+- [Where / orderBy filters](guide.html#query-data-filters)
 
 # Motivation
 

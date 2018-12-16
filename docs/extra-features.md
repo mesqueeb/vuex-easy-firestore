@@ -1,55 +1,5 @@
 # Extra features
 
-## Filters
-
-> Only for 'collection' mode.
-
-Just as in Firestore's [onSnapshot](https://firebase.google.com/docs/firestore/query-data/listen) listener, you can set `where` and `orderBy` filters to filter which docs are retrieved and synced.
-
-- *where:* arrays of `parameters` that get passed on to firestore's `.where(...parameters)`
-- *orderBy:* a single `array` that gets passed on to firestore's `.orderBy(...array)`
-
-### Usage:
-
-```js
-const where = [ // an array of arrays
-  ['certain_field', '==', false],
-  ['another_field', '==', true],
-]
-const orderBy = ['created_date'] // or more params
-
-// Add to openDBChannel:
-store.dispatch('myModule/openDBChannel', {where, orderBy}) // like this
-
-// OR
-// Add to your vuex-easy-fire module in the config
-myModule = {
-  // your other vuex-easy-fire config...
-  sync: {
-    where,
-    orderBy
-  }
-}
-```
-
-You can also use all kind of variables like `'{userId}'` like so:
-
-```js
-store.dispatch('myModule/openDBChannel', {
-  where: [
-    ['created_by', '==', '{userId}'],
-    ['some field', '==', '{pathVar}']
-  ],
-  pathVar: 'value'
-})
-```
-
-What happens here above is:
-- `{userId}` will be automatically replaced with the authenticated user
-- `{pathVar}` is a custom variable that will be replaced with `'value'`
-
-For more information on custom variables, see the next chapter:
-
 ## Variables for firestorePath or filters
 
 Besides `'{userId}'` in your `firestorePath` in the config or in where filters, you can also use **any variable** in the `firestorePath` or the `where` filter.
@@ -99,7 +49,7 @@ You can prevent props on your docs in 'collection' mode (or on your single doc i
 }
 ```
 
-**Example fillables:**
+### Example fillables
 
 ```js
 // settings:
@@ -116,7 +66,7 @@ dispatch('user/set', newUser)
 {name: 'Ash', age: 10}
 ```
 
-**Example guard:**
+### Example guard
 
 If you have only one prop you do not want to sync to firestore you can set `guard` instead of `fillables`.
 
@@ -125,149 +75,81 @@ If you have only one prop you do not want to sync to firestore you can set `guar
 guard: ['email']
 ```
 
-## Hooks before insert/patch/delete
+### Nested fillables/guard
 
-A function where you can check something or even change the doc (the doc object) before the store mutation occurs. The `doc` passed in these hooks will also have an `id` field which is the id with which it will be added to the store and to Firestore.
-
-Please make sure to check the overview of [execution timings of hooks](#execution-timings-of-hooks).
+In the example below we will prevent the nested field called `notAllowed` from being synced:
 
 ```js
-{
-  // your other vuex-easy-fire config...
-  sync: {
-    insertHook: function (updateStore, doc, store) { updateStore(doc) },
-    patchHook: function (updateStore, doc, store) { updateStore(doc) },
-    deleteHook: function (updateStore, id, store) { updateStore(id) },
-    // Batches have separate hooks!
-    insertBatchHook: function (updateStore, doc, store) { updateStore(doc) },
-    patchBatchHook: function (updateStore, doc, ids, store) { updateStore(doc, ids) },
-    deleteBatchHook: function (updateStore, ids, store) { updateStore(ids) },
+const docToPatch = {nested: {allowed: true, notAllowed: true}}
+
+// in your module config, either set the fillables like so:
+fillables: ['nested.allowed']
+
+// OR set your guard like so:
+guard: ['nested.notAllowed']
+```
+
+### Wildcard fillables/guard
+
+You can also use wildcards!
+
+In this example you have a document with an object called `lists`. The lists each have an id as the key, and a nested property you want to prevent from being synced:
+
+```js
+const docToPatch = {
+  lists: {
+    'list-id1': {allowed: true, notAllowed: true},
+    'list-id2': {allowed: true, notAllowed: true}
   }
+}
+
+// in your module config, either set the fillables like so:
+fillables: ['lists.*.allowed']
+
+// OR set your guard like so:
+guard: ['lists.*.notAllowed']
+```
+
+## Duplicating docs
+
+> Only for 'collection' mode.
+
+You can duplicate a document really simply by dispatching 'duplicate' and passing the id of the target document.
+
+```js
+// let's duplicate Bulbasaur who has the id '001'
+dispatch('pokemonBox/duplicate', '001')
+```
+
+This will create a copy of Bulbasaur (and all its props) with a random new ID. The duplicated doc will automatically be added to your vuex module and synced as well.
+
+If you need to know which new ID was generated for the duplicate, you can retrieve it from the action:
+
+```js
+const idMap = await dispatch('pokemonBox/duplicate', '001')
+// mind the await!
+// idMap will look like this:
+{'001': dupeId}
+// dupeId will be a string with the ID of the duplicate!
+```
+
+In the example above, if Bulbasaur ('001') was duplicated and the new document has random ID `'123abc'` the `idMap` will be `{'001': '123abc'}`.
+
+### Duplicate batch
+
+This is how you duplicate a batch of documents:
+
+```js
+const idMap = await dispatch('pokemonBox/duplicateBatch', ['001', '004', '007'])
+// idMap will look like this:
+{
+  '001': 'some-random-new-ID-1',
+  '004': 'some-random-new-ID-2',
+  '007': 'some-random-new-ID-3',
 }
 ```
 
-::: warning You must call `updateStore(doc)` to make the store mutation.
-But you may choose not to call this to abort the mutation. If you do not call `updateStore(doc)` nothing will happen.
-:::
-
-## Hooks after changes on the server
-
-Exactly the same as above, but for changes that have occured on the server. You also have some extra parameters to work with:
-
-- *id:* the doc id returned in `change.doc.id` (see firestore documentation for more info)
-- *doc:* the doc returned in `change.doc.data()` (see firestore documentation for more info)
-
-```js
-{
-  // your other vuex-easy-fire config...
-  serverChange: {
-    addedHook: function (updateStore, doc, id, store) { updateStore(doc) },
-    modifiedHook: function (updateStore, doc, id, store) { updateStore(doc) },
-    removedHook: function (updateStore, doc, id, store) { updateStore(doc) },
-  }
-}
-```
-
-Please make sure to check the overview of execution timings of hooks, in the next chapter:
-
-## Execution timings of hooks
-
-Notice that the `created_at` and `updated_at` fields mentioned below is used by default, but can be disabled. To disable just add them to your [guard config](#fillables-and-guard).
-
-**Collection mode hooks**
-
-<table>
-  <tr>
-    <th>change type</th>
-    <th colspan="2">local</th>
-    <th>server</th>
-  </tr>
-  <tr>
-    <td>insertion</td>
-    <td>
-      <b>without <code>created_at</code></b>
-      <ol>
-        <li><code>sync.insertHook</code></li>
-      </ol>
-    </td>
-    <td>
-      <b>with <code>created_at</code></b>
-      <ol>
-        <li><code>sync.insertHook</code></li>
-        <li><code>serverChange.modifiedHook</code></li>
-      </ol>
-    </td>
-    <td><code>serverChange.addedHook</code></td>
-  </tr>
-  <tr>
-    <td>modification</td>
-    <td>
-      <b>without <code>updated_at</code></b>
-      <ol>
-        <li><code>sync.patchHook</code></li>
-      </ol>
-    </td>
-    <td>
-      <b>with <code>updated_at</code></b>
-      <ol>
-        <li><code>sync.patchHook</code></li>
-        <li><code>serverChange.modifiedHook</code></li>
-      </ol>
-    </td>
-    <td><code>serverChange.modifiedHook</code></td>
-  </tr>
-  <tr>
-    <td>deletion</td>
-    <td colspan="2">
-      <ol>
-        <li><code>sync.deleteHook</code></li>
-        <li><code>serverChange.removedHook</code></li>
-      </ol>
-    </td>
-    <td><code>serverChange.removedHook</code></td>
-  </tr>
-  <tr>
-    <td>after <code>openDBChannel</code></td>
-    <td colspan="3"><code>serverChange.addedHook</code> is executed once for each doc</td>
-  </tr>
-</table>
-
-**Doc mode hooks**
-
-<table>
-  <tr>
-    <th>change type</th>
-    <th colspan="2">local</th>
-    <th>server</th>
-  </tr>
-  <tr>
-    <td>modification</td>
-    <td>
-      <b>without <code>updated_at</code></b>
-      <ol>
-        <li><code>sync.patchHook</code></li>
-      </ol>
-    </td>
-    <td>
-      <b>with <code>updated_at</code></b>
-      <ol>
-        <li><code>sync.patchHook</code></li>
-        <li><code>serverChange.modifiedHook</code></li>
-      </ol>
-    </td>
-    <td><code>serverChange.modifiedHook</code></td>
-  </tr>
-  <tr>
-    <td>after <code>openDBChannel</code></td>
-    <td colspan="3"><code>serverChange.modifiedHook</code> is executed once</td>
-  </tr>
-</table>
-
-### Note about the serverChange hooks executing on local changes
-
-I have done my best to limit the hooks to only be executed on the proper events. The server hooks are executed during Firestore's [onSnapshot events](https://firebase.google.com/docs/firestore/query-data/listen).
-
-The reason for `updated_at` to trigger `serverChange.modifiedHook` even on just a local change, is because `updated_at` uses Firestore's `firebase.firestore.FieldValue.serverTimestamp()` which is replaced by a timestamp on the server and therefor there is a "server change".
+This way you can use the result if you need to do extra things to your duplicated docs and you will know for each ID which new ID was used to make a duplication.
 
 ## defaultValues set after server retrieval
 
@@ -317,6 +199,29 @@ const docToBeInserted = {date: null}
 ```
 
 To learn more about Firestore's Timestamp format see [here](https://firebase.google.com/docs/reference/js/firebase.firestore.Timestamp).
+
+## Shortcut: set(path, doc)
+
+Inside Vue component templates there is a shortcut for `dispatch('module/set', newVal)`. If you enable support for my other library called 'vuex-easy-access' you will be able to just use `set('module', newVal)` instead!
+
+For this shortcut usage, import the npm module 'vuex-easy-access' when you initialise your store and add it as plugin. Pass the 'vuex-easy-firestore' plugin first and **the 'vuex-easy-access' plugin second** for it to work properly.
+
+Also add `{vuexEasyFirestore: true}` in the options when you initialise 'vuex-easy-access' like so:
+
+```js
+import vuexEasyAccess from 'vuex-easy-access'
+const easyAccess = vuexEasyAccess({vuexEasyFirestore: true})
+
+const store = {
+  plugins: [easyFirestoreModules, easyAccess]
+}
+```
+
+Please check the relevant documentation [on the vuex-easy-access repository](https://mesqueeb.github.io/vuex-easy-access/advanced.html#firestore-integration-for-google-firebase)!
+
+### About 'vuex-easy-access'
+
+Vuex easy access has a lot of different features to make working with your store extremely easy. The main purpose of that library is to be able to do any kind of mutation to your store directly from the templates without having to set up actions yourself. It is especially usefull when working with wildcards. Please see the [introduction on Vuex Easy Access here](https://mesqueeb.github.io/vuex-easy-access/).
 
 ## Pass Firebase dependency
 
