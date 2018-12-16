@@ -161,7 +161,7 @@ export default function (Firebase: any): AnyObject {
         doc = filter(doc, fillables, guard)
         return doc
       },
-    whereFilters: (state, getters) => {
+    where: (state, getters) => {
       const whereArrays = state._conf.sync.where
       return whereArrays.map(whereClause => {
         return whereClause.map(param => {

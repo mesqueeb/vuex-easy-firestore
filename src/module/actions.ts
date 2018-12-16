@@ -166,20 +166,21 @@ export default function (Firebase: any): AnyObject {
     },
     fetch (
       {state, getters, commit, dispatch},
-      {whereFilters = [], orderBy = []} = {whereFilters: [], orderBy: []}
-      // whereFilters: [['archived', '==', true]]
+      {where = [], whereFilters = [], orderBy = []} = {where: [], whereFilters: [], orderBy: []}
+      // where: [['archived', '==', true]]
       // orderBy: ['done_date', 'desc']
     ) {
+      if (whereFilters.length) where = whereFilters
       return new Promise((resolve, reject) => {
         if (state._conf.logging) console.log('[vuex-easy-firestore] Fetch starting')
         if (!getters.signedIn) return resolve()
-        const identifier = createFetchIdentifier({whereFilters, orderBy})
+        const identifier = createFetchIdentifier({where, orderBy})
         const fetched = state._sync.fetched[identifier]
         // We've never fetched this before:
         if (!fetched) {
           let ref = getters.dbRef
           // apply where filters and orderBy
-          whereFilters.forEach(paramsArr => {
+          where.forEach(paramsArr => {
             ref = ref.where(...paramsArr)
           })
           if (orderBy.length) {
@@ -236,11 +237,12 @@ export default function (Firebase: any): AnyObject {
     },
     fetchAndAdd (
       {state, getters, commit, dispatch},
-      {whereFilters = [], orderBy = []} = {whereFilters: [], orderBy: []}
-      // whereFilters: [['archived', '==', true]]
+      {where = [], whereFilters = [], orderBy = []} = {where: [], whereFilters: [], orderBy: []}
+      // where: [['archived', '==', true]]
       // orderBy: ['done_date', 'desc']
     ) {
-      return dispatch('fetch', {whereFilters, orderBy})
+      if (whereFilters.length) where = whereFilters
+      return dispatch('fetch', {where, orderBy})
         .then(querySnapshot => {
           if (querySnapshot.done === true) return querySnapshot
           if (isFunction(querySnapshot.forEach)) {
@@ -291,7 +293,7 @@ export default function (Firebase: any): AnyObject {
       let dbRef = getters.dbRef
       // apply where filters and orderBy
       if (getters.collectionMode) {
-        getters.whereFilters.forEach(whereParams => {
+        getters.where.forEach(whereParams => {
           dbRef = dbRef.where(...whereParams)
         })
         if (state._conf.sync.orderBy.length) {
@@ -329,7 +331,7 @@ export default function (Firebase: any): AnyObject {
             }
             if (source === 'local') return resolve()
             const doc = setDefaultValues(querySnapshot.data(), state._conf.serverChange.defaultValues)
-            const id = getters.firestorePathComplete.split('/').pop()
+            const id = getters.docModeId
             doc.id = id
             handleDoc('modified', id, doc)
             return resolve()

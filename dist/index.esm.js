@@ -584,17 +584,17 @@ function stringifyParams(params) {
     }).join();
 }
 /**
- * Gets an object with {whereFilters, orderBy} filters and returns a unique identifier for that
+ * Gets an object with {where, orderBy} filters and returns a unique identifier for that
  *
  * @export
- * @param {AnyObject} [whereOrderBy={}] whereOrderBy {whereFilters, orderBy}
+ * @param {AnyObject} [whereOrderBy={}] whereOrderBy {where, orderBy}
  * @returns {string}
  */
 function createFetchIdentifier(whereOrderBy) {
     if (whereOrderBy === void 0) { whereOrderBy = {}; }
     var identifier = '';
-    if ('whereFilters' in whereOrderBy) {
-        identifier += '[where]' + whereOrderBy.whereFilters.map(function (where) { return stringifyParams(where); }).join();
+    if ('where' in whereOrderBy) {
+        identifier += '[where]' + whereOrderBy.where.map(function (where) { return stringifyParams(where); }).join();
     }
     if ('orderBy' in whereOrderBy) {
         identifier += '[orderBy]' + stringifyParams(whereOrderBy.orderBy);
@@ -820,26 +820,28 @@ function pluginActions (Firebase$$1) {
             });
         },
         fetch: function (_a, _b
-        // whereFilters: [['archived', '==', true]]
+        // where: [['archived', '==', true]]
         // orderBy: ['done_date', 'desc']
         ) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
-            var _c = _b === void 0 ? { whereFilters: [], orderBy: [] } : _b
-            // whereFilters: [['archived', '==', true]]
+            var _c = _b === void 0 ? { where: [], whereFilters: [], orderBy: [] } : _b
+            // where: [['archived', '==', true]]
             // orderBy: ['done_date', 'desc']
-            , _d = _c.whereFilters, whereFilters = _d === void 0 ? [] : _d, _e = _c.orderBy, orderBy = _e === void 0 ? [] : _e;
+            , _d = _c.where, where = _d === void 0 ? [] : _d, _e = _c.whereFilters, whereFilters = _e === void 0 ? [] : _e, _f = _c.orderBy, orderBy = _f === void 0 ? [] : _f;
+            if (whereFilters.length)
+                where = whereFilters;
             return new Promise(function (resolve, reject) {
                 if (state._conf.logging)
                     console.log('[vuex-easy-firestore] Fetch starting');
                 if (!getters.signedIn)
                     return resolve();
-                var identifier = createFetchIdentifier({ whereFilters: whereFilters, orderBy: orderBy });
+                var identifier = createFetchIdentifier({ where: where, orderBy: orderBy });
                 var fetched = state._sync.fetched[identifier];
                 // We've never fetched this before:
                 if (!fetched) {
                     var ref_1 = getters.dbRef;
                     // apply where filters and orderBy
-                    whereFilters.forEach(function (paramsArr) {
+                    where.forEach(function (paramsArr) {
                         ref_1 = ref_1.where.apply(ref_1, paramsArr);
                     });
                     if (orderBy.length) {
@@ -896,15 +898,17 @@ function pluginActions (Firebase$$1) {
             });
         },
         fetchAndAdd: function (_a, _b
-        // whereFilters: [['archived', '==', true]]
+        // where: [['archived', '==', true]]
         // orderBy: ['done_date', 'desc']
         ) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
-            var _c = _b === void 0 ? { whereFilters: [], orderBy: [] } : _b
-            // whereFilters: [['archived', '==', true]]
+            var _c = _b === void 0 ? { where: [], whereFilters: [], orderBy: [] } : _b
+            // where: [['archived', '==', true]]
             // orderBy: ['done_date', 'desc']
-            , _d = _c.whereFilters, whereFilters = _d === void 0 ? [] : _d, _e = _c.orderBy, orderBy = _e === void 0 ? [] : _e;
-            return dispatch('fetch', { whereFilters: whereFilters, orderBy: orderBy })
+            , _d = _c.where, where = _d === void 0 ? [] : _d, _e = _c.whereFilters, whereFilters = _e === void 0 ? [] : _e, _f = _c.orderBy, orderBy = _f === void 0 ? [] : _f;
+            if (whereFilters.length)
+                where = whereFilters;
+            return dispatch('fetch', { where: where, orderBy: orderBy })
                 .then(function (querySnapshot) {
                 if (querySnapshot.done === true)
                     return querySnapshot;
@@ -956,7 +960,7 @@ function pluginActions (Firebase$$1) {
             var dbRef = getters.dbRef;
             // apply where filters and orderBy
             if (getters.collectionMode) {
-                getters.whereFilters.forEach(function (whereParams) {
+                getters.where.forEach(function (whereParams) {
                     dbRef = dbRef.where.apply(dbRef, whereParams);
                 });
                 if (state._conf.sync.orderBy.length) {
@@ -1412,7 +1416,7 @@ function pluginGetters (Firebase$$1) {
                 return doc;
             };
         },
-        whereFilters: function (state, getters) {
+        where: function (state, getters) {
             var whereArrays = state._conf.sync.where;
             return whereArrays.map(function (whereClause) {
                 return whereClause.map(function (param) {

@@ -294,13 +294,13 @@ Say that you have a default filter set on the documents you are syncing when you
 
 You can have two extra parameters:
 
-- *whereFilters:* The same as firestore's `.where()`. An array of arrays with the filters you want. eg. `[['field', '==', false], ...]`
+- *where:* The same as firestore's `.where()`. An array of arrays with the filters you want. eg. `[['field', '==', false], ...]`
 - *orderBy:* The same as firestore's `.orderBy()`. eg. `['created_date']`
 
 ### Usage example `fetchAndAdd`:
 
 ```js
-dispatch('pokemonBox/fetchAndAdd', {whereFilters: [['freed', '==', true]], orderBy: ['freedDate']})
+dispatch('pokemonBox/fetchAndAdd', {where: [['freed', '==', true]], orderBy: ['freedDate']})
   .then(querySnapshot => {
     if (querySnapshot.done === true) {
       // `{done: true}` is returned when everything is already fetched and there are 0 docs:
@@ -317,7 +317,7 @@ Using the `fetchAndAdd` method means your documents will be added to your vuex-m
 ### Usage example `fetch`:
 
 ```js
-dispatch('pokemonBox/fetch', {whereFilters: [['freed', '==', true]], orderBy: ['freedDate']})
+dispatch('pokemonBox/fetch', {where: [['freed', '==', true]], orderBy: ['freedDate']})
   .then(querySnapshot => {
     if (querySnapshot.done === true) {
       // `{done: true}` is returned when everything is already fetched and there are 0 docs:
@@ -343,7 +343,7 @@ The fetch limit defaults to 50 docs. If you watch to fetch *the next 50 docs* yo
 
 ```js
 function fetchFreedPokemon () {
-  dispatch('pokemonBox/fetchAndAdd', {whereFilters: [['freed', '==', true]], orderBy: ['freedDate']})
+  dispatch('pokemonBox/fetchAndAdd', {where: [['freed', '==', true]], orderBy: ['freedDate']})
 }
 // call once to fetch the first 50:
 fetchFreedPokemon()

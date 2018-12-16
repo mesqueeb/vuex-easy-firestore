@@ -75,12 +75,12 @@ test('[prepareForPatch] doc', async t => {
   t.is(res[docModeId].updated_at, undefined)
 })
 
-test('[whereFilters]', async t => {
+test('[where]', async t => {
   let res
   char._conf.sync.where = [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']]
   char._sync.userId = 'charlie'
   char._sync.pathVariables = {nr: '1', big: 'shot'}
-  res = store.getters['mainCharacter/whereFilters']
+  res = store.getters['mainCharacter/where']
   t.deepEqual(res, [['hi.charlie.docs.1', '==', 'shot'], ['charlie', '==', 'charlie']])
   t.deepEqual(char._conf.sync.where, [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']])
   // accept other values than strings
@@ -88,12 +88,12 @@ test('[whereFilters]', async t => {
   char._sync.userId = ''
   const date = new Date()
   char._sync.pathVariables = {date, nulll: null, undef: undefined}
-  res = store.getters['mainCharacter/whereFilters']
+  res = store.getters['mainCharacter/where']
   t.deepEqual(res, [[1, '==', true], ['', '==', date, null, undefined]])
   t.deepEqual(char._conf.sync.where, [[1, '==', true], ['{userId}', '==', '{date}', '{nulll}', '{undef}']])
   char._conf.sync.where = [[1, true, undefined, '{a}', NaN]]
   char._sync.pathVariables = {a: {}}
-  res = store.getters['mainCharacter/whereFilters']
+  res = store.getters['mainCharacter/where']
   t.deepEqual(res, [[1, true, undefined, {}, NaN]])
   t.deepEqual(char._conf.sync.where, [[1, true, undefined, '{a}', NaN]])
 })

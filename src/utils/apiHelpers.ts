@@ -161,16 +161,16 @@ function stringifyParams (params: any[]): string {
 }
 
 /**
- * Gets an object with {whereFilters, orderBy} filters and returns a unique identifier for that
+ * Gets an object with {where, orderBy} filters and returns a unique identifier for that
  *
  * @export
- * @param {AnyObject} [whereOrderBy={}] whereOrderBy {whereFilters, orderBy}
+ * @param {AnyObject} [whereOrderBy={}] whereOrderBy {where, orderBy}
  * @returns {string}
  */
 export function createFetchIdentifier (whereOrderBy: AnyObject = {}): string {
   let identifier = ''
-  if ('whereFilters' in whereOrderBy) {
-    identifier += '[where]' + whereOrderBy.whereFilters.map(where => stringifyParams(where)).join()
+  if ('where' in whereOrderBy) {
+    identifier += '[where]' + whereOrderBy.where.map(where => stringifyParams(where)).join()
   }
   if ('orderBy' in whereOrderBy) {
     identifier += '[orderBy]' + stringifyParams(whereOrderBy.orderBy)
