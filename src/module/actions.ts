@@ -17,6 +17,12 @@ import { createDiffieHellman } from 'crypto';
  */
 export default function (Firebase: any): AnyObject {
   return {
+    setUserId: ({state}) => {
+      if (Firebase.auth().currentUser) {
+        state._sync.signedIn = true
+        state._sync.userId = Firebase.auth().currentUser.uid
+      }
+    },
     duplicate: async ({state, getters, commit, dispatch}, id) => {
       if (!getters.collectionMode) return console.error('[vuex-easy-firestore] You can only duplicate in \'collection\' mode.')
       if (!id) return {}
@@ -171,6 +177,7 @@ export default function (Firebase: any): AnyObject {
       // where: [['archived', '==', true]]
       // orderBy: ['done_date', 'desc']
     ) {
+      dispatch('setUserId')
       if (whereFilters.length) where = whereFilters
       return new Promise((resolve, reject) => {
         if (state._conf.logging) console.log('[vuex-easy-firestore] Fetch starting')
@@ -280,6 +287,7 @@ export default function (Firebase: any): AnyObject {
       }
     },
     openDBChannel ({getters, state, commit, dispatch}, pathVariables) {
+      dispatch('setUserId')
       const store = this
       // set state for pathVariables
       if (pathVariables && isPlainObject(pathVariables)) {

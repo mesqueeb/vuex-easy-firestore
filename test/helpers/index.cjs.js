@@ -808,6 +808,13 @@ function getValueFromPayloadPiece(payloadPiece) {
 function pluginActions (Firebase$$1) {
     var _this = this;
     return {
+        setUserId: function (_a) {
+            var state = _a.state;
+            if (Firebase$$1.auth().currentUser) {
+                state._sync.signedIn = true;
+                state._sync.userId = Firebase$$1.auth().currentUser.uid;
+            }
+        },
         duplicate: function (_a, id) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             return __awaiter(_this, void 0, void 0, function () {
@@ -986,6 +993,7 @@ function pluginActions (Firebase$$1) {
             // where: [['archived', '==', true]]
             // orderBy: ['done_date', 'desc']
             , _d = _c.where, where = _d === void 0 ? [] : _d, _e = _c.whereFilters, whereFilters = _e === void 0 ? [] : _e, _f = _c.orderBy, orderBy = _f === void 0 ? [] : _f;
+            dispatch('setUserId');
             if (whereFilters.length)
                 where = whereFilters;
             return new Promise(function (resolve, reject) {
@@ -1101,6 +1109,7 @@ function pluginActions (Firebase$$1) {
         },
         openDBChannel: function (_a, pathVariables) {
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
+            dispatch('setUserId');
             var store = this;
             // set state for pathVariables
             if (pathVariables && isWhat.isPlainObject(pathVariables)) {
