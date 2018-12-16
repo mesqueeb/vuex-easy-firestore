@@ -23,7 +23,6 @@ test('[COLLECTION] set with no id', async t => {
   await wait(2)
   // insert set
   id = await store.dispatch('pokemonBox/insert', {name: 'Unown'})
-  console.log('id  set with no id → ', id)
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Unown')
   await wait(2)
@@ -54,6 +53,27 @@ test('[COLLECTION] set with no id', async t => {
   docR = await boxRef.doc(id).get()
   doc = docR.data()
   t.deepEqual(doc.name, {is: 'nested1'})
+})
+
+test('[COLLECTION] insert and patch right after each other', async t => {
+  await wait(2)
+  // insert
+  const id = boxRef.doc().id
+  console.log('id → ', id)
+  store.dispatch('pokemonBox/insert', {id, name: 'Mew', type: {normal: true}})
+  t.truthy(box.pokemon[id])
+  t.is(box.pokemon[id].name, 'Mew')
+  t.deepEqual(box.pokemon[id].type, {normal: true})
+  // patch
+  store.dispatch('pokemonBox/patch', {id, type: {psychic: true}})
+  t.is(box.pokemon[id].name, 'Mew')
+  t.deepEqual(box.pokemon[id].type, {normal: true, psychic: true})
+  // await server
+  await wait(2)
+  const docR = await boxRef.doc(id).get()
+  const doc = docR.data()
+  t.is(doc.name, 'Mew')
+  t.deepEqual(doc.type, {normal: true, psychic: true})
 })
 
 test('[COLLECTION] set & delete: top lvl', async t => {

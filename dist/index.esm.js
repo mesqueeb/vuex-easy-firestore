@@ -703,6 +703,20 @@ function pluginActions (Firebase$$1) {
                 return console.error('[vuex-easy-firestore] ids needs to be an array');
             if (id)
                 ids.push(id);
+            // EXTRA: check if doc is being inserted if so
+            state._sync.syncStack.inserts.forEach(function (newDoc, newDocIndex) {
+                // get the index of the id that is also in the insert stack
+                var indexIdInInsert = ids.indexOf(newDoc.id);
+                if (indexIdInInsert === -1)
+                    return;
+                // the doc trying to be synced is also in insert
+                // prepare the doc as new doc:
+                var patchDoc = getters.prepareForInsert([doc])[0];
+                // replace insert sync stack with merged item:
+                state._sync.syncStack.inserts[newDocIndex] = merge(newDoc, patchDoc);
+                // empty out the id that was to be patched:
+                ids.splice(indexIdInInsert, 1);
+            });
             // 1. Prepare for patching
             var syncStackItems = getters.prepareForPatch(ids, doc);
             // 2. Push to syncStack
