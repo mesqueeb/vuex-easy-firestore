@@ -281,7 +281,7 @@ What happens here above is:
 - `{userId}` will be automatically replaced with the authenticated user
 - `{pathVar}` is a custom variable that will be replaced with `'value'`
 
-For more information on custom variables, see the chapter on [variables for firestorePath or filters](vuex-easy-firestore/extra-features.html#variables-for-firestorepath-or-filters).
+For more information on custom variables, see the chapter on [variables for firestorePath or filters](extra-features.html#variables-for-firestorepath-or-filters).
 
 ## Fetching docs (with different filters)
 
