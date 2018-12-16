@@ -121,13 +121,13 @@ test('SET_PATHVARS & where getter', async t => {
   box._conf.sync.where = [['hi.{userId}.docs.{name}', '==', '{big}']]
   box._sync.userId = 'charlie'
   // pokemonBox._sync.userId = 'charlie'
-  res = store.getters['pokemonBox/where']
+  res = store.getters['pokemonBox/getWhereArrays']()
   t.deepEqual(box._sync.pathVariables, {})
   t.deepEqual(box._conf.sync.where, [['hi.{userId}.docs.{name}', '==', '{big}']])
   t.deepEqual(res, [['hi.charlie.docs.{name}', '==', '{big}']])
 
   store.commit('pokemonBox/SET_PATHVARS', {name: 'Satoshi'})
-  res = store.getters['pokemonBox/where']
+  res = store.getters['pokemonBox/getWhereArrays']()
   t.deepEqual(box._sync.pathVariables, {name: 'Satoshi'})
   t.deepEqual(box._conf.sync.where, [['hi.{userId}.docs.{name}', '==', '{big}']])
   t.deepEqual(res, [['hi.charlie.docs.Satoshi', '==', '{big}']])

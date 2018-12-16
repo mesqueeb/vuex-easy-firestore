@@ -1,4 +1,4 @@
-import { isArray, isPlainObject, isAnyObject, isFunction } from 'is-what'
+import { isArray, isPlainObject, isFunction } from 'is-what'
 import merge from 'merge-anything'
 import { AnyObject, IPluginState } from '../declarations'
 import setDefaultValues from '../utils/setDefaultValues'
@@ -180,7 +180,7 @@ export default function (Firebase: any): AnyObject {
         if (!fetched) {
           let ref = getters.dbRef
           // apply where filters and orderBy
-          where.forEach(paramsArr => {
+          getters.getWhereArrays(where).forEach(paramsArr => {
             ref = ref.where(...paramsArr)
           })
           if (orderBy.length) {
@@ -282,18 +282,11 @@ export default function (Firebase: any): AnyObject {
         delete pathVariables.orderBy
         commit('SET_PATHVARS', pathVariables)
       }
-      // get userId
-      let userId = null
-      if (Firebase.auth().currentUser) {
-        state._sync.signedIn = true
-        userId = Firebase.auth().currentUser.uid
-        state._sync.userId = userId
-      }
       // getters.dbRef should already have pathVariables swapped out
       let dbRef = getters.dbRef
       // apply where filters and orderBy
       if (getters.collectionMode) {
-        getters.where.forEach(whereParams => {
+        getters.getWhereArrays().forEach(whereParams => {
           dbRef = dbRef.where(...whereParams)
         })
         if (state._conf.sync.orderBy.length) {

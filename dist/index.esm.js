@@ -841,7 +841,7 @@ function pluginActions (Firebase$$1) {
                 if (!fetched) {
                     var ref_1 = getters.dbRef;
                     // apply where filters and orderBy
-                    where.forEach(function (paramsArr) {
+                    getters.getWhereArrays(where).forEach(function (paramsArr) {
                         ref_1 = ref_1.where.apply(ref_1, paramsArr);
                     });
                     if (orderBy.length) {
@@ -949,18 +949,11 @@ function pluginActions (Firebase$$1) {
                 delete pathVariables.orderBy;
                 commit('SET_PATHVARS', pathVariables);
             }
-            // get userId
-            var userId = null;
-            if (Firebase$$1.auth().currentUser) {
-                state._sync.signedIn = true;
-                userId = Firebase$$1.auth().currentUser.uid;
-                state._sync.userId = userId;
-            }
             // getters.dbRef should already have pathVariables swapped out
             var dbRef = getters.dbRef;
             // apply where filters and orderBy
             if (getters.collectionMode) {
-                getters.where.forEach(function (whereParams) {
+                getters.getWhereArrays().forEach(function (whereParams) {
                     dbRef = dbRef.where.apply(dbRef, whereParams);
                 });
                 if (state._conf.sync.orderBy.length) {
@@ -1416,8 +1409,13 @@ function pluginGetters (Firebase$$1) {
                 return doc;
             };
         },
-        where: function (state, getters) {
-            var whereArrays = state._conf.sync.where;
+        getWhereArrays: function (state, getters) { return function (whereArrays) {
+            if (!isArray(whereArrays))
+                whereArrays = state._conf.sync.where;
+            if (Firebase$$1.auth().currentUser) {
+                state._sync.signedIn = true;
+                state._sync.userId = Firebase$$1.auth().currentUser.uid;
+            }
             return whereArrays.map(function (whereClause) {
                 return whereClause.map(function (param) {
                     if (!isString(param))
@@ -1443,7 +1441,7 @@ function pluginGetters (Firebase$$1) {
                     return cleanedParam;
                 });
             });
-        },
+        }; },
     };
 }
 

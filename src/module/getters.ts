@@ -1,4 +1,4 @@
-import { isString, isPlainObject, isAnyObject } from 'is-what'
+import { isString, isArray } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
 import { findAndReplaceIf } from 'find-and-replace-anything'
 import filter from 'filter-anything'
@@ -161,8 +161,12 @@ export default function (Firebase: any): AnyObject {
         doc = filter(doc, fillables, guard)
         return doc
       },
-    where: (state, getters) => {
-      const whereArrays = state._conf.sync.where
+    getWhereArrays: (state, getters) => (whereArrays) => {
+      if (!isArray(whereArrays)) whereArrays = state._conf.sync.where
+      if (Firebase.auth().currentUser) {
+        state._sync.signedIn = true
+        state._sync.userId = Firebase.auth().currentUser.uid
+      }
       return whereArrays.map(whereClause => {
         return whereClause.map(param => {
           if (!isString(param)) return param
