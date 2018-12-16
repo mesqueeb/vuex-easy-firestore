@@ -4073,10 +4073,10 @@ fill-range@^4.0.0:
     repeat-string "^1.6.1"
     to-regex-range "^2.1.0"
 
-filter-anything@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/filter-anything/-/filter-anything-1.0.0.tgz#59d1be272d9e72d0eac42c09b4a667a298088e75"
-  integrity sha512-ScsNU4RAtNdKqKC47i7E08dwdDVGRtTm+tYZj2YZVprJSKaM9VZQGlOEBTjRuzGOJqKnzAnurh2Q5PD3mMgEPA==
+filter-anything@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/filter-anything/-/filter-anything-1.1.0.tgz#9821649f17be540297f13ec4d5bdf340a72a7e01"
+  integrity sha512-c5+DdGvv1qJLXctPCPEfers1iz9TzjmYo4w9JQeh4sy8/au+lJH70mpJ4QEKcCHN8vy4QdlvhMSzYS1BGtBGfw==
   dependencies:
     is-what "^3.1.1"
 
