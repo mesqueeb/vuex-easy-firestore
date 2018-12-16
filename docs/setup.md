@@ -101,9 +101,9 @@ dispatch('moduleName/closeDBChannel')
 
 This will close the connection using Firestore's [unsubscribe function](https://firebase.google.com/docs/firestore/query-data/listen#detach_a_listener).
 
-Please note, `closeDBChannel` **will not clear out the vuex-module.** This means that you can continue to insert/patch/delete docs and they will still be synced to the server. However, changes on the server side will not be reflected to the app anymore.
+Please note that `closeDBChannel` does not mean it will not listen for "local" changes! This menas that even with a closedDBChannel, you can continue to insert/patch/delete docs and they will still be synced to the server. However, changes on the server side will not be reflected to the app anymore.
 
-You can also close the connection and completely clear out the module; removing all docs from vuex. (without deleting anything on the server, don't worry) In this case do:
+`closeDBChannel` will not clear out the data in your current vuex module. You can also close the connection and completely clear out the module; removing all docs from your vuex module. (without deleting anything on the server, don't worry) In this case do:
 
 ```js
 dispatch('moduleName/closeDBChannel', {clearModule: true})
