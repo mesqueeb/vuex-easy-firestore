@@ -1178,9 +1178,7 @@ function pluginActions (Firebase$$1) {
                         var id = change.doc.id;
                         var defaultValues = merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues, // depreciated
                         state._conf.serverChange.convertTimestamps);
-                        var doc = (changeType === 'added')
-                            ? setDefaultValues(change.doc.data(), defaultValues)
-                            : change.doc.data();
+                        var doc = setDefaultValues(change.doc.data(), defaultValues);
                         handleDoc(changeType, id, doc);
                     });
                     return resolve();

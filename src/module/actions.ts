@@ -358,9 +358,7 @@ export default function (Firebase: any): AnyObject {
               state._conf.serverChange.defaultValues, // depreciated
               state._conf.serverChange.convertTimestamps,
             )
-            const doc = (changeType === 'added')
-              ? setDefaultValues(change.doc.data(), defaultValues)
-              : change.doc.data()
+            const doc = setDefaultValues(change.doc.data(), defaultValues)
             handleDoc(changeType, id, doc)
           })
           return resolve()
