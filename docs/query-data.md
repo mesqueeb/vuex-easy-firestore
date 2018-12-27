@@ -1,0 +1,264 @@
+# Query data
+
+## Get data
+
+The prime philosophy of Vuex Easy Firestore is to be able to have a vuex module (or several) which are all in sync with Firestore. When your app is openend there are two ways you can get data from Firestore and have it added to your vuex modules:
+
+- get realtime updates
+- fetch the document(s) once
+
+To have a better understanding of the difference I will give some examples:
+
+## Realtime updates vs single fetch
+
+Realtime updates are powered by Firestore's [onSnapshot](https://firebase.google.com/docs/firestore/query-data/listen) listener. This means that if data on the server is changed, the changes are pushed to all clients that have your application open.
+
+With Vuex easy firestore using _realtime updates_ will effectively make **a 2-way sync between your firestore collection or doc and your vuex module**.
+
+Fetching the document(s) once is when you want to retrieve the document(s) once, when your application or a page is opened, but do not require to have the data to be live updated when the server data changes.
+
+## Realtime updates: openDBChannel
+
+If you want to use _realtime updates_ the only thing you need to do is to dispatch the `openDBChannel` action. Eg.
+
+```js
+dispatch('moduleName/openDBChannel').catch(console.error)
+```
+
+`openDBChannel` is just the same as the Firestore [onSnapshot](https://firebase.google.com/docs/firestore/query-data/listen) function, but the difference is that the documents from Firestore are automatically added to Vuex: in the module defined as `moduleName` and inside the object defined as `statePropName` as per your config (see [setup](setup.html#setup)).
+
+### Close DB channel
+
+In most cases you never need to close the connection to Firestore. But if you do want to close it (unsubscribe from Firestore's `onSnapshot`) you can do so like this:
+
+```js
+dispatch('moduleName/closeDBChannel')
+```
+
+This will close the connection using Firestore's [unsubscribe function](https://firebase.google.com/docs/firestore/query-data/listen#detach_a_listener).
+
+Please note that `closeDBChannel` does not mean it will not listen for "local" changes! This menas that even with a closedDBChannel, you can continue to insert/patch/delete docs and they will still be synced to the server. However, changes on the server side will not be reflected to the app anymore.
+
+`closeDBChannel` will not clear out the data in your current vuex module. You can also close the connection and completely clear out the module; removing all docs from your vuex module. (without deleting anything on the server, don't worry) In this case do:
+
+```js
+dispatch('moduleName/closeDBChannel', {clearModule: true})
+```
+
+## Fetching docs
+
+> Only for 'collection' mode. (doc mode WIP)
+
+If you want to fetching docs once (opposed to _realtime updates_) you just need to dispatch the `fetchAndAdd` action. Eg.
+
+```js
+dispatch('myModule/fetchAndAdd')
+```
+
+This is the same as doing `dbRef.collection(path).get()` with Firebase. The difference is that with `fetchAndAdd` your documents are automatically added to Vuex: in the module defined as `moduleName` and inside the object defined as `statePropName` as per your config (see [setup](setup.html#setup)).
+
+### A note on fetch limit:
+
+When doing `fetchAndAdd` there will be a limit that defaults to 50 docs. If you watch to fetch *the next 50 docs* you just need to call the `fetch` or `fetchAndAdd` action again, and it will automatically retrieve the next docs! See the example below:
+
+```js
+// call once to fetch the first 50:
+dispatch('myModule/fetchAndAdd')
+// then just call again to fetch the next 50!
+dispatch('myModule/fetchAndAdd')
+// and so on...
+```
+
+You can change the default fetch limit like so:
+
+```js
+{
+  // your other vuex-easy-fire config
+  fetch: {
+    // The max amount of documents to be fetched. Defaults to 50.
+    docLimit: 1000,
+  },
+}
+```
+
+The `fetchAndAdd` action will return `{done: true}` if all docs are retrieved. Eg.
+
+```js
+dispatch('myModule/fetchAndAdd')
+  .then(querySnapshot => {
+    if (querySnapshot.done === true) {
+      // `{done: true}` is returned when everything is already fetched and there are 0 docs:
+      console.log('finished fetching all docs')
+      return
+    }
+  })
+  .catch(console.error)
+```
+
+## Firestore authentication
+
+In most cases your application will have many users, and your Firestore path will need to include the user ID of the user who is signed in. This can be done in Vuex Easy Firestore by using the `{userId}` wildcard like so:
+
+```js
+const myModule = {
+  firestorePath: 'userDocs/{userId}/data',
+  firestoreRefType: 'collection',
+  moduleName: 'userData',
+  statePropName: 'data',
+}
+```
+
+Of course, you will need to wait for the user to sign in and only then dispatch either `openDBChannel` or `fetchAndAdd`. For this you can use Firebase's native `onAuthStateChanged` function:
+
+```js
+// Be sure to initialise Firebase first!
+Firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    // user is logged in so openDBChannel
+    store.dispatch('userData/openDBChannel')
+      .catch(console.error)
+    // or fetchAndAdd
+    // store.dispatch('userData/fetchAndAdd')
+  }
+})
+```
+
+## where / orderBy filters
+
+> Only for 'collection' mode.
+
+Just like Firestore, you can use `where` and `orderBy` to filter which docs are retrieved and synced.
+
+- *where:* arrays of "parameters" that get passed on to firestore's `.where(...parameters)`
+- *orderBy:* a single "array" that gets passed on to firestore's `.orderBy(...array)`
+
+There are three ways to use where and orderBy. As per example we will define `where` and `orderBy` variables first, then show how you can use them:
+
+```js
+const where = [ // an array of arrays
+  ['some_field', '==', false],
+  ['another_field', '==', true],
+]
+const orderBy = ['created_at'] // or more params
+```
+
+1. Pass together with openDBChannel:
+
+```js
+dispatch('myModule/openDBChannel', {where, orderBy})
+```
+
+2. Pass together with fetchAndAdd:
+
+```js
+dispatch('myModule/fetchAndAdd', {where, orderBy})
+```
+
+3. Define inside your vuex module, to set as default when for `openDBChannel`:
+
+```js
+const myModule = {
+  firestorePath: 'myDocs',
+  firestoreRefType: 'collection',
+  moduleName: 'myModule',
+  statePropName: 'data',
+  sync: {
+    where,
+    orderBy
+  }
+}
+// Now you can do:
+dispatch('myModule/openDBChannel')
+// And it will use the where and orderBy as defined in your module
+```
+
+### userId in where/orderBy
+
+You can also use variables like `userId` (of the authenticated user) inside where filters. Eg.
+
+```js
+store.dispatch('myModule/openDBChannel', {
+  where: [['created_by', '==', '{userId}']],
+})
+```
+
+`{userId}` will be automatically replaced with the authenticated user id.
+
+Besides `userId` you can also use "custom variables". For more information on this, see the chapter on [variables for firestorePath or filters](extra-features.html#variables-for-firestorepath-or-filters).
+
+### Example usage: openDBChannel and fetchAndAdd
+
+Say you have an "notes" application that shows a user's notes when the app is opened, but only notes that are not "archived". Then later when the user opens the archive-page those notes are fetched and shown as well.
+
+```js
+// when the app is opened after user authentication:
+store.dispatch('userNotes/openDBChannel', {
+  where: [['archived', '==', false], ['created_by', '==', '{userId}']],
+})
+
+// then when the archive-page is opened:
+store.dispatch('userNotes/fetchAndAdd', {
+  where: [['archived', '==', true], ['created_by', '==', '{userId}']],
+})
+```
+
+Both `openDBChannel` and `fetchAndAdd` will add the documents in the same Vuex module, so it is really easy to work with. You can then create some getters with just the archived or not-archived notes like so:
+
+```js
+getters: {
+  notArchivedNotes: (state) => {
+    return Object.values(state.data).filter(note => !note.archived)
+  },
+  archivedNotes: (state) => {
+    return Object.values(state.data).filter(note => note.archived)
+  }
+}
+```
+
+## Multiple modules with 2-way sync
+
+Of course you can have multiple vuex modules, all in sync with different firestore paths.
+
+```js
+const userDataModule = {/* config */}
+const anotherModule = {/* config */}
+const aThirdModule = {/* config */}
+// make sure you choose a different moduleName and firestorePath each time!
+const easyFirestores = createEasyFirestore([userDataModule, anotherModule, aThirdModule], {logging: true})
+// and include as PLUGIN in your vuex store:
+store: {
+  // ... your store
+  plugins: [easyFirestores]
+}
+```
+
+Passing `{logging: true}` as second param will enable console.logging on each api call. This is recommended for debugging initially, but could be disabled on production.
+
+## Sync directly to module state
+
+In your vuex-easy-firestore modules you can -- instead of choosing `statePropName` where your docs will be added to -- choose to leave `statePropName` blank.
+
+Leaving `statePropName` blank and syncing directly to the state means that the doc(s) will be added directly to the `state` of the module.
+
+In most cases I would advise against this, because you might want to save other data in your module's state as well. Mixing your documents data with other data will give you a harder time when creating getters for that module!
+
+It is usually much better to use the same `statePropName` (eg. `'data'`) for all modules. This makes writing getters etc. much easier.
+
+## Manual fetch handling
+
+Besides `fetchAndAdd` there is also the `fetch` action. The difference is that with just `fetch`  it will not add the documents to your vuex module, so you can handle the result yourself. `fetch` is useful because it will automatically use the Firestore path from your module and also has the limit of 50 docs per retrieval. You can then continue calling fetch to retrieve the next set of docs.
+
+```js
+dispatch('myModule/fetch', {where: [['archived', '==', true]]})
+  .then(querySnapshot => {
+    if (querySnapshot.done === true) {
+      // `{done: true}` is returned when everything is already fetched and there are 0 docs:
+      console.log('finished fetching all docs')
+      return
+    }
+    // do whatever you want with the `querySnapshot`
+  })
+  .catch(console.error)
+```
+
+The `querySnapshot` that is returned is the same querySnapshot as the Firestore one. Please read the [Firestore documentation on querySnapshot](https://firebase.google.com/docs/reference/js/firebase.firestore.QuerySnapshot) to know what you can do with these. Only when all documents were already fetched (and the result is 0 docs) vuex-easy-firestore will return `{done: true}` instead.

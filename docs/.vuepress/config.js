@@ -9,7 +9,8 @@ module.exports = {
     displayAllHeaders: true,
     sidebar: [
       ['/setup', 'Installation & setup'],
-      '/guide',
+      '/add-and-manage-data',
+      '/query-data',
       '/firestore-fields-and-functions',
       '/hooks',
       '/extra-features',

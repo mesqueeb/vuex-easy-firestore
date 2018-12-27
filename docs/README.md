@@ -40,7 +40,7 @@ Now you just update and add docs with `dispatch('userData/set', newItem)` and fo
 - [Hooks](hooks.html#hooks) (before / after sync)
 - [Fillables / guard](extra-features.html#fillables-and-guard) (limit fields which will sync)
 - [Timestamp conversion to Date()](extra-features.html#firestore-timestamp-conversion)
-- [Where / orderBy filters](guide.html#query-data-filters)
+- [Where / orderBy filters](query-data.html#where-orderby-filters)
 
 # Motivation
 

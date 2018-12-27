@@ -25,6 +25,10 @@ export default function (userState: object): AnyObject {
       if (where && isArray(where)) state._conf.sync.where = where
       if (orderBy && isArray(orderBy)) state._conf.sync.orderBy = orderBy
     },
+    SET_USER_ID (state, userId) {
+      state._sync.signedIn = true
+      state._sync.userId = userId
+    },
     CLEAR_USER (state) {
       state._sync.signedIn = false
       state._sync.userId = null

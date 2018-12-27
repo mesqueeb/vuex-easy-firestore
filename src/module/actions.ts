@@ -16,13 +16,12 @@ import error from './errors'
  */
 export default function (Firebase: any): AnyObject {
   return {
-    setUserId: ({state}, userId) => {
+    setUserId: ({commit}, userId) => {
       if (!userId && Firebase.auth().currentUser) {
         userId = Firebase.auth().currentUser.uid
       }
       if (!userId) return console.error('[vuex-easy-firestore]', 'Firebase was not authenticated and no userId was passed.')
-      state._sync.signedIn = true
-      state._sync.userId = userId
+      commit('SET_USER_ID')
     },
     clearUser: ({commit}) => {
       commit('CLEAR_USER')
