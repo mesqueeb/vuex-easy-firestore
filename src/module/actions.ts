@@ -17,10 +17,11 @@ import { createDiffieHellman } from 'crypto';
  */
 export default function (Firebase: any): AnyObject {
   return {
-    setUserId: ({state}) => {
+    setUserId: ({state}, userId) => {
+      if (!userId) userId = Firebase.auth().currentUser.uid
       if (Firebase.auth().currentUser) {
         state._sync.signedIn = true
-        state._sync.userId = Firebase.auth().currentUser.uid
+        state._sync.userId = userId
       }
     },
     duplicate: async ({state, getters, commit, dispatch}, id) => {
