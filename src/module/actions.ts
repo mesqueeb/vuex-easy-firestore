@@ -27,6 +27,9 @@ export default function (Firebase: any): AnyObject {
     clearUser: ({commit}) => {
       commit('CLEAR_USER')
     },
+    setPathVars: ({commit}, pathVars) => {
+      commit('SET_PATHVARS', pathVars)
+    },
     duplicate: async ({state, getters, commit, dispatch}, id) => {
       if (!getters.collectionMode) return console.error('[vuex-easy-firestore] You can only duplicate in \'collection\' mode.')
       if (!id) return {}

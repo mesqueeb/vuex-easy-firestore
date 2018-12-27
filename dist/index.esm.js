@@ -670,6 +670,10 @@ function pluginActions (Firebase$$1) {
             var commit = _a.commit;
             commit('CLEAR_USER');
         },
+        setPathVars: function (_a, pathVars) {
+            var commit = _a.commit;
+            commit('SET_PATHVARS', pathVars);
+        },
         duplicate: function (_a, id) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             return __awaiter(_this, void 0, void 0, function () {
