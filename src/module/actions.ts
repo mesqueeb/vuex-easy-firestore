@@ -6,7 +6,6 @@ import startDebounce from '../utils/debounceHelper'
 import { makeBatchFromSyncstack, createFetchIdentifier } from '../utils/apiHelpers'
 import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
 import error from './errors'
-import { createDiffieHellman } from 'crypto';
 
 /**
  * A function returning the actions object
@@ -18,11 +17,15 @@ import { createDiffieHellman } from 'crypto';
 export default function (Firebase: any): AnyObject {
   return {
     setUserId: ({state}, userId) => {
-      if (!userId) userId = Firebase.auth().currentUser.uid
-      if (Firebase.auth().currentUser) {
-        state._sync.signedIn = true
-        state._sync.userId = userId
+      if (!userId && Firebase.auth().currentUser) {
+        userId = Firebase.auth().currentUser.uid
       }
+      if (!userId) return console.error('[vuex-easy-firestore]', 'Firebase was not authenticated and no userId was passed.')
+      state._sync.signedIn = true
+      state._sync.userId = userId
+    },
+    clearUser: ({commit}) => {
+      commit('CLEAR_USER')
     },
     duplicate: async ({state, getters, commit, dispatch}, id) => {
       if (!getters.collectionMode) return console.error('[vuex-easy-firestore] You can only duplicate in \'collection\' mode.')
