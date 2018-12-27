@@ -201,6 +201,10 @@ function pluginMutations (userState) {
             if (orderBy && isWhat.isArray(orderBy))
                 state._conf.sync.orderBy = orderBy;
         },
+        CLEAR_USER: function (state) {
+            state._sync.signedIn = false;
+            state._sync.userId = null;
+        },
         RESET_VUEX_EASY_FIRESTORE_STATE: function (state) {
             var self = this;
             var _sync = merge(state._sync, {
@@ -657,12 +661,19 @@ function getValueFromPayloadPiece(payloadPiece) {
 function pluginActions (Firebase$$1) {
     var _this = this;
     return {
-        setUserId: function (_a) {
+        setUserId: function (_a, userId) {
             var state = _a.state;
-            if (Firebase$$1.auth().currentUser) {
-                state._sync.signedIn = true;
-                state._sync.userId = Firebase$$1.auth().currentUser.uid;
+            if (!userId && Firebase$$1.auth().currentUser) {
+                userId = Firebase$$1.auth().currentUser.uid;
             }
+            if (!userId)
+                return console.error('[vuex-easy-firestore]', 'Firebase was not authenticated and no userId was passed.');
+            state._sync.signedIn = true;
+            state._sync.userId = userId;
+        },
+        clearUser: function (_a) {
+            var commit = _a.commit;
+            commit('CLEAR_USER');
         },
         duplicate: function (_a, id) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
@@ -1426,6 +1437,7 @@ function pluginGetters (Firebase$$1) {
                 // set default fields
                 doc.created_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
                 doc.created_by = state._sync.userId;
+                doc.id = getters.docModeId;
                 // clean up item
                 doc = filter(doc, fillables, guard);
                 return doc;

@@ -25,10 +25,14 @@ export default function (userState: object): AnyObject {
       if (where && isArray(where)) state._conf.sync.where = where
       if (orderBy && isArray(orderBy)) state._conf.sync.orderBy = orderBy
     },
+    CLEAR_USER (state) {
+      state._sync.signedIn = false
+      state._sync.userId = null
+    },
     RESET_VUEX_EASY_FIRESTORE_STATE (state) {
       const self = this
       const _sync = merge(state._sync, {
-         // make null once to be able to overwrite with empty object
+        // make null once to be able to overwrite with empty object
         pathVariables: null,
         syncStack: { updates: null, propDeletions: null },
         fetched: null,

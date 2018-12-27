@@ -157,6 +157,7 @@ export default function (Firebase: any): AnyObject {
         // set default fields
         doc.created_at = Firebase.firestore.FieldValue.serverTimestamp()
         doc.created_by = state._sync.userId
+        doc.id = getters.docModeId
         // clean up item
         doc = filter(doc, fillables, guard)
         return doc
