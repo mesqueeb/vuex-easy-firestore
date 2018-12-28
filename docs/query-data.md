@@ -37,7 +37,7 @@ dispatch('moduleName/closeDBChannel')
 
 This will close the connection using Firestore's [unsubscribe function](https://firebase.google.com/docs/firestore/query-data/listen#detach_a_listener).
 
-Please note that `closeDBChannel` does not mean it will not listen for "local" changes! This menas that even with a closedDBChannel, you can continue to insert/patch/delete docs and they will still be synced to the server. However, changes on the server side will not be reflected to the app anymore.
+Please note that `closeDBChannel` does not mean it will not listen for "local" changes! This means that even with a closedDBChannel, you can continue to insert/patch/delete docs and they will still be synced to the server. However, changes on the server side will not be reflected to the app anymore.
 
 `closeDBChannel` will not clear out the data in your current vuex module. You can also close the connection and completely clear out the module; removing all docs from your vuex module. (without deleting anything on the server, don't worry) In this case do:
 
@@ -122,6 +122,21 @@ Firebase.auth().onAuthStateChanged(user => {
   }
 })
 ```
+
+If you want to use the library without fetching documents, so without using `openDBChannel` and `fetchAndAdd`, you will notice that `{userId}` is not automatically replaced with the user id. This is because `openDBChannel` and `fetchAndAdd` both dispatch an action called `setUserId` that retrieves the current user id from Firebase authentication and places it in the firestorePath.
+
+In this case you can manually dispatch `setUserId` like so:
+
+```js
+Firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    // in case you do not use `openDBChannel` or `fetchAndAdd`
+    store.dispatch('userData/setUserId')
+  }
+})
+```
+
+When required you can also manually pass a user id like so: `dispatch('userData/setUserId', id)`
 
 ## where / orderBy filters
 
@@ -232,7 +247,17 @@ store: {
 }
 ```
 
-Passing `{logging: true}` as second param will enable console.logging on each api call. This is recommended for debugging initially, but could be disabled on production.
+Do not forget you will have to dispatch openDBChannel or fetchAndAdd for each module you want to retrieve the doc(s) of:
+
+```js
+Firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    store.dispatch('userDataModule/openDBChannel').catch(console.error)
+    store.dispatch('anotherModule/openDBChannel').catch(console.error)
+    store.dispatch('aThirdModule/openDBChannel').catch(console.error)
+  }
+})
+```
 
 ## Sync directly to module state
 
