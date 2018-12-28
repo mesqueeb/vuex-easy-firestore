@@ -21,7 +21,7 @@ export default function (Firebase: any): AnyObject {
         userId = Firebase.auth().currentUser.uid
       }
       if (!userId) return console.error('[vuex-easy-firestore]', 'Firebase was not authenticated and no userId was passed.')
-      commit('SET_USER_ID')
+      commit('SET_USER_ID', userId)
     },
     clearUser: ({commit}) => {
       commit('CLEAR_USER')

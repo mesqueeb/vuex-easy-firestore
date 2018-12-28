@@ -353,8 +353,10 @@ function pluginMutations (userState) {
                 state._conf.sync.orderBy = orderBy;
         },
         SET_USER_ID: function (state, userId) {
+            console.log('setting userId → ', userId);
             state._sync.signedIn = true;
             state._sync.userId = userId;
+            console.log('state._sync.userId → ', state._sync.userId);
         },
         CLEAR_USER: function (state) {
             state._sync.signedIn = false;
@@ -821,7 +823,7 @@ function pluginActions (Firebase$$1) {
             }
             if (!userId)
                 return console.error('[vuex-easy-firestore]', 'Firebase was not authenticated and no userId was passed.');
-            commit('SET_USER_ID');
+            commit('SET_USER_ID', userId);
         },
         clearUser: function (_a) {
             var commit = _a.commit;
