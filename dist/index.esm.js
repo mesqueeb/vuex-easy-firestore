@@ -196,6 +196,10 @@ function pluginMutations (userState) {
             if (orderBy && isArray(orderBy))
                 state._conf.sync.orderBy = orderBy;
         },
+        SET_USER_ID: function (state, userId) {
+            state._sync.signedIn = true;
+            state._sync.userId = userId;
+        },
         CLEAR_USER: function (state) {
             state._sync.signedIn = false;
             state._sync.userId = null;
@@ -222,18 +226,16 @@ function pluginMutations (userState) {
                 stopPatchingTimeout: null
             });
             var newState = merge(userState, { _sync: _sync });
-            if (state._conf.statePropName) {
-                Object.keys(newState).forEach(function (key) {
-                    self._vm.$set(state, key, newState[key]);
-                });
-                return self._vm.$set(state, state._conf.statePropName, {});
-            }
-            Object.keys(state).forEach(function (key) {
-                if (Object.keys(newState).includes(key)) {
-                    self._vm.$set(state, key, newState[key]);
+            var docContainer = (state._conf.statePropName)
+                ? state[state._conf.statePropName]
+                : state;
+            Object.keys(newState).forEach(function (key) {
+                self._vm.$set(state, key, newState[key]);
+            });
+            Object.keys(docContainer).forEach(function (key) {
+                if (Object.keys(newState).includes(key))
                     return;
-                }
-                self._vm.$delete(state, key);
+                self._vm.$delete(docContainer, key);
             });
         },
         resetSyncStack: function (state) {
@@ -657,14 +659,13 @@ function pluginActions (Firebase$$1) {
     var _this = this;
     return {
         setUserId: function (_a, userId) {
-            var state = _a.state;
+            var commit = _a.commit;
             if (!userId && Firebase$$1.auth().currentUser) {
                 userId = Firebase$$1.auth().currentUser.uid;
             }
             if (!userId)
                 return console.error('[vuex-easy-firestore]', 'Firebase was not authenticated and no userId was passed.');
-            state._sync.signedIn = true;
-            state._sync.userId = userId;
+            commit('SET_USER_ID');
         },
         clearUser: function (_a) {
             var commit = _a.commit;

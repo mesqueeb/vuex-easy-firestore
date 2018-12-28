@@ -55,18 +55,15 @@ export default function (userState: object): AnyObject {
         stopPatchingTimeout: null
       })
       const newState = merge(userState, {_sync})
-      if (state._conf.statePropName) {
-        Object.keys(newState).forEach(key => {
-          self._vm.$set(state, key, newState[key])
-        })
-        return self._vm.$set(state, state._conf.statePropName, {})
-      }
-      Object.keys(state).forEach(key => {
-        if (Object.keys(newState).includes(key)) {
-          self._vm.$set(state, key, newState[key])
-          return
-        }
-        self._vm.$delete(state, key)
+      const docContainer = (state._conf.statePropName)
+        ? state[state._conf.statePropName]
+        : state
+      Object.keys(newState).forEach(key => {
+        self._vm.$set(state, key, newState[key])
+      })
+      Object.keys(docContainer).forEach(key => {
+        if (Object.keys(newState).includes(key)) return
+        self._vm.$delete(docContainer, key)
       })
     },
     resetSyncStack (state) {
