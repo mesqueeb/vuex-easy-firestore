@@ -353,10 +353,8 @@ function pluginMutations (userState) {
                 state._conf.sync.orderBy = orderBy;
         },
         SET_USER_ID: function (state, userId) {
-            console.log('setting userId → ', userId);
             state._sync.signedIn = true;
             state._sync.userId = userId;
-            console.log('state._sync.userId → ', state._sync.userId);
         },
         CLEAR_USER: function (state) {
             state._sync.signedIn = false;

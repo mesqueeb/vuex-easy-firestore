@@ -26,10 +26,8 @@ export default function (userState: object): AnyObject {
       if (orderBy && isArray(orderBy)) state._conf.sync.orderBy = orderBy
     },
     SET_USER_ID (state, userId) {
-      console.log('setting userId → ', userId)
       state._sync.signedIn = true
       state._sync.userId = userId
-      console.log('state._sync.userId → ', state._sync.userId)
     },
     CLEAR_USER (state) {
       state._sync.signedIn = false
