@@ -352,6 +352,10 @@ function pluginMutations (userState) {
             if (orderBy && isWhat.isArray(orderBy))
                 state._conf.sync.orderBy = orderBy;
         },
+        CLEAR_USER: function (state) {
+            state._sync.signedIn = false;
+            state._sync.userId = null;
+        },
         RESET_VUEX_EASY_FIRESTORE_STATE: function (state) {
             var self = this;
             var _sync = merge(state._sync, {
@@ -808,6 +812,24 @@ function getValueFromPayloadPiece(payloadPiece) {
 function pluginActions (Firebase$$1) {
     var _this = this;
     return {
+        setUserId: function (_a, userId) {
+            var state = _a.state;
+            if (!userId && Firebase$$1.auth().currentUser) {
+                userId = Firebase$$1.auth().currentUser.uid;
+            }
+            if (!userId)
+                return console.error('[vuex-easy-firestore]', 'Firebase was not authenticated and no userId was passed.');
+            state._sync.signedIn = true;
+            state._sync.userId = userId;
+        },
+        clearUser: function (_a) {
+            var commit = _a.commit;
+            commit('CLEAR_USER');
+        },
+        setPathVars: function (_a, pathVars) {
+            var commit = _a.commit;
+            commit('SET_PATHVARS', pathVars);
+        },
         duplicate: function (_a, id) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             return __awaiter(_this, void 0, void 0, function () {
@@ -986,6 +1008,7 @@ function pluginActions (Firebase$$1) {
             // where: [['archived', '==', true]]
             // orderBy: ['done_date', 'desc']
             , _d = _c.where, where = _d === void 0 ? [] : _d, _e = _c.whereFilters, whereFilters = _e === void 0 ? [] : _e, _f = _c.orderBy, orderBy = _f === void 0 ? [] : _f;
+            dispatch('setUserId');
             if (whereFilters.length)
                 where = whereFilters;
             return new Promise(function (resolve, reject) {
@@ -1101,6 +1124,7 @@ function pluginActions (Firebase$$1) {
         },
         openDBChannel: function (_a, pathVariables) {
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
+            dispatch('setUserId');
             var store = this;
             // set state for pathVariables
             if (pathVariables && isWhat.isPlainObject(pathVariables)) {
@@ -1169,9 +1193,7 @@ function pluginActions (Firebase$$1) {
                         var id = change.doc.id;
                         var defaultValues = merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues, // depreciated
                         state._conf.serverChange.convertTimestamps);
-                        var doc = (changeType === 'added')
-                            ? setDefaultValues(change.doc.data(), defaultValues)
-                            : change.doc.data();
+                        var doc = setDefaultValues(change.doc.data(), defaultValues);
                         handleDoc(changeType, id, doc);
                     });
                     return resolve();
@@ -1570,6 +1592,7 @@ function pluginGetters (Firebase$$1) {
                 // set default fields
                 doc.created_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
                 doc.created_by = state._sync.userId;
+                doc.id = getters.docModeId;
                 // clean up item
                 doc = filter(doc, fillables, guard);
                 return doc;

@@ -6,7 +6,6 @@ import startDebounce from '../utils/debounceHelper'
 import { makeBatchFromSyncstack, createFetchIdentifier } from '../utils/apiHelpers'
 import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
 import error from './errors'
-import { createDiffieHellman } from 'crypto';
 
 /**
  * A function returning the actions object
@@ -17,6 +16,19 @@ import { createDiffieHellman } from 'crypto';
  */
 export default function (Firebase: any): AnyObject {
   return {
+    setUserId: ({commit}, userId) => {
+      if (!userId && Firebase.auth().currentUser) {
+        userId = Firebase.auth().currentUser.uid
+      }
+      if (!userId) return console.error('[vuex-easy-firestore]', 'Firebase was not authenticated and no userId was passed.')
+      commit('SET_USER_ID')
+    },
+    clearUser: ({commit}) => {
+      commit('CLEAR_USER')
+    },
+    setPathVars: ({commit}, pathVars) => {
+      commit('SET_PATHVARS', pathVars)
+    },
     duplicate: async ({state, getters, commit, dispatch}, id) => {
       if (!getters.collectionMode) return console.error('[vuex-easy-firestore] You can only duplicate in \'collection\' mode.')
       if (!id) return {}
@@ -171,6 +183,7 @@ export default function (Firebase: any): AnyObject {
       // where: [['archived', '==', true]]
       // orderBy: ['done_date', 'desc']
     ) {
+      dispatch('setUserId')
       if (whereFilters.length) where = whereFilters
       return new Promise((resolve, reject) => {
         if (state._conf.logging) console.log('[vuex-easy-firestore] Fetch starting')
@@ -280,6 +293,7 @@ export default function (Firebase: any): AnyObject {
       }
     },
     openDBChannel ({getters, state, commit, dispatch}, pathVariables) {
+      dispatch('setUserId')
       const store = this
       // set state for pathVariables
       if (pathVariables && isPlainObject(pathVariables)) {
@@ -350,9 +364,7 @@ export default function (Firebase: any): AnyObject {
               state._conf.serverChange.defaultValues, // depreciated
               state._conf.serverChange.convertTimestamps,
             )
-            const doc = (changeType === 'added')
-              ? setDefaultValues(change.doc.data(), defaultValues)
-              : change.doc.data()
+            const doc = setDefaultValues(change.doc.data(), defaultValues)
             handleDoc(changeType, id, doc)
           })
           return resolve()

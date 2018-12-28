@@ -110,47 +110,6 @@ fillables: ['lists.*.allowed']
 guard: ['lists.*.notAllowed']
 ```
 
-## Duplicating docs
-
-> Only for 'collection' mode.
-
-You can duplicate a document really simply by dispatching 'duplicate' and passing the id of the target document.
-
-```js
-// let's duplicate Bulbasaur who has the id '001'
-dispatch('pokemonBox/duplicate', '001')
-```
-
-This will create a copy of Bulbasaur (and all its props) with a random new ID. The duplicated doc will automatically be added to your vuex module and synced as well.
-
-If you need to know which new ID was generated for the duplicate, you can retrieve it from the action:
-
-```js
-const idMap = await dispatch('pokemonBox/duplicate', '001')
-// mind the await!
-// idMap will look like this:
-{'001': dupeId}
-// dupeId will be a string with the ID of the duplicate!
-```
-
-In the example above, if Bulbasaur ('001') was duplicated and the new document has random ID `'123abc'` the `idMap` will be `{'001': '123abc'}`.
-
-### Duplicate batch
-
-This is how you duplicate a batch of documents:
-
-```js
-const idMap = await dispatch('pokemonBox/duplicateBatch', ['001', '004', '007'])
-// idMap will look like this:
-{
-  '001': 'some-random-new-ID-1',
-  '004': 'some-random-new-ID-2',
-  '007': 'some-random-new-ID-3',
-}
-```
-
-This way you can use the result if you need to do extra things to your duplicated docs and you will know for each ID which new ID was used to make a duplication.
-
 ## Default values
 
 You can set up default values for your docs that will be added to the object on each insert.
@@ -181,7 +140,7 @@ Also, to make sure there are no vue reactivity issues, these default values are 
 
 Firestore works with special "[timestamp](https://firebase.google.com/docs/reference/js/firebase.firestore.Timestamp)" fields rather than with `new Date()`. Vuex-easy-firestore also uses the timestamp fields for the auto-generated fields `created_at` and `updated_at` which are added to your docs.
 
-In your app, if you want to use these timestamps as a `new Date()` object you have to call `timestamp.toDate()` on each of these fields. **Luckily this can do this for you!**
+In your app, if you want to use these timestamps as a `new Date()` object you have to call `timestamp.toDate()` on each of these fields. **Luckily we can do this for you!**
 
 You just have to specify the fields in a `convertTimestamps` object in your module config like so:
 
@@ -191,12 +150,22 @@ const vuexModule = {
   serverChange: {
     convertTimestamps: {
       updated_at: '%convertTimestamp%'
+      // define each field like so ↑ in an object here
     },
   }
 }
 ```
 
 Now the Timestamp on `updated_at` will automatically trigger `Timestamp.toDate()` before being added to your vuex store!
+
+If you want to use Firestore _timestamps_ on a custom field, you can just go ahead and set the field to `new Date()`. This is because Firestore will automatically change this for you to a timestamp field on the server either way!
+Eg.
+
+```js
+dispatch('module/set', {timestampField: new Date()})
+```
+
+The above will be added as `new Date()` in vuex but as a _timestamp_ in Firestore.
 
 ## Shortcut: set(path, doc)
 
