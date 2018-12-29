@@ -2,9 +2,11 @@ import { isString, isArray } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
 import { findAndReplaceIf } from 'find-and-replace-anything'
 import filter from 'filter-anything'
+import merge from 'merge-anything'
 import flattenToPaths from '../utils/objectFlattenToPaths'
 import { getPathVarMatches } from '../utils/apiHelpers'
 import { isArrayHelper } from '../utils/arrayHelpers'
+import setDefaultValues from '../utils/setDefaultValues'
 import { AnyObject } from '../declarations'
 import error from './errors'
 
@@ -66,6 +68,17 @@ export default function (Firebase: any): AnyObject {
     docModeId: (state, getters) => {
       return getters.firestorePathComplete.split('/').pop()
     },
+    cleanUpRetrievedDoc: (state, getters, rootState, rootGetters) =>
+      (doc, id) => {
+        const defaultValues = merge(
+          state._conf.sync.defaultValues,
+          state._conf.serverChange.defaultValues, // depreciated
+          state._conf.serverChange.convertTimestamps,
+        )
+        const cleanDoc = setDefaultValues(doc, defaultValues)
+        cleanDoc.id = id
+        return cleanDoc
+      },
     prepareForPatch: (state, getters, rootState, rootGetters) =>
       (ids = [], doc = {}) => {
         // get relevant data from the storeRef

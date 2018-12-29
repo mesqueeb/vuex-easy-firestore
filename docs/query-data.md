@@ -17,6 +17,8 @@ With Vuex easy firestore using _realtime updates_ will effectively make **a 2-wa
 
 Fetching the document(s) once is when you want to retrieve the document(s) once, when your application or a page is opened, but do not require to have the data to be live updated when the server data changes.
 
+Both with _realtime updates_ and with _fetching docs_ you can use `where` filters to specify which docs you want to retrieve (just like Firestore). In some modules you might initially open a channel for _realtime updates_ with a certain `where` filter, and later when the user requests other docs do an additional `fetch` with another `where` filter.
+
 ## Realtime updates: openDBChannel
 
 If you want to use _realtime updates_ the only thing you need to do is to dispatch the `openDBChannel` action. Eg.
@@ -47,8 +49,6 @@ dispatch('moduleName/closeDBChannel', {clearModule: true})
 
 ## Fetching docs
 
-> Only for 'collection' mode. (doc mode WIP)
-
 If you want to fetching docs once (opposed to _realtime updates_) you just need to dispatch the `fetchAndAdd` action. Eg.
 
 ```js
@@ -57,9 +57,9 @@ dispatch('myModule/fetchAndAdd')
 
 This is the same as doing `dbRef.collection(path).get()` with Firebase. The difference is that with `fetchAndAdd` your documents are automatically added to Vuex: in the module defined as `moduleName` and inside the object defined as `statePropName` as per your config (see [setup](setup.html#setup)).
 
-### A note on fetch limit:
+### a note on fetch limit
 
-When doing `fetchAndAdd` there will be a limit that defaults to 50 docs. If you watch to fetch *the next 50 docs* you just need to call the `fetch` or `fetchAndAdd` action again, and it will automatically retrieve the next docs! See the example below:
+When doing `fetchAndAdd` there will be a limit that defaults to 50 docs. If you want to fetch *the next 50 docs* you just need to call the `fetchAndAdd` action again, and it will automatically retrieve the next docs! See the example below:
 
 ```js
 // call once to fetch the first 50:
@@ -81,18 +81,14 @@ You can change the default fetch limit like so:
 }
 ```
 
-The `fetchAndAdd` action will return `{done: true}` if all docs are retrieved. Eg.
+The `fetchAndAdd` action will return a promise resolving in `{done: true}` if there are no more docs to be fetched. You can use this to check when to stop fetching like so:
 
 ```js
-dispatch('myModule/fetchAndAdd')
-  .then(querySnapshot => {
-    if (querySnapshot.done === true) {
-      // `{done: true}` is returned when everything is already fetched and there are 0 docs:
-      console.log('finished fetching all docs')
-      return
-    }
-  })
-  .catch(console.error)
+fetchAndAdd = async function () {
+  let fetchResult = await store.dispatch('myModule/fetchAndAdd')
+  if (fetchResult.done === true) return 'all done!'
+  return 'retrieved 50 docs, call again to fetch the next!'
+}
 ```
 
 ## Firestore authentication
@@ -185,6 +181,21 @@ const myModule = {
 // Now you can do:
 dispatch('myModule/openDBChannel')
 // And it will use the where and orderBy as defined in your module
+```
+
+### a note on orderBy
+
+Using `orderBy` works just like in Firebase: "the docs will be retrieved in that order".
+Please note however, that your docs are saved inside an object in your Vuex module. **JavaScript object properties do not have an order.** (the prop-order might differ from browser to browser)
+
+This means that even though you can retrieve your docs in a certain order, when showing them in a Vue component, you will need to manually sort the docs in the order you want. You can do this through a getter in your Vuex module. Eg.
+
+```js
+getters: {
+  sortedDocs: (state, getters) => {
+    return Object.values(state.data).sort() // your sort function
+  }
+}
 ```
 
 ### userId in where/orderBy

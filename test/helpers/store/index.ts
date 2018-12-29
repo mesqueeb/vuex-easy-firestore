@@ -3,6 +3,7 @@ import Vuex from 'vuex'
 import storeObj from './store'
 
 Vue.use(Vuex)
+export const store = new Vuex.Store(storeObj)
 export const storeActions = new Vuex.Store(storeObj)
 export const storeDBChannel = new Vuex.Store(storeObj)
 export const storeGetters = new Vuex.Store(storeObj)
