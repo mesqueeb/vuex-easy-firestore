@@ -49,8 +49,6 @@ dispatch('moduleName/closeDBChannel', {clearModule: true})
 
 ## Fetching docs
 
-> Only for 'collection' mode. (doc mode WIP)
-
 If you want to fetching docs once (opposed to _realtime updates_) you just need to dispatch the `fetchAndAdd` action. Eg.
 
 ```js
@@ -61,7 +59,7 @@ This is the same as doing `dbRef.collection(path).get()` with Firebase. The diff
 
 ### a note on fetch limit
 
-When doing `fetchAndAdd` there will be a limit that defaults to 50 docs. If you watch to fetch *the next 50 docs* you just need to call the `fetch` or `fetchAndAdd` action again, and it will automatically retrieve the next docs! See the example below:
+When doing `fetchAndAdd` there will be a limit that defaults to 50 docs. If you want to fetch *the next 50 docs* you just need to call the `fetchAndAdd` action again, and it will automatically retrieve the next docs! See the example below:
 
 ```js
 // call once to fetch the first 50:
@@ -83,18 +81,14 @@ You can change the default fetch limit like so:
 }
 ```
 
-The `fetchAndAdd` action will return `{done: true}` if all docs are retrieved. Eg.
+The `fetchAndAdd` action will return a promise resolving in `{done: true}` if there are no more docs to be fetched. You can use this to check when to stop fetching like so:
 
 ```js
-dispatch('myModule/fetchAndAdd')
-  .then(querySnapshot => {
-    if (querySnapshot.done === true) {
-      // `{done: true}` is returned when everything is already fetched and there are 0 docs:
-      console.log('finished fetching all docs')
-      return
-    }
-  })
-  .catch(console.error)
+fetchAndAdd = async function () {
+  let fetchResult = await store.dispatch('myModule/fetchAndAdd')
+  if (fetchResult.done === true) return 'all done!'
+  return 'retrieved 50 docs, call again to fetch the next!'
+}
 ```
 
 ## Firestore authentication
