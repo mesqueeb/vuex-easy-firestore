@@ -29,6 +29,8 @@ But you may choose not to call this to abort the mutation. If you do not call `u
 
 ## Hooks after server changes
 
+> Only for 'openDBChannel'
+
 Exactly the same as above, but for changes that have occured on the server. You also have some extra parameters to work with:
 
 - *id:* the doc id returned in `change.doc.id` (see firestore documentation for more info)
@@ -46,6 +48,27 @@ Exactly the same as above, but for changes that have occured on the server. You 
 ```
 
 Please make sure to check the overview of execution timings of hooks, in the next chapter:
+
+<!-- ## Hooks after fetch
+
+> Only for 'fetchAndAdd'
+
+After you fetch documents by dispatching `fetchAndAdd` there will be **no hooks** that execute. You can however add some extra functionality in the callback of `fetchAndAdd` like so:
+
+```js
+dispatch('myModule/fetchAndAdd')
+  .then(querySnapshot => {
+    if (querySnapshot.done === true) {
+      // `{done: true}` is returned when everything is already fetched and there are 0 docs:
+      console.log('finished fetching all docs')
+      return
+    }
+    // do whatever you want with the `querySnapshot`
+  })
+  .catch(console.error)
+```
+
+Please make sure to check the overview of execution timings of hooks, in the next chapter: -->
 
 ## Execution timings of hooks
 
