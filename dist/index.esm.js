@@ -659,12 +659,16 @@ function pluginActions (Firebase$$1) {
     var _this = this;
     return {
         setUserId: function (_a, userId) {
-            var commit = _a.commit;
+            var commit = _a.commit, state = _a.state;
             if (!userId && Firebase$$1.auth().currentUser) {
                 userId = Firebase$$1.auth().currentUser.uid;
             }
-            if (!userId)
-                return console.error('[vuex-easy-firestore]', 'Firebase was not authenticated and no userId was passed.');
+            if (!userId) {
+                var requireUser = state._conf.firestorePath.includes('{userId}');
+                if (requireUser)
+                    console.error('[vuex-easy-firestore]', 'Firebase was not authenticated and no userId was passed.');
+                return;
+            }
             commit('SET_USER_ID', userId);
         },
         clearUser: function (_a) {
@@ -923,17 +927,45 @@ function pluginActions (Firebase$$1) {
                 });
             });
         },
-        fetchAndAdd: function (_a, _b
+        fetchAndAdd: function (_a, pathVariables
         // where: [['archived', '==', true]]
         // orderBy: ['done_date', 'desc']
         ) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
-            var _c = _b === void 0 ? { where: [], whereFilters: [], orderBy: [] } : _b
-            // where: [['archived', '==', true]]
-            // orderBy: ['done_date', 'desc']
-            , _d = _c.where, where = _d === void 0 ? [] : _d, _e = _c.whereFilters, whereFilters = _e === void 0 ? [] : _e, _f = _c.orderBy, orderBy = _f === void 0 ? [] : _f;
-            if (whereFilters.length)
+            if (pathVariables === void 0) { pathVariables = { where: [], whereFilters: [], orderBy: [] }; }
+            var where = pathVariables.where, whereFilters = pathVariables.whereFilters, orderBy = pathVariables.orderBy;
+            if (!isArray(where))
+                where = [];
+            if (!isArray(orderBy))
+                orderBy = [];
+            if (isArray(whereFilters) && whereFilters.length)
                 where = whereFilters;
+            if (pathVariables && isPlainObject(pathVariables)) {
+                delete pathVariables.where;
+                delete pathVariables.whereFilters;
+                delete pathVariables.orderBy;
+                commit('SET_PATHVARS', pathVariables);
+            }
+            // 'doc' mode:
+            if (!getters.collectionMode) {
+                return getters.dbRef.get().then(function (_doc) {
+                    if (!_doc.exists) {
+                        // No initial doc found in docMode
+                        if (state._conf.logging)
+                            console.log('[vuex-easy-firestore] inserting initial doc');
+                        dispatch('insertInitialDoc');
+                        return _doc;
+                    }
+                    var id = getters.docModeId;
+                    var doc = getters.cleanUpRetrievedDoc(_doc.data(), id);
+                    commit('PATCH_DOC', doc);
+                    return doc;
+                }).catch(function (error$$1) {
+                    console.error('[vuex-easy-firestore]', error$$1);
+                    return error$$1;
+                });
+            }
+            // 'collection' mode:
             return dispatch('fetch', { where: where, orderBy: orderBy })
                 .then(function (querySnapshot) {
                 if (querySnapshot.done === true)
@@ -941,36 +973,43 @@ function pluginActions (Firebase$$1) {
                 if (isFunction(querySnapshot.forEach)) {
                     querySnapshot.forEach(function (_doc) {
                         var id = _doc.id;
-                        var defaultValues = merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues, // depreciated
-                        state._conf.serverChange.convertTimestamps);
-                        var doc = setDefaultValues(_doc.data(), defaultValues);
-                        doc.id = id;
+                        var doc = getters.cleanUpRetrievedDoc(_doc.data(), id);
                         commit('INSERT_DOC', doc);
                     });
                 }
                 return querySnapshot;
             });
         },
-        serverUpdate: function (_a, _b) {
-            var commit = _a.commit;
+        applyHooksAndUpdateState: function (_a, _b) {
+            var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             var change = _b.change, id = _b.id, _c = _b.doc, doc = _c === void 0 ? {} : _c;
-            doc.id = id;
-            switch (change) {
-                case 'added':
-                    commit('INSERT_DOC', doc);
-                    break;
-                case 'removed':
-                    commit('DELETE_DOC', id);
-                    break;
-                default:
-                    commit('PATCH_DOC', doc);
-                    break;
+            var store = this;
+            // define storeUpdateFn()
+            function storeUpdateFn(_doc) {
+                switch (change) {
+                    case 'added':
+                        commit('INSERT_DOC', _doc);
+                        break;
+                    case 'removed':
+                        commit('DELETE_DOC', id);
+                        break;
+                    default:
+                        commit('PATCH_DOC', _doc);
+                        break;
+                }
+            }
+            // get user set sync hook function
+            var syncHookFn = state._conf.serverChange[change + 'Hook'];
+            if (isFunction(syncHookFn)) {
+                syncHookFn(storeUpdateFn, doc, id, store, 'server', change);
+            }
+            else {
+                storeUpdateFn(doc);
             }
         },
         openDBChannel: function (_a, pathVariables) {
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             dispatch('setUserId');
-            var store = this;
             // set state for pathVariables
             if (pathVariables && isPlainObject(pathVariables)) {
                 commit('SET_SYNCFILTERS', pathVariables);
@@ -989,21 +1028,6 @@ function pluginActions (Firebase$$1) {
                     dbRef = dbRef.orderBy.apply(dbRef, state._conf.sync.orderBy);
                 }
             }
-            // define handleDoc()
-            function handleDoc(_changeType, id, doc) {
-                // define storeUpdateFn()
-                function storeUpdateFn(_doc) {
-                    return dispatch('serverUpdate', { change: _changeType, id: id, doc: _doc });
-                }
-                // get user set sync hook function
-                var syncHookFn = state._conf.serverChange[_changeType + 'Hook'];
-                if (syncHookFn) {
-                    syncHookFn(storeUpdateFn, doc, id, store, 'server', _changeType);
-                }
-                else {
-                    storeUpdateFn(doc);
-                }
-            }
             // make a promise
             return new Promise(function (resolve, reject) {
                 // log
@@ -1012,6 +1036,7 @@ function pluginActions (Firebase$$1) {
                 }
                 var unsubscribe = dbRef.onSnapshot(function (querySnapshot) {
                     var source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server';
+                    // 'doc' mode:
                     if (!getters.collectionMode) {
                         if (!querySnapshot.data()) {
                             // No initial doc found in docMode
@@ -1022,24 +1047,20 @@ function pluginActions (Firebase$$1) {
                         }
                         if (source === 'local')
                             return resolve();
-                        var defaultValues = merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues, // depreciated
-                        state._conf.serverChange.convertTimestamps);
-                        var doc = setDefaultValues(querySnapshot.data(), defaultValues);
                         var id = getters.docModeId;
-                        doc.id = id;
-                        handleDoc('modified', id, doc);
+                        var doc = getters.cleanUpRetrievedDoc(querySnapshot.data(), id);
+                        dispatch('applyHooksAndUpdateState', { change: 'modified', id: id, doc: doc });
                         return resolve();
                     }
+                    // 'collection' mode:
                     querySnapshot.docChanges().forEach(function (change) {
                         var changeType = change.type;
                         // Don't do anything for local modifications & removals
                         if (source === 'local')
                             return resolve();
                         var id = change.doc.id;
-                        var defaultValues = merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues, // depreciated
-                        state._conf.serverChange.convertTimestamps);
-                        var doc = setDefaultValues(change.doc.data(), defaultValues);
-                        handleDoc(changeType, id, doc);
+                        var doc = getters.cleanUpRetrievedDoc(change.doc.data(), id);
+                        dispatch('applyHooksAndUpdateState', { change: changeType, id: id, doc: doc });
                     });
                     return resolve();
                 }, function (error$$1) {
@@ -1330,6 +1351,15 @@ function pluginGetters (Firebase$$1) {
         },
         docModeId: function (state, getters) {
             return getters.firestorePathComplete.split('/').pop();
+        },
+        cleanUpRetrievedDoc: function (state, getters, rootState, rootGetters) {
+            return function (doc, id) {
+                var defaultValues = merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues, // depreciated
+                state._conf.serverChange.convertTimestamps);
+                var cleanDoc = setDefaultValues(doc, defaultValues);
+                cleanDoc.id = id;
+                return cleanDoc;
+            };
         },
         prepareForPatch: function (state, getters, rootState, rootGetters) {
             return function (ids, doc) {

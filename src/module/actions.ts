@@ -16,11 +16,15 @@ import error from './errors'
  */
 export default function (Firebase: any): AnyObject {
   return {
-    setUserId: ({commit}, userId) => {
+    setUserId: ({commit, state}, userId) => {
       if (!userId && Firebase.auth().currentUser) {
         userId = Firebase.auth().currentUser.uid
       }
-      if (!userId) return console.error('[vuex-easy-firestore]', 'Firebase was not authenticated and no userId was passed.')
+      if (!userId) {
+        const requireUser = state._conf.firestorePath.includes('{userId}')
+        if (requireUser) console.error('[vuex-easy-firestore]', 'Firebase was not authenticated and no userId was passed.')
+        return
+      }
       commit('SET_USER_ID', userId)
     },
     clearUser: ({commit}) => {
@@ -251,45 +255,78 @@ export default function (Firebase: any): AnyObject {
     },
     fetchAndAdd (
       {state, getters, commit, dispatch},
-      {where = [], whereFilters = [], orderBy = []} = {where: [], whereFilters: [], orderBy: []}
+      pathVariables = {where: [], whereFilters: [], orderBy: []}
       // where: [['archived', '==', true]]
       // orderBy: ['done_date', 'desc']
     ) {
-      if (whereFilters.length) where = whereFilters
+      let {where, whereFilters, orderBy} = pathVariables
+      if (!isArray(where)) where = []
+      if (!isArray(orderBy)) orderBy = []
+      if (isArray(whereFilters) && whereFilters.length) where = whereFilters
+      if (pathVariables && isPlainObject(pathVariables)) {
+        delete pathVariables.where
+        delete pathVariables.whereFilters
+        delete pathVariables.orderBy
+        commit('SET_PATHVARS', pathVariables)
+      }
+      // 'doc' mode:
+      if (!getters.collectionMode) {
+        return getters.dbRef.get().then(_doc => {
+          if (!_doc.exists) {
+            // No initial doc found in docMode
+            if (state._conf.logging) console.log('[vuex-easy-firestore] inserting initial doc')
+            dispatch('insertInitialDoc')
+            return _doc
+          }
+          const id = getters.docModeId
+          const doc = getters.cleanUpRetrievedDoc(_doc.data(), id)
+          commit('PATCH_DOC', doc)
+          return doc
+        }).catch(error => {
+          console.error('[vuex-easy-firestore]', error)
+          return error
+        })
+      }
+      // 'collection' mode:
+
       return dispatch('fetch', {where, orderBy})
         .then(querySnapshot => {
           if (querySnapshot.done === true) return querySnapshot
           if (isFunction(querySnapshot.forEach)) {
             querySnapshot.forEach(_doc => {
               const id = _doc.id
-              const defaultValues = merge(
-                state._conf.sync.defaultValues,
-                state._conf.serverChange.defaultValues, // depreciated
-                state._conf.serverChange.convertTimestamps,
-              )
-              const doc = setDefaultValues(_doc.data(), defaultValues)
-              doc.id = id
+              const doc = getters.cleanUpRetrievedDoc(_doc.data(), id)
               commit('INSERT_DOC', doc)
             })
           }
           return querySnapshot
         })
     },
-    serverUpdate (
-      {commit},
-      {change, id, doc = {}}: {change: string, id: string, doc: AnyObject}
+    applyHooksAndUpdateState (
+      {getters, state, commit, dispatch},
+      {change, id, doc = {}}: {change: 'added' | 'removed' | 'modified', id: string, doc: AnyObject}
     ) {
-      doc.id = id
-      switch (change) {
-        case 'added':
-          commit('INSERT_DOC', doc)
-          break
-        case 'removed':
-          commit('DELETE_DOC', id)
-          break
-        default:
-          commit('PATCH_DOC', doc)
-          break
+      const store = this
+      // define storeUpdateFn()
+      function storeUpdateFn (_doc) {
+        switch (change) {
+          case 'added':
+            commit('INSERT_DOC', _doc)
+            break
+          case 'removed':
+            commit('DELETE_DOC', id)
+            break
+          default:
+            commit('PATCH_DOC', _doc)
+            break
+        }
+      }
+      // get user set sync hook function
+      const syncHookFn = state._conf.serverChange[change + 'Hook']
+      if (isFunction(syncHookFn)) {
+        syncHookFn(storeUpdateFn, doc, id, store, 'server', change)
+      } else {
+        storeUpdateFn(doc)
       }
     },
     openDBChannel ({getters, state, commit, dispatch}, pathVariables) {
@@ -313,20 +350,6 @@ export default function (Firebase: any): AnyObject {
           dbRef = dbRef.orderBy(...state._conf.sync.orderBy)
         }
       }
-      // define handleDoc()
-      function handleDoc (_changeType, id, doc) {
-        // define storeUpdateFn()
-        function storeUpdateFn (_doc) {
-          return dispatch('serverUpdate', {change: _changeType, id, doc: _doc})
-        }
-        // get user set sync hook function
-        const syncHookFn = state._conf.serverChange[_changeType + 'Hook']
-        if (syncHookFn) {
-          syncHookFn(storeUpdateFn, doc, id, store, 'server', _changeType)
-        } else {
-          storeUpdateFn(doc)
-        }
-      }
       // make a promise
       return new Promise((resolve, reject) => {
         // log
@@ -335,6 +358,7 @@ export default function (Firebase: any): AnyObject {
         }
         const unsubscribe = dbRef.onSnapshot(querySnapshot => {
           const source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
+          // 'doc' mode:
           if (!getters.collectionMode) {
             if (!querySnapshot.data()) {
               // No initial doc found in docMode
@@ -343,29 +367,19 @@ export default function (Firebase: any): AnyObject {
               return resolve()
             }
             if (source === 'local') return resolve()
-            const defaultValues = merge(
-              state._conf.sync.defaultValues,
-              state._conf.serverChange.defaultValues, // depreciated
-              state._conf.serverChange.convertTimestamps,
-            )
-            const doc = setDefaultValues(querySnapshot.data(), defaultValues)
             const id = getters.docModeId
-            doc.id = id
-            handleDoc('modified', id, doc)
+            const doc = getters.cleanUpRetrievedDoc(querySnapshot.data(), id)
+            dispatch('applyHooksAndUpdateState', {change: 'modified', id, doc})
             return resolve()
           }
+          // 'collection' mode:
           querySnapshot.docChanges().forEach(change => {
             const changeType = change.type
             // Don't do anything for local modifications & removals
             if (source === 'local') return resolve()
             const id = change.doc.id
-            const defaultValues = merge(
-              state._conf.sync.defaultValues,
-              state._conf.serverChange.defaultValues, // depreciated
-              state._conf.serverChange.convertTimestamps,
-            )
-            const doc = setDefaultValues(change.doc.data(), defaultValues)
-            handleDoc(changeType, id, doc)
+            const doc = getters.cleanUpRetrievedDoc(change.doc.data(), id)
+            dispatch('applyHooksAndUpdateState', {change: changeType, id, doc})
           })
           return resolve()
         }, error => {

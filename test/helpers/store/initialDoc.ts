@@ -2,9 +2,7 @@ import { defaultMutations } from 'vuex-easy-access'
 
 function initialState () {
   return {
-    name: 'Satoshi',
-    pokemonBelt: [],
-    items: []
+    iniProp: true,
   }
 }
 
