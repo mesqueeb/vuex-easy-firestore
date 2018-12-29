@@ -17,7 +17,7 @@ With Vuex easy firestore using _realtime updates_ will effectively make **a 2-wa
 
 Fetching the document(s) once is when you want to retrieve the document(s) once, when your application or a page is opened, but do not require to have the data to be live updated when the server data changes.
 
-Both with _realtime updates_ and with _fetching docs_ you can use `where`/`orderBy` filters to specify which docs you want to retrieve. In some modules you might initially open a channel for _realtime updates_ with a certain `where` filter, and later when the user requests other docs do an additional `fetch` with another `where` filter.
+Both with _realtime updates_ and with _fetching docs_ you can use `where` filters to specify which docs you want to retrieve (just like Firestore). In some modules you might initially open a channel for _realtime updates_ with a certain `where` filter, and later when the user requests other docs do an additional `fetch` with another `where` filter.
 
 ## Realtime updates: openDBChannel
 
