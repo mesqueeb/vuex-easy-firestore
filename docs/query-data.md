@@ -192,7 +192,7 @@ dispatch('myModule/openDBChannel')
 ### a note on orderBy
 
 Using `orderBy` works just like in Firebase: "the docs will be retrieved in that order".
-Please note however, that your docs are saved inside an object in your Vuex module. **In JavaScript object properties do not have an order.**
+Please note however, that your docs are saved inside an object in your Vuex module. **JavaScript object properties do not have an order.** (the prop-order might differ from browser to browser)
 
 This means that even though you can retrieve your docs in a certain order, when showing them in a Vue component, you will need to manually sort the docs in the order you want. You can do this through a getter in your Vuex module. Eg.
 
