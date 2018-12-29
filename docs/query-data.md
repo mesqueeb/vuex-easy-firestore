@@ -69,16 +69,13 @@ dispatch('myModule/fetchAndAdd')
 // and so on...
 ```
 
-You can change the default fetch limit like so:
+You can pass a custom fetch limit or disable the fetch limit by passing 0:
 
 ```js
-{
-  // your other vuex-easy-fire config
-  fetch: {
-    // The max amount of documents to be fetched. Defaults to 50.
-    docLimit: 1000,
-  },
-}
+// custom fetch limit:
+dispatch('myModule/fetchAndAdd', {limit: 1000})
+// no fetch limit:
+dispatch('myModule/fetchAndAdd', {limit: 0})
 ```
 
 The `fetchAndAdd` action will return a promise resolving in `{done: true}` if there are no more docs to be fetched. You can use this to check when to stop fetching like so:
@@ -282,7 +279,7 @@ It is usually much better to use the same `statePropName` (eg. `'data'`) for all
 
 ## Manual fetch handling
 
-Besides `fetchAndAdd` there is also the `fetch` action. The difference is that with just `fetch`  it will not add the documents to your vuex module, so you can handle the result yourself. `fetch` is useful because it will automatically use the Firestore path from your module and also has the limit of 50 docs per retrieval. You can then continue calling fetch to retrieve the next set of docs.
+Besides `fetchAndAdd` there is also the `fetch` action. The difference is that with just `fetch`  it will not add the documents to your vuex module, so you can handle the result yourself. `fetch` is useful because it will automatically use the Firestore path from your module.
 
 ```js
 dispatch('myModule/fetch', {where: [['archived', '==', true]]})
@@ -298,3 +295,12 @@ dispatch('myModule/fetch', {where: [['archived', '==', true]]})
 ```
 
 The `querySnapshot` that is returned is the same querySnapshot as the Firestore one. Please read the [Firestore documentation on querySnapshot](https://firebase.google.com/docs/reference/js/firebase.firestore.QuerySnapshot) to know what you can do with these. Only when all documents were already fetched (and the result is 0 docs) vuex-easy-firestore will return `{done: true}` instead.
+
+Please note, just like [fetchAndAdd](#fetching-docs) explained above, `fetch` also has a default limit of 50 docs per retrieval. You can then continue calling fetch to retrieve the next set of docs or pass a custom limit or 0 to disable it.
+
+```js
+// custom fetch limit:
+dispatch('myModule/fetch', {limit: 1000})
+// no fetch limit:
+dispatch('myModule/fetch', {limit: 0})
+```
