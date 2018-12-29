@@ -848,18 +848,23 @@ function pluginActions (Firebase$$1) {
                 });
             });
         },
-        fetch: function (_a, _b
+        fetch: function (_a, pathVariables
         // where: [['archived', '==', true]]
         // orderBy: ['done_date', 'desc']
         ) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
-            var _c = _b === void 0 ? { where: [], whereFilters: [], orderBy: [] } : _b
-            // where: [['archived', '==', true]]
-            // orderBy: ['done_date', 'desc']
-            , _d = _c.where, where = _d === void 0 ? [] : _d, _e = _c.whereFilters, whereFilters = _e === void 0 ? [] : _e, _f = _c.orderBy, orderBy = _f === void 0 ? [] : _f;
+            if (pathVariables === void 0) { pathVariables = { where: [], whereFilters: [], orderBy: [] }; }
             dispatch('setUserId');
-            if (whereFilters.length)
-                where = whereFilters;
+            var where = pathVariables.where, whereFilters = pathVariables.whereFilters, orderBy = pathVariables.orderBy;
+            if (!isArray(where))
+                where = [];
+            if (!isArray(orderBy))
+                orderBy = [];
+            if (isArray(whereFilters) && whereFilters.length)
+                where = whereFilters; // depreciated
+            if (pathVariables && isPlainObject(pathVariables)) {
+                commit('SET_PATHVARS', pathVariables);
+            }
             return new Promise(function (resolve, reject) {
                 if (state._conf.logging)
                     console.log('[vuex-easy-firestore] Fetch starting');
@@ -874,9 +879,8 @@ function pluginActions (Firebase$$1) {
                     getters.getWhereArrays(where).forEach(function (paramsArr) {
                         ref_1 = ref_1.where.apply(ref_1, paramsArr);
                     });
-                    if (orderBy.length) {
+                    if (orderBy.length)
                         ref_1 = ref_1.orderBy.apply(ref_1, orderBy);
-                    }
                     state._sync.fetched[identifier] = {
                         ref: ref_1,
                         done: false,
@@ -897,7 +901,12 @@ function pluginActions (Firebase$$1) {
                     // get next ref if saved in state
                     fRef = state._sync.fetched[identifier].nextFetchRef;
                 }
-                fRef = fRef.limit(state._conf.fetch.docLimit);
+                // add doc limit
+                var limit = (isNumber(pathVariables.limit))
+                    ? pathVariables.limit
+                    : state._conf.fetch.docLimit;
+                if (limit > 0)
+                    fRef = fRef.limit(limit);
                 // Stop if all records already fetched
                 if (fRequest.retrievedFetchRefs.includes(fRef)) {
                     console.error('[vuex-easy-firestore] Already retrieved this part.');
@@ -911,7 +920,7 @@ function pluginActions (Firebase$$1) {
                         querySnapshot.done = true;
                         return resolve(querySnapshot);
                     }
-                    if (docs.length < state._conf.fetch.docLimit) {
+                    if (docs.length < limit) {
                         state._sync.fetched[identifier].done = true;
                     }
                     state._sync.fetched[identifier].retrievedFetchRefs.push(fRef);
@@ -933,17 +942,7 @@ function pluginActions (Firebase$$1) {
         ) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             if (pathVariables === void 0) { pathVariables = { where: [], whereFilters: [], orderBy: [] }; }
-            var where = pathVariables.where, whereFilters = pathVariables.whereFilters, orderBy = pathVariables.orderBy;
-            if (!isArray(where))
-                where = [];
-            if (!isArray(orderBy))
-                orderBy = [];
-            if (isArray(whereFilters) && whereFilters.length)
-                where = whereFilters;
             if (pathVariables && isPlainObject(pathVariables)) {
-                delete pathVariables.where;
-                delete pathVariables.whereFilters;
-                delete pathVariables.orderBy;
                 commit('SET_PATHVARS', pathVariables);
             }
             // 'doc' mode:
@@ -966,7 +965,7 @@ function pluginActions (Firebase$$1) {
                 });
             }
             // 'collection' mode:
-            return dispatch('fetch', { where: where, orderBy: orderBy })
+            return dispatch('fetch', pathVariables)
                 .then(function (querySnapshot) {
                 if (querySnapshot.done === true)
                     return querySnapshot;

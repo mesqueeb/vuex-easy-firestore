@@ -1,4 +1,4 @@
-import { isArray, isPlainObject, isFunction } from 'is-what'
+import { isArray, isPlainObject, isFunction, isNumber } from 'is-what'
 import merge from 'merge-anything'
 import { AnyObject, IPluginState } from '../declarations'
 import setDefaultValues from '../utils/setDefaultValues'
@@ -183,12 +183,18 @@ export default function (Firebase: any): AnyObject {
     },
     fetch (
       {state, getters, commit, dispatch},
-      {where = [], whereFilters = [], orderBy = []} = {where: [], whereFilters: [], orderBy: []}
+      pathVariables: AnyObject = {where: [], whereFilters: [], orderBy: []}
       // where: [['archived', '==', true]]
       // orderBy: ['done_date', 'desc']
     ) {
       dispatch('setUserId')
-      if (whereFilters.length) where = whereFilters
+      let {where, whereFilters, orderBy} = pathVariables
+      if (!isArray(where)) where = []
+      if (!isArray(orderBy)) orderBy = []
+      if (isArray(whereFilters) && whereFilters.length) where = whereFilters // depreciated
+      if (pathVariables && isPlainObject(pathVariables)) {
+        commit('SET_PATHVARS', pathVariables)
+      }
       return new Promise((resolve, reject) => {
         if (state._conf.logging) console.log('[vuex-easy-firestore] Fetch starting')
         if (!getters.signedIn) return resolve()
@@ -201,9 +207,7 @@ export default function (Firebase: any): AnyObject {
           getters.getWhereArrays(where).forEach(paramsArr => {
             ref = ref.where(...paramsArr)
           })
-          if (orderBy.length) {
-            ref = ref.orderBy(...orderBy)
-          }
+          if (orderBy.length) ref = ref.orderBy(...orderBy)
           state._sync.fetched[identifier] = {
             ref,
             done: false,
@@ -223,7 +227,11 @@ export default function (Firebase: any): AnyObject {
           // get next ref if saved in state
           fRef = state._sync.fetched[identifier].nextFetchRef
         }
-        fRef = fRef.limit(state._conf.fetch.docLimit)
+        // add doc limit
+        let limit = (isNumber(pathVariables.limit))
+          ? pathVariables.limit
+          : state._conf.fetch.docLimit
+        if (limit > 0) fRef = fRef.limit(limit)
         // Stop if all records already fetched
         if (fRequest.retrievedFetchRefs.includes(fRef)) {
           console.error('[vuex-easy-firestore] Already retrieved this part.')
@@ -237,7 +245,7 @@ export default function (Firebase: any): AnyObject {
             querySnapshot.done = true
             return resolve(querySnapshot)
           }
-          if (docs.length < state._conf.fetch.docLimit) {
+          if (docs.length < limit) {
             state._sync.fetched[identifier].done = true
           }
           state._sync.fetched[identifier].retrievedFetchRefs.push(fRef)
@@ -259,14 +267,7 @@ export default function (Firebase: any): AnyObject {
       // where: [['archived', '==', true]]
       // orderBy: ['done_date', 'desc']
     ) {
-      let {where, whereFilters, orderBy} = pathVariables
-      if (!isArray(where)) where = []
-      if (!isArray(orderBy)) orderBy = []
-      if (isArray(whereFilters) && whereFilters.length) where = whereFilters
       if (pathVariables && isPlainObject(pathVariables)) {
-        delete pathVariables.where
-        delete pathVariables.whereFilters
-        delete pathVariables.orderBy
         commit('SET_PATHVARS', pathVariables)
       }
       // 'doc' mode:
@@ -288,8 +289,7 @@ export default function (Firebase: any): AnyObject {
         })
       }
       // 'collection' mode:
-
-      return dispatch('fetch', {where, orderBy})
+      return dispatch('fetch', pathVariables)
         .then(querySnapshot => {
           if (querySnapshot.done === true) return querySnapshot
           if (isFunction(querySnapshot.forEach)) {
