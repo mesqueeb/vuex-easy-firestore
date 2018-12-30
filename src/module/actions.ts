@@ -196,7 +196,10 @@ export default function (Firebase: any): AnyObject {
         commit('SET_PATHVARS', pathVariables)
       }
       return new Promise((resolve, reject) => {
-        if (state._conf.logging) console.log('[vuex-easy-firestore] Fetch starting')
+        // log
+        if (state._conf.logging) {
+          console.log(`%c fetch for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: blue')
+        }
         if (!getters.signedIn) return resolve()
         const identifier = createFetchIdentifier({where, orderBy})
         const fetched = state._sync.fetched[identifier]
@@ -252,7 +255,7 @@ export default function (Firebase: any): AnyObject {
           // Get the last visible document
           resolve(querySnapshot)
           const lastVisible = docs[docs.length - 1]
-          // get the next records.
+          // set the reference for the next records.
           const next = fRef.startAfter(lastVisible)
           state._sync.fetched[identifier].nextFetchRef = next
         }).catch(error => {
