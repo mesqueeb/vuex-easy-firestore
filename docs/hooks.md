@@ -1,6 +1,6 @@
 # Hooks
 
-A hook is a function do anything the doc (the doc object) before the store mutation occurs. You can even modify the docs, or add fields based on conditional checks etc.
+A hook is a function do anything the doc (the doc object) before the store mutation occurs. You can also modify the docs, or add fields based on conditional checks etc. You can even prevent a doc to be added to your vuex module.
 
 ## Hooks on local changes
 
@@ -29,9 +29,11 @@ But you may choose not to call this to abort the mutation. If you do not call `u
 
 ## Hooks after server changes
 
-> Only for 'openDBChannel'
+_Hooks after server changes_ work just like _hooks on local changes_ but for changes that have occured on the server. Just as with the hooks for local changes, you can use these hooks to make changes to incoming documents or prevent them from being added to your vuex module.
 
-Exactly the same as above, but for changes that have occured on the server. You also have some extra parameters to work with:
+These hooks will fire not only on modifications and inserts **but also when dispatching `openDBChannel` or `fetchAndAdd`**. Be sure to check the **execution timings of hooks** below to know when which are executed.
+
+You also have some extra parameters to work with:
 
 - *id:* the doc id returned in `change.doc.id` (see firestore documentation for more info)
 - *doc:* the doc returned in `change.doc.data()` (see firestore documentation for more info)
@@ -48,27 +50,6 @@ Exactly the same as above, but for changes that have occured on the server. You 
 ```
 
 Please make sure to check the overview of execution timings of hooks, in the next chapter:
-
-<!-- ## Hooks after fetch
-
-> Only for 'fetchAndAdd'
-
-After you fetch documents by dispatching `fetchAndAdd` there will be **no hooks** that execute. You can however add some extra functionality in the callback of `fetchAndAdd` like so:
-
-```js
-dispatch('myModule/fetchAndAdd')
-  .then(querySnapshot => {
-    if (querySnapshot.done === true) {
-      // `{done: true}` is returned when everything is already fetched and there are 0 docs:
-      console.log('finished fetching all docs')
-      return
-    }
-    // do whatever you want with the `querySnapshot`
-  })
-  .catch(console.error)
-```
-
-Please make sure to check the overview of execution timings of hooks, in the next chapter: -->
 
 ## Execution timings of hooks
 
@@ -127,7 +108,7 @@ Notice that the `created_at` and `updated_at` fields mentioned below is used by 
     <td><code>serverChange.removedHook</code></td>
   </tr>
   <tr>
-    <td>after <code>openDBChannel</code></td>
+    <td>on <code>openDBChannel</code><br>and<br><code>fetchAndAdd</code></td>
     <td colspan="3"><code>serverChange.addedHook</code> is executed once for each doc</td>
   </tr>
 </table>
@@ -158,7 +139,7 @@ Notice that the `created_at` and `updated_at` fields mentioned below is used by 
     <td><code>serverChange.modifiedHook</code></td>
   </tr>
   <tr>
-    <td>after <code>openDBChannel</code></td>
+    <td>on <code>openDBChannel</code><br>and<br><code>fetchAndAdd</code></td>
     <td colspan="3"><code>serverChange.modifiedHook</code> is executed once</td>
   </tr>
 </table>
