@@ -1040,8 +1040,10 @@ function pluginActions (Firebase$$1) {
                 commit('SET_PATHVARS', pathVariables);
             }
             return new Promise(function (resolve, reject) {
-                if (state._conf.logging)
-                    console.log('[vuex-easy-firestore] Fetch starting');
+                // log
+                if (state._conf.logging) {
+                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: blue');
+                }
                 if (!getters.signedIn)
                     return resolve();
                 var identifier = createFetchIdentifier({ where: where, orderBy: orderBy });
@@ -1101,7 +1103,7 @@ function pluginActions (Firebase$$1) {
                     // Get the last visible document
                     resolve(querySnapshot);
                     var lastVisible = docs[docs.length - 1];
-                    // get the next records.
+                    // set the reference for the next records.
                     var next = fRef.startAfter(lastVisible);
                     state._sync.fetched[identifier].nextFetchRef = next;
                 }).catch(function (error$$1) {
@@ -1131,7 +1133,7 @@ function pluginActions (Firebase$$1) {
                     }
                     var id = getters.docModeId;
                     var doc = getters.cleanUpRetrievedDoc(_doc.data(), id);
-                    commit('PATCH_DOC', doc);
+                    dispatch('applyHooksAndUpdateState', { change: 'modified', id: id, doc: doc });
                     return doc;
                 }).catch(function (error$$1) {
                     console.error('[vuex-easy-firestore]', error$$1);
@@ -1147,7 +1149,7 @@ function pluginActions (Firebase$$1) {
                     querySnapshot.forEach(function (_doc) {
                         var id = _doc.id;
                         var doc = getters.cleanUpRetrievedDoc(_doc.data(), id);
-                        commit('INSERT_DOC', doc);
+                        dispatch('applyHooksAndUpdateState', { change: 'added', id: id, doc: doc });
                     });
                 }
                 return querySnapshot;
