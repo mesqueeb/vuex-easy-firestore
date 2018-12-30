@@ -284,7 +284,7 @@ export default function (Firebase: any): AnyObject {
           }
           const id = getters.docModeId
           const doc = getters.cleanUpRetrievedDoc(_doc.data(), id)
-          commit('PATCH_DOC', doc)
+          dispatch('applyHooksAndUpdateState', {change: 'modified', id, doc})
           return doc
         }).catch(error => {
           console.error('[vuex-easy-firestore]', error)
@@ -299,7 +299,7 @@ export default function (Firebase: any): AnyObject {
             querySnapshot.forEach(_doc => {
               const id = _doc.id
               const doc = getters.cleanUpRetrievedDoc(_doc.data(), id)
-              commit('INSERT_DOC', doc)
+              dispatch('applyHooksAndUpdateState', {change: 'added', id, doc})
             })
           }
           return querySnapshot
