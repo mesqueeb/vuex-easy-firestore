@@ -1,18 +1,26 @@
 # Config example
 
-Here is a list with all possible config options. **Only the top 3 properties are required**, the rest may be left out if not used!
+Here is a list with all possible config options. **Only the top 4 properties are required**, the rest may be left out if not used!
 
 ```js
 const firestoreModule = {
   firestorePath: '',
-    // The path to a collection or doc in firestore. You can use `{userId}` which will be replaced with the user Id.
+    // The path to a "collection" or single "document" in firestore.
+    // You can use `{userId}` which will be replaced with the user Id.
   firestoreRefType: '',
     // `'collection'` or `'doc'`. Depending on your `firestorePath`.
   moduleName: '',
-    // The module name. Can be nested, eg. `'user/items'`
+    // The module name. eg. `'userItems'`
+    // Can also be a nested module, eg. `'user/items'`
   statePropName: '',
-    // The name of the property where the docs or doc will be synced to. If left blank it will be synced on the state of the module.
+    // The name of the property where the docs or doc will be synced to.
+    // always best to set to `'data'` imo!
+    // If left blank it will be synced on the state of the module.
 
+  namespaced: true,
+    // always best to do this imo! See more info at: https://vuex.vuejs.org/guide/modules.html#namespacing
+
+  // EVERYTHING BELOW IS OPTIONAL (only include what you use)
   // Related to the 2-way sync:
   sync: {
     where: [],
