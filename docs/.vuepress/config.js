@@ -14,6 +14,7 @@ module.exports = {
       '/firestore-fields-and-functions',
       '/hooks',
       '/extra-features',
+      ['/faq', 'FAQ'],
       '/config-example',
       '/feedback',
     ],
