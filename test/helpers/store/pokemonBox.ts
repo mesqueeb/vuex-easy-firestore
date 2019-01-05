@@ -33,11 +33,15 @@ export default {
       'arr1',
       'arr2',
       'guarded',
-      'defaultVal'
+      'defaultVal',
+      'nestedDefaultVal'
     ],
     guard: ['guarded'],
     defaultValues: {
-      defaultVal: true
+      defaultVal: true,
+      nestedDefaultVal: {
+        types: 'moon'
+      },
     },
     // HOOKS for local changes:
     insertHook: function (updateStore, doc, store) {

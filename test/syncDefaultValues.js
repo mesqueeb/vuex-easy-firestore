@@ -14,6 +14,7 @@ test('[COLLECTION] sync: defaultValues', async t => {
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Squirtle')
   t.is(box.pokemon[id].defaultVal, true)
+  t.deepEqual(box.pokemon[id].nestedDefaultVal, {types: 'moon'})
   // fetch from server to check
   await wait(2)
   const docR = await boxRef.doc(id).get()
@@ -21,4 +22,12 @@ test('[COLLECTION] sync: defaultValues', async t => {
   t.truthy(doc)
   t.is(doc.name, 'Squirtle')
   t.is(doc.defaultVal, true)
+  t.deepEqual(doc.nestedDefaultVal, {types: 'moon'})
+  // change default val and add new pokemon
+  box.pokemon[id].nestedDefaultVal.types = 'sun'
+  t.deepEqual(box.pokemon[id].nestedDefaultVal, {types: 'sun'})
+  t.deepEqual(box._conf.sync.defaultValues, {
+    defaultVal: true,
+    nestedDefaultVal: {types: 'moon'}
+  })
 })
