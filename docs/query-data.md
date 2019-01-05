@@ -98,6 +98,7 @@ const myModule = {
   firestoreRefType: 'collection',
   moduleName: 'userData',
   statePropName: 'data',
+  namespaced: true, // optional but recommended
 }
 ```
 
@@ -170,6 +171,7 @@ const myModule = {
   firestoreRefType: 'collection',
   moduleName: 'myModule',
   statePropName: 'data',
+  namespaced: true, // optional but recommended
   sync: {
     where,
     orderBy

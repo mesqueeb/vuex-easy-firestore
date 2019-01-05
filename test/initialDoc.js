@@ -16,7 +16,7 @@ test('initialDoc through openDBRef', async t => {
   store.dispatch('initialDoc/openDBChannel', {randomId})
   const fullPath = store.getters['initialDoc/firestorePathComplete']
   t.is(fullPath.split('/').pop(), randomId)
-  await wait(2)
+  await wait(4)
   docR = await Firebase.firestore().doc(path).get()
   t.is(docR.exists, true)
   doc = docR.data()
@@ -35,7 +35,7 @@ test('initialDoc through fetchAndAdd', async t => {
   store.dispatch('initialDoc/fetchAndAdd', {randomId})
   const fullPath = store.getters['initialDoc/firestorePathComplete']
   t.is(fullPath.split('/').pop(), randomId)
-  await wait(2)
+  await wait(4)
   docR = await Firebase.firestore().doc(path).get()
   t.is(docR.exists, true)
   doc = docR.data()

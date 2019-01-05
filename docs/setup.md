@@ -25,7 +25,8 @@ const myModule = {
   firestoreRefType: 'collection', // or 'doc'
   moduleName: 'myModule',
   statePropName: 'data',
-  // you can also add state/getters/mutations/actions
+  namespaced: true, // optional but recommended
+  // you can also add your own state/getters/mutations/actions
 }
 
 // do the magic 🧙🏻‍♂️

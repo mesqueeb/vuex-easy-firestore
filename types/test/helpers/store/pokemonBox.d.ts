@@ -10,6 +10,9 @@ declare const _default: {
         guard: string[];
         defaultValues: {
             defaultVal: boolean;
+            nestedDefaultVal: {
+                types: string;
+            };
         };
         insertHook: (updateStore: any, doc: any, store: any) => any;
         patchHook: (updateStore: any, doc: any, store: any) => any;

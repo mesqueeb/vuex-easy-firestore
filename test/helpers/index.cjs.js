@@ -44,11 +44,15 @@ var pokemonBox = {
             'arr1',
             'arr2',
             'guarded',
-            'defaultVal'
+            'defaultVal',
+            'nestedDefaultVal'
         ],
         guard: ['guarded'],
         defaultValues: {
-            defaultVal: true
+            defaultVal: true,
+            nestedDefaultVal: {
+                types: 'moon'
+            },
         },
         // HOOKS for local changes:
         insertHook: function (updateStore, doc, store) {
@@ -344,7 +348,7 @@ function isArrayHelper(value) {
     return (isWhat.isAnyObject(value) &&
         !isWhat.isPlainObject(value) &&
         // @ts-ignore
-        (value.constructor.name === 'ArrayUnion' || value.constructor.name === 'ArrayRemove'));
+        value.isArrayHelper === true);
 }
 
 /**

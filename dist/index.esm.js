@@ -124,7 +124,7 @@ function error (error) {
 
 var ArrayUnion = /** @class */ (function () {
     function ArrayUnion(payload) {
-        this.name = 'ArrayUnion';
+        this.isArrayHelper = true;
         this.payload = payload;
     }
     ArrayUnion.prototype.executeOn = function (array) {
@@ -140,7 +140,7 @@ var ArrayUnion = /** @class */ (function () {
 }());
 var ArrayRemove = /** @class */ (function () {
     function ArrayRemove(payload) {
-        this.name = 'ArrayRemove';
+        this.isArrayHelper = true;
         this.payload = payload;
     }
     ArrayRemove.prototype.executeOn = function (array) {
@@ -170,7 +170,7 @@ function isArrayHelper(value) {
     return (isAnyObject(value) &&
         !isPlainObject(value) &&
         // @ts-ignore
-        (value.constructor.name === 'ArrayUnion' || value.constructor.name === 'ArrayRemove'));
+        value.isArrayHelper === true);
 }
 
 /**
