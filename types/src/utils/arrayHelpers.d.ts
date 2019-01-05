@@ -1,14 +1,14 @@
 import * as Firebase from 'firebase/app';
 import 'firebase/firestore';
 export declare class ArrayUnion {
-    name: string;
+    isArrayHelper: boolean;
     payload: any;
     constructor(payload: any);
     executeOn(array: any[]): any[];
     getFirestoreFieldValue(): Firebase.firestore.FieldValue;
 }
 export declare class ArrayRemove {
-    name: string;
+    isArrayHelper: boolean;
     payload: any;
     constructor(payload: any);
     executeOn(array: any[]): any[];

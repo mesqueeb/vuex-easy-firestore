@@ -348,7 +348,7 @@ function isArrayHelper(value) {
     return (isWhat.isAnyObject(value) &&
         !isWhat.isPlainObject(value) &&
         // @ts-ignore
-        (value.constructor.name === 'ArrayUnion' || value.constructor.name === 'ArrayRemove'));
+        value.isArrayHelper === true);
 }
 
 /**

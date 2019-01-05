@@ -3,10 +3,10 @@ import * as Firebase from 'firebase/app'
 import 'firebase/firestore'
 
 export class ArrayUnion {
-  name: string
+  isArrayHelper: boolean
   payload: any
   constructor (payload: any) {
-    this.name = 'ArrayUnion'
+    this.isArrayHelper = true
     this.payload = payload
   }
   executeOn (array: any[]) {
@@ -21,10 +21,10 @@ export class ArrayUnion {
 }
 
 export class ArrayRemove {
-  name: string
+  isArrayHelper: boolean
   payload: any
   constructor (payload: any) {
-    this.name = 'ArrayRemove'
+    this.isArrayHelper = true
     this.payload = payload
   }
   executeOn (array: any[]) {
@@ -57,6 +57,6 @@ export function isArrayHelper (value) {
     isAnyObject(value) &&
     !isPlainObject(value) &&
     // @ts-ignore
-    (value.constructor.name === 'ArrayUnion' || value.constructor.name === 'ArrayRemove')
+    value.isArrayHelper === true
   )
 }
