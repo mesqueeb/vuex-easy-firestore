@@ -954,6 +954,7 @@ function pluginActions (Firebase$$1) {
             }
             // 'doc' mode:
             if (!getters.collectionMode) {
+                dispatch('setUserId');
                 return getters.dbRef.get().then(function (_doc) {
                     if (!_doc.exists) {
                         // No initial doc found in docMode

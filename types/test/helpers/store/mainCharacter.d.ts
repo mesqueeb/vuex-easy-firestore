@@ -7,6 +7,7 @@ declare const _default: {
         name: string;
         pokemonBelt: any[];
         items: any[];
+        multipleFastEdits: any;
     };
     mutations: import("vuex-easy-access/types/declarations").AnyObject;
     actions: {};

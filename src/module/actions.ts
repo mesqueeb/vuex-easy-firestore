@@ -275,6 +275,7 @@ export default function (Firebase: any): AnyObject {
       }
       // 'doc' mode:
       if (!getters.collectionMode) {
+        dispatch('setUserId')
         return getters.dbRef.get().then(_doc => {
           if (!_doc.exists) {
             // No initial doc found in docMode
