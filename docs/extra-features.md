@@ -138,9 +138,11 @@ Also, to make sure there are no vue reactivity issues, these default values are 
 
 ## Firestore Timestamp conversion
 
-Firestore works with special "[timestamp](https://firebase.google.com/docs/reference/js/firebase.firestore.Timestamp)" fields rather than with `new Date()`. Vuex-easy-firestore also uses the timestamp fields for the auto-generated fields `created_at` and `updated_at` which are added to your docs.
+Firestore works with special "[timestamp](https://firebase.google.com/docs/reference/js/firebase.firestore.Timestamp)" fields rather than with `new Date()`. The general rule is: **If you set or update a field to be `new Date()` it will be converted to a special Timestamp field on the server automatically.**
 
-In your app, if you want to use these timestamps as a `new Date()` object you have to call `timestamp.toDate()` on each of these fields. **Luckily we can do this for you!**
+There is nothing you can do to prevent this, it's just how Firestore works. The problem is that next time a user opens your app and your documents are retrieved from the server, you will be getting Timestamps and have to call `timestamp.toDate()` on each of these fields!
+
+**Luckily vuex-easy-firestore can do this for you!** This library has date fields for `created_at` and `updated_at` that are already automatically converted to regular dates upon server retrieval. So we can easily extend this function to include other fields you want to use `new Date()`.
 
 You just have to specify the fields in a `convertTimestamps` object in your module config like so:
 
@@ -149,16 +151,16 @@ const vuexModule = {
   // your other vuex-easy-firestore config...
   serverChange: {
     convertTimestamps: {
-      updated_at: '%convertTimestamp%'
+      created_at: '%convertTimestamp%', // default
+      updated_at: '%convertTimestamp%', // default
       // define each field like so ↑ in an object here
     },
   }
 }
 ```
 
-Now the Timestamp on `updated_at` will automatically trigger `Timestamp.toDate()` before being added to your vuex store!
+The Timestamps of each of the fields defined like above will automatically trigger `Timestamp.toDate()` before being added to your vuex store!
 
-If you want to use Firestore _timestamps_ on a custom field, you can just go ahead and set the field to `new Date()`. This is because Firestore will automatically change this for you to a timestamp field on the server either way!
 Eg.
 
 ```js

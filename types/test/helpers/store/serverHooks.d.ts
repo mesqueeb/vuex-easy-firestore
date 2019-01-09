@@ -4,13 +4,14 @@ declare const _default: {
     moduleName: string;
     statePropName: string;
     state: {
-        name: string;
-        pokemonBelt: any[];
-        items: any[];
-        multipleFastEdits: any;
+        iniProp: boolean;
+        propToBeDeleted: boolean;
     };
     mutations: import("vuex-easy-access/types/declarations").AnyObject;
     actions: {};
     getters: {};
+    sync: {
+        guard: string[];
+    };
 };
 export default _default;
