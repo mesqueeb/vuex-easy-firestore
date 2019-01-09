@@ -105,7 +105,7 @@ export default function (Firebase: any): AnyObject {
             patchData = doc
           }
           // set default fields
-          patchData.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
+          patchData.updated_at = new Date()
           patchData.updated_by = state._sync.userId
           // replace arrayUnion and arrayRemove
           function checkFn (foundVal) {
@@ -129,7 +129,7 @@ export default function (Firebase: any): AnyObject {
         const collectionMode = getters.collectionMode
         const patchData: AnyObject = {}
         // set default fields
-        patchData.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
+        patchData.updated_at = new Date()
         patchData.updated_by = state._sync.userId
         // add fillable and guard defaults
         // clean up item
@@ -152,7 +152,7 @@ export default function (Firebase: any): AnyObject {
         // add fillable and guard defaults
         return items.reduce((carry, item) => {
           // set default fields
-          item.created_at = Firebase.firestore.FieldValue.serverTimestamp()
+          item.created_at = new Date()
           item.created_by = state._sync.userId
           // clean up item
           item = filter(item, getters.fillables, getters.guard)
@@ -164,7 +164,7 @@ export default function (Firebase: any): AnyObject {
       (doc) => {
         // add fillable and guard defaults
         // set default fields
-        doc.created_at = Firebase.firestore.FieldValue.serverTimestamp()
+        doc.created_at = new Date()
         doc.created_by = state._sync.userId
         doc.id = getters.docModeId
         // clean up item

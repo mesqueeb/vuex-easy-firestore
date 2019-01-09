@@ -1,6 +1,6 @@
 import test from 'ava'
-import { isPlainObject, isArray, isDate } from 'is-what'
-import wait from './helpers/wait'
+import { isDate } from 'is-what'
+// import wait from './helpers/wait'
 import * as Firebase from 'firebase/app'
 import 'firebase/firestore'
 import {storeGetters as store} from './helpers/index.cjs.js'
@@ -26,14 +26,14 @@ test('[prepareForPatch] collection', async t => {
   t.is(res['2'].id, '2')
   t.is(res['1'].updated_by, 'charlie')
   t.is(res['2'].updated_by, 'charlie')
-  t.is(res['1'].updated_at._methodName, 'FieldValue.serverTimestamp')
-  t.is(res['2'].updated_at._methodName, 'FieldValue.serverTimestamp')
+  t.is(isDate(res['1'].updated_at), true)
+  t.is(isDate(res['2'].updated_at), true)
   // prepareForPropDeletion
   res = store.getters['pokemonBox/prepareForPropDeletion']('1.pathdel.a')
   t.is(res['1'].id, '1')
   t.is(res['1']['pathdel.a']._methodName, 'FieldValue.delete')
   t.is(res['1'].updated_by, 'charlie')
-  t.is(res['1'].updated_at._methodName, 'FieldValue.serverTimestamp')
+  t.is(isDate(res['1'].updated_at), true)
   // deeper delete
   res = store.getters['pokemonBox/prepareForPropDeletion']('1.a.met.de.aba')
   t.is(res['1']['a.met.de.aba']._methodName, 'FieldValue.delete')
@@ -59,13 +59,13 @@ test('[prepareForPatch] doc', async t => {
   t.is(res[docModeId].del._methodName, 'FieldValue.delete')
   t.is(res[docModeId].id, docModeId)
   t.is(res[docModeId].updated_by, 'charlie')
-  t.is(res[docModeId].updated_at._methodName, 'FieldValue.serverTimestamp')
+  t.is(isDate(res[docModeId].updated_at), true)
   // prepareForPropDeletion
   res = store.getters['mainCharacter/prepareForPropDeletion']('1.pathdel.a')
   t.is(res[docModeId].id, docModeId)
   t.is(res[docModeId]['1.pathdel.a']._methodName, 'FieldValue.delete')
   t.is(res[docModeId].updated_by, 'charlie')
-  t.is(res[docModeId].updated_at._methodName, 'FieldValue.serverTimestamp')
+  t.is(isDate(res[docModeId].updated_at), true)
   // different fillables & guard
   char._conf.sync.guard = ['updated_at', 'updated_by', 'id']
   res = store.getters['mainCharacter/prepareForPropDeletion']('1.pathdel.a')

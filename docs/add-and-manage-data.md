@@ -125,7 +125,7 @@ In the above example you can see that you can delete a field (or property) by pa
 
 When working with collections, each document insert or update will automatically receive these fields:
 
-- `created_at` / `updated_at` both use: `Firebase.firestore.FieldValue.serverTimestamp()`
+- `created_at` / `updated_at` both use: `new Date()`
 - `created_by` / `updated_by` will automatically fill in the userId
 
 You can disable these fields by adding them to your `guard` config. See the [related documentation on guard](extra-features.html#fillables-and-guard).
@@ -189,7 +189,7 @@ dispatch('moduleName/delete', 'settings.banned')
 
 When working with a single doc, your document updates will automatically receive these fields:
 
-- `updated_at` uses: `Firebase.firestore.FieldValue.serverTimestamp()`
+- `updated_at` uses: `new Date()`
 - `updated_by` will automatically fill in the userId
 
 Just as with 'collection' mode, you can disable these fields by adding them to your `guard` config. See the [related documentation on guard](extra-features.html#fillables-and-guard).

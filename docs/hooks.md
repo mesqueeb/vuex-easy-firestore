@@ -53,53 +53,27 @@ Please make sure to check the overview of execution timings of hooks, in the nex
 
 ## Execution timings of hooks
 
-Notice that the `created_at` and `updated_at` fields mentioned below is used by default, but can be disabled. To disable just add them to your [guard config](extra-features.html#fillables-and-guard).
-
 **Hooks on 'collection' mode**
 
 <table>
   <tr>
     <th>change type</th>
-    <th colspan="2">local</th>
+    <th>local</th>
     <th>server</th>
   </tr>
   <tr>
     <td>insertion</td>
-    <td>
-      <b>without <code>created_at</code></b>
-      <ol>
-        <li><code>sync.insertHook</code></li>
-      </ol>
-    </td>
-    <td>
-      <b>with <code>created_at</code></b>
-      <ol>
-        <li><code>sync.insertHook</code></li>
-        <li><code>serverChange.modifiedHook</code></li>
-      </ol>
-    </td>
+    <td><code>sync.insertHook</code></td>
     <td><code>serverChange.addedHook</code></td>
   </tr>
   <tr>
     <td>modification</td>
-    <td>
-      <b>without <code>updated_at</code></b>
-      <ol>
-        <li><code>sync.patchHook</code></li>
-      </ol>
-    </td>
-    <td>
-      <b>with <code>updated_at</code></b>
-      <ol>
-        <li><code>sync.patchHook</code></li>
-        <li><code>serverChange.modifiedHook</code></li>
-      </ol>
-    </td>
+    <td><code>sync.patchHook</code></td>
     <td><code>serverChange.modifiedHook</code></td>
   </tr>
   <tr>
     <td>deletion</td>
-    <td colspan="2">
+    <td>
       <ol>
         <li><code>sync.deleteHook</code></li>
         <li><code>serverChange.removedHook</code></li>
@@ -109,7 +83,7 @@ Notice that the `created_at` and `updated_at` fields mentioned below is used by 
   </tr>
   <tr>
     <td>on <code>openDBChannel</code><br>and<br><code>fetchAndAdd</code></td>
-    <td colspan="3"><code>serverChange.addedHook</code> is executed once for each doc</td>
+    <td colspan="2"><code>serverChange.addedHook</code> is executed once for each doc</td>
   </tr>
 </table>
 
@@ -118,34 +92,16 @@ Notice that the `created_at` and `updated_at` fields mentioned below is used by 
 <table>
   <tr>
     <th>change type</th>
-    <th colspan="2">local</th>
+    <th>local</th>
     <th>server</th>
   </tr>
   <tr>
     <td>modification</td>
-    <td>
-      <b>without <code>updated_at</code></b>
-      <ol>
-        <li><code>sync.patchHook</code></li>
-      </ol>
-    </td>
-    <td>
-      <b>with <code>updated_at</code></b>
-      <ol>
-        <li><code>sync.patchHook</code></li>
-        <li><code>serverChange.modifiedHook</code></li>
-      </ol>
-    </td>
+    <td><code>sync.patchHook</code></td>
     <td><code>serverChange.modifiedHook</code></td>
   </tr>
   <tr>
     <td>on <code>openDBChannel</code><br>and<br><code>fetchAndAdd</code></td>
-    <td colspan="3"><code>serverChange.modifiedHook</code> is executed once</td>
+    <td colspan="2"><code>serverChange.modifiedHook</code> is executed once</td>
   </tr>
 </table>
-
-### Note about the serverChange hooks executing on local changes
-
-I have done my best to limit the hooks to only be executed on the proper events. The server hooks are executed during Firestore's [onSnapshot events](https://firebase.google.com/docs/firestore/query-data/listen).
-
-The reason for `updated_at` to trigger `serverChange.modifiedHook` even on just a local change, is because `updated_at` uses Firestore's `firebase.firestore.FieldValue.serverTimestamp()` which is replaced by a timestamp on the server and therefor there is a "server change".
