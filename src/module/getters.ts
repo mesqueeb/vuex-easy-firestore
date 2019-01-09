@@ -68,6 +68,15 @@ export default function (Firebase: any): AnyObject {
     docModeId: (state, getters) => {
       return getters.firestorePathComplete.split('/').pop()
     },
+    fillables: (state) => {
+      let fillables = state._conf.sync.fillables
+      if (!fillables.length) return fillables
+      return fillables
+        .concat(['updated_at', 'updated_by', 'id', 'created_at', 'created_by'])
+    },
+    guard: (state) => {
+      return state._conf.sync.guard.concat(['_conf', '_sync'])
+    },
     cleanUpRetrievedDoc: (state, getters, rootState, rootGetters) =>
       (doc, id) => {
         const defaultValues = merge(
@@ -106,12 +115,8 @@ export default function (Firebase: any): AnyObject {
             return foundVal
           }
           patchData = findAndReplaceIf(patchData, checkFn)
-          // add fillable and guard defaults
-          let fillables = state._conf.sync.fillables
-          if (fillables.length) fillables = fillables.concat(['updated_at', 'updated_by'])
-          const guard = state._conf.sync.guard.concat(['_conf', '_sync'])
           // clean up item
-          const cleanedPatchData = filter(patchData, fillables, guard)
+          const cleanedPatchData = filter(patchData, getters.fillables, getters.guard)
           const itemToUpdate = flattenToPaths(cleanedPatchData)
           // add id (required to get ref later at apiHelpers.ts)
           itemToUpdate.id = id
@@ -127,11 +132,8 @@ export default function (Firebase: any): AnyObject {
         patchData.updated_at = Firebase.firestore.FieldValue.serverTimestamp()
         patchData.updated_by = state._sync.userId
         // add fillable and guard defaults
-        let fillables = state._conf.sync.fillables
-        if (fillables.length) fillables = fillables.concat(['updated_at', 'updated_by'])
-        const guard = state._conf.sync.guard.concat(['_conf', '_sync'])
         // clean up item
-        const cleanedPatchData = filter(patchData, fillables, guard)
+        const cleanedPatchData = filter(patchData, getters.fillables, getters.guard)
         // add id (required to get ref later at apiHelpers.ts)
         let id, cleanedPath
         if (collectionMode) {
@@ -148,15 +150,12 @@ export default function (Firebase: any): AnyObject {
     prepareForInsert: (state, getters, rootState, rootGetters) =>
       (items = []) => {
         // add fillable and guard defaults
-        let fillables = state._conf.sync.fillables
-        if (fillables.length) fillables = fillables.concat(['id', 'created_at', 'created_by'])
-        const guard = state._conf.sync.guard.concat(['_conf', '_sync'])
         return items.reduce((carry, item) => {
           // set default fields
           item.created_at = Firebase.firestore.FieldValue.serverTimestamp()
           item.created_by = state._sync.userId
           // clean up item
-          item = filter(item, fillables, guard)
+          item = filter(item, getters.fillables, getters.guard)
           carry.push(item)
           return carry
         }, [])
@@ -164,15 +163,12 @@ export default function (Firebase: any): AnyObject {
     prepareInitialDocForInsert: (state, getters, rootState, rootGetters) =>
       (doc) => {
         // add fillable and guard defaults
-        let fillables = state._conf.sync.fillables
-        if (fillables.length) fillables = fillables.concat(['id', 'created_at', 'created_by'])
-        const guard = state._conf.sync.guard.concat(['_conf', '_sync'])
         // set default fields
         doc.created_at = Firebase.firestore.FieldValue.serverTimestamp()
         doc.created_by = state._sync.userId
         doc.id = getters.docModeId
         // clean up item
-        doc = filter(doc, fillables, guard)
+        doc = filter(doc, getters.fillables, getters.guard)
         return doc
       },
     getWhereArrays: (state, getters) => (whereArrays) => {

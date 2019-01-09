@@ -1555,6 +1555,16 @@ function pluginGetters (Firebase$$1) {
         docModeId: function (state, getters) {
             return getters.firestorePathComplete.split('/').pop();
         },
+        fillables: function (state) {
+            var fillables = state._conf.sync.fillables;
+            if (!fillables.length)
+                return fillables;
+            return fillables
+                .concat(['updated_at', 'updated_by', 'id', 'created_at', 'created_by']);
+        },
+        guard: function (state) {
+            return state._conf.sync.guard.concat(['_conf', '_sync']);
+        },
         cleanUpRetrievedDoc: function (state, getters, rootState, rootGetters) {
             return function (doc, id) {
                 var defaultValues = merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues, // depreciated
@@ -1595,13 +1605,8 @@ function pluginGetters (Firebase$$1) {
                         return foundVal;
                     }
                     patchData = findAndReplaceAnything.findAndReplaceIf(patchData, checkFn);
-                    // add fillable and guard defaults
-                    var fillables = state._conf.sync.fillables;
-                    if (fillables.length)
-                        fillables = fillables.concat(['updated_at', 'updated_by']);
-                    var guard = state._conf.sync.guard.concat(['_conf', '_sync']);
                     // clean up item
-                    var cleanedPatchData = filter(patchData, fillables, guard);
+                    var cleanedPatchData = filter(patchData, getters.fillables, getters.guard);
                     var itemToUpdate = flattenToPaths(cleanedPatchData);
                     // add id (required to get ref later at apiHelpers.ts)
                     itemToUpdate.id = id;
@@ -1620,12 +1625,8 @@ function pluginGetters (Firebase$$1) {
                 patchData.updated_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
                 patchData.updated_by = state._sync.userId;
                 // add fillable and guard defaults
-                var fillables = state._conf.sync.fillables;
-                if (fillables.length)
-                    fillables = fillables.concat(['updated_at', 'updated_by']);
-                var guard = state._conf.sync.guard.concat(['_conf', '_sync']);
                 // clean up item
-                var cleanedPatchData = filter(patchData, fillables, guard);
+                var cleanedPatchData = filter(patchData, getters.fillables, getters.guard);
                 // add id (required to get ref later at apiHelpers.ts)
                 var id, cleanedPath;
                 if (collectionMode) {
@@ -1645,16 +1646,12 @@ function pluginGetters (Firebase$$1) {
             return function (items) {
                 if (items === void 0) { items = []; }
                 // add fillable and guard defaults
-                var fillables = state._conf.sync.fillables;
-                if (fillables.length)
-                    fillables = fillables.concat(['id', 'created_at', 'created_by']);
-                var guard = state._conf.sync.guard.concat(['_conf', '_sync']);
                 return items.reduce(function (carry, item) {
                     // set default fields
                     item.created_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
                     item.created_by = state._sync.userId;
                     // clean up item
-                    item = filter(item, fillables, guard);
+                    item = filter(item, getters.fillables, getters.guard);
                     carry.push(item);
                     return carry;
                 }, []);
@@ -1663,16 +1660,12 @@ function pluginGetters (Firebase$$1) {
         prepareInitialDocForInsert: function (state, getters, rootState, rootGetters) {
             return function (doc) {
                 // add fillable and guard defaults
-                var fillables = state._conf.sync.fillables;
-                if (fillables.length)
-                    fillables = fillables.concat(['id', 'created_at', 'created_by']);
-                var guard = state._conf.sync.guard.concat(['_conf', '_sync']);
                 // set default fields
                 doc.created_at = Firebase$$1.firestore.FieldValue.serverTimestamp();
                 doc.created_by = state._sync.userId;
                 doc.id = getters.docModeId;
                 // clean up item
-                doc = filter(doc, fillables, guard);
+                doc = filter(doc, getters.fillables, getters.guard);
                 return doc;
             };
         },
