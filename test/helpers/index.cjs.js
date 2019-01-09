@@ -224,6 +224,28 @@ var initialDoc = {
     getters: {},
 };
 
+function initialState$8() {
+    return {
+        iniProp: true,
+        propToBeDeleted: true
+    };
+}
+var serverHooks = {
+    // easy firestore config
+    firestorePath: 'docs/serverHooks',
+    firestoreRefType: 'doc',
+    moduleName: 'serverHooks',
+    statePropName: '',
+    // module
+    state: initialState$8(),
+    mutations: createEasyAccess.defaultMutations(initialState$8()),
+    actions: {},
+    getters: {},
+    sync: {
+        guard: ['created_by', 'created_at', 'updated_by', 'updated_at']
+    }
+};
+
 require('@firebase/firestore');
 
 /**
@@ -1851,7 +1873,8 @@ var easyFirestores = vuexEasyFirestore([
     testMutations2,
     testNestedFillables,
     testNestedGuard,
-    initialDoc
+    initialDoc,
+    serverHooks
 ], { logging: false, FirebaseDependency: Firebase });
 var storeObj = {
     plugins: [easyFirestores, easyAccess]

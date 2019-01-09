@@ -6,6 +6,7 @@ import mainCharacter from './mainCharacter'
 import testNestedFillables from './testNestedFillables'
 import testNestedGuard from './testNestedGuard'
 import initialDoc from './initialDoc'
+import serverHooks from './serverHooks'
 import createFirestores from '../../../src/index'
 import createEasyAccess from 'vuex-easy-access'
 // import Firebase from '../firestoreMock'
@@ -21,7 +22,8 @@ const easyFirestores = createFirestores(
     testMutations2,
     testNestedFillables,
     testNestedGuard,
-    initialDoc
+    initialDoc,
+    serverHooks
   ],
   {logging: false, FirebaseDependency: Firebase}
 )
