@@ -4,7 +4,9 @@ import { firestore } from 'firebase/app';
 import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
 import merge from 'merge-anything';
 import { findAndReplace, findAndReplaceIf } from 'find-and-replace-anything';
+import { compareObjectProps } from 'compare-anything';
 import filter from 'filter-anything';
+import flatten from 'flatten-anything';
 
 require('@firebase/firestore');
 
@@ -982,7 +984,8 @@ function pluginActions (Firebase$$1) {
                 return querySnapshot;
             });
         },
-        applyHooksAndUpdateState: function (_a, _b) {
+        applyHooksAndUpdateState: function (// this is only on server retrievals
+        _a, _b) {
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             var change = _b.change, id = _b.id, _c = _b.doc, doc = _c === void 0 ? {} : _c;
             var store = this;
@@ -996,6 +999,7 @@ function pluginActions (Firebase$$1) {
                         commit('DELETE_DOC', id);
                         break;
                     default:
+                        dispatch('deleteMissingProps', _doc);
                         commit('PATCH_DOC', _doc);
                         break;
                 }
@@ -1008,6 +1012,34 @@ function pluginActions (Firebase$$1) {
             else {
                 storeUpdateFn(doc);
             }
+        },
+        deleteMissingProps: function (_a, doc) {
+            var getters = _a.getters, commit = _a.commit;
+            var defaultValues = getters.defaultValues;
+            var searchTarget = (getters.collectionMode)
+                ? getters.storeRef[doc.id]
+                : getters.storeRef;
+            var compareInfo = compareObjectProps(doc, defaultValues, searchTarget);
+            Object.keys(compareInfo.presentIn).forEach(function (prop) {
+                // don't worry about props not in fillables
+                if (getters.fillables.length && !getters.fillables.includes(prop)) {
+                    return;
+                }
+                // don't worry about props in guard
+                if (getters.guard.includes(prop))
+                    return;
+                // where is the prop present?
+                var presence = compareInfo.presentIn[prop];
+                var propNotInDoc = (!presence.includes(0));
+                var propNotInDefaultValues = (!presence.includes(1));
+                // delete props that are not present in the doc and default values
+                if (propNotInDoc && propNotInDefaultValues) {
+                    var path = (getters.collectionMode)
+                        ? doc.id + ".prop"
+                        : prop;
+                    return commit('DELETE_PROP', path);
+                }
+            });
         },
         openDBChannel: function (_a, pathVariables) {
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
@@ -1274,36 +1306,6 @@ function pluginActions (Firebase$$1) {
     };
 }
 
-function retrievePaths(object, path, result) {
-    if (!isPlainObject(object) ||
-        !Object.keys(object).length ||
-        object.methodName === 'FieldValue.serverTimestamp') {
-        if (!path)
-            return object;
-        result[path] = object;
-        return result;
-    }
-    return Object.keys(object).reduce(function (carry, key) {
-        var pathUntilNow = (path)
-            ? path + '.'
-            : '';
-        var newPath = pathUntilNow + key;
-        var extra = retrievePaths(object[key], newPath, result);
-        return Object.assign(carry, extra);
-    }, {});
-}
-/**
- * Flattens an object from {a: {b: {c: 'd'}}} to {'a.b.c': 'd'}
- *
- * @export
- * @param {object} object the object to flatten
- * @returns {AnyObject} the flattened object
- */
-function flattenToPaths (object) {
-    var result = {};
-    return retrievePaths(object, null, result);
-}
-
 /**
  * A function returning the getters object
  *
@@ -1364,10 +1366,15 @@ function pluginGetters (Firebase$$1) {
         guard: function (state) {
             return state._conf.sync.guard.concat(['_conf', '_sync']);
         },
+        defaultValues: function (state, getters) {
+            if (!getters.collectionMode)
+                return getters.storeRef;
+            return merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues // depreciated
+            );
+        },
         cleanUpRetrievedDoc: function (state, getters, rootState, rootGetters) {
             return function (doc, id) {
-                var defaultValues = merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues, // depreciated
-                state._conf.serverChange.convertTimestamps);
+                var defaultValues = merge(getters.defaultValues, state._conf.serverChange.convertTimestamps);
                 var cleanDoc = setDefaultValues(doc, defaultValues);
                 cleanDoc.id = id;
                 return cleanDoc;
@@ -1406,7 +1413,7 @@ function pluginGetters (Firebase$$1) {
                     patchData = findAndReplaceIf(patchData, checkFn);
                     // clean up item
                     var cleanedPatchData = filter(patchData, getters.fillables, getters.guard);
-                    var itemToUpdate = flattenToPaths(cleanedPatchData);
+                    var itemToUpdate = flatten(cleanedPatchData);
                     // add id (required to get ref later at apiHelpers.ts)
                     itemToUpdate.id = id;
                     carry[id] = itemToUpdate;

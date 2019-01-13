@@ -3,7 +3,7 @@ import { defaultMutations } from 'vuex-easy-access'
 function initialState () {
   return {
     iniProp: true,
-    propToBeDeleted: true
+    defaultPropsNotToBeDeleted: true
   }
 }
 

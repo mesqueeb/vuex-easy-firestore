@@ -3,7 +3,7 @@ import { getDeepRef } from 'vuex-easy-access'
 import { findAndReplaceIf } from 'find-and-replace-anything'
 import filter from 'filter-anything'
 import merge from 'merge-anything'
-import flattenToPaths from '../utils/objectFlattenToPaths'
+import flatten from 'flatten-anything'
 import { getPathVarMatches } from '../utils/apiHelpers'
 import { isArrayHelper } from '../utils/arrayHelpers'
 import setDefaultValues from '../utils/setDefaultValues'
@@ -77,11 +77,17 @@ export default function (Firebase: any): AnyObject {
     guard: (state) => {
       return state._conf.sync.guard.concat(['_conf', '_sync'])
     },
+    defaultValues: (state, getters) => {
+      if (!getters.collectionMode) return getters.storeRef
+      return merge(
+        state._conf.sync.defaultValues,
+        state._conf.serverChange.defaultValues // depreciated
+      )
+    },
     cleanUpRetrievedDoc: (state, getters, rootState, rootGetters) =>
       (doc, id) => {
         const defaultValues = merge(
-          state._conf.sync.defaultValues,
-          state._conf.serverChange.defaultValues, // depreciated
+          getters.defaultValues,
           state._conf.serverChange.convertTimestamps,
         )
         const cleanDoc = setDefaultValues(doc, defaultValues)
@@ -117,7 +123,7 @@ export default function (Firebase: any): AnyObject {
           patchData = findAndReplaceIf(patchData, checkFn)
           // clean up item
           const cleanedPatchData = filter(patchData, getters.fillables, getters.guard)
-          const itemToUpdate = flattenToPaths(cleanedPatchData)
+          const itemToUpdate = flatten(cleanedPatchData)
           // add id (required to get ref later at apiHelpers.ts)
           itemToUpdate.id = id
           carry[id] = itemToUpdate
