@@ -77,11 +77,17 @@ export default function (Firebase: any): AnyObject {
     guard: (state) => {
       return state._conf.sync.guard.concat(['_conf', '_sync'])
     },
+    defaultValues: (state, getters) => {
+      if (!getters.collectionMode) return getters.storeRef
+      return merge(
+        state._conf.sync.defaultValues,
+        state._conf.serverChange.defaultValues // depreciated
+      )
+    },
     cleanUpRetrievedDoc: (state, getters, rootState, rootGetters) =>
       (doc, id) => {
         const defaultValues = merge(
-          state._conf.sync.defaultValues,
-          state._conf.serverChange.defaultValues, // depreciated
+          getters.defaultValues,
           state._conf.serverChange.convertTimestamps,
         )
         const cleanDoc = setDefaultValues(doc, defaultValues)

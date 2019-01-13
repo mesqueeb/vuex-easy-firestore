@@ -7,21 +7,48 @@ import {storeGetters as store} from './helpers/index.cjs.js'
 const state = store.state.serverHooks
 const docRef = store.getters['serverHooks/dbRef']
 
-test('[serverHook] prop deletion is reflected locally', async t => {
+test('[serverHook] server prop deletion', async t => {
   let doc, docR
-  t.is(state.propToBeDeleted, true)
   await store.dispatch('serverHooks/openDBChannel')
-  t.is(state.propToBeDeleted, true)
-  await wait(2)
+  // ==============================================
+  // default props will never be deleted from state
+  // ==============================================
+  await wait(3)
+  // make sure defaultPropsNotToBeDeleted is true also on the server
+  store.dispatch('serverHooks/set', {defaultPropsNotToBeDeleted: true})
+  t.is(state.defaultPropsNotToBeDeleted, true)
+  await wait(3)
   docR = await docRef.get()
   doc = docR.data()
-  t.is(doc.propToBeDeleted, true)
+  t.is(doc.defaultPropsNotToBeDeleted, true)
+  // all is good, now let's delete it from just the server
   await docRef.update({
-    propToBeDeleted: Firebase.firestore.FieldValue.delete()
+    defaultPropsNotToBeDeleted: Firebase.firestore.FieldValue.delete()
   })
-  await wait(2)
+  await wait(3)
   docR = await docRef.get()
   doc = docR.data()
-  t.is(doc.propToBeDeleted, undefined)
-  t.is(state.propToBeDeleted, undefined)
+  t.is(doc.defaultPropsNotToBeDeleted, undefined)
+  t.is(state.defaultPropsNotToBeDeleted, true)
+
+  // ==============================================
+  // non-default prop deletion is reflected locally
+  // ==============================================
+  await wait(3)
+  // make sure defaultPropsNotToBeDeleted is true also on the server
+  store.dispatch('serverHooks/set', {addedPropToBeDeleted: true})
+  t.is(state.addedPropToBeDeleted, true)
+  await wait(3)
+  docR = await docRef.get()
+  doc = docR.data()
+  t.is(doc.addedPropToBeDeleted, true)
+  // all is good, now let's delete it from just the server
+  await docRef.update({
+    addedPropToBeDeleted: Firebase.firestore.FieldValue.delete()
+  })
+  await wait(3)
+  docR = await docRef.get()
+  doc = docR.data()
+  t.is(doc.addedPropToBeDeleted, undefined)
+  t.is(state.addedPropToBeDeleted, true)
 })

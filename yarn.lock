@@ -2737,6 +2737,13 @@ commondir@^1.0.1:
   resolved "https://registry.yarnpkg.com/commondir/-/commondir-1.0.1.tgz#ddd800da0c66127393cca5950ea968a3aaf1253b"
   integrity sha1-3dgA2gxmEnOTzKWVDqloo6rxJTs=
 
+compare-anything@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/compare-anything/-/compare-anything-0.0.1.tgz#b12b7beca9faa19fec42e0a7e4de21c0749c07bb"
+  integrity sha512-n0XCviA3qj0LJVfdd/UAoOHsBKa979eIk+4c7z4DW3cDUUmyeBajv5SQ2XQZr/qSYqTdzWzbI7nCNMvQvt3S3A==
+  dependencies:
+    is-what "^3.1.2"
+
 component-emitter@^1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/component-emitter/-/component-emitter-1.2.1.tgz#137918d6d78283f7df7a6b7c5a63e140e69425e6"

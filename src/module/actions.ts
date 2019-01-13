@@ -1,6 +1,7 @@
 import { isArray, isPlainObject, isFunction, isNumber } from 'is-what'
 import merge from 'merge-anything'
 import { findAndReplaceIf } from 'find-and-replace-anything'
+import { compareObjectProps } from 'compare-anything'
 import { AnyObject, IPluginState } from '../declarations'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
@@ -335,14 +336,31 @@ export default function (Firebase: any): AnyObject {
         storeUpdateFn(doc)
       }
     },
-    deleteMissingProps ({getters, state, commit, dispatch}, doc) {
+    deleteMissingProps ({getters, commit}, doc) {
+      const defaultValues = getters.defaultValues
       const searchTarget = (getters.collectionMode)
         ? getters.storeRef[doc.id]
         : getters.storeRef
-      function checkFn (prop) {
-        return prop
-      }
-      findAndReplaceIf(searchTarget, checkFn)
+      const compareInfo = compareObjectProps(doc, defaultValues, searchTarget)
+      Object.keys(compareInfo.presentIn).forEach(prop => {
+        // don't worry about props not in fillables
+        if (getters.fillables.length && !getters.fillables.includes(prop)) {
+          return
+        }
+        // don't worry about props in guard
+        if (getters.guard.includes(prop)) return
+        // where is the prop present?
+        const presence = compareInfo.presentIn[prop]
+        const propNotInDoc = (!presence.includes(0))
+        const propNotInDefaultValues = (!presence.includes(1))
+        // delete props that are not present in the doc and default values
+        if (propNotInDoc && propNotInDefaultValues) {
+          const path = (getters.collectionMode)
+            ? `${doc.id}.prop`
+            : prop
+          return commit('DELETE_PROP', path)
+        }
+      })
     },
     openDBChannel ({getters, state, commit, dispatch}, pathVariables) {
       dispatch('setUserId')

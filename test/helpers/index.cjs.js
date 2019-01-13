@@ -8,6 +8,7 @@ var isWhat = require('is-what');
 var Firebase = require('firebase/app');
 var merge = _interopDefault(require('merge-anything'));
 var findAndReplaceAnything = require('find-and-replace-anything');
+var compareAnything = require('compare-anything');
 var filter = _interopDefault(require('filter-anything'));
 var flatten = _interopDefault(require('flatten-anything'));
 var Vue = _interopDefault(require('vue'));
@@ -1214,14 +1215,32 @@ function pluginActions (Firebase$$1) {
             }
         },
         deleteMissingProps: function (_a, doc) {
-            var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
+            var getters = _a.getters, commit = _a.commit;
+            var defaultValues = getters.defaultValues;
             var searchTarget = (getters.collectionMode)
                 ? getters.storeRef[doc.id]
                 : getters.storeRef;
-            function checkFn(prop) {
-                return prop;
-            }
-            findAndReplaceAnything.findAndReplaceIf(searchTarget, checkFn);
+            var compareInfo = compareAnything.compareObjectProps(doc, defaultValues, searchTarget);
+            Object.keys(compareInfo.presentIn).forEach(function (prop) {
+                // don't worry about props not in fillables
+                if (getters.fillables.length && !getters.fillables.includes(prop)) {
+                    return;
+                }
+                // don't worry about props in guard
+                if (getters.guard.includes(prop))
+                    return;
+                // where is the prop present?
+                var presence = compareInfo.presentIn[prop];
+                var propNotInDoc = (!presence.includes(0));
+                var propNotInDefaultValues = (!presence.includes(1));
+                // delete props that are not present in the doc and default values
+                if (propNotInDoc && propNotInDefaultValues) {
+                    var path = (getters.collectionMode)
+                        ? doc.id + ".prop"
+                        : prop;
+                    return commit('DELETE_PROP', path);
+                }
+            });
         },
         openDBChannel: function (_a, pathVariables) {
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
@@ -1548,10 +1567,15 @@ function pluginGetters (Firebase$$1) {
         guard: function (state) {
             return state._conf.sync.guard.concat(['_conf', '_sync']);
         },
+        defaultValues: function (state, getters) {
+            if (!getters.collectionMode)
+                return getters.storeRef;
+            return merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues // depreciated
+            );
+        },
         cleanUpRetrievedDoc: function (state, getters, rootState, rootGetters) {
             return function (doc, id) {
-                var defaultValues = merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues, // depreciated
-                state._conf.serverChange.convertTimestamps);
+                var defaultValues = merge(getters.defaultValues, state._conf.serverChange.convertTimestamps);
                 var cleanDoc = setDefaultValues(doc, defaultValues);
                 cleanDoc.id = id;
                 return cleanDoc;
