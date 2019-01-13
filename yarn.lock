@@ -4151,6 +4151,13 @@ flat-cache@^1.2.1:
     graceful-fs "^4.1.2"
     write "^0.2.1"
 
+flatten-anything@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/flatten-anything/-/flatten-anything-1.0.0.tgz#b175cb4d717a8831e644ccd4254fc663b05a0594"
+  integrity sha512-UvNcgCjMiFw1nSsf/b4j9MA+apNwNmhXYNSs0pozt/J+9FN3RUb3TQKkGwG/qa0o46tqOXahuZWGpqWHCLVtaQ==
+  dependencies:
+    is-what "^3.1.2"
+
 flatten@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/flatten/-/flatten-1.0.2.tgz#dae46a9d78fbe25292258cc1e780a41d95c03782"
@@ -5176,6 +5183,11 @@ is-what@^3.1.1:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/is-what/-/is-what-3.1.1.tgz#3a22d7f38fc50ffa58cd29b29f0450c489afd65d"
   integrity sha512-zJfgPtIFG4G9tdJraBhkYxKF7TtSBADu7FLqV544UlzCwfZxOV5lhvRcRpcoT+C/dRf4npOaBVFRHuqD3XXqJw==
+
+is-what@^3.1.2:
+  version "3.1.2"
+  resolved "https://registry.yarnpkg.com/is-what/-/is-what-3.1.2.tgz#988de1c66e43a6f26a2ee5b8a9c99fa8b91dce7d"
+  integrity sha512-Vq0dNCSDGxl7KnquuKqkVaOHOCllLn9zm7WObKckKI8F1I5ATH6erjeqhSVag0rTv4n+J8+hSGtuDaCIM2q/qA==
 
 is-windows@^1.0.2:
   version "1.0.2"

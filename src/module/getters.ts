@@ -3,7 +3,7 @@ import { getDeepRef } from 'vuex-easy-access'
 import { findAndReplaceIf } from 'find-and-replace-anything'
 import filter from 'filter-anything'
 import merge from 'merge-anything'
-import flattenToPaths from '../utils/objectFlattenToPaths'
+import flatten from 'flatten-anything'
 import { getPathVarMatches } from '../utils/apiHelpers'
 import { isArrayHelper } from '../utils/arrayHelpers'
 import setDefaultValues from '../utils/setDefaultValues'
@@ -117,7 +117,7 @@ export default function (Firebase: any): AnyObject {
           patchData = findAndReplaceIf(patchData, checkFn)
           // clean up item
           const cleanedPatchData = filter(patchData, getters.fillables, getters.guard)
-          const itemToUpdate = flattenToPaths(cleanedPatchData)
+          const itemToUpdate = flatten(cleanedPatchData)
           // add id (required to get ref later at apiHelpers.ts)
           itemToUpdate.id = id
           carry[id] = itemToUpdate

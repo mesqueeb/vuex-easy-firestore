@@ -9,6 +9,7 @@ var Firebase = require('firebase/app');
 var merge = _interopDefault(require('merge-anything'));
 var findAndReplaceAnything = require('find-and-replace-anything');
 var filter = _interopDefault(require('filter-anything'));
+var flatten = _interopDefault(require('flatten-anything'));
 var Vue = _interopDefault(require('vue'));
 var Vuex = _interopDefault(require('vuex'));
 
@@ -1183,7 +1184,8 @@ function pluginActions (Firebase$$1) {
                 return querySnapshot;
             });
         },
-        applyHooksAndUpdateState: function (_a, _b) {
+        applyHooksAndUpdateState: function (// this is only on server retrievals
+        _a, _b) {
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             var change = _b.change, id = _b.id, _c = _b.doc, doc = _c === void 0 ? {} : _c;
             var store = this;
@@ -1197,6 +1199,7 @@ function pluginActions (Firebase$$1) {
                         commit('DELETE_DOC', id);
                         break;
                     default:
+                        dispatch('deleteMissingProps', _doc);
                         commit('PATCH_DOC', _doc);
                         break;
                 }
@@ -1209,6 +1212,16 @@ function pluginActions (Firebase$$1) {
             else {
                 storeUpdateFn(doc);
             }
+        },
+        deleteMissingProps: function (_a, doc) {
+            var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
+            var searchTarget = (getters.collectionMode)
+                ? getters.storeRef[doc.id]
+                : getters.storeRef;
+            function checkFn(prop) {
+                return prop;
+            }
+            findAndReplaceAnything.findAndReplaceIf(searchTarget, checkFn);
         },
         openDBChannel: function (_a, pathVariables) {
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
@@ -1475,36 +1488,6 @@ function pluginActions (Firebase$$1) {
     };
 }
 
-function retrievePaths(object, path, result) {
-    if (!isWhat.isPlainObject(object) ||
-        !Object.keys(object).length ||
-        object.methodName === 'FieldValue.serverTimestamp') {
-        if (!path)
-            return object;
-        result[path] = object;
-        return result;
-    }
-    return Object.keys(object).reduce(function (carry, key) {
-        var pathUntilNow = (path)
-            ? path + '.'
-            : '';
-        var newPath = pathUntilNow + key;
-        var extra = retrievePaths(object[key], newPath, result);
-        return Object.assign(carry, extra);
-    }, {});
-}
-/**
- * Flattens an object from {a: {b: {c: 'd'}}} to {'a.b.c': 'd'}
- *
- * @export
- * @param {object} object the object to flatten
- * @returns {AnyObject} the flattened object
- */
-function flattenToPaths (object) {
-    var result = {};
-    return retrievePaths(object, null, result);
-}
-
 /**
  * A function returning the getters object
  *
@@ -1607,7 +1590,7 @@ function pluginGetters (Firebase$$1) {
                     patchData = findAndReplaceAnything.findAndReplaceIf(patchData, checkFn);
                     // clean up item
                     var cleanedPatchData = filter(patchData, getters.fillables, getters.guard);
-                    var itemToUpdate = flattenToPaths(cleanedPatchData);
+                    var itemToUpdate = flatten(cleanedPatchData);
                     // add id (required to get ref later at apiHelpers.ts)
                     itemToUpdate.id = id;
                     carry[id] = itemToUpdate;

@@ -37,6 +37,7 @@
   "dependencies": {
     "filter-anything": "^1.1.0",
     "find-and-replace-anything": "^2.0.0",
+    "flatten-anything": "^1.0.0",
     "is-what": "^3.1.1",
     "merge-anything": "^2.2.0",
     "vuex-easy-access": "^3.1.5"

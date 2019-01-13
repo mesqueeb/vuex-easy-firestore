@@ -1,5 +1,6 @@
 import { isArray, isPlainObject, isFunction, isNumber } from 'is-what'
 import merge from 'merge-anything'
+import { findAndReplaceIf } from 'find-and-replace-anything'
 import { AnyObject, IPluginState } from '../declarations'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
@@ -306,7 +307,7 @@ export default function (Firebase: any): AnyObject {
           return querySnapshot
         })
     },
-    applyHooksAndUpdateState (
+    applyHooksAndUpdateState ( // this is only on server retrievals
       {getters, state, commit, dispatch},
       {change, id, doc = {}}: {change: 'added' | 'removed' | 'modified', id: string, doc: AnyObject}
     ) {
@@ -321,6 +322,7 @@ export default function (Firebase: any): AnyObject {
             commit('DELETE_DOC', id)
             break
           default:
+            dispatch('deleteMissingProps', _doc)
             commit('PATCH_DOC', _doc)
             break
         }
@@ -332,6 +334,15 @@ export default function (Firebase: any): AnyObject {
       } else {
         storeUpdateFn(doc)
       }
+    },
+    deleteMissingProps ({getters, state, commit, dispatch}, doc) {
+      const searchTarget = (getters.collectionMode)
+        ? getters.storeRef[doc.id]
+        : getters.storeRef
+      function checkFn (prop) {
+        return prop
+      }
+      findAndReplaceIf(searchTarget, checkFn)
     },
     openDBChannel ({getters, state, commit, dispatch}, pathVariables) {
       dispatch('setUserId')
