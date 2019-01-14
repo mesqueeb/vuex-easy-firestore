@@ -951,6 +951,9 @@ function pluginActions (Firebase$$1) {
             }
             // 'doc' mode:
             if (!getters.collectionMode) {
+                if (state._conf.logging) {
+                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: blue');
+                }
                 dispatch('setUserId');
                 return getters.dbRef.get().then(function (_doc) {
                     if (!_doc.exists) {

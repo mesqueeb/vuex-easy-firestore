@@ -5,7 +5,7 @@ declare const _default: {
     statePropName: string;
     state: {
         iniProp: boolean;
-        propToBeDeleted: boolean;
+        defaultPropsNotToBeDeleted: boolean;
     };
     mutations: import("vuex-easy-access/types/declarations").AnyObject;
     actions: {};
