@@ -6,7 +6,7 @@ import { getKeysFromPath } from 'vuex-easy-access'
 import { isArray } from 'is-what'
 import iniModule from './module'
 import { IEasyFirestoreModule } from './declarations'
-import { arrayUnion, arrayRemove } from './utils/arrayHelpers'
+import { arrayUnion, arrayRemove, setBaseFirebase } from './utils/arrayHelpers'
 
 /**
  * Create vuex-easy-firestore modules. Add as single plugin to Vuex Store.
@@ -30,6 +30,7 @@ function vuexEasyFirestore (
     FirebaseDependency: Firebase
   }
 ): any {
+  if (FirebaseDependency) setBaseFirebase(FirebaseDependency)
   return store => {
     // Get an array of config files
     if (!isArray(easyFirestoreModule)) easyFirestoreModule = [easyFirestoreModule]

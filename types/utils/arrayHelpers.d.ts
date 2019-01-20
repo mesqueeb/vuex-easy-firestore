@@ -1,5 +1,6 @@
 import * as Firebase from 'firebase/app';
 import 'firebase/firestore';
+export declare function setBaseFirebase(firebaseDependency: any): void;
 export declare class ArrayUnion {
     isArrayHelper: boolean;
     payload: any;
