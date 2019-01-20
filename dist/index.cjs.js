@@ -129,6 +129,10 @@ function error (error) {
     return error;
 }
 
+var _BaseFirebase = Firebase;
+function setBaseFirebase(firebaseDependency) {
+    _BaseFirebase = firebaseDependency;
+}
 var ArrayUnion = /** @class */ (function () {
     function ArrayUnion(payload) {
         this.isArrayHelper = true;
@@ -141,7 +145,7 @@ var ArrayUnion = /** @class */ (function () {
         return array;
     };
     ArrayUnion.prototype.getFirestoreFieldValue = function () {
-        return Firebase.firestore.FieldValue.arrayUnion(this.payload);
+        return _BaseFirebase.firestore.FieldValue.arrayUnion(this.payload);
     };
     return ArrayUnion;
 }());
@@ -158,7 +162,7 @@ var ArrayRemove = /** @class */ (function () {
         return array;
     };
     ArrayRemove.prototype.getFirestoreFieldValue = function () {
-        return Firebase.firestore.FieldValue.arrayRemove(this.payload);
+        return _BaseFirebase.firestore.FieldValue.arrayRemove(this.payload);
     };
     return ArrayRemove;
 }());
@@ -956,10 +960,10 @@ function pluginActions (Firebase$$1) {
             }
             // 'doc' mode:
             if (!getters.collectionMode) {
+                dispatch('setUserId');
                 if (state._conf.logging) {
                     console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: blue');
                 }
-                dispatch('setUserId');
                 return getters.dbRef.get().then(function (_doc) {
                     if (!_doc.exists) {
                         // No initial doc found in docMode
@@ -1647,6 +1651,8 @@ function vuexEasyFirestore(easyFirestoreModule, _a) {
         logging: false,
         FirebaseDependency: Firebase
     } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.FirebaseDependency, FirebaseDependency = _d === void 0 ? Firebase : _d;
+    if (FirebaseDependency)
+        setBaseFirebase(FirebaseDependency);
     return function (store) {
         // Get an array of config files
         if (!isWhat.isArray(easyFirestoreModule))
