@@ -32,17 +32,22 @@ export default function (Firebase: any): AnyObject {
   return {
     firestorePathComplete (state, getters) {
       let path = state._conf.firestorePath
-      const requireUser = path.includes('{userId}')
-      if (requireUser) {
-        if (!getters.signedIn) return path
-        if (!Firebase.auth().currentUser) return path
-        const userId = Firebase.auth().currentUser.uid
-        path = path.replace('{userId}', userId)
-      }
       Object.keys(state._sync.pathVariables).forEach(key => {
         const pathPiece = state._sync.pathVariables[key]
         path = path.replace(`{${key}}`, `${pathPiece}`)
       })
+      const requireUser = path.includes('{userId}')
+      if (requireUser) {
+        const userId = state._sync.userId
+        if (
+          getters.signedIn &&
+          isString(userId) &&
+          userId !== '' &&
+          userId !== '{userId}'
+        ) {
+          path = path.replace('{userId}', userId)
+        }
+      }
       return path
     },
     signedIn: (state, getters, rootState, rootGetters) => {

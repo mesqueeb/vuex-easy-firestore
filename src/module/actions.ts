@@ -18,16 +18,18 @@ import error from './errors'
  */
 export default function (Firebase: any): AnyObject {
   return {
-    setUserId: ({commit, state}, userId) => {
+    setUserId: ({commit, getters}, userId) => {
+      if (userId === undefined) userId = null
+      // undefined cannot be synced to firestore
       if (!userId && Firebase.auth().currentUser) {
         userId = Firebase.auth().currentUser.uid
       }
-      if (!userId) {
-        const requireUser = state._conf.firestorePath.includes('{userId}')
-        if (requireUser) console.error('[vuex-easy-firestore]', 'Firebase was not authenticated and no userId was passed.')
-        return
-      }
       commit('SET_USER_ID', userId)
+      if (getters.firestorePathComplete.includes('{userId}')) {
+        const error = '[vuex-easy-firestore] error trying to set userId.\n Try doing \`dispatch(\'module/setUserId\', userId)\ before openDBChannel or fetchAndAdd.`'
+        console.error(error)
+        throw error
+      }
     },
     clearUser: ({commit}) => {
       commit('CLEAR_USER')
@@ -448,8 +450,10 @@ export default function (Firebase: any): AnyObject {
     },
     insert ({state, getters, commit, dispatch}, doc) {
       const store = this
-      if (!getters.signedIn) return 'auth/invalid-user-token'
+      // check payload
       if (!doc) return
+      // check userId
+      dispatch('setUserId')
       const newDoc = doc
       if (!newDoc.id) newDoc.id = getters.dbRef.doc().id
       // apply default values
@@ -469,9 +473,10 @@ export default function (Firebase: any): AnyObject {
     },
     insertBatch ({state, getters, commit, dispatch}, docs) {
       const store = this
-      if (!getters.signedIn) return 'auth/invalid-user-token'
+      // check payload
       if (!isArray(docs) || !docs.length) return []
-
+      // check userId
+      dispatch('setUserId')
       const newDocs = docs.reduce((carry, _doc) => {
         const newDoc = getValueFromPayloadPiece(_doc)
         if (!newDoc.id) newDoc.id = getters.dbRef.doc().id
@@ -495,10 +500,13 @@ export default function (Firebase: any): AnyObject {
     },
     patch ({state, getters, commit, dispatch}, doc) {
       const store = this
+      // check payload
       if (!doc) return
       const id = (getters.collectionMode) ? getId(doc) : undefined
       const value = (getters.collectionMode) ? getValueFromPayloadPiece(doc) : doc
       if (!id && getters.collectionMode) return
+      // check userId
+      dispatch('setUserId')
       // add id to value
       if (!value.id) value.id = id
       // define the store update
@@ -519,8 +527,11 @@ export default function (Firebase: any): AnyObject {
       {doc, ids = []}
     ) {
       const store = this
+      // check payload
       if (!doc) return []
       if (!isArray(ids) || !ids.length) return []
+      // check userId
+      dispatch('setUserId')
       // define the store update
       function storeUpdateFn (_doc, _ids) {
         _ids.forEach(_id => {
@@ -537,8 +548,11 @@ export default function (Firebase: any): AnyObject {
       return ids
     },
     delete ({state, getters, commit, dispatch}, id) {
-      if (!id) return
       const store = this
+      // check payload
+      if (!id) return
+      // check userId
+      dispatch('setUserId')
       function storeUpdateFn (_id) {
         // id is a path
         const pathDelete = (_id.includes('.') || !getters.collectionMode)
@@ -564,8 +578,11 @@ export default function (Firebase: any): AnyObject {
       {state, getters, commit, dispatch}: {state: IPluginState, getters: any, commit: any, dispatch: any},
       ids)
     {
-      if (!isArray(ids) || !ids.length) return []
       const store = this
+      // check payload
+      if (!isArray(ids) || !ids.length) return []
+      // check userId
+      dispatch('setUserId')
       // define the store update
       function storeUpdateFn (_ids) {
         _ids.forEach(_id => {
