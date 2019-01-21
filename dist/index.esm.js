@@ -3,9 +3,10 @@ import * as Firebase from 'firebase/app';
 import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
 import merge from 'merge-anything';
 import { findAndReplace, findAndReplaceIf } from 'find-and-replace-anything';
+import flatten from 'flatten-anything';
 import { compareObjectProps } from 'compare-anything';
 import filter from 'filter-anything';
-import flatten from 'flatten-anything';
+import copy from 'copy-anything';
 
 require('@firebase/firestore');
 
@@ -1033,7 +1034,10 @@ function pluginActions (Firebase$$1) {
             var searchTarget = (getters.collectionMode)
                 ? getters.storeRef[doc.id]
                 : getters.storeRef;
-            var compareInfo = compareObjectProps(doc, defaultValues, searchTarget);
+            var compareInfo = compareObjectProps(flatten(doc), // presentIn 0
+            flatten(defaultValues), // presentIn 1
+            flatten(searchTarget) // presentIn 2
+            );
             Object.keys(compareInfo.presentIn).forEach(function (prop) {
                 // don't worry about props not in fillables
                 if (getters.fillables.length && !getters.fillables.includes(prop)) {
@@ -1042,6 +1046,9 @@ function pluginActions (Firebase$$1) {
                 // don't worry about props in guard
                 if (getters.guard.includes(prop))
                     return;
+                // don't worry about props starting with _sync or _conf
+                if (prop.split('.')[0] === '_sync' || prop.split('.')[0] === '_conf')
+                    return;
                 // where is the prop present?
                 var presence = compareInfo.presentIn[prop];
                 var propNotInDoc = (!presence.includes(0));
@@ -1049,7 +1056,7 @@ function pluginActions (Firebase$$1) {
                 // delete props that are not present in the doc and default values
                 if (propNotInDoc && propNotInDefaultValues) {
                     var path = (getters.collectionMode)
-                        ? doc.id + ".prop"
+                        ? doc.id + "." + prop
                         : prop;
                     return commit('DELETE_PROP', path);
                 }
@@ -1396,8 +1403,6 @@ function pluginGetters (Firebase$$1) {
             return state._conf.sync.guard.concat(['_conf', '_sync']);
         },
         defaultValues: function (state, getters) {
-            if (!getters.collectionMode)
-                return getters.storeRef;
             return merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues // depreciated
             );
         },
@@ -1631,7 +1636,8 @@ function errorCheck (config) {
  * @returns {IStore} the module ready to be included in your vuex store
  */
 function iniModule (userConfig, FirebaseDependency) {
-    var conf = merge({ state: {}, mutations: {}, actions: {}, getters: {} }, defaultConfig, userConfig);
+    // prepare state._conf
+    var conf = copy(merge({ state: {}, mutations: {}, actions: {}, getters: {} }, defaultConfig, userConfig));
     if (!errorCheck(conf))
         return;
     var userState = conf.state;
@@ -1642,12 +1648,21 @@ function iniModule (userConfig, FirebaseDependency) {
     delete conf.mutations;
     delete conf.actions;
     delete conf.getters;
+    // prepare rest of state
     var docContainer = {};
     if (conf.statePropName)
         docContainer[conf.statePropName] = {};
+    var restOfState = merge(userState, docContainer);
+    // if 'doc' mode, set merge initial state onto default values
+    if (conf.firestoreRefType === 'doc') {
+        var defaultValsInState = (conf.statePropName)
+            ? restOfState[conf.statePropName]
+            : restOfState;
+        conf.sync.defaultValues = copy(merge(defaultValsInState, conf.sync.defaultValues));
+    }
     return {
         namespaced: true,
-        state: merge(pluginState(), userState, docContainer, { _conf: conf }),
+        state: merge(pluginState(), restOfState, { _conf: conf }),
         mutations: merge(userMutations, pluginMutations(merge(userState, { _conf: conf }))),
         actions: merge(userActions, pluginActions(FirebaseDependency)),
         getters: merge(userGetters, pluginGetters(FirebaseDependency))
