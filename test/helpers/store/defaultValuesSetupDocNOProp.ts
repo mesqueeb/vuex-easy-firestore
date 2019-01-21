@@ -2,23 +2,30 @@ import { defaultMutations } from 'vuex-easy-access'
 
 function initialState () {
   return {
-    iniProp: true,
-    defaultPropsNotToBeDeleted: true
+    defaultVal1: true,
+    nestedDefaultVal: {
+      type1: 'sun'
+    },
   }
 }
 
 export default {
   // easy firestore config
-  firestorePath: 'configTests/serverHooks', // this should be randomized each test
+  firestorePath: 'configTests/defaultValuesSetupDocNOProp',
   firestoreRefType: 'doc',
-  moduleName: 'serverHooks',
+  moduleName: 'defaultValuesSetupDocNOProp',
   statePropName: '',
+  sync: {
+    defaultValues: {
+      defaultVal2: true,
+      nestedDefaultVal: {
+        type2: 'moon'
+      },
+    },
+  },
   // module
   state: initialState(),
   mutations: defaultMutations(initialState()),
   actions: {},
   getters: {},
-  sync: {
-    guard: ['created_by', 'created_at', 'updated_by', 'updated_at']
-  }
 }

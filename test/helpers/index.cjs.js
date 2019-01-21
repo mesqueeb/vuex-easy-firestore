@@ -8,9 +8,10 @@ var Firebase = require('firebase/app');
 var isWhat = require('is-what');
 var merge = _interopDefault(require('merge-anything'));
 var findAndReplaceAnything = require('find-and-replace-anything');
+var flatten = _interopDefault(require('flatten-anything'));
 var compareAnything = require('compare-anything');
 var filter = _interopDefault(require('filter-anything'));
-var flatten = _interopDefault(require('flatten-anything'));
+var copy = _interopDefault(require('copy-anything'));
 var Vue = _interopDefault(require('vue'));
 var Vuex = _interopDefault(require('vuex'));
 
@@ -82,6 +83,112 @@ function initialState$1() {
     return {
         name: 'Satoshi',
         pokemonBelt: [],
+        items: [],
+        multipleFastEdits: null,
+    };
+}
+var mainCharacter = {
+    // easy firestore config
+    firestorePath: 'playerCharacters/Satoshi',
+    firestoreRefType: 'doc',
+    moduleName: 'mainCharacter',
+    statePropName: '',
+    // module
+    state: initialState$1(),
+    mutations: createEasyAccess.defaultMutations(initialState$1()),
+    actions: {},
+    getters: {},
+};
+
+function initialState$2() {
+    return {
+        playerName: 'Satoshi',
+        pokemon: {},
+        stats: {
+            pokemonCount: 0,
+            freedCount: 0,
+        }
+    };
+}
+var pokemonBoxVEA = {
+    // easy firestore config
+    firestorePath: 'pokemonBoxesVEA/Satoshi/pokemon',
+    firestoreRefType: 'collection',
+    moduleName: 'pokemonBoxVEA',
+    statePropName: 'pokemon',
+    // Sync:
+    sync: {
+        where: [['id', '==', '{pokeId}']],
+        orderBy: [],
+        fillables: [
+            'fillable',
+            'name',
+            'id',
+            'type',
+            'freed',
+            'nested',
+            'addedBeforeInsert',
+            'addedBeforePatch',
+            'arr1',
+            'arr2',
+            'guarded',
+            'defaultVal',
+            'nestedDefaultVal'
+        ],
+        guard: ['guarded'],
+        defaultValues: {
+            defaultVal: true,
+            nestedDefaultVal: {
+                types: 'moon'
+            },
+        },
+        // HOOKS for local changes:
+        insertHook: function (updateStore, doc, store) {
+            doc.addedBeforeInsert = true;
+            return updateStore(doc);
+        },
+        patchHook: function (updateStore, doc, store) {
+            doc.addedBeforePatch = true;
+            return updateStore(doc);
+        },
+        deleteHook: function (updateStore, id, store) {
+            if (id === 'stopBeforeDelete')
+                return;
+            return updateStore(id);
+        }
+    },
+    // module
+    state: initialState$2(),
+    mutations: createEasyAccess.defaultMutations(initialState$2()),
+    actions: {},
+    getters: {},
+};
+
+function initialState$3() {
+    return {
+        name: 'Satoshi',
+        pokemonBelt: [],
+        items: [],
+        multipleFastEdits: null,
+    };
+}
+var mainCharacterVEA = {
+    // easy firestore config
+    firestorePath: 'playerCharactersVEA/Satoshi',
+    firestoreRefType: 'doc',
+    moduleName: 'mainCharacterVEA',
+    statePropName: '',
+    // module
+    state: initialState$3(),
+    mutations: createEasyAccess.defaultMutations(initialState$3()),
+    actions: {},
+    getters: {},
+};
+
+function initialState$4() {
+    return {
+        name: 'Satoshi',
+        pokemonBelt: [],
         items: []
     };
 }
@@ -92,13 +199,13 @@ var testPathVar = {
     moduleName: 'testPathVar',
     statePropName: '',
     // module
-    state: initialState$1(),
-    mutations: createEasyAccess.defaultMutations(initialState$1()),
+    state: initialState$4(),
+    mutations: createEasyAccess.defaultMutations(initialState$4()),
     actions: {},
     getters: {},
 };
 
-function initialState$2() {
+function initialState$5() {
     return {
         name: 'Satoshi',
         pokemonBelt: [],
@@ -112,13 +219,13 @@ var testMutations1 = {
     moduleName: 'testMutationsNoStateProp',
     statePropName: '',
     // module
-    state: initialState$2(),
-    mutations: createEasyAccess.defaultMutations(initialState$2()),
+    state: initialState$5(),
+    mutations: createEasyAccess.defaultMutations(initialState$5()),
     actions: {},
     getters: {},
 };
 
-function initialState$3() {
+function initialState$6() {
     return {
         name: 'Satoshi',
         pokemonBelt: [],
@@ -132,34 +239,13 @@ var testMutations2 = {
     moduleName: 'testMutationsWithStateProp',
     statePropName: 'putItHere',
     // module
-    state: initialState$3(),
-    mutations: createEasyAccess.defaultMutations(initialState$3()),
+    state: initialState$6(),
+    mutations: createEasyAccess.defaultMutations(initialState$6()),
     actions: {},
     getters: {},
 };
 
-function initialState$4() {
-    return {
-        name: 'Satoshi',
-        pokemonBelt: [],
-        items: [],
-        multipleFastEdits: null,
-    };
-}
-var mainCharacter = {
-    // easy firestore config
-    firestorePath: 'playerCharacters/Satoshi',
-    firestoreRefType: 'doc',
-    moduleName: 'mainCharacter',
-    statePropName: '',
-    // module
-    state: initialState$4(),
-    mutations: createEasyAccess.defaultMutations(initialState$4()),
-    actions: {},
-    getters: {},
-};
-
-function initialState$5() {
+function initialState$7() {
     return {
         nested: {
             fillables: {
@@ -179,13 +265,13 @@ var testNestedFillables = {
         fillables: ['nested.fillables.yes'],
     },
     // module
-    state: initialState$5(),
-    mutations: createEasyAccess.defaultMutations(initialState$5()),
+    state: initialState$7(),
+    mutations: createEasyAccess.defaultMutations(initialState$7()),
     actions: {},
     getters: {},
 };
 
-function initialState$6() {
+function initialState$8() {
     return {
         nested: {
             guard: true,
@@ -202,13 +288,13 @@ var testNestedGuard = {
         guard: ['nested.guard'],
     },
     // module
-    state: initialState$6(),
-    mutations: createEasyAccess.defaultMutations(initialState$6()),
+    state: initialState$8(),
+    mutations: createEasyAccess.defaultMutations(initialState$8()),
     actions: {},
     getters: {},
 };
 
-function initialState$7() {
+function initialState$9() {
     return {
         iniProp: true,
     };
@@ -220,13 +306,13 @@ var initialDoc = {
     moduleName: 'initialDoc',
     statePropName: '',
     // module
-    state: initialState$7(),
-    mutations: createEasyAccess.defaultMutations(initialState$7()),
+    state: initialState$9(),
+    mutations: createEasyAccess.defaultMutations(initialState$9()),
     actions: {},
     getters: {},
 };
 
-function initialState$8() {
+function initialState$a() {
     return {
         iniProp: true,
         defaultPropsNotToBeDeleted: true
@@ -234,13 +320,13 @@ function initialState$8() {
 }
 var serverHooks = {
     // easy firestore config
-    firestorePath: 'docs/serverHooks',
+    firestorePath: 'configTests/serverHooks',
     firestoreRefType: 'doc',
     moduleName: 'serverHooks',
     statePropName: '',
     // module
-    state: initialState$8(),
-    mutations: createEasyAccess.defaultMutations(initialState$8()),
+    state: initialState$a(),
+    mutations: createEasyAccess.defaultMutations(initialState$a()),
     actions: {},
     getters: {},
     sync: {
@@ -375,6 +461,128 @@ var user = {
     // module
     state: {},
     mutations: {},
+    getters: {},
+};
+
+function initialState$b() {
+    return {
+        defaultVal1: true,
+        nestedDefaultVal: {
+            type1: 'sun'
+        },
+    };
+}
+var defaultValuesSetupColNOProp = {
+    // easy firestore config
+    firestorePath: 'configTests/defaultValuesSetupColNOProp',
+    firestoreRefType: 'collection',
+    moduleName: 'defaultValuesSetupColNOProp',
+    statePropName: '',
+    sync: {
+        defaultValues: {
+            defaultVal: true,
+            nestedDefaultVal: {
+                type: 'moon'
+            },
+        },
+    },
+    // module
+    state: initialState$b(),
+    mutations: createEasyAccess.defaultMutations(initialState$b()),
+    actions: {},
+    getters: {},
+};
+
+function initialState$c() {
+    return {
+        NOT: false,
+        prop: {
+            defaultVal1: true,
+            nestedDefaultVal: {
+                type1: 'sun'
+            },
+        }
+    };
+}
+var defaultValuesSetupColProp = {
+    // easy firestore config
+    firestorePath: 'configTests/defaultValuesSetupColProp',
+    firestoreRefType: 'collection',
+    moduleName: 'defaultValuesSetupColProp',
+    statePropName: 'prop',
+    sync: {
+        defaultValues: {
+            defaultVal: true,
+            nestedDefaultVal: {
+                type: 'moon'
+            },
+        },
+    },
+    // module
+    state: initialState$c(),
+    mutations: createEasyAccess.defaultMutations(initialState$c()),
+    actions: {},
+    getters: {},
+};
+
+function initialState$d() {
+    return {
+        defaultVal1: true,
+        nestedDefaultVal: {
+            type1: 'sun'
+        },
+    };
+}
+var defaultValuesSetupDocNOProp = {
+    // easy firestore config
+    firestorePath: 'configTests/defaultValuesSetupDocNOProp',
+    firestoreRefType: 'doc',
+    moduleName: 'defaultValuesSetupDocNOProp',
+    statePropName: '',
+    sync: {
+        defaultValues: {
+            defaultVal2: true,
+            nestedDefaultVal: {
+                type2: 'moon'
+            },
+        },
+    },
+    // module
+    state: initialState$d(),
+    mutations: createEasyAccess.defaultMutations(initialState$d()),
+    actions: {},
+    getters: {},
+};
+
+function initialState$e() {
+    return {
+        NOT: false,
+        prop: {
+            defaultVal1: true,
+            nestedDefaultVal: {
+                type1: 'sun'
+            },
+        }
+    };
+}
+var defaultValuesSetupDocProp = {
+    // easy firestore config
+    firestorePath: 'configTests/defaultValuesSetupDocProp',
+    firestoreRefType: 'doc',
+    moduleName: 'defaultValuesSetupDocProp',
+    statePropName: 'prop',
+    sync: {
+        defaultValues: {
+            defaultVal2: true,
+            nestedDefaultVal: {
+                type2: 'moon'
+            },
+        },
+    },
+    // module
+    state: initialState$e(),
+    mutations: createEasyAccess.defaultMutations(initialState$e()),
+    actions: {},
     getters: {},
 };
 
@@ -1280,7 +1488,10 @@ function pluginActions (Firebase$$1) {
             var searchTarget = (getters.collectionMode)
                 ? getters.storeRef[doc.id]
                 : getters.storeRef;
-            var compareInfo = compareAnything.compareObjectProps(doc, defaultValues, searchTarget);
+            var compareInfo = compareAnything.compareObjectProps(flatten(doc), // presentIn 0
+            flatten(defaultValues), // presentIn 1
+            flatten(searchTarget) // presentIn 2
+            );
             Object.keys(compareInfo.presentIn).forEach(function (prop) {
                 // don't worry about props not in fillables
                 if (getters.fillables.length && !getters.fillables.includes(prop)) {
@@ -1289,6 +1500,9 @@ function pluginActions (Firebase$$1) {
                 // don't worry about props in guard
                 if (getters.guard.includes(prop))
                     return;
+                // don't worry about props starting with _sync or _conf
+                if (prop.split('.')[0] === '_sync' || prop.split('.')[0] === '_conf')
+                    return;
                 // where is the prop present?
                 var presence = compareInfo.presentIn[prop];
                 var propNotInDoc = (!presence.includes(0));
@@ -1296,7 +1510,7 @@ function pluginActions (Firebase$$1) {
                 // delete props that are not present in the doc and default values
                 if (propNotInDoc && propNotInDefaultValues) {
                     var path = (getters.collectionMode)
-                        ? doc.id + ".prop"
+                        ? doc.id + "." + prop
                         : prop;
                     return commit('DELETE_PROP', path);
                 }
@@ -1643,8 +1857,6 @@ function pluginGetters (Firebase$$1) {
             return state._conf.sync.guard.concat(['_conf', '_sync']);
         },
         defaultValues: function (state, getters) {
-            if (!getters.collectionMode)
-                return getters.storeRef;
             return merge(state._conf.sync.defaultValues, state._conf.serverChange.defaultValues // depreciated
             );
         },
@@ -1878,7 +2090,8 @@ function errorCheck (config) {
  * @returns {IStore} the module ready to be included in your vuex store
  */
 function iniModule (userConfig, FirebaseDependency) {
-    var conf = merge({ state: {}, mutations: {}, actions: {}, getters: {} }, defaultConfig, userConfig);
+    // prepare state._conf
+    var conf = copy(merge({ state: {}, mutations: {}, actions: {}, getters: {} }, defaultConfig, userConfig));
     if (!errorCheck(conf))
         return;
     var userState = conf.state;
@@ -1889,12 +2102,21 @@ function iniModule (userConfig, FirebaseDependency) {
     delete conf.mutations;
     delete conf.actions;
     delete conf.getters;
+    // prepare rest of state
     var docContainer = {};
     if (conf.statePropName)
         docContainer[conf.statePropName] = {};
+    var restOfState = merge(userState, docContainer);
+    // if 'doc' mode, set merge initial state onto default values
+    if (conf.firestoreRefType === 'doc') {
+        var defaultValsInState = (conf.statePropName)
+            ? restOfState[conf.statePropName]
+            : restOfState;
+        conf.sync.defaultValues = copy(merge(defaultValsInState, conf.sync.defaultValues));
+    }
     return {
         namespaced: true,
-        state: merge(pluginState(), userState, docContainer, { _conf: conf }),
+        state: merge(pluginState(), restOfState, { _conf: conf }),
         mutations: merge(userMutations, pluginMutations(merge(userState, { _conf: conf }))),
         actions: merge(userActions, pluginActions(FirebaseDependency)),
         getters: merge(userGetters, pluginGetters(FirebaseDependency))
@@ -1941,6 +2163,8 @@ var easyAccess = createEasyAccess__default({ vuexEasyFirestore: true });
 var easyFirestores = vuexEasyFirestore([
     pokemonBox,
     mainCharacter,
+    pokemonBoxVEA,
+    mainCharacterVEA,
     testPathVar,
     testMutations1,
     testMutations2,
@@ -1948,7 +2172,11 @@ var easyFirestores = vuexEasyFirestore([
     testNestedGuard,
     initialDoc,
     serverHooks,
-    user
+    user,
+    defaultValuesSetupColNOProp,
+    defaultValuesSetupColProp,
+    defaultValuesSetupDocNOProp,
+    defaultValuesSetupDocProp,
 ], { logging: false, FirebaseDependency: Firebase });
 var storeObj = {
     plugins: [easyFirestores, easyAccess]
@@ -1956,21 +2184,9 @@ var storeObj = {
 
 Vue.use(Vuex);
 var store = new Vuex.Store(storeObj);
-var storeActions = new Vuex.Store(storeObj);
-var storeDBChannel = new Vuex.Store(storeObj);
-var storeGetters = new Vuex.Store(storeObj);
-var storeMutations = new Vuex.Store(storeObj);
-var storeSyncConfig = new Vuex.Store(storeObj);
-var storeVuexEasyAccess = new Vuex.Store(storeObj);
 
 var stores = /*#__PURE__*/Object.freeze({
-  store: store,
-  storeActions: storeActions,
-  storeDBChannel: storeDBChannel,
-  storeGetters: storeGetters,
-  storeMutations: storeMutations,
-  storeSyncConfig: storeSyncConfig,
-  storeVuexEasyAccess: storeVuexEasyAccess
+  store: store
 });
 
 // import './firestore'

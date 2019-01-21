@@ -1,13 +1,19 @@
 import pokemonBox from './pokemonBox'
+import mainCharacter from './mainCharacter'
+import pokemonBoxVEA from './pokemonBoxVEA'
+import mainCharacterVEA from './mainCharacterVEA'
 import testPathVar from './testPathVar'
 import testMutations1 from './testMutationsNoStateProp'
 import testMutations2 from './testMutationsWithStateProp'
-import mainCharacter from './mainCharacter'
 import testNestedFillables from './testNestedFillables'
 import testNestedGuard from './testNestedGuard'
 import initialDoc from './initialDoc'
 import serverHooks from './serverHooks'
 import user from './user'
+import defaultValuesSetupColNOProp from './defaultValuesSetupColNOProp'
+import defaultValuesSetupColProp from './defaultValuesSetupColProp'
+import defaultValuesSetupDocNOProp from './defaultValuesSetupDocNOProp'
+import defaultValuesSetupDocProp from './defaultValuesSetupDocProp'
 import createFirestores from '../../../src/index'
 import createEasyAccess from 'vuex-easy-access'
 // import Firebase from '../firestoreMock'
@@ -18,6 +24,8 @@ const easyFirestores = createFirestores(
   [
     pokemonBox,
     mainCharacter,
+    pokemonBoxVEA,
+    mainCharacterVEA,
     testPathVar,
     testMutations1,
     testMutations2,
@@ -25,7 +33,11 @@ const easyFirestores = createFirestores(
     testNestedGuard,
     initialDoc,
     serverHooks,
-    user
+    user,
+    defaultValuesSetupColNOProp,
+    defaultValuesSetupColProp,
+    defaultValuesSetupDocNOProp,
+    defaultValuesSetupDocProp,
   ],
   {logging: false, FirebaseDependency: Firebase}
 )

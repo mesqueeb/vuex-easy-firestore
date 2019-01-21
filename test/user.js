@@ -1,6 +1,6 @@
 import test from 'ava'
 import wait from './helpers/wait'
-import {storeSyncConfig as store} from './helpers/index.cjs.js'
+import {store} from './helpers/index.cjs.js'
 import * as firebase from 'firebase/app'
 import 'firebase/auth'
 

@@ -3,7 +3,7 @@ import { isDate } from 'is-what'
 // import wait from './helpers/wait'
 import * as Firebase from 'firebase/app'
 import 'firebase/firestore'
-import {storeGetters as store} from './helpers/index.cjs.js'
+import {store} from './helpers/index.cjs.js'
 
 const box = store.state.pokemonBox
 const char = store.state.mainCharacter

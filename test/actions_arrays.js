@@ -1,7 +1,7 @@
 import test from 'ava'
 import { isPlainObject, isArray, isDate } from 'is-what'
 import wait from './helpers/wait'
-import {storeActions as store} from './helpers/index.cjs.js'
+import {store} from './helpers/index.cjs.js'
 import { arrayUnion, arrayRemove } from '../src/index'
 
 import * as Firebase from 'firebase/app'

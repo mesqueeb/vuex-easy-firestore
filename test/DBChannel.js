@@ -1,6 +1,6 @@
 import test from 'ava'
 import wait from './helpers/wait'
-import {storeDBChannel as store} from './helpers/index.cjs.js'
+import {store} from './helpers/index.cjs.js'
 
 const tpv = store.state.testPathVar
 test('[openDBChannel] check firestorePathComplete after openDBChannel', async t => {

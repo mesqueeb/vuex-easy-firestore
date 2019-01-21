@@ -1,5 +1,5 @@
 import test from 'ava'
-import {storeMutations as store} from './helpers/index.cjs.js'
+import {store} from './helpers/index.cjs.js'
 import * as Firebase from 'firebase/app'
 import 'firebase/firestore'
 
