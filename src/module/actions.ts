@@ -202,7 +202,7 @@ export default function (Firebase: any): AnyObject {
       return new Promise((resolve, reject) => {
         // log
         if (state._conf.logging) {
-          console.log(`%c fetch for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: blue')
+          console.log(`%c fetch for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: lightcoral')
         }
         if (!getters.signedIn) return resolve()
         const identifier = createFetchIdentifier({where, orderBy})
@@ -281,7 +281,7 @@ export default function (Firebase: any): AnyObject {
       if (!getters.collectionMode) {
         dispatch('setUserId')
         if (state._conf.logging) {
-          console.log(`%c fetch for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: blue')
+          console.log(`%c fetch for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: lightcoral')
         }
         return getters.dbRef.get().then(_doc => {
           if (!_doc.exists) {
@@ -392,7 +392,7 @@ export default function (Firebase: any): AnyObject {
       return new Promise((resolve, reject) => {
         // log
         if (state._conf.logging) {
-          console.log(`%c openDBChannel for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: blue')
+          console.log(`%c openDBChannel for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: lightcoral')
         }
         const unsubscribe = dbRef.onSnapshot(querySnapshot => {
           const source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'

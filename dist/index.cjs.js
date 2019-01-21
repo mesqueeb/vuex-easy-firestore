@@ -887,7 +887,7 @@ function pluginActions (Firebase$$1) {
             return new Promise(function (resolve, reject) {
                 // log
                 if (state._conf.logging) {
-                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: blue');
+                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: lightcoral');
                 }
                 if (!getters.signedIn)
                     return resolve();
@@ -970,7 +970,7 @@ function pluginActions (Firebase$$1) {
             if (!getters.collectionMode) {
                 dispatch('setUserId');
                 if (state._conf.logging) {
-                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: blue');
+                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: lightcoral');
                 }
                 return getters.dbRef.get().then(function (_doc) {
                     if (!_doc.exists) {
@@ -1086,7 +1086,7 @@ function pluginActions (Firebase$$1) {
             return new Promise(function (resolve, reject) {
                 // log
                 if (state._conf.logging) {
-                    console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: blue');
+                    console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: lightcoral');
                 }
                 var unsubscribe = dbRef.onSnapshot(function (querySnapshot) {
                     var source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server';
