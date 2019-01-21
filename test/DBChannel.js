@@ -33,8 +33,9 @@ const char = store.state.mainCharacter
 test('[openDBChannel] check where filter after openDBChannel', async t => {
   let res
   char._conf.sync.where = [['hi.{userId}.docs.{name}', '==', '{big}']]
-  char._sync.userId = 'charlie'
   // 0. initial path
+  char._sync.userId = 'charlie'
+  char._sync.signedIn = true
   res = store.getters['mainCharacter/getWhereArrays']()
   t.deepEqual(char._sync.pathVariables, {})
   t.deepEqual(char._conf.sync.where, [['hi.{userId}.docs.{name}', '==', '{big}']])
@@ -45,13 +46,14 @@ test('[openDBChannel] check where filter after openDBChannel', async t => {
   res = store.getters['mainCharacter/getWhereArrays']()
   t.deepEqual(char._sync.pathVariables, {name: 'Luca'})
   t.deepEqual(char._conf.sync.where, [['hi.{userId}.docs.{name}', '==', '{big}']])
-  t.deepEqual(res, [['hi.charlie.docs.Luca', '==', '{big}']])
+  // 'charlie' is replaced by 'null' because there is no actual authenticated user in this test
+  t.deepEqual(res, [['hi.null.docs.Luca', '==', '{big}']])
   // 2. open again
   store.dispatch('mainCharacter/openDBChannel', {name: 'Mesqueeb'}).catch(console.error)
   await wait(2)
   res = store.getters['mainCharacter/getWhereArrays']()
   t.deepEqual(char._sync.pathVariables, {name: 'Mesqueeb'})
-  t.deepEqual(res, [['hi.charlie.docs.Mesqueeb', '==', '{big}']])
+  t.deepEqual(res, [['hi.null.docs.Mesqueeb', '==', '{big}']])
 })
 
 // test('sync: where', async t => {

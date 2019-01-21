@@ -26,8 +26,13 @@ export default function (userState: object): AnyObject {
       if (orderBy && isArray(orderBy)) state._conf.sync.orderBy = orderBy
     },
     SET_USER_ID (state, userId) {
-      state._sync.signedIn = true
-      state._sync.userId = userId
+      if (!userId) {
+        state._sync.signedIn = false
+        state._sync.userId = null
+      } else {
+        state._sync.signedIn = true
+        state._sync.userId = userId
+      }
     },
     CLEAR_USER (state) {
       state._sync.signedIn = false

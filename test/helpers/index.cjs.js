@@ -512,8 +512,14 @@ function pluginMutations (userState) {
                 state._conf.sync.orderBy = orderBy;
         },
         SET_USER_ID: function (state, userId) {
-            state._sync.signedIn = true;
-            state._sync.userId = userId;
+            if (!userId) {
+                state._sync.signedIn = false;
+                state._sync.userId = null;
+            }
+            else {
+                state._sync.signedIn = true;
+                state._sync.userId = userId;
+            }
         },
         CLEAR_USER: function (state) {
             state._sync.signedIn = false;
@@ -911,17 +917,19 @@ function pluginActions (Firebase$$1) {
     var _this = this;
     return {
         setUserId: function (_a, userId) {
-            var commit = _a.commit, state = _a.state;
+            var commit = _a.commit, getters = _a.getters;
+            if (userId === undefined)
+                userId = null;
+            // undefined cannot be synced to firestore
             if (!userId && Firebase$$1.auth().currentUser) {
                 userId = Firebase$$1.auth().currentUser.uid;
             }
-            if (!userId) {
-                var requireUser = state._conf.firestorePath.includes('{userId}');
-                if (requireUser)
-                    console.error('[vuex-easy-firestore]', 'Firebase was not authenticated and no userId was passed.');
-                return;
-            }
             commit('SET_USER_ID', userId);
+            if (getters.firestorePathComplete.includes('{userId}')) {
+                var error_1 = '[vuex-easy-firestore] error trying to set userId.\n Try doing \`dispatch(\'module/setUserId\', userId)\ before openDBChannel or fetchAndAdd.`';
+                console.error(error_1);
+                throw error_1;
+            }
         },
         clearUser: function (_a) {
             var commit = _a.commit;
@@ -1384,10 +1392,11 @@ function pluginActions (Firebase$$1) {
         insert: function (_a, doc) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             var store = this;
-            if (!getters.signedIn)
-                return 'auth/invalid-user-token';
+            // check payload
             if (!doc)
                 return;
+            // check userId
+            dispatch('setUserId');
             var newDoc = doc;
             if (!newDoc.id)
                 newDoc.id = getters.dbRef.doc().id;
@@ -1409,10 +1418,11 @@ function pluginActions (Firebase$$1) {
         insertBatch: function (_a, docs) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             var store = this;
-            if (!getters.signedIn)
-                return 'auth/invalid-user-token';
+            // check payload
             if (!isWhat.isArray(docs) || !docs.length)
                 return [];
+            // check userId
+            dispatch('setUserId');
             var newDocs = docs.reduce(function (carry, _doc) {
                 var newDoc = getValueFromPayloadPiece(_doc);
                 if (!newDoc.id)
@@ -1438,12 +1448,15 @@ function pluginActions (Firebase$$1) {
         patch: function (_a, doc) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             var store = this;
+            // check payload
             if (!doc)
                 return;
             var id = (getters.collectionMode) ? getId(doc) : undefined;
             var value = (getters.collectionMode) ? getValueFromPayloadPiece(doc) : doc;
             if (!id && getters.collectionMode)
                 return;
+            // check userId
+            dispatch('setUserId');
             // add id to value
             if (!value.id)
                 value.id = id;
@@ -1464,10 +1477,13 @@ function pluginActions (Firebase$$1) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             var doc = _b.doc, _c = _b.ids, ids = _c === void 0 ? [] : _c;
             var store = this;
+            // check payload
             if (!doc)
                 return [];
             if (!isWhat.isArray(ids) || !ids.length)
                 return [];
+            // check userId
+            dispatch('setUserId');
             // define the store update
             function storeUpdateFn(_doc, _ids) {
                 _ids.forEach(function (_id) {
@@ -1485,9 +1501,12 @@ function pluginActions (Firebase$$1) {
         },
         delete: function (_a, id) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
+            var store = this;
+            // check payload
             if (!id)
                 return;
-            var store = this;
+            // check userId
+            dispatch('setUserId');
             function storeUpdateFn(_id) {
                 // id is a path
                 var pathDelete = (_id.includes('.') || !getters.collectionMode);
@@ -1513,9 +1532,12 @@ function pluginActions (Firebase$$1) {
         },
         deleteBatch: function (_a, ids) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
+            var store = this;
+            // check payload
             if (!isWhat.isArray(ids) || !ids.length)
                 return [];
-            var store = this;
+            // check userId
+            dispatch('setUserId');
             // define the store update
             function storeUpdateFn(_ids) {
                 _ids.forEach(function (_id) {
@@ -1570,19 +1592,20 @@ function pluginGetters (Firebase$$1) {
     return {
         firestorePathComplete: function (state, getters) {
             var path = state._conf.firestorePath;
-            var requireUser = path.includes('{userId}');
-            if (requireUser) {
-                if (!getters.signedIn)
-                    return path;
-                if (!Firebase$$1.auth().currentUser)
-                    return path;
-                var userId = Firebase$$1.auth().currentUser.uid;
-                path = path.replace('{userId}', userId);
-            }
             Object.keys(state._sync.pathVariables).forEach(function (key) {
                 var pathPiece = state._sync.pathVariables[key];
                 path = path.replace("{" + key + "}", "" + pathPiece);
             });
+            var requireUser = path.includes('{userId}');
+            if (requireUser) {
+                var userId = state._sync.userId;
+                if (getters.signedIn &&
+                    isWhat.isString(userId) &&
+                    userId !== '' &&
+                    userId !== '{userId}') {
+                    path = path.replace('{userId}', userId);
+                }
+            }
             return path;
         },
         signedIn: function (state, getters, rootState, rootGetters) {
@@ -1913,8 +1936,6 @@ var config = {
 };
 Firebase.initializeApp(config);
 var firestore = Firebase.firestore();
-var settings = { timestampsInSnapshots: true };
-firestore.settings(settings);
 
 var easyAccess = createEasyAccess__default({ vuexEasyFirestore: true });
 var easyFirestores = vuexEasyFirestore([
