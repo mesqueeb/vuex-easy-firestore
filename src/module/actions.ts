@@ -1,6 +1,6 @@
 import { isArray, isPlainObject, isFunction, isNumber } from 'is-what'
 import merge from 'merge-anything'
-import { findAndReplaceIf } from 'find-and-replace-anything'
+import flatten from 'flatten-anything'
 import { compareObjectProps } from 'compare-anything'
 import { AnyObject, IPluginState } from '../declarations'
 import setDefaultValues from '../utils/setDefaultValues'
@@ -202,7 +202,7 @@ export default function (Firebase: any): AnyObject {
       return new Promise((resolve, reject) => {
         // log
         if (state._conf.logging) {
-          console.log(`%c fetch for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: blue')
+          console.log(`%c fetch for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: lightcoral')
         }
         if (!getters.signedIn) return resolve()
         const identifier = createFetchIdentifier({where, orderBy})
@@ -281,7 +281,7 @@ export default function (Firebase: any): AnyObject {
       if (!getters.collectionMode) {
         dispatch('setUserId')
         if (state._conf.logging) {
-          console.log(`%c fetch for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: blue')
+          console.log(`%c fetch for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: lightcoral')
         }
         return getters.dbRef.get().then(_doc => {
           if (!_doc.exists) {
@@ -346,7 +346,11 @@ export default function (Firebase: any): AnyObject {
       const searchTarget = (getters.collectionMode)
         ? getters.storeRef[doc.id]
         : getters.storeRef
-      const compareInfo = compareObjectProps(doc, defaultValues, searchTarget)
+      const compareInfo = compareObjectProps(
+        flatten(doc), // presentIn 0
+        flatten(defaultValues), // presentIn 1
+        flatten(searchTarget) // presentIn 2
+      )
       Object.keys(compareInfo.presentIn).forEach(prop => {
         // don't worry about props not in fillables
         if (getters.fillables.length && !getters.fillables.includes(prop)) {
@@ -354,6 +358,8 @@ export default function (Firebase: any): AnyObject {
         }
         // don't worry about props in guard
         if (getters.guard.includes(prop)) return
+        // don't worry about props starting with _sync or _conf
+        if (prop.split('.')[0] === '_sync' || prop.split('.')[0] === '_conf') return
         // where is the prop present?
         const presence = compareInfo.presentIn[prop]
         const propNotInDoc = (!presence.includes(0))
@@ -361,7 +367,7 @@ export default function (Firebase: any): AnyObject {
         // delete props that are not present in the doc and default values
         if (propNotInDoc && propNotInDefaultValues) {
           const path = (getters.collectionMode)
-            ? `${doc.id}.prop`
+            ? `${doc.id}.${prop}`
             : prop
           return commit('DELETE_PROP', path)
         }
@@ -392,7 +398,7 @@ export default function (Firebase: any): AnyObject {
       return new Promise((resolve, reject) => {
         // log
         if (state._conf.logging) {
-          console.log(`%c openDBChannel for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: blue')
+          console.log(`%c openDBChannel for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: lightcoral')
         }
         const unsubscribe = dbRef.onSnapshot(querySnapshot => {
           const source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'

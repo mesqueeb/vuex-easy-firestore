@@ -83,7 +83,6 @@ export default function (Firebase: any): AnyObject {
       return state._conf.sync.guard.concat(['_conf', '_sync'])
     },
     defaultValues: (state, getters) => {
-      if (!getters.collectionMode) return getters.storeRef
       return merge(
         state._conf.sync.defaultValues,
         state._conf.serverChange.defaultValues // depreciated

@@ -1,5 +1,5 @@
 import { grabUntilApiLimit, makeBatchFromSyncstack, getPathVarMatches, createFetchIdentifier } from '../../src/utils/apiHelpers'
-import {storeGetters as store} from '../helpers/index.cjs.js'
+import {store} from '../helpers/index.cjs.js'
 import test from 'ava'
 
 const state = {

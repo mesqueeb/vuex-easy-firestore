@@ -1,13 +1,49 @@
 import test from 'ava'
 import wait from './helpers/wait'
-import {storeSyncConfig as store} from './helpers/index.cjs.js'
+import {store} from './helpers/index.cjs.js'
 
 const box = store.state.pokemonBox
 const boxRef = store.getters['pokemonBox/dbRef']
 // const char = store.state.mainCharacter
 // const charRef = store.getters['mainCharacter/dbRef']
 
-test('[COLLECTION] sync: defaultValues', async t => {
+const ColNOProp = store.state.defaultValuesSetupColNOProp._conf.sync.defaultValues
+const ColProp = store.state.defaultValuesSetupColProp._conf.sync.defaultValues
+const DocNOProp = store.state.defaultValuesSetupDocNOProp._conf.sync.defaultValues
+const DocProp = store.state.defaultValuesSetupDocProp._conf.sync.defaultValues
+
+test('defaultValues are set properly', async t => {
+  t.deepEqual(ColNOProp, {
+    defaultVal: true,
+    nestedDefaultVal: {
+      type: 'moon'
+    },
+  })
+  t.deepEqual(ColProp, {
+    defaultVal: true,
+    nestedDefaultVal: {
+      type: 'moon'
+    }
+  })
+  t.deepEqual(DocNOProp, {
+    defaultVal1: true,
+    defaultVal2: true,
+    nestedDefaultVal: {
+      type1: 'sun',
+      type2: 'moon'
+    },
+  })
+  t.deepEqual(DocProp, {
+    defaultVal1: true,
+    defaultVal2: true,
+    nestedDefaultVal: {
+      type1: 'sun',
+      type2: 'moon'
+    },
+  })
+})
+
+test('[COLLECTION] sync: defaultValues are added', async t => {
   const id = boxRef.doc().id
   store.dispatch('pokemonBox/insert', {id, name: 'Squirtle'})
     .catch(console.error)

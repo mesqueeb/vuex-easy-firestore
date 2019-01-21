@@ -1,3 +1,4 @@
+import copy from 'copy-anything'
 import merge from 'merge-anything'
 // store
 import { IStore, IEasyFirestoreModule } from '../declarations'
@@ -16,11 +17,12 @@ import errorCheck from './errorCheckConfig'
  * @returns {IStore} the module ready to be included in your vuex store
  */
 export default function (userConfig: IEasyFirestoreModule, FirebaseDependency: any): IStore {
-  const conf: IEasyFirestoreModule = merge(
-    {state: {}, mutations: {}, actions: {},getters: {}},
+  // prepare state._conf
+  const conf: IEasyFirestoreModule = copy(merge(
+    {state: {}, mutations: {}, actions: {}, getters: {}},
     defaultConfig,
     userConfig
-  )
+  ))
   if (!errorCheck(conf)) return
   const userState = conf.state
   const userMutations = conf.mutations
@@ -30,12 +32,23 @@ export default function (userConfig: IEasyFirestoreModule, FirebaseDependency: a
   delete conf.mutations
   delete conf.actions
   delete conf.getters
-
+  // prepare rest of state
   const docContainer = {}
   if (conf.statePropName) docContainer[conf.statePropName] = {}
+  const restOfState = merge(userState, docContainer)
+  // if 'doc' mode, set merge initial state onto default values
+  if (conf.firestoreRefType === 'doc') {
+    const defaultValsInState = (conf.statePropName)
+      ? restOfState[conf.statePropName]
+      : restOfState
+    conf.sync.defaultValues = copy(merge(
+      defaultValsInState,
+      conf.sync.defaultValues
+    ))
+  }
   return {
     namespaced: true,
-    state: merge(pluginState(), userState, docContainer, {_conf: conf}),
+    state: merge(pluginState(), restOfState, {_conf: conf}),
     mutations: merge(userMutations, pluginMutations(merge(userState, {_conf: conf}))),
     actions: merge(userActions, pluginActions(FirebaseDependency)),
     getters: merge(userGetters, pluginGetters(FirebaseDependency))

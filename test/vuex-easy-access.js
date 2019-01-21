@@ -2,15 +2,14 @@ import test from 'ava'
 import { isPlainObject, isArray, isDate } from 'is-what'
 import wait from './helpers/wait'
 import Firebase from './helpers/firestoreMock'
-import {storeVuexEasyAccess as store} from './helpers/index.cjs.js'
+import {store} from './helpers/index.cjs.js'
 
-const box = store.state.pokemonBox
-const char = store.state.mainCharacter
-const boxRef = store.getters['pokemonBox/dbRef']
-const charRef = store.getters['mainCharacter/dbRef']
+const box = store.state.pokemonBoxVEA
+const char = store.state.mainCharacterVEA
+const boxRef = store.getters['pokemonBoxVEA/dbRef']
+const charRef = store.getters['mainCharacterVEA/dbRef']
 
 test('[COLLECTION] set & delete: top lvl', async t => {
-  await wait(10)
   const id = boxRef.doc().id
   const id2 = boxRef.doc().id
   const date = new Date()
@@ -21,7 +20,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
     type: ['water'],
     meta: {date, firebaseServerTS: Firebase.firestore.FieldValue.serverTimestamp()}
   }
-  await store.set('pokemonBox/pokemon.*', pokemonValues)
+  await store.set('pokemonBoxVEA/pokemon.*', pokemonValues)
   await wait(2)
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Squirtle')
@@ -40,7 +39,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
     name: 'COOL Squirtle!',
     meta: {date: date2}
   }
-  store.set('pokemonBox/pokemon.*', pokemonValuesNew)
+  store.set('pokemonBoxVEA/pokemon.*', pokemonValuesNew)
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'COOL Squirtle!')
   t.deepEqual(box.pokemon[id].type, ['water'])
@@ -53,7 +52,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.deepEqual(doc.type, ['water'])
 
   // update arrays
-  store.set('pokemonBox/pokemon.*', {type: ['water', 'normal'], id})
+  store.set('pokemonBoxVEA/pokemon.*', {type: ['water', 'normal'], id})
   t.deepEqual(box.pokemon[id].type, ['water', 'normal'])
   await wait(2)
   docR = await boxRef.doc(id).get()
@@ -61,7 +60,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.deepEqual(doc.type, ['water', 'normal'])
 
   // SECOND SET + set chooses insert appropriately
-  store.set('pokemonBox/pokemon.*', {name: 'Charmander', id: id2})
+  store.set('pokemonBoxVEA/pokemon.*', {name: 'Charmander', id: id2})
   t.truthy(box.pokemon[id2])
   t.is(box.pokemon[id2].name, 'Charmander')
   await wait(2)
@@ -71,7 +70,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.is(doc.name, 'Charmander')
 
   // delete
-  store.delete('pokemonBox/pokemon.*', id)
+  store.delete('pokemonBoxVEA/pokemon.*', id)
   t.falsy(box.pokemon[id])
   await wait(2)
   docR = await boxRef.doc(id).get()
@@ -79,16 +78,15 @@ test('[COLLECTION] set & delete: top lvl', async t => {
 
   // DELETE
   t.truthy(box.pokemon[id2])
-  store.dispatch('pokemonBox/delete', id2)
+  store.dispatch('pokemonBoxVEA/delete', id2)
   t.falsy(box.pokemon[id2])
 })
 
 test('[COLLECTION] set & delete: deep', async t => {
-  await wait(10)
   let docR, doc
 
   const id = boxRef.doc().id
-  await store.set('pokemonBox/pokemon.*', {id, nested: {a: {met: {de: 'aba'}}}})
+  await store.set('pokemonBoxVEA/pokemon.*', {id, nested: {a: {met: {de: 'aba'}}}})
   t.truthy(box.pokemon[id])
   t.deepEqual(box.pokemon[id].nested, {a: {met: {de: 'aba'}}})
   await wait(2)
@@ -97,8 +95,8 @@ test('[COLLECTION] set & delete: deep', async t => {
   t.deepEqual(doc.nested, {a: {met: {de: 'aba'}}})
 
   // update
-  await store.set('pokemonBox/pokemon.*.nested.a.met.de', [id, 'ebe'])
-  // await store.set('pokemonBox/pokemon.*.nested.a.met.*', [id, {de: 'ebe'}])
+  await store.set('pokemonBoxVEA/pokemon.*.nested.a.met.de', [id, 'ebe'])
+  // await store.set('pokemonBoxVEA/pokemon.*.nested.a.met.*', [id, {de: 'ebe'}])
   t.deepEqual(box.pokemon[id].nested, {a: {met: {de: 'ebe'}}})
   await wait(2)
   docR = await boxRef.doc(id).get()
@@ -107,7 +105,7 @@ test('[COLLECTION] set & delete: deep', async t => {
   t.deepEqual(doc.nested, {a: {met: {de: 'ebe'}}})
 
   // delete
-  await store.delete('pokemonBox/pokemon.*.nested.a.met.de', [id])
+  await store.delete('pokemonBoxVEA/pokemon.*.nested.a.met.de', [id])
   t.deepEqual(box.pokemon[id].nested, {a: {met: {}}})
   await wait(2)
   docR = await boxRef.doc(id).get()
@@ -126,7 +124,7 @@ test('[COLLECTION] set & delete: deep', async t => {
 //   const id3 = boxRef.doc().id
 //   const c = {id: id3, name: 'Squirtle', type: {water: true}}
 //   const pokemonValues = [a, b, c]
-//   await store.dispatch('pokemonBox/insertBatch', pokemonValues)
+//   await store.dispatch('pokemonBoxVEA/insertBatch', pokemonValues)
 //     .catch(console.error)
 //   t.deepEqual(box.pokemon[id1], a)
 //   t.deepEqual(box.pokemon[id2], b)
@@ -147,13 +145,14 @@ test('[COLLECTION] set & delete: deep', async t => {
 // })
 
 test('[DOC] set & delete: top lvl', async t => {
-  await wait(10)
+  store.dispatch('mainCharacterVEA/openDBChannel')
+  await wait(3)
   // EXISTING prop set
-  await store.set('mainCharacter/items', ['Pokeball'])
+  await store.set('mainCharacterVEA/items', ['Pokeball'])
   t.true(char.items.includes('Pokeball'))
   t.deepEqual(char.items, ['Pokeball'])
   // NEW prop set
-  await store.set('mainCharacter/newProp', 'Klappie')
+  await store.set('mainCharacterVEA/newProp', 'Klappie')
   t.truthy(char.newProp)
   t.is(char.newProp, 'Klappie')
   await wait(2)
@@ -164,7 +163,7 @@ test('[DOC] set & delete: top lvl', async t => {
   t.is(doc.newProp, 'Klappie')
 
   // delete
-  await store.delete('mainCharacter/newProp')
+  await store.delete('mainCharacterVEA/newProp')
   t.falsy(char.newProp)
   await wait(2)
   docR = await charRef.get()
@@ -174,19 +173,20 @@ test('[DOC] set & delete: top lvl', async t => {
 })
 
 test('[DOC] set & delete: deep', async t => {
-  await wait(10)
-  await store.set('mainCharacter', {a: {met: {de: 'aba'}}})
+  await wait(3)
+  await store.set('mainCharacterVEA', {a: {met: {de: 'aba'}}})
   t.truthy(char.a.met.de)
   t.is(char.a.met.de, 'aba')
   await wait(2)
   let docR, doc
   docR = await charRef.get()
   doc = docR.data()
-  t.truthy(doc.a.met.de)
+  t.truthy(doc.a)
+  t.truthy(doc.a.met)
   t.is(doc.a.met.de, 'aba')
 
   // delete
-  await store.delete('mainCharacter/a.met.de')
+  await store.delete('mainCharacterVEA/a.met.de')
   t.truthy(char.a.met)
   t.falsy(char.a.met.de)
 })
@@ -195,15 +195,15 @@ test('[DOC] set & delete: deep', async t => {
 //   await wait(2)
 //   let res
 //   const id = boxRef.doc().id
-//   await store.set('pokemonBox/pokemon.*', {id, name: 'Jamie Lannister'})
+//   await store.set('pokemonBoxVEA/pokemon.*', {id, name: 'Jamie Lannister'})
 //   t.is(box.pokemon[id].name, 'Jamie Lannister')
 //   // dupe 1
-//   res = await store.dispatch('pokemonBox/duplicate', id)
+//   res = await store.dispatch('pokemonBoxVEA/duplicate', id)
 //   t.deepEqual(Object.keys(res), [id])
 //   const dId = res[id]
 //   t.is(box.pokemon[dId].name, 'Jamie Lannister')
 //   // dupe many
-//   res = await store.dispatch('pokemonBox/duplicateBatch', [id, dId])
+//   res = await store.dispatch('pokemonBoxVEA/duplicateBatch', [id, dId])
 //   t.deepEqual(Object.keys(res), [id, dId])
 //   t.is(box.pokemon[res[id]].name, 'Jamie Lannister')
 //   t.is(box.pokemon[res[dId]].name, 'Jamie Lannister')

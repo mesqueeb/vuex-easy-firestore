@@ -1,7 +1,7 @@
 import test from 'ava'
 import { isPlainObject } from 'is-what'
 import wait from './helpers/wait'
-import {storeActions as store} from './helpers/index.cjs.js'
+import {store} from './helpers/index.cjs.js'
 
 const box = store.state.pokemonBox
 const boxRef = store.getters['pokemonBox/dbRef']

@@ -2,23 +2,22 @@ import { defaultMutations } from 'vuex-easy-access'
 
 function initialState () {
   return {
-    iniProp: true,
-    defaultPropsNotToBeDeleted: true
+    name: 'Satoshi',
+    pokemonBelt: [],
+    items: [],
+    multipleFastEdits: null,
   }
 }
 
 export default {
   // easy firestore config
-  firestorePath: 'configTests/serverHooks', // this should be randomized each test
+  firestorePath: 'playerCharactersVEA/Satoshi',
   firestoreRefType: 'doc',
-  moduleName: 'serverHooks',
+  moduleName: 'mainCharacterVEA',
   statePropName: '',
   // module
   state: initialState(),
   mutations: defaultMutations(initialState()),
   actions: {},
   getters: {},
-  sync: {
-    guard: ['created_by', 'created_at', 'updated_by', 'updated_at']
-  }
 }

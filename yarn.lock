@@ -2865,6 +2865,13 @@ cookies@~0.7.1:
     depd "~1.1.2"
     keygrip "~1.0.2"
 
+copy-anything@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/copy-anything/-/copy-anything-1.1.0.tgz#d243475ede080b48d33821fac9a84c9c984bef2b"
+  integrity sha512-fA8D988xB27MB7Lz1h5KUDOGZRmoTsx1OYctPJCEqlD8jO+hqL6XSJiRPmvLmaxAi8zipgaQljiSmmYXTrZsIw==
+  dependencies:
+    is-what "^3.1.2"
+
 copy-concurrently@^1.0.0:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/copy-concurrently/-/copy-concurrently-1.0.5.tgz#92297398cae34937fcafd6ec8139c18051f0b5e0"

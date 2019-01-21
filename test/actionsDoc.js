@@ -1,7 +1,7 @@
 import test from 'ava'
 import { isArray } from 'is-what'
 import wait from './helpers/wait'
-import {storeActions as store} from './helpers/index.cjs.js'
+import {store} from './helpers/index.cjs.js'
 
 const char = store.state.mainCharacter
 const charRef = store.getters['mainCharacter/dbRef']

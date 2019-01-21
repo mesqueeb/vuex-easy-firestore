@@ -1,6 +1,6 @@
 import test from 'ava'
 import wait from './helpers/wait'
-import {storeSyncConfig as store} from './helpers/index.cjs.js'
+import {store} from './helpers/index.cjs.js'
 
 const box = store.state.pokemonBox
 const boxRef = store.getters['pokemonBox/dbRef']
@@ -15,7 +15,7 @@ test('[COLLECTION] sync: insertHook & patchHook', async t => {
   t.is(box.pokemon[id].name, 'Horsea')
   t.is(box.pokemon[id].addedBeforeInsert, true)
   t.is(box.pokemon[id].addedBeforePatch, undefined)
-  await wait(2)
+  await wait(3)
   docR = await boxRef.doc(id).get()
   doc = docR.data()
   t.truthy(doc)
