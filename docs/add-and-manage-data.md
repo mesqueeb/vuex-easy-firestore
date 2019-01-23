@@ -36,7 +36,7 @@ const myModule = {
   firestoreRefType: 'collection',
   moduleName: 'myModule',
   statePropName: 'data',
-  namespaced: true, // optional but recommended
+  namespaced: true, // automatically added
 }
 ```
 

@@ -18,7 +18,7 @@ const firestoreModule = {
     // If left blank it will be synced on the state of the module.
 
   namespaced: true,
-    // always best to do this imo! See more info at: https://vuex.vuejs.org/guide/modules.html#namespacing
+    // this is automatically added! See more info at: https://vuex.vuejs.org/guide/modules.html#namespacing
 
   // EVERYTHING BELOW IS OPTIONAL (only include what you use)
   // Related to the 2-way sync:

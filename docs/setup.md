@@ -25,7 +25,7 @@ const myModule = {
   firestoreRefType: 'collection', // or 'doc'
   moduleName: 'myModule',
   statePropName: 'data',
-  namespaced: true, // optional but recommended
+  namespaced: true, // automatically added
   // you can also add your own state/getters/mutations/actions
 }
 
@@ -33,7 +33,7 @@ const myModule = {
 const easyFirestore = createEasyFirestore(myModule, {logging: true})
 
 // include as PLUGIN in your vuex store:
-store: {
+const store = {
   // ... your store
   plugins: [easyFirestore]
 }
@@ -48,7 +48,7 @@ You can edit and add docs and all changes will be synced to Firestore! Please ch
 
 ### Dev logging
 
-Passing `{logging: true}` as second param will enable console.logging on each api call. This is recommended for debugging initially, but could be disabled on production.
+Passing `{logging: true}` as second param will enable console.logging on each api call. This is recommended for debugging initially, but should be disabled on production.
 
 ## First steps
 

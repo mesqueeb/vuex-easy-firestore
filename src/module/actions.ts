@@ -283,9 +283,10 @@ export default function (Firebase: any): AnyObject {
         if (state._conf.logging) {
           console.log(`%c fetch for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: lightcoral')
         }
-        return getters.dbRef.get().then(_doc => {
+        return getters.dbRef.get().then(async _doc => {
           if (!_doc.exists) {
             // No initial doc found in docMode
+            if (state._conf.sync.preventInitialDocInsertion) throw 'preventInitialDocInsertion'
             if (state._conf.logging) console.log('[vuex-easy-firestore] inserting initial doc')
             dispatch('insertInitialDoc')
             return _doc
@@ -406,6 +407,7 @@ export default function (Firebase: any): AnyObject {
           if (!getters.collectionMode) {
             if (!querySnapshot.data()) {
               // No initial doc found in docMode
+              if (state._conf.sync.preventInitialDocInsertion) return reject('preventInitialDocInsertion')
               if (state._conf.logging) console.log('[vuex-easy-firestore] inserting initial doc')
               dispatch('insertInitialDoc')
               return resolve()
