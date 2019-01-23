@@ -10,8 +10,9 @@ import { arrayUnion, arrayRemove } from './utils/arrayHelpers';
  * @param {{logging?: boolean, FirebaseDependency?: any}} extraConfig An object with `logging` and `FirebaseDependency` props. `logging` enables console logs for debugging. `FirebaseDependency` is the non-instanciated Firebase class you can pass. (defaults to the Firebase peer dependency)
  * @returns {*}
  */
-declare function vuexEasyFirestore(easyFirestoreModule: IEasyFirestoreModule | IEasyFirestoreModule[], { logging, FirebaseDependency }?: {
+declare function vuexEasyFirestore(easyFirestoreModule: IEasyFirestoreModule | IEasyFirestoreModule[], { logging, preventInitialDocInsertion, FirebaseDependency }?: {
     logging?: boolean;
+    preventInitialDocInsertion?: boolean;
     FirebaseDependency?: any;
 }): any;
 export { vuexEasyFirestore, arrayUnion, arrayRemove };

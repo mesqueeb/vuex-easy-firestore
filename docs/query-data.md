@@ -98,7 +98,7 @@ const myModule = {
   firestoreRefType: 'collection',
   moduleName: 'userData',
   statePropName: 'data',
-  namespaced: true, // optional but recommended
+  namespaced: true, // automatically added
 }
 ```
 
@@ -171,7 +171,7 @@ const myModule = {
   firestoreRefType: 'collection',
   moduleName: 'myModule',
   statePropName: 'data',
-  namespaced: true, // optional but recommended
+  namespaced: true, // automatically added
   sync: {
     where,
     orderBy
@@ -237,6 +237,78 @@ getters: {
   archivedNotes: (state) => {
     return Object.values(state.data).filter(note => note.archived)
   }
+}
+```
+
+## Automatic initial doc insertion
+
+> Only for 'doc' mode
+
+When your vuex-easy-firestore module has `firestoreRefType: 'doc'`, either with openDBChannel or fetchAndAdd it will try and find that single document in your Firestore, according to your `firestorePath`. However, sometimes there might be cases where this doc does not yet exist inside your Firestore. When this happens vuex-easy-firestore will automatically insert an initial doc for you.
+
+In the example below we have a setup where one document per page is fetched and added when a page is opened. The `pageId` is retrieved from Vue router:
+
+```js
+// Vuex module
+const myModule = {
+  firestorePath: 'pages/{pageId}',
+  firestoreRefType: 'doc',
+  moduleName: 'openPage',
+  statePropName: 'data',
+  namespaced: true, // automatically added
+}
+
+// Vue component
+export default {
+  name: 'openPage',
+  mounted () {
+    const pageId = this.$router.params.id
+    this.$store.dispatch('openPage/fetchAndAdd', {pageId})
+  },
+}
+```
+
+However, there might be cases where you want to prevent an initial doc to be added automatically. One example case might be when a user that visits the page doesn't have the permission to insert docs. In this case you can prevent the initial doc insert by vuex-easy-firestore entirely:
+
+```js
+// Vuex module
+const myModule = {
+  firestorePath: 'pages/{pageId}',
+  firestoreRefType: 'doc',
+  moduleName: 'openPage',
+  statePropName: 'data',
+  sync: {
+    preventInitialDocInsertion: true
+  }
+}
+
+// Vue component
+export default {
+  name: 'openPage',
+  mounted () {
+    const pageId = this.$router.params.id
+    this.$store.dispatch('openPage/fetchAndAdd', {pageId})
+      .catch(error => {
+        if (error === 'preventInitialDocInsertion') {
+          // an initial doc insertion was prevented
+        }
+      })
+  },
+}
+```
+
+You can also disable initial doc insertion on the top level for all modules:
+
+```js
+const easyFirestore = createEasyFirestore(
+  [module1, module2],
+  {preventInitialDocInsertion: true}
+)
+
+// include as PLUGIN in your vuex store:
+const store = {
+  // ... your store
+  plugins: [easyFirestore]
 }
 ```
 

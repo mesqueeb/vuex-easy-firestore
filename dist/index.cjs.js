@@ -67,6 +67,7 @@ var defaultConfig = {
         fillables: [],
         guard: [],
         defaultValues: {},
+        preventInitialDocInsertion: false,
         // HOOKS for local changes:
         insertHook: function (updateStore, doc, store) { return updateStore(doc); },
         patchHook: function (updateStore, doc, store) { return updateStore(doc); },
@@ -962,6 +963,7 @@ function pluginActions (Firebase$$1) {
         // where: [['archived', '==', true]]
         // orderBy: ['done_date', 'desc']
         ) {
+            var _this = this;
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             if (pathVariables === void 0) { pathVariables = { where: [], whereFilters: [], orderBy: [] }; }
             if (pathVariables && isWhat.isPlainObject(pathVariables)) {
@@ -973,19 +975,24 @@ function pluginActions (Firebase$$1) {
                 if (state._conf.logging) {
                     console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: lightcoral');
                 }
-                return getters.dbRef.get().then(function (_doc) {
-                    if (!_doc.exists) {
-                        // No initial doc found in docMode
-                        if (state._conf.logging)
-                            console.log('[vuex-easy-firestore] inserting initial doc');
-                        dispatch('insertInitialDoc');
-                        return _doc;
-                    }
-                    var id = getters.docModeId;
-                    var doc = getters.cleanUpRetrievedDoc(_doc.data(), id);
-                    dispatch('applyHooksAndUpdateState', { change: 'modified', id: id, doc: doc });
-                    return doc;
-                }).catch(function (error$$1) {
+                return getters.dbRef.get().then(function (_doc) { return __awaiter(_this, void 0, void 0, function () {
+                    var id, doc;
+                    return __generator(this, function (_a) {
+                        if (!_doc.exists) {
+                            // No initial doc found in docMode
+                            if (state._conf.sync.preventInitialDocInsertion)
+                                throw 'preventInitialDocInsertion';
+                            if (state._conf.logging)
+                                console.log('[vuex-easy-firestore] inserting initial doc');
+                            dispatch('insertInitialDoc');
+                            return [2 /*return*/, _doc];
+                        }
+                        id = getters.docModeId;
+                        doc = getters.cleanUpRetrievedDoc(_doc.data(), id);
+                        dispatch('applyHooksAndUpdateState', { change: 'modified', id: id, doc: doc });
+                        return [2 /*return*/, doc];
+                    });
+                }); }).catch(function (error$$1) {
                     console.error('[vuex-easy-firestore]', error$$1);
                     return error$$1;
                 });
@@ -1101,6 +1108,8 @@ function pluginActions (Firebase$$1) {
                     if (!getters.collectionMode) {
                         if (!querySnapshot.data()) {
                             // No initial doc found in docMode
+                            if (state._conf.sync.preventInitialDocInsertion)
+                                return reject('preventInitialDocInsertion');
                             if (state._conf.logging)
                                 console.log('[vuex-easy-firestore] inserting initial doc');
                             dispatch('insertInitialDoc');
@@ -1687,8 +1696,9 @@ function iniModule (userConfig, FirebaseDependency) {
 function vuexEasyFirestore(easyFirestoreModule, _a) {
     var _b = _a === void 0 ? {
         logging: false,
+        preventInitialDocInsertion: false,
         FirebaseDependency: Firebase
-    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.FirebaseDependency, FirebaseDependency = _d === void 0 ? Firebase : _d;
+    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.preventInitialDocInsertion, preventInitialDocInsertion = _d === void 0 ? false : _d, _e = _b.FirebaseDependency, FirebaseDependency = _e === void 0 ? Firebase : _e;
     if (FirebaseDependency)
         setBaseFirebase(FirebaseDependency);
     return function (store) {
@@ -1698,6 +1708,9 @@ function vuexEasyFirestore(easyFirestoreModule, _a) {
         // Create a module for each config file
         easyFirestoreModule.forEach(function (config) {
             config.logging = logging;
+            if (config.sync && config.sync.preventInitialDocInsertion === undefined) {
+                config.sync.preventInitialDocInsertion = preventInitialDocInsertion;
+            }
             var moduleName = vuexEasyAccess.getKeysFromPath(config.moduleName);
             store.registerModule(moduleName, iniModule(config, FirebaseDependency));
         });

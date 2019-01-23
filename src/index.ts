@@ -21,12 +21,15 @@ function vuexEasyFirestore (
   easyFirestoreModule: IEasyFirestoreModule | IEasyFirestoreModule[],
   {
     logging = false,
+    preventInitialDocInsertion = false,
     FirebaseDependency = Firebase
   }: {
     logging?: boolean,
+    preventInitialDocInsertion?: boolean,
     FirebaseDependency?: any
   } = {
     logging: false,
+    preventInitialDocInsertion: false,
     FirebaseDependency: Firebase
   }
 ): any {
@@ -37,6 +40,9 @@ function vuexEasyFirestore (
     // Create a module for each config file
     easyFirestoreModule.forEach((config: IEasyFirestoreModule) => {
       config.logging = logging
+      if (config.sync && config.sync.preventInitialDocInsertion === undefined) {
+        config.sync.preventInitialDocInsertion = preventInitialDocInsertion
+      }
       const moduleName = getKeysFromPath(config.moduleName)
       store.registerModule(moduleName, iniModule(config, FirebaseDependency))
     })

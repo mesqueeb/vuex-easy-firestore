@@ -8,6 +8,7 @@ import testMutations2 from './testMutationsWithStateProp'
 import testNestedFillables from './testNestedFillables'
 import testNestedGuard from './testNestedGuard'
 import initialDoc from './initialDoc'
+import preventInitialDoc from './preventInitialDoc'
 import serverHooks from './serverHooks'
 import user from './user'
 import defaultValuesSetupColNOProp from './defaultValuesSetupColNOProp'
@@ -32,6 +33,7 @@ const easyFirestores = createFirestores(
     testNestedFillables,
     testNestedGuard,
     initialDoc,
+    preventInitialDoc,
     serverHooks,
     user,
     defaultValuesSetupColNOProp,
