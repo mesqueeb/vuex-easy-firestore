@@ -28,6 +28,7 @@ const firestoreModule = {
     fillables: [],
     guard: [],
     defaultValues: {},
+    debounceTimerMs: 1000,
     // HOOKS for local changes:
     insertHook: function (updateStore, doc, store) { return updateStore(doc) },
     patchHook: function (updateStore, doc, store) { return updateStore(doc) },

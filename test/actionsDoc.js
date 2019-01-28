@@ -96,7 +96,7 @@ test('[DOC] set & delete: top lvl', async t => {
 })
 
 test('[DOC] set & delete: deep', async t => {
-  await wait(20)
+  await wait(3)
   let docR, doc
   // set
   store.dispatch('mainCharacter/set', {nestedInDoc: {a: {met: {de: 'aba'}}}})

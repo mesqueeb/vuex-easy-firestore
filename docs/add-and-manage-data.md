@@ -20,7 +20,7 @@ There are two ways to use vuex-easy-firestore, in 'collection' or 'doc' mode. Yo
 
 Whether a vuex module is set to 'doc' or 'collection' mode, will have small changes in the actions you can do, but the syntax is mostly the same.
 
-The sync is fully robust and **automatically groups any api calls per 1000 ms**. You don't have to worry about optimising/limiting the api calls, it's all done automatically! (Only one api call per 1000ms will be made for a maximum of 500 changes, if there are more changes queued it will automatically be split over 2 api calls).
+The sync is fully robust and **automatically groups any api calls per 1000 ms**. That means, no matter how many patches you make, only one api call per 1000ms will be made for a maximum of 500 changes. You don't have to worry about optimising/limiting your api calls, it's all done automatically! (> 500 changes will be automatically split over 2 api calls) You can also [customise this debounce duration](extra-features.html#custom-sync-debounce-duration) to eg. 500 or 2000ms.
 
 > If you still are confused how to set up your database structure when it comes to **documents vs collections**, I highly recommend to check [this guide from Firebase](https://firebase.google.com/docs/firestore/manage-data/structure-data) itself.
 

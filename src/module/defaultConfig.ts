@@ -25,6 +25,7 @@ export type IConfig = {
     fillables?: string[]
     guard?: string[]
     preventInitialDocInsertion?: boolean
+    debounceTimerMs?: number
     defaultValues?: AnyObject
     insertHook?: SyncHookDoc
     patchHook?: SyncHookDoc
@@ -67,6 +68,7 @@ export default {
     guard: [],
     defaultValues: {},
     preventInitialDocInsertion: false,
+    debounceTimerMs: 1000,
     // HOOKS for local changes:
     insertHook: function (updateStore, doc, store) { return updateStore(doc) },
     patchHook: function (updateStore, doc, store) { return updateStore(doc) },

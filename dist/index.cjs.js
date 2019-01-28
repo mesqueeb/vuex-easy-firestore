@@ -68,6 +68,7 @@ var defaultConfig = {
         guard: [],
         defaultValues: {},
         preventInitialDocInsertion: false,
+        debounceTimerMs: 1000,
         // HOOKS for local changes:
         insertHook: function (updateStore, doc, store) { return updateStore(doc); },
         patchHook: function (updateStore, doc, store) { return updateStore(doc); },
@@ -839,7 +840,8 @@ function pluginActions (Firebase$$1) {
             if (!getters.signedIn)
                 return false;
             if (!state._sync.syncStack.debounceTimer) {
-                var debounceTimer = startDebounce(1000);
+                var ms = state._conf.sync.debounceTimerMs;
+                var debounceTimer = startDebounce(ms);
                 debounceTimer.done.then(function (_) { return dispatch('batchSync'); });
                 state._sync.syncStack.debounceTimer = debounceTimer;
             }

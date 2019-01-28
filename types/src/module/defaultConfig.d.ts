@@ -22,6 +22,7 @@ export declare type IConfig = {
         fillables?: string[];
         guard?: string[];
         preventInitialDocInsertion?: boolean;
+        debounceTimerMs?: number;
         defaultValues?: AnyObject;
         insertHook?: SyncHookDoc;
         patchHook?: SyncHookDoc;
@@ -58,6 +59,7 @@ declare const _default: {
         guard: any[];
         defaultValues: {};
         preventInitialDocInsertion: boolean;
+        debounceTimerMs: number;
         insertHook: (updateStore: any, doc: any, store: any) => any;
         patchHook: (updateStore: any, doc: any, store: any) => any;
         deleteHook: (updateStore: any, id: any, store: any) => any;
