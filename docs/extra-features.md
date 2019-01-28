@@ -169,6 +169,37 @@ dispatch('module/set', {timestampField: new Date()})
 
 The above will be added as `new Date()` in vuex but as a _timestamp_ in Firestore.
 
+## Pass Firebase dependency
+
+Vuex Easy Firestore will automatically use Firebase as a peer dependency to access `Firebase.auth()` etc. If you want to pass a Firebase instance you have instantiated yourself you can do so like this:
+
+```js
+// make sure you import at least auth and firestore as well:
+import * as Firebase from 'firebase/app'
+import 'firebase/auth'
+import 'firebase/firestore'
+
+import createEasyFirestore from 'vuex-easy-firestore'
+const easyFirestore = createEasyFirestore(
+  userDataModule,
+  {logging: true, FirebaseDependency: Firebase} // pass Firebase like this. Mind the Capital F!
+)
+```
+
+## Custom sync debounce duration
+
+Vuex easy firestore only makes one api call per 1000ms, no matter how many patches you make. This default debounce duration of 1000ms can be modified per module like so:
+
+```js
+const vuexModule = {
+  // your other vuex-easy-firestore config...
+  sync: {
+    debounceTimerMs: 2000
+    // defaults to 1000
+  }
+}
+```
+
 ## Shortcut: set(path, doc)
 
 Inside Vue component templates there is a shortcut for `dispatch('module/set', newVal)`. If you enable support for my other library called 'vuex-easy-access' you will be able to just use `set('module', newVal)` instead!
@@ -191,20 +222,3 @@ Please check the relevant documentation [on the vuex-easy-access repository](htt
 ### About 'vuex-easy-access'
 
 Vuex easy access has a lot of different features to make working with your store extremely easy. The main purpose of that library is to be able to do any kind of mutation to your store directly from the templates without having to set up actions yourself. It is especially usefull when working with wildcards. Please see the [introduction on Vuex Easy Access here](https://mesqueeb.github.io/vuex-easy-access/).
-
-## Pass Firebase dependency
-
-Vuex Easy Firestore will automatically use Firebase as a peer dependency to access `Firebase.auth()` etc. If you want to pass a Firebase instance you have instantiated yourself you can do so like this:
-
-```js
-// make sure you import at least auth and firestore as well:
-import * as Firebase from 'firebase/app'
-import 'firebase/auth'
-import 'firebase/firestore'
-
-import createEasyFirestore from 'vuex-easy-firestore'
-const easyFirestore = createEasyFirestore(
-  userDataModule,
-  {logging: true, FirebaseDependency: Firebase} // pass Firebase like this. Mind the Capital F!
-)
-```

@@ -157,7 +157,8 @@ export default function (Firebase: any): AnyObject {
     handleSyncStackDebounce ({state, commit, dispatch, getters}) {
       if (!getters.signedIn) return false
       if (!state._sync.syncStack.debounceTimer) {
-        const debounceTimer = startDebounce(1000)
+        const ms = state._conf.sync.debounceTimerMs
+        const debounceTimer = startDebounce(ms)
         debounceTimer.done.then(_ => dispatch('batchSync'))
         state._sync.syncStack.debounceTimer = debounceTimer
       }
