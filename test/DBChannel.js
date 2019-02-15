@@ -56,6 +56,20 @@ test('[openDBChannel] check where filter after openDBChannel', async t => {
   t.deepEqual(res, [['hi.null.docs.Mesqueeb', '==', '{big}']])
 })
 
+const docModeWithPathVar = store.state.docModeWithPathVar
+test('[openDBChannel] check doc ID (doc mode) after openDBChannel', async t => {
+  t.is(store.getters['docModeWithPathVar/firestorePathComplete'], 'playerCharacters/{name}')
+  await store.dispatch('docModeWithPathVar/openDBChannel', {name: 'Lucaz'}).catch(console.error)
+  await wait(2)
+  t.is(store.getters['docModeWithPathVar/firestorePathComplete'], 'playerCharacters/Lucaz')
+  t.is(docModeWithPathVar.id, 'Lucaz')
+  await store.dispatch('docModeWithPathVar/patch', {description: 'Test'}).catch(console.error)
+  await wait(2)
+  t.is(store.getters['docModeWithPathVar/firestorePathComplete'], 'playerCharacters/Lucaz')
+  t.is(docModeWithPathVar.description, 'Test')
+  t.is(docModeWithPathVar.id, 'Lucaz')
+})
+
 // test('sync: where', async t => {
 //   t.pass()
 //   // await wait()

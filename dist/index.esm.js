@@ -1222,7 +1222,7 @@ function pluginActions (Firebase$$1) {
             // check payload
             if (!doc)
                 return;
-            var id = (getters.collectionMode) ? getId(doc) : undefined;
+            var id = (getters.collectionMode) ? getId(doc) : getters.docModeId;
             var value = (getters.collectionMode) ? getValueFromPayloadPiece(doc) : doc;
             if (!id && getters.collectionMode)
                 return;
