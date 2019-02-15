@@ -15,6 +15,7 @@ import defaultValuesSetupColNOProp from './defaultValuesSetupColNOProp'
 import defaultValuesSetupColProp from './defaultValuesSetupColProp'
 import defaultValuesSetupDocNOProp from './defaultValuesSetupDocNOProp'
 import defaultValuesSetupDocProp from './defaultValuesSetupDocProp'
+import docModeWithPathVar from './docModeWithPathVar'
 import createFirestores from '../../../src/index'
 import createEasyAccess from 'vuex-easy-access'
 // import Firebase from '../firestoreMock'
@@ -40,6 +41,7 @@ const easyFirestores = createFirestores(
     defaultValuesSetupColProp,
     defaultValuesSetupDocNOProp,
     defaultValuesSetupDocProp,
+    docModeWithPathVar
   ],
   {logging: false, FirebaseDependency: Firebase}
 )

@@ -511,7 +511,7 @@ export default function (Firebase: any): AnyObject {
       const store = this
       // check payload
       if (!doc) return
-      const id = (getters.collectionMode) ? getId(doc) : undefined
+      const id = (getters.collectionMode) ? getId(doc) : getters.docModeId
       const value = (getters.collectionMode) ? getValueFromPayloadPiece(doc) : doc
       if (!id && getters.collectionMode) return
       // check userId

@@ -607,6 +607,22 @@ var defaultValuesSetupDocProp = {
     getters: {},
 };
 
+function initialState$g() {
+    return {};
+}
+var docModeWithPathVar = {
+    // easy firestore config
+    firestorePath: 'playerCharacters/{name}',
+    firestoreRefType: 'doc',
+    moduleName: 'docModeWithPathVar',
+    statePropName: '',
+    // module
+    state: initialState$g(),
+    mutations: createEasyAccess.defaultMutations(initialState$g()),
+    actions: {},
+    getters: {},
+};
+
 require('@firebase/firestore');
 
 /**
@@ -1697,7 +1713,7 @@ function pluginActions (Firebase$$1) {
             // check payload
             if (!doc)
                 return;
-            var id = (getters.collectionMode) ? getId(doc) : undefined;
+            var id = (getters.collectionMode) ? getId(doc) : getters.docModeId;
             var value = (getters.collectionMode) ? getValueFromPayloadPiece(doc) : doc;
             if (!id && getters.collectionMode)
                 return;
@@ -2214,6 +2230,7 @@ var easyFirestores = vuexEasyFirestore([
     defaultValuesSetupColProp,
     defaultValuesSetupDocNOProp,
     defaultValuesSetupDocProp,
+    docModeWithPathVar
 ], { logging: false, FirebaseDependency: Firebase });
 var storeObj = {
     plugins: [easyFirestores, easyAccess]
