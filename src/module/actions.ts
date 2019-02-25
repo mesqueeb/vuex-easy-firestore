@@ -1,4 +1,5 @@
 import { isArray, isPlainObject, isFunction, isNumber } from 'is-what'
+import copy from 'copy-anything'
 import merge from 'merge-anything'
 import flatten from 'flatten-anything'
 import { compareObjectProps } from 'compare-anything'
@@ -521,7 +522,7 @@ export default function (Firebase: any): AnyObject {
       // define the store update
       function storeUpdateFn (_val) {
         commit('PATCH_DOC', _val)
-        return dispatch('patchDoc', {id, doc: _val})
+        return dispatch('patchDoc', {id, doc: copy(_val)})
       }
       // check for hooks
       if (state._conf.sync.patchHook) {
