@@ -51,6 +51,10 @@ You also have some extra parameters to work with:
 
 Please make sure to check the overview of execution timings of hooks, in the next chapter:
 
+## Hooks on openDBChannel / fetch
+
+The "Hooks after server changes" explained above also trigger once on `openDBChannel` and `fetchAndAdd`. Check the **execution timings of hooks** below to know precisely when which hooks are executed.
+
 ## Execution timings of hooks
 
 **Hooks on 'collection' mode**
