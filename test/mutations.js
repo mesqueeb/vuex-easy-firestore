@@ -17,7 +17,7 @@ test('RESET_VUEX_EASY_FIRESTORE_STATE', t => {
 
   // test('RESET_VUEX_EASY_FIRESTORE_STATE', t => {
   const defaultState = {
-    unsubscribe: null,
+    unsubscribe: {},
     pathVariables: {},
     patching: false,
     syncStack: {

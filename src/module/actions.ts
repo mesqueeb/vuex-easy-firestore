@@ -386,6 +386,18 @@ export default function (Firebase: any): AnyObject {
         delete pathVariables.orderBy
         commit('SET_PATHVARS', pathVariables)
       }
+      const identifier = createFetchIdentifier({
+        where: state._conf.sync.where,
+        orderBy: state._conf.sync.orderBy,
+        pathVariables: state._sync.pathVariables
+      })
+      if (isFunction(state._sync.unsubscribe[identifier])) {
+        const channelAlreadyOpenError = `openDBChannel was already called for these filters and pathvariables. Identifier: ${identifier}`
+        if (state._conf.logging) {
+          console.log(channelAlreadyOpenError)
+        }
+        return new Promise((resolve, reject) => { reject(channelAlreadyOpenError) })
+      }
       // getters.dbRef should already have pathVariables swapped out
       let dbRef = getters.dbRef
       // apply where filters and orderBy
@@ -434,14 +446,23 @@ export default function (Firebase: any): AnyObject {
           state._sync.patching = 'error'
           return reject(error)
         })
-        state._sync.unsubscribe = unsubscribe
+        state._sync.unsubscribe[identifier] = unsubscribe
       })
     },
     closeDBChannel ({getters, state, commit, dispatch}, { clearModule = false } = { clearModule: false }) {
+      const identifier = createFetchIdentifier({
+        where: state._conf.sync.where,
+        orderBy: state._conf.sync.orderBy,
+        pathVariables: state._sync.pathVariables
+      })
+      const unsubscribeDBChannel = state._sync.unsubscribe[identifier]
+      if (isFunction(unsubscribeDBChannel)) {
+        unsubscribeDBChannel()
+        state._sync.unsubscribe[identifier] = null
+      }
       if (clearModule) {
         commit('RESET_VUEX_EASY_FIRESTORE_STATE')
       }
-      if (isFunction(state._sync.unsubscribe)) return state._sync.unsubscribe()
     },
     set ({commit, dispatch, getters, state}, doc) {
       if (!doc) return

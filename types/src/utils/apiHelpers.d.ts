@@ -40,7 +40,7 @@ export declare function trimAccolades(pathPiece: string): string;
  * Gets an object with {where, orderBy} filters and returns a unique identifier for that
  *
  * @export
- * @param {AnyObject} [whereOrderBy={}] whereOrderBy {where, orderBy}
+ * @param {AnyObject} [whereOrderBy={}] whereOrderBy {where, orderBy, pathVariables}
  * @returns {string}
  */
 export declare function createFetchIdentifier(whereOrderBy?: AnyObject): string;

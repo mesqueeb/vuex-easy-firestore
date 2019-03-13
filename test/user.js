@@ -18,7 +18,7 @@ test('check {userId} on change users with logout', async t => {
   t.is(firebase.auth().currentUser.uid, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
   // opening db
   t.is(getters['user/firestorePathComplete'], 'user/{userId}')
-  store.dispatch('user/openDBChannel')
+  store.dispatch('user/openDBChannel').catch(console.error)
   t.is(getters['user/firestorePathComplete'], 'user/LH3AIbCFMPMeeLclvRkmXghIaOx1')
   await wait(3)
   t.is(state._sync.userId, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
@@ -38,7 +38,8 @@ test('check {userId} on change users with logout', async t => {
   t.is(state._sync.signedIn, true)
   t.is(state._sync.userId, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
   t.is(getters['user/firestorePathComplete'], 'user/LH3AIbCFMPMeeLclvRkmXghIaOx1')
-  store.dispatch('user/openDBChannel')
+  store.dispatch('user/closeDBChannel')
+  store.dispatch('user/openDBChannel').catch(console.error)
   // openDBChannel sets userId
   t.is(getters['user/firestorePathComplete'], 'user/psqOfK5yLYVTT0LDTfuZUTxuYrE2')
   await wait(3)
@@ -55,7 +56,8 @@ test('check {userId} on change users with logout', async t => {
   t.is(state._sync.signedIn, true)
   t.is(state._sync.userId, 'psqOfK5yLYVTT0LDTfuZUTxuYrE2')
   t.is(getters['user/firestorePathComplete'], 'user/psqOfK5yLYVTT0LDTfuZUTxuYrE2')
-  store.dispatch('user/openDBChannel')
+  store.dispatch('user/closeDBChannel')
+  store.dispatch('user/openDBChannel').catch(console.error)
   // openDBChannel sets userId
   t.is(getters['user/firestorePathComplete'], 'user/LH3AIbCFMPMeeLclvRkmXghIaOx1')
   await wait(3)
