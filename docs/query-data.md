@@ -88,6 +88,8 @@ fetchAndAdd = async function () {
 }
 ```
 
+If you require to know **wether or not fetch was called at least once**, you can do so by looking at the the state prop called `state._sync.fetched` of your module. If this is an empty object, fetch was not yet triggered. If it has data inside you know fetch has been called at least once.
+
 ## Firestore authentication
 
 In most cases your application will have many users, and your Firestore path will need to include the user ID of the user who is signed in. This can be done in Vuex Easy Firestore by using the `{userId}` wildcard like so:

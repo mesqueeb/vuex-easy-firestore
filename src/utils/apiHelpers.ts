@@ -164,7 +164,7 @@ function stringifyParams (params: any[]): string {
  * Gets an object with {where, orderBy} filters and returns a unique identifier for that
  *
  * @export
- * @param {AnyObject} [whereOrderBy={}] whereOrderBy {where, orderBy}
+ * @param {AnyObject} [whereOrderBy={}] whereOrderBy {where, orderBy, pathVariables}
  * @returns {string}
  */
 export function createFetchIdentifier (whereOrderBy: AnyObject = {}): string {
@@ -174,6 +174,11 @@ export function createFetchIdentifier (whereOrderBy: AnyObject = {}): string {
   }
   if ('orderBy' in whereOrderBy) {
     identifier += '[orderBy]' + stringifyParams(whereOrderBy.orderBy)
+  }
+  if ('pathVariables' in whereOrderBy) {
+    delete whereOrderBy.pathVariables.where
+    delete whereOrderBy.pathVariables.orderBy
+    identifier += '[pathVariables]' + JSON.stringify(whereOrderBy.pathVariables)
   }
   return identifier
 }

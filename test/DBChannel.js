@@ -70,6 +70,34 @@ test('[openDBChannel] check doc ID (doc mode) after openDBChannel', async t => {
   t.is(docModeWithPathVar.id, 'Lucaz')
 })
 
+test('[openDBChannel] open multiple times', async t => {
+  try {
+    await store.dispatch('multipleOpenDBChannels/openDBChannel')
+  } catch (e) {
+    t.fail()
+  }
+  try {
+    await store.dispatch('multipleOpenDBChannels/openDBChannel')
+  } catch (e) {
+    t.is(e, `openDBChannel was already called for these filters and pathvariables. Identifier: [where][orderBy][pathVariables]{}`)
+  }
+  try {
+    await store.dispatch('multipleOpenDBChannels/openDBChannel', {name: 'Lucaz'})
+  } catch (e) {
+    t.fail()
+  }
+  try {
+    await store.dispatch('multipleOpenDBChannels/openDBChannel', {name: 'Lucas'})
+  } catch (e) {
+    t.fail()
+  }
+  try {
+    await store.dispatch('multipleOpenDBChannels/openDBChannel', {name: 'Lucas'})
+  } catch (e) {
+    t.is(e, `openDBChannel was already called for these filters and pathvariables. Identifier: [where][orderBy][pathVariables]{"name":"Lucas"}`)
+  }
+})
+
 // test('sync: where', async t => {
 //   t.pass()
 //   // await wait()

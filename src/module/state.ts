@@ -4,7 +4,7 @@ export type IState = {
   _sync: {
     signedIn: boolean
     userId: any
-    unsubscribe: () => any | null
+    unsubscribe: AnyObject
     pathVariables: AnyObject
     patching: boolean
     syncStack: {
@@ -30,7 +30,7 @@ export default function (): IState {
     _sync: {
       signedIn: false,
       userId: null,
-      unsubscribe: null,
+      unsubscribe: {},
       pathVariables: {},
       patching: false,
       syncStack: {

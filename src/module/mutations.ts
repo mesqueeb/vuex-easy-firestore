@@ -1,4 +1,4 @@
-import { isPlainObject, isArray } from 'is-what'
+import { isPlainObject, isArray, isFunction } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
 import error from './errors'
 import merge from 'merge-anything'
@@ -39,14 +39,19 @@ export default function (userState: object): AnyObject {
       state._sync.userId = null
     },
     RESET_VUEX_EASY_FIRESTORE_STATE (state) {
+      // unsubscribe all DBChannel listeners:
+      Object.keys(state._sync.unsubscribe).forEach(unsubscribe => {
+        if (isFunction(unsubscribe)) unsubscribe()
+      })
       const self = this
       const _sync = merge(state._sync, {
         // make null once to be able to overwrite with empty object
+        unsubscribe: null,
         pathVariables: null,
         syncStack: { updates: null, propDeletions: null },
         fetched: null,
       }, {
-        unsubscribe: null,
+        unsubscribe: {},
         pathVariables: {},
         patching: false,
         syncStack: {

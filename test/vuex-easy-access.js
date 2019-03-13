@@ -145,7 +145,7 @@ test('[COLLECTION] set & delete: deep', async t => {
 // })
 
 test('[DOC] set & delete: top lvl', async t => {
-  store.dispatch('mainCharacterVEA/openDBChannel')
+  store.dispatch('mainCharacterVEA/openDBChannel').catch(console.error)
   await wait(3)
   // EXISTING prop set
   await store.set('mainCharacterVEA/items', ['Pokeball'])

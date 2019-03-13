@@ -9,7 +9,7 @@ const docRef = store.getters['serverHooks/dbRef']
 
 test('[MANUAL TEST] server prop deletion - no defaults', async t => {
   let doc, docR
-  await store.dispatch('serverHooks/openDBChannel')
+  await store.dispatch('serverHooks/openDBChannel').catch(console.error)
   // ==============================================
   // default props will never be deleted from state
   // ==============================================
@@ -34,7 +34,7 @@ test('[MANUAL TEST] server prop deletion - no defaults', async t => {
 })
 test('[MANUAL TEST] server prop deletion - top lvl', async t => {
   let doc, docR
-  await store.dispatch('serverHooks/openDBChannel')
+  await store.dispatch('serverHooks/openDBChannel').catch(console.error)
   await wait(3)
   // ==============================================
   // non-default prop deletion is reflected locally
@@ -60,7 +60,7 @@ test('[MANUAL TEST] server prop deletion - top lvl', async t => {
 })
 test('[MANUAL TEST] server prop deletion - nested', async t => {
   let doc, docR
-  await store.dispatch('serverHooks/openDBChannel')
+  await store.dispatch('serverHooks/openDBChannel').catch(console.error)
   await wait(5)
   // ==============================================
   // nested props deletion is reflected locally

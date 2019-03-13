@@ -594,6 +594,22 @@ var defaultValuesSetupDocProp = {
 function initialState$g() {
     return {};
 }
+var multipleOpenDBChannels = {
+    // easy firestore config
+    firestorePath: 'coll/{name}/data',
+    firestoreRefType: 'collection',
+    moduleName: 'multipleOpenDBChannels',
+    statePropName: '',
+    // module
+    state: initialState$g(),
+    mutations: createEasyAccess.defaultMutations(initialState$g()),
+    actions: {},
+    getters: {},
+};
+
+function initialState$h() {
+    return {};
+}
 var docModeWithPathVar = {
     // easy firestore config
     firestorePath: 'playerCharacters/{name}',
@@ -601,8 +617,8 @@ var docModeWithPathVar = {
     moduleName: 'docModeWithPathVar',
     statePropName: '',
     // module
-    state: initialState$g(),
-    mutations: createEasyAccess.defaultMutations(initialState$g()),
+    state: initialState$h(),
+    mutations: createEasyAccess.defaultMutations(initialState$h()),
     actions: {},
     getters: {},
 };
@@ -662,7 +678,7 @@ function pluginState () {
         _sync: {
             signedIn: false,
             userId: null,
-            unsubscribe: null,
+            unsubscribe: {},
             pathVariables: {},
             patching: false,
             syncStack: {
@@ -739,14 +755,20 @@ function pluginMutations (userState) {
             state._sync.userId = null;
         },
         RESET_VUEX_EASY_FIRESTORE_STATE: function (state) {
+            // unsubscribe all DBChannel listeners:
+            Object.keys(state._sync.unsubscribe).forEach(function (unsubscribe) {
+                if (isWhat.isFunction(unsubscribe))
+                    unsubscribe();
+            });
             var self = this;
             var _sync = merge(state._sync, {
                 // make null once to be able to overwrite with empty object
+                unsubscribe: null,
                 pathVariables: null,
                 syncStack: { updates: null, propDeletions: null },
                 fetched: null,
             }, {
-                unsubscribe: null,
+                unsubscribe: {},
                 pathVariables: {},
                 patching: false,
                 syncStack: {
@@ -964,7 +986,7 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {*} A Firebase firestore batch object.
  */
-function makeBatchFromSyncstack(state, getters, Firebase$$1, batchMaxCount) {
+function makeBatchFromSyncstack(state, getters, Firebase, batchMaxCount) {
     if (batchMaxCount === void 0) { batchMaxCount = 500; }
     // get state & getter variables
     var firestorePath = state._conf.firestorePath;
@@ -972,7 +994,7 @@ function makeBatchFromSyncstack(state, getters, Firebase$$1, batchMaxCount) {
     var dbRef = getters.dbRef;
     var collectionMode = getters.collectionMode;
     // make batch
-    var batch = Firebase$$1.firestore().batch();
+    var batch = Firebase.firestore().batch();
     var log = {};
     var count = 0;
     // Add 'updates' to batch
@@ -1066,7 +1088,7 @@ function stringifyParams(params) {
  * Gets an object with {where, orderBy} filters and returns a unique identifier for that
  *
  * @export
- * @param {AnyObject} [whereOrderBy={}] whereOrderBy {where, orderBy}
+ * @param {AnyObject} [whereOrderBy={}] whereOrderBy {where, orderBy, pathVariables}
  * @returns {string}
  */
 function createFetchIdentifier(whereOrderBy) {
@@ -1077,6 +1099,11 @@ function createFetchIdentifier(whereOrderBy) {
     }
     if ('orderBy' in whereOrderBy) {
         identifier += '[orderBy]' + stringifyParams(whereOrderBy.orderBy);
+    }
+    if ('pathVariables' in whereOrderBy) {
+        delete whereOrderBy.pathVariables.where;
+        delete whereOrderBy.pathVariables.orderBy;
+        identifier += '[pathVariables]' + JSON.stringify(whereOrderBy.pathVariables);
     }
     return identifier;
 }
@@ -1126,7 +1153,7 @@ function getValueFromPayloadPiece(payloadPiece) {
  * @param {*} Firebase The Firebase dependency
  * @returns {AnyObject} the actions object
  */
-function pluginActions (Firebase$$1) {
+function pluginActions (Firebase) {
     var _this = this;
     return {
         setUserId: function (_a, userId) {
@@ -1134,8 +1161,8 @@ function pluginActions (Firebase$$1) {
             if (userId === undefined)
                 userId = null;
             // undefined cannot be synced to firestore
-            if (!userId && Firebase$$1.auth().currentUser) {
-                userId = Firebase$$1.auth().currentUser.uid;
+            if (!userId && Firebase.auth().currentUser) {
+                userId = Firebase.auth().currentUser.uid;
             }
             commit('SET_USER_ID', userId);
             if (getters.firestorePathComplete.includes('{userId}')) {
@@ -1300,7 +1327,7 @@ function pluginActions (Firebase$$1) {
         },
         batchSync: function (_a) {
             var getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch, state = _a.state;
-            var batch = makeBatchFromSyncstack(state, getters, Firebase$$1);
+            var batch = makeBatchFromSyncstack(state, getters, Firebase);
             dispatch('_startPatching');
             state._sync.syncStack.debounceTimer = null;
             return new Promise(function (resolve, reject) {
@@ -1314,11 +1341,11 @@ function pluginActions (Firebase$$1) {
                     }
                     dispatch('_stopPatching');
                     return resolve();
-                }).catch(function (error$$1) {
+                }).catch(function (error) {
                     state._sync.patching = 'error';
                     state._sync.syncStack.debounceTimer = null;
                     console.error('Error during synchronisation ↓');
-                    return reject(error$$1);
+                    return reject(error);
                 });
             });
         },
@@ -1406,9 +1433,9 @@ function pluginActions (Firebase$$1) {
                     // set the reference for the next records.
                     var next = fRef.startAfter(lastVisible);
                     state._sync.fetched[identifier].nextFetchRef = next;
-                }).catch(function (error$$1) {
-                    console.error('[vuex-easy-firestore]', error$$1);
-                    return reject(error$$1);
+                }).catch(function (error) {
+                    console.error('[vuex-easy-firestore]', error);
+                    return reject(error);
                 });
             });
         },
@@ -1445,9 +1472,9 @@ function pluginActions (Firebase$$1) {
                         dispatch('applyHooksAndUpdateState', { change: 'modified', id: id, doc: doc });
                         return [2 /*return*/, doc];
                     });
-                }); }).catch(function (error$$1) {
-                    console.error('[vuex-easy-firestore]', error$$1);
-                    return error$$1;
+                }); }).catch(function (error) {
+                    console.error('[vuex-easy-firestore]', error);
+                    return error;
                 });
             }
             // 'collection' mode:
@@ -1538,6 +1565,18 @@ function pluginActions (Firebase$$1) {
                 delete pathVariables.orderBy;
                 commit('SET_PATHVARS', pathVariables);
             }
+            var identifier = createFetchIdentifier({
+                where: state._conf.sync.where,
+                orderBy: state._conf.sync.orderBy,
+                pathVariables: state._sync.pathVariables
+            });
+            if (isWhat.isFunction(state._sync.unsubscribe[identifier])) {
+                var channelAlreadyOpenError_1 = "openDBChannel was already called for these filters and pathvariables. Identifier: " + identifier;
+                if (state._conf.logging) {
+                    console.log(channelAlreadyOpenError_1);
+                }
+                return new Promise(function (resolve, reject) { reject(channelAlreadyOpenError_1); });
+            }
             // getters.dbRef should already have pathVariables swapped out
             var dbRef = getters.dbRef;
             // apply where filters and orderBy
@@ -1586,21 +1625,29 @@ function pluginActions (Firebase$$1) {
                         dispatch('applyHooksAndUpdateState', { change: changeType, id: id, doc: doc });
                     });
                     return resolve();
-                }, function (error$$1) {
+                }, function (error) {
                     state._sync.patching = 'error';
-                    return reject(error$$1);
+                    return reject(error);
                 });
-                state._sync.unsubscribe = unsubscribe;
+                state._sync.unsubscribe[identifier] = unsubscribe;
             });
         },
         closeDBChannel: function (_a, _b) {
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             var _c = (_b === void 0 ? { clearModule: false } : _b).clearModule, clearModule = _c === void 0 ? false : _c;
+            var identifier = createFetchIdentifier({
+                where: state._conf.sync.where,
+                orderBy: state._conf.sync.orderBy,
+                pathVariables: state._sync.pathVariables
+            });
+            var unsubscribeDBChannel = state._sync.unsubscribe[identifier];
+            if (isWhat.isFunction(unsubscribeDBChannel)) {
+                unsubscribeDBChannel();
+                state._sync.unsubscribe[identifier] = null;
+            }
             if (clearModule) {
                 commit('RESET_VUEX_EASY_FIRESTORE_STATE');
             }
-            if (isWhat.isFunction(state._sync.unsubscribe))
-                return state._sync.unsubscribe();
         },
         set: function (_a, doc) {
             var commit = _a.commit, dispatch = _a.dispatch, getters = _a.getters, state = _a.state;
@@ -1816,7 +1863,7 @@ function pluginActions (Firebase$$1) {
  * @param {*} Firebase The Firebase dependency
  * @returns {AnyObject} the getters object
  */
-function pluginGetters (Firebase$$1) {
+function pluginGetters (Firebase) {
     return {
         firestorePathComplete: function (state, getters) {
             var path = state._conf.firestorePath;
@@ -1845,8 +1892,8 @@ function pluginGetters (Firebase$$1) {
         dbRef: function (state, getters, rootState, rootGetters) {
             var path = getters.firestorePathComplete;
             return (getters.collectionMode)
-                ? Firebase$$1.firestore().collection(path)
-                : Firebase$$1.firestore().doc(path);
+                ? Firebase.firestore().collection(path)
+                : Firebase.firestore().doc(path);
         },
         storeRef: function (state, getters, rootState) {
             var path = (state._conf.statePropName)
@@ -1945,7 +1992,7 @@ function pluginGetters (Firebase$$1) {
                     id = getters.docModeId;
                     cleanedPath = path;
                 }
-                cleanedPatchData[cleanedPath] = Firebase$$1.firestore.FieldValue.delete();
+                cleanedPatchData[cleanedPath] = Firebase.firestore.FieldValue.delete();
                 cleanedPatchData.id = id;
                 return _a = {}, _a[id] = cleanedPatchData, _a;
             };
@@ -1980,9 +2027,9 @@ function pluginGetters (Firebase$$1) {
         getWhereArrays: function (state, getters) { return function (whereArrays) {
             if (!isWhat.isArray(whereArrays))
                 whereArrays = state._conf.sync.where;
-            if (Firebase$$1.auth().currentUser) {
+            if (Firebase.auth().currentUser) {
                 state._sync.signedIn = true;
-                state._sync.userId = Firebase$$1.auth().currentUser.uid;
+                state._sync.userId = Firebase.auth().currentUser.uid;
             }
             return whereArrays.map(function (whereClause) {
                 return whereClause.map(function (param) {
@@ -2175,7 +2222,7 @@ var config = {
     projectId: 'tests-firestore',
 };
 Firebase.initializeApp(config);
-var firestore$1 = Firebase.firestore();
+var firestore = Firebase.firestore();
 
 var easyAccess = createEasyAccess__default({ vuexEasyFirestore: true });
 var easyFirestores = vuexEasyFirestore([
@@ -2196,6 +2243,7 @@ var easyFirestores = vuexEasyFirestore([
     defaultValuesSetupColProp,
     defaultValuesSetupDocNOProp,
     defaultValuesSetupDocProp,
+    multipleOpenDBChannels,
     docModeWithPathVar
 ], { logging: false, FirebaseDependency: Firebase });
 var storeObj = {
