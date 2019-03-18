@@ -150,10 +150,25 @@ export default function (Firebase: any): AnyObject {
 
       // 1. Prepare for insert
       const initialDoc = (getters.storeRef) ? getters.storeRef : {}
-      const doc = getters.prepareInitialDocForInsert(initialDoc)
+      const initialDocPrepared = getters.prepareInitialDocForInsert(initialDoc)
 
-      // 2. insert
-      return getters.dbRef.set(doc)
+      // 2. Create a reference to the SF doc.
+      var initialDocRef = getters.dbRef
+      return Firebase.firestore().runTransaction(transaction => {
+        // This code may get re-run multiple times if there are conflicts.
+        return transaction.get(initialDocRef)
+          .then(foundInitialDoc => {
+            if (!foundInitialDoc.exists) {
+              transaction.set(initialDocRef, initialDocPrepared)
+            }
+          })
+      }).then(function() {
+        if (state._conf.logging) {
+          console.log('[vuex-easy-firestore] Initial doc succesfully inserted.')
+        }
+      }).catch(function(error) {
+        console.error('[vuex-easy-firestore] Initial doc succesfully insertion failed. Further `set` or `patch` actions will also fail. Requires an internet connection when the initial doc is inserted. Please connect to the internet and refresh the page.', error)
+      })
     },
     handleSyncStackDebounce ({state, commit, dispatch, getters}) {
       if (!getters.signedIn) return false
@@ -290,7 +305,7 @@ export default function (Firebase: any): AnyObject {
             // No initial doc found in docMode
             if (state._conf.sync.preventInitialDocInsertion) throw 'preventInitialDocInsertion'
             if (state._conf.logging) console.log('[vuex-easy-firestore] inserting initial doc')
-            dispatch('insertInitialDoc')
+            await dispatch('insertInitialDoc')
             return _doc
           }
           const id = getters.docModeId
@@ -415,7 +430,7 @@ export default function (Firebase: any): AnyObject {
         if (state._conf.logging) {
           console.log(`%c openDBChannel for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: lightcoral')
         }
-        const unsubscribe = dbRef.onSnapshot(querySnapshot => {
+        const unsubscribe = dbRef.onSnapshot(async querySnapshot => {
           const source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
           // 'doc' mode:
           if (!getters.collectionMode) {
@@ -423,7 +438,7 @@ export default function (Firebase: any): AnyObject {
               // No initial doc found in docMode
               if (state._conf.sync.preventInitialDocInsertion) return reject('preventInitialDocInsertion')
               if (state._conf.logging) console.log('[vuex-easy-firestore] inserting initial doc')
-              dispatch('insertInitialDoc')
+              await dispatch('insertInitialDoc')
               return resolve()
             }
             if (source === 'local') return resolve()
