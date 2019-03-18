@@ -802,9 +802,24 @@ function pluginActions (Firebase) {
                 return;
             // 1. Prepare for insert
             var initialDoc = (getters.storeRef) ? getters.storeRef : {};
-            var doc = getters.prepareInitialDocForInsert(initialDoc);
-            // 2. insert
-            return getters.dbRef.set(doc);
+            var initialDocPrepared = getters.prepareInitialDocForInsert(initialDoc);
+            // 2. Create a reference to the SF doc.
+            var initialDocRef = getters.dbRef;
+            return Firebase.firestore().runTransaction(function (transaction) {
+                // This code may get re-run multiple times if there are conflicts.
+                return transaction.get(initialDocRef)
+                    .then(function (foundInitialDoc) {
+                    if (!foundInitialDoc.exists) {
+                        transaction.set(initialDocRef, initialDocPrepared);
+                    }
+                });
+            }).then(function () {
+                if (state._conf.logging) {
+                    console.log('[vuex-easy-firestore] Initial doc succesfully inserted.');
+                }
+            }).catch(function (error) {
+                console.error('[vuex-easy-firestore] Initial doc succesfully insertion failed. Further `set` or `patch` actions will also fail. Requires an internet connection when the initial doc is inserted. Please connect to the internet and refresh the page.', error);
+            });
         },
         handleSyncStackDebounce: function (_a) {
             var state = _a.state, commit = _a.commit, dispatch = _a.dispatch, getters = _a.getters;
@@ -951,19 +966,24 @@ function pluginActions (Firebase) {
                 return getters.dbRef.get().then(function (_doc) { return __awaiter(_this, void 0, void 0, function () {
                     var id, doc;
                     return __generator(this, function (_a) {
-                        if (!_doc.exists) {
-                            // No initial doc found in docMode
-                            if (state._conf.sync.preventInitialDocInsertion)
-                                throw 'preventInitialDocInsertion';
-                            if (state._conf.logging)
-                                console.log('[vuex-easy-firestore] inserting initial doc');
-                            dispatch('insertInitialDoc');
-                            return [2 /*return*/, _doc];
+                        switch (_a.label) {
+                            case 0:
+                                if (!!_doc.exists) return [3 /*break*/, 2];
+                                // No initial doc found in docMode
+                                if (state._conf.sync.preventInitialDocInsertion)
+                                    throw 'preventInitialDocInsertion';
+                                if (state._conf.logging)
+                                    console.log('[vuex-easy-firestore] inserting initial doc');
+                                return [4 /*yield*/, dispatch('insertInitialDoc')];
+                            case 1:
+                                _a.sent();
+                                return [2 /*return*/, _doc];
+                            case 2:
+                                id = getters.docModeId;
+                                doc = getters.cleanUpRetrievedDoc(_doc.data(), id);
+                                dispatch('applyHooksAndUpdateState', { change: 'modified', id: id, doc: doc });
+                                return [2 /*return*/, doc];
                         }
-                        id = getters.docModeId;
-                        doc = getters.cleanUpRetrievedDoc(_doc.data(), id);
-                        dispatch('applyHooksAndUpdateState', { change: 'modified', id: id, doc: doc });
-                        return [2 /*return*/, doc];
                     });
                 }); }).catch(function (error) {
                     console.error('[vuex-easy-firestore]', error);
@@ -1049,6 +1069,7 @@ function pluginActions (Firebase) {
             });
         },
         openDBChannel: function (_a, pathVariables) {
+            var _this = this;
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             dispatch('setUserId');
             // set state for pathVariables
@@ -1087,38 +1108,45 @@ function pluginActions (Firebase) {
                 if (state._conf.logging) {
                     console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: lightcoral');
                 }
-                var unsubscribe = dbRef.onSnapshot(function (querySnapshot) {
-                    var source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server';
-                    // 'doc' mode:
-                    if (!getters.collectionMode) {
-                        if (!querySnapshot.data()) {
-                            // No initial doc found in docMode
-                            if (state._conf.sync.preventInitialDocInsertion)
-                                return reject('preventInitialDocInsertion');
-                            if (state._conf.logging)
-                                console.log('[vuex-easy-firestore] inserting initial doc');
-                            dispatch('insertInitialDoc');
-                            return resolve();
+                var unsubscribe = dbRef.onSnapshot(function (querySnapshot) { return __awaiter(_this, void 0, void 0, function () {
+                    var source, id, doc;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server';
+                                if (!!getters.collectionMode) return [3 /*break*/, 3];
+                                if (!!querySnapshot.data()) return [3 /*break*/, 2];
+                                // No initial doc found in docMode
+                                if (state._conf.sync.preventInitialDocInsertion)
+                                    return [2 /*return*/, reject('preventInitialDocInsertion')];
+                                if (state._conf.logging)
+                                    console.log('[vuex-easy-firestore] inserting initial doc');
+                                return [4 /*yield*/, dispatch('insertInitialDoc')];
+                            case 1:
+                                _a.sent();
+                                return [2 /*return*/, resolve()];
+                            case 2:
+                                if (source === 'local')
+                                    return [2 /*return*/, resolve()];
+                                id = getters.docModeId;
+                                doc = getters.cleanUpRetrievedDoc(querySnapshot.data(), id);
+                                dispatch('applyHooksAndUpdateState', { change: 'modified', id: id, doc: doc });
+                                return [2 /*return*/, resolve()];
+                            case 3:
+                                // 'collection' mode:
+                                querySnapshot.docChanges().forEach(function (change) {
+                                    var changeType = change.type;
+                                    // Don't do anything for local modifications & removals
+                                    if (source === 'local')
+                                        return resolve();
+                                    var id = change.doc.id;
+                                    var doc = getters.cleanUpRetrievedDoc(change.doc.data(), id);
+                                    dispatch('applyHooksAndUpdateState', { change: changeType, id: id, doc: doc });
+                                });
+                                return [2 /*return*/, resolve()];
                         }
-                        if (source === 'local')
-                            return resolve();
-                        var id = getters.docModeId;
-                        var doc = getters.cleanUpRetrievedDoc(querySnapshot.data(), id);
-                        dispatch('applyHooksAndUpdateState', { change: 'modified', id: id, doc: doc });
-                        return resolve();
-                    }
-                    // 'collection' mode:
-                    querySnapshot.docChanges().forEach(function (change) {
-                        var changeType = change.type;
-                        // Don't do anything for local modifications & removals
-                        if (source === 'local')
-                            return resolve();
-                        var id = change.doc.id;
-                        var doc = getters.cleanUpRetrievedDoc(change.doc.data(), id);
-                        dispatch('applyHooksAndUpdateState', { change: changeType, id: id, doc: doc });
                     });
-                    return resolve();
-                }, function (error) {
+                }); }, function (error) {
                     state._sync.patching = 'error';
                     return reject(error);
                 });

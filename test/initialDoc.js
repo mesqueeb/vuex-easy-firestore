@@ -15,8 +15,9 @@ test('initialDoc through openDBRef & fetchAndAdd', async t => {
   // doc doesn't exist yet
   t.is(docR.exists, false)
   try {
-    store.dispatch('initialDoc/openDBChannel', {randomId})
+    await store.dispatch('initialDoc/openDBChannel', {randomId})
   } catch (error) {
+    console.error(error)
     t.fail()
   }
   const testFullPath = store.getters['initialDoc/firestorePathComplete']
