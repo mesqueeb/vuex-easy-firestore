@@ -97,43 +97,65 @@ function setBaseFirebase(firebaseDependency) {
     _BaseFirebase = firebaseDependency;
 }
 var ArrayUnion = /** @class */ (function () {
-    function ArrayUnion(payload) {
+    function ArrayUnion() {
+        var payload = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            payload[_i] = arguments[_i];
+        }
         this.isArrayHelper = true;
         this.payload = payload;
     }
     ArrayUnion.prototype.executeOn = function (array) {
-        if (!array.includes(this.payload)) {
-            array.push(this.payload);
-        }
+        this.payload.forEach(function (item) {
+            if (!array.includes(item)) {
+                array.push(item);
+            }
+        });
         return array;
     };
     ArrayUnion.prototype.getFirestoreFieldValue = function () {
-        return _BaseFirebase.firestore.FieldValue.arrayUnion(this.payload);
+        var _a;
+        return (_a = _BaseFirebase.firestore.FieldValue).arrayUnion.apply(_a, this.payload);
     };
     return ArrayUnion;
 }());
 var ArrayRemove = /** @class */ (function () {
-    function ArrayRemove(payload) {
+    function ArrayRemove() {
+        var payload = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            payload[_i] = arguments[_i];
+        }
         this.isArrayHelper = true;
         this.payload = payload;
     }
     ArrayRemove.prototype.executeOn = function (array) {
-        var index = array.indexOf(this.payload);
-        if (index > -1) {
-            array.splice(index, 1);
-        }
+        this.payload.forEach(function (item) {
+            var index = array.indexOf(item);
+            if (index > -1) {
+                array.splice(index, 1);
+            }
+        });
         return array;
     };
     ArrayRemove.prototype.getFirestoreFieldValue = function () {
-        return _BaseFirebase.firestore.FieldValue.arrayRemove(this.payload);
+        var _a;
+        return (_a = _BaseFirebase.firestore.FieldValue).arrayRemove.apply(_a, this.payload);
     };
     return ArrayRemove;
 }());
-function arrayUnion(payload) {
-    return new ArrayUnion(payload);
+function arrayUnion() {
+    var payload = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        payload[_i] = arguments[_i];
+    }
+    return new (ArrayUnion.bind.apply(ArrayUnion, [void 0].concat(payload)))();
 }
-function arrayRemove(payload) {
-    return new ArrayRemove(payload);
+function arrayRemove() {
+    var payload = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        payload[_i] = arguments[_i];
+    }
+    return new (ArrayRemove.bind.apply(ArrayRemove, [void 0].concat(payload)))();
 }
 function isArrayHelper(value) {
     // this is bugged in vuex actions, I DONT KNOW WHY

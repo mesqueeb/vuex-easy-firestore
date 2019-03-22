@@ -113,7 +113,7 @@ const myModule = {
 export default myModule
 ```
 
-### In a nutshell
+## In a nutshell
 
 Basically what Vuex Easy Firestore does is register your vuex-easy-firestore module to the store and give you a bunch of easy to use actions to retrieve and insert/modify/delete Firestore data.
 
