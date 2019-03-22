@@ -705,6 +705,57 @@ function error (error) {
     return error;
 }
 
+var _BaseFirebase = Firebase;
+function setBaseFirebase(firebaseDependency) {
+    _BaseFirebase = firebaseDependency;
+}
+var ArrayUnion = /** @class */ (function () {
+    function ArrayUnion() {
+        var payload = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            payload[_i] = arguments[_i];
+        }
+        this.isArrayHelper = true;
+        this.payload = payload;
+    }
+    ArrayUnion.prototype.executeOn = function (array) {
+        this.payload.forEach(function (item) {
+            if (!array.includes(item)) {
+                array.push(item);
+            }
+        });
+        return array;
+    };
+    ArrayUnion.prototype.getFirestoreFieldValue = function () {
+        var _a;
+        return (_a = _BaseFirebase.firestore.FieldValue).arrayUnion.apply(_a, this.payload);
+    };
+    return ArrayUnion;
+}());
+var ArrayRemove = /** @class */ (function () {
+    function ArrayRemove() {
+        var payload = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            payload[_i] = arguments[_i];
+        }
+        this.isArrayHelper = true;
+        this.payload = payload;
+    }
+    ArrayRemove.prototype.executeOn = function (array) {
+        this.payload.forEach(function (item) {
+            var index = array.indexOf(item);
+            if (index > -1) {
+                array.splice(index, 1);
+            }
+        });
+        return array;
+    };
+    ArrayRemove.prototype.getFirestoreFieldValue = function () {
+        var _a;
+        return (_a = _BaseFirebase.firestore.FieldValue).arrayRemove.apply(_a, this.payload);
+    };
+    return ArrayRemove;
+}());
 function isArrayHelper(value) {
     // this is bugged in vuex actions, I DONT KNOW WHY
     // return (
@@ -2227,6 +2278,8 @@ function vuexEasyFirestore(easyFirestoreModule, _a) {
         preventInitialDocInsertion: false,
         FirebaseDependency: Firebase
     } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.preventInitialDocInsertion, preventInitialDocInsertion = _d === void 0 ? false : _d, _e = _b.FirebaseDependency, FirebaseDependency = _e === void 0 ? Firebase : _e;
+    if (FirebaseDependency)
+        setBaseFirebase(FirebaseDependency);
     return function (store) {
         // Get an array of config files
         if (!isWhat.isArray(easyFirestoreModule))

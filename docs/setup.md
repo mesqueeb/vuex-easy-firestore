@@ -10,15 +10,90 @@ Firebase is a peer dependency; It will use your existing version.
 
 ## Setup
 
-It's super easy to set up and start using! Below is a short example how to setup your vuex easy firestore module:
+Vuex Easy Firestore is all about adding just a few lines to each Vuex module to automatically have it sync with your Firestore. We'll take you through the next three steps:
 
-1. Add 4 lines of code to your vuex-module
-2. Import the vuex-module wrapped in vuex-easy-firestore plugin
-3. dispatch `openDBChannel` action
+1. Create a Firebase init file
+2. Create a Vuex store init file
+3. Create and export your vuex-easy-firestore modules
 
+### 1. Create a Firebase init file
+
+First we'll create a function that enables Firebase and Firestore and will attempt to enable offline persistence. You can read more on this in the [Firebase documentation](https://firebase.google.com/docs/firestore/manage-data/enable-offline).
 
 ```js
-import createEasyFirestore from 'vuex-easy-firestore'
+// ~config/firebase.js
+import * as Firebase from 'firebase/app'
+import 'firebase/firestore'
+
+function initFirebase () {
+  Firebase.initializeApp({ /* your Firebase config */})
+  return new Promise((resolve, reject) => {
+    Firebase.firestore().enablePersistence()
+      .then(resolve)
+      .catch(err => {
+        if (err.code === 'failed-precondition') {
+          reject(err)
+          // Multiple tabs open, persistence can only be
+          // enabled in one tab at a a time.
+        } else if (err.code === 'unimplemented') {
+          reject(err)
+          // The current browser does not support all of
+          // the features required to enable persistence
+        }
+      })
+  })
+}
+
+export { Firebase, initFirebase }
+```
+
+### 2. Create a Vuex store init file
+
+```js
+// ~store/index.js
+import Vue from 'vue'
+import Vuex from 'vuex'
+import VuexEasyFirestore from 'vuex-easy-firestore'
+Vue.use(Vuex)
+
+// import from step 1
+import { Firebase, initFirebase } from '~config/firebase.js'
+// import from step 3 (below)
+import myModule from './modules/myModule.js'
+
+// do the magic 🧙🏻‍♂️
+const easyFirestore = VuexEasyFirestore(
+  [myModule],
+  {logging: true, FirebaseDependency: Firebase}
+)
+
+// include as PLUGIN in your vuex store:
+const storeData = {
+  // ... your store
+  plugins: [easyFirestore]
+}
+const store = new Vuex.Store(storeData)
+
+// initFirebase
+initFirebase()
+  .catch(error => {
+    // take user to a page stating an error occurred
+    // (might be a connection error, or the app is open in another tab)
+  })
+
+export default store
+```
+
+It's very important that we take the user to an error page when something went wrong with the Firestore initialisation.
+
+When something went wrong and there was no data retrieved from cache or from the server, the user might still be able to see your app but without any data. **In this case it's important that we prevent the user from being able to use the app and start writing data**, because this could potentially overwrite data on the server.
+
+Finally, passing `{logging: true}` as second param for `VuexEasyFirestore` will enable console.logging on each api call. This is recommended for debugging initially, but should be disabled on production.
+
+### 3. Create and export your vuex-easy-firestore modules
+
+```js
+// ~store/modules/myModule.js
 
 const myModule = {
   firestorePath: 'myDocs',
@@ -26,29 +101,25 @@ const myModule = {
   moduleName: 'myModule',
   statePropName: 'data',
   namespaced: true, // automatically added
-  // you can also add your own state/getters/mutations/actions
+
+  // this object is your store module (will be added as '/myModule')
+  // you can also add state/getters/mutations/actions
+  state: {},
+  getters: {},
+  mutations: {},
+  actions: {},
 }
 
-// do the magic 🧙🏻‍♂️
-const easyFirestore = createEasyFirestore(myModule, {logging: true})
-
-// include as PLUGIN in your vuex store:
-const store = {
-  // ... your store
-  plugins: [easyFirestore]
-}
-
-// open the DB channel
-store.dispatch('myModule/openDBChannel')
+export default myModule
 ```
 
-By dispatching `openDBChannel` the library will automatically retrieve all docs from your Firestore collection called `myDocs` and save them in your state at `myModule.data`.
+## In a nutshell
 
-You can edit and add docs and all changes will be synced to Firestore! Please check "[add and manage data](add-and-manage-data.html)" for basic information how to use the actions that are prepared for you.
+Basically what Vuex Easy Firestore does is register your vuex-easy-firestore module to the store and give you a bunch of easy to use actions to retrieve and insert/modify/delete Firestore data.
 
-### Dev logging
+For **retrieving data**, eg. just by doing `dispatch('myModule/openDBChannel')` the library will automatically retrieve all docs from your Firestore collection called `myDocs` and save them in your state at `myModule.data`.
 
-Passing `{logging: true}` as second param will enable console.logging on each api call. This is recommended for debugging initially, but should be disabled on production.
+For **editing data**, you can use `dispatch('myModule/set', {someProp: newVal})` or `dispatch('myModule/insert', {name: 'a new record'})` and all changes will be synced to Firestore!
 
 ## First steps
 
