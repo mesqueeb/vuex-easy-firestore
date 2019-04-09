@@ -430,6 +430,14 @@ export default function (Firebase: any): AnyObject {
         if (state._conf.logging) {
           console.log(`%c openDBChannel for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: lightcoral')
         }
+
+        if (Firebase.firestore()._firestoreClient.persistence &&
+          Firebase.firestore()._firestoreClient.persistence.constructor.name === 'IndexedDbPersistence' &&
+          !navigator.onLine
+        ) {
+          dispatch('fetchAndAdd')
+        }
+
         const unsubscribe = dbRef.onSnapshot(async querySnapshot => {
           const source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
           // 'doc' mode:
@@ -451,7 +459,7 @@ export default function (Firebase: any): AnyObject {
           querySnapshot.docChanges().forEach(change => {
             const changeType = change.type
             // Don't do anything for local modifications & removals
-            if (source === 'local' && changeType !== 'added') return resolve()
+            if (source === 'local') return resolve()
             const id = change.doc.id
             const doc = getters.cleanUpRetrievedDoc(change.doc.data(), id)
             dispatch('applyHooksAndUpdateState', {change: changeType, id, doc})
