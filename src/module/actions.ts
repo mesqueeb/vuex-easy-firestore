@@ -451,7 +451,7 @@ export default function (Firebase: any): AnyObject {
           querySnapshot.docChanges().forEach(change => {
             const changeType = change.type
             // Don't do anything for local modifications & removals
-            if (source === 'local') return resolve()
+            if (source === 'local' && changeType !== 'added') return resolve()
             const id = change.doc.id
             const doc = getters.cleanUpRetrievedDoc(change.doc.data(), id)
             dispatch('applyHooksAndUpdateState', {change: changeType, id, doc})
