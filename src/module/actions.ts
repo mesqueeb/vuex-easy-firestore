@@ -393,7 +393,8 @@ export default function (Firebase: any): AnyObject {
     },
     openDBChannel ({getters, state, commit, dispatch}, pathVariables) {
       dispatch('setUserId')
-      const store = this
+      // `first` makes sure that local changes made during offline are reflected as server changes which the app is refreshed during offline mode
+      let first = true
       // set state for pathVariables
       if (pathVariables && isPlainObject(pathVariables)) {
         commit('SET_SYNCFILTERS', pathVariables)
@@ -441,21 +442,23 @@ export default function (Firebase: any): AnyObject {
               await dispatch('insertInitialDoc')
               return resolve()
             }
-            if (source === 'local') return resolve()
+            if (source === 'local' && !first) return resolve()
             const id = getters.docModeId
             const doc = getters.cleanUpRetrievedDoc(querySnapshot.data(), id)
             dispatch('applyHooksAndUpdateState', {change: 'modified', id, doc})
+            first = false
             return resolve()
           }
           // 'collection' mode:
           querySnapshot.docChanges().forEach(change => {
             const changeType = change.type
             // Don't do anything for local modifications & removals
-            if (source === 'local') return resolve()
+            if (source === 'local' && !first) return resolve()
             const id = change.doc.id
             const doc = getters.cleanUpRetrievedDoc(change.doc.data(), id)
             dispatch('applyHooksAndUpdateState', {change: changeType, id, doc})
           })
+          first = false
           return resolve()
         }, error => {
           state._sync.patching = 'error'
