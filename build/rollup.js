@@ -23,6 +23,16 @@ const name = pkg.name
 const className = name.replace(/(^\w|-\w)/g, c => c.replace('-', '').toUpperCase())
 const external = Object.keys(pkg.dependencies || [])
 const plugins = [
+  // resolve({only: [
+  //   'compare-anything',
+  //   'copy-anything',
+  //   'filter-anything',
+  //   'find-and-replace-anything',
+  //   'flatten-anything',
+  //   'is-what',
+  //   'merge-anything',
+  //   'vuex-easy-access',
+  // ]}),
   typescript({useTsconfigDeclarationDir: true}),
 ]
 

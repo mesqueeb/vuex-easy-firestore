@@ -1630,6 +1630,8 @@ function pluginActions (Firebase) {
             var _this = this;
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             dispatch('setUserId');
+            // `first` makes sure that local changes made during offline are reflected as server changes which the app is refreshed during offline mode
+            var first = true;
             // set state for pathVariables
             if (pathVariables && isWhat.isPlainObject(pathVariables)) {
                 commit('SET_SYNCFILTERS', pathVariables);
@@ -1684,23 +1686,25 @@ function pluginActions (Firebase) {
                                 _a.sent();
                                 return [2 /*return*/, resolve()];
                             case 2:
-                                if (source === 'local')
+                                if (source === 'local' && !first)
                                     return [2 /*return*/, resolve()];
                                 id = getters.docModeId;
                                 doc = getters.cleanUpRetrievedDoc(querySnapshot.data(), id);
                                 dispatch('applyHooksAndUpdateState', { change: 'modified', id: id, doc: doc });
+                                first = false;
                                 return [2 /*return*/, resolve()];
                             case 3:
                                 // 'collection' mode:
                                 querySnapshot.docChanges().forEach(function (change) {
                                     var changeType = change.type;
                                     // Don't do anything for local modifications & removals
-                                    if (source === 'local')
+                                    if (source === 'local' && !first)
                                         return resolve();
                                     var id = change.doc.id;
                                     var doc = getters.cleanUpRetrievedDoc(change.doc.data(), id);
                                     dispatch('applyHooksAndUpdateState', { change: changeType, id: id, doc: doc });
                                 });
+                                first = false;
                                 return [2 /*return*/, resolve()];
                         }
                     });
