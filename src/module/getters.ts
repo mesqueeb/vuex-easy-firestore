@@ -1,11 +1,9 @@
 import { isString, isArray } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
-import { findAndReplaceIf } from 'find-and-replace-anything'
 import filter from 'filter-anything'
 import merge from 'merge-anything'
 import flatten from 'flatten-anything'
 import { getPathVarMatches } from '../utils/apiHelpers'
-import { isArrayHelper } from '../utils/arrayHelpers'
 import setDefaultValues from '../utils/setDefaultValues'
 import { AnyObject } from '../declarations'
 import error from './errors'
@@ -117,14 +115,6 @@ export default function (Firebase: any): AnyObject {
           // set default fields
           patchData.updated_at = new Date()
           patchData.updated_by = state._sync.userId
-          // replace arrayUnion and arrayRemove
-          function checkFn (foundVal) {
-            if (isArrayHelper(foundVal)) {
-              return foundVal.getFirestoreFieldValue()
-            }
-            return foundVal
-          }
-          patchData = findAndReplaceIf(patchData, checkFn)
           // clean up item
           const cleanedPatchData = filter(patchData, getters.fillables, getters.guard)
           const itemToUpdate = flatten(cleanedPatchData)

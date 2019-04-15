@@ -4,16 +4,16 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var Firebase = require('firebase/app');
+var Firebase$2 = require('firebase/app');
 require('firebase/firestore');
 require('firebase/auth');
 var vuexEasyAccess = require('vuex-easy-access');
 var isWhat = require('is-what');
 var copy = _interopDefault(require('copy-anything'));
 var merge = _interopDefault(require('merge-anything'));
+var findAndReplaceAnything = require('find-and-replace-anything');
 var flatten = _interopDefault(require('flatten-anything'));
 var compareAnything = require('compare-anything');
-var findAndReplaceAnything = require('find-and-replace-anything');
 var filter = _interopDefault(require('filter-anything'));
 
 var defaultConfig = {
@@ -98,9 +98,9 @@ function error (error) {
     return error;
 }
 
-var _BaseFirebase = Firebase;
-function setBaseFirebase(firebaseDependency) {
-    _BaseFirebase = firebaseDependency;
+var Firebase = Firebase$2;
+function setFirebaseDependency(firebaseDependency) {
+    Firebase = firebaseDependency;
 }
 var ArrayUnion = /** @class */ (function () {
     function ArrayUnion() {
@@ -121,7 +121,7 @@ var ArrayUnion = /** @class */ (function () {
     };
     ArrayUnion.prototype.getFirestoreFieldValue = function () {
         var _a;
-        return (_a = _BaseFirebase.firestore.FieldValue).arrayUnion.apply(_a, this.payload);
+        return (_a = Firebase.firestore.FieldValue).arrayUnion.apply(_a, this.payload);
     };
     return ArrayUnion;
 }());
@@ -145,7 +145,7 @@ var ArrayRemove = /** @class */ (function () {
     };
     ArrayRemove.prototype.getFirestoreFieldValue = function () {
         var _a;
-        return (_a = _BaseFirebase.firestore.FieldValue).arrayRemove.apply(_a, this.payload);
+        return (_a = Firebase.firestore.FieldValue).arrayRemove.apply(_a, this.payload);
     };
     return ArrayRemove;
 }());
@@ -173,6 +173,34 @@ function isArrayHelper(value) {
         !isWhat.isPlainObject(value) &&
         // @ts-ignore
         value.isArrayHelper === true);
+}
+
+var Firebase$1 = Firebase$2;
+function setFirebaseDependency$1(firebaseDependency) {
+    Firebase$1 = firebaseDependency;
+}
+var Increment = /** @class */ (function () {
+    function Increment(payload) {
+        this.isIncrementHelper = true;
+        this.payload = payload;
+    }
+    Increment.prototype.executeOn = function (counter) {
+        return counter + this.payload;
+    };
+    Increment.prototype.getFirestoreFieldValue = function () {
+        return Firebase$1.firestore.FieldValue.increment(this.payload);
+    };
+    return Increment;
+}());
+function increment(payload) {
+    return new Increment(payload);
+}
+function isIncrementHelper(payload) {
+    // return payload instanceof Increment
+    return (isWhat.isAnyObject(payload) &&
+        !isWhat.isPlainObject(payload) &&
+        // @ts-ignore
+        payload.isIncrementHelper === true);
 }
 
 /**
@@ -283,20 +311,17 @@ function pluginMutations (userState) {
                 return error('patchNoRef');
             return Object.keys(patches).forEach(function (key) {
                 var newVal = patches[key];
-                // Array unions and deletions
-                if (isWhat.isArray(ref[key]) && isArrayHelper(patches[key])) {
-                    newVal = patches[key].executeOn(ref[key]);
-                }
                 // Merge if exists
-                function arrayHelpers(originVal, newVal) {
+                function helpers(originVal, newVal) {
                     if (isWhat.isArray(originVal) && isArrayHelper(newVal)) {
+                        newVal = newVal.executeOn(originVal);
+                    }
+                    if (isWhat.isNumber(originVal) && isIncrementHelper(newVal)) {
                         newVal = newVal.executeOn(originVal);
                     }
                     return newVal; // always return newVal as fallback!!
                 }
-                if (isWhat.isPlainObject(ref[key]) && isWhat.isPlainObject(patches[key])) {
-                    newVal = merge({ extensions: [arrayHelpers] }, ref[key], patches[key]);
-                }
+                newVal = merge({ extensions: [helpers] }, ref[key], patches[key]);
                 _this._vm.$set(ref, key, newVal);
             });
         },
@@ -750,7 +775,7 @@ function pluginActions (Firebase) {
             var _c = _b === void 0 ? { ids: [], doc: {} } : _b, _d = _c.id, id = _d === void 0 ? '' : _d, _e = _c.ids, ids = _e === void 0 ? [] : _e, doc = _c.doc;
             // 0. payload correction (only arrays)
             if (!isWhat.isArray(ids))
-                return console.error('[vuex-easy-firestore] ids needs to be an array');
+                return console.error("[vuex-easy-firestore] ids needs to be an array");
             if (id)
                 ids.push(id);
             // EXTRA: check if doc is being inserted if so
@@ -771,9 +796,36 @@ function pluginActions (Firebase) {
             var syncStackItems = getters.prepareForPatch(ids, doc);
             // 2. Push to syncStack
             Object.keys(syncStackItems).forEach(function (id) {
-                var newVal = (!state._sync.syncStack.updates[id])
-                    ? syncStackItems[id]
-                    : merge(state._sync.syncStack.updates[id], syncStackItems[id]);
+                var newVal;
+                if (!state._sync.syncStack.updates[id]) {
+                    // replace arrayUnion and arrayRemove
+                    newVal = findAndReplaceAnything.findAndReplaceIf(syncStackItems[id], function (foundVal) {
+                        if (isArrayHelper(foundVal)) {
+                            return foundVal.getFirestoreFieldValue();
+                        }
+                        if (isIncrementHelper(foundVal)) {
+                            return foundVal.getFirestoreFieldValue();
+                        }
+                        return foundVal;
+                    });
+                }
+                else {
+                    newVal = merge({ extensions: [
+                            function (originVal, newVal) {
+                                if (originVal instanceof Firebase.firestore.FieldValue &&
+                                    isArrayHelper(newVal)) {
+                                    originVal._elements = originVal._elements.concat(newVal.payload);
+                                    newVal = originVal;
+                                }
+                                if (originVal instanceof Firebase.firestore.FieldValue &&
+                                    isIncrementHelper(newVal)) {
+                                    originVal._operand = originVal._operand + newVal.payload;
+                                    newVal = originVal;
+                                }
+                                return newVal; // always return newVal as fallback!!
+                            }
+                        ] }, state._sync.syncStack.updates[id], syncStackItems[id]);
+                }
                 state._sync.syncStack.updates[id] = newVal;
             });
             // 3. Create or refresh debounce
@@ -1505,14 +1557,6 @@ function pluginGetters (Firebase) {
                     // set default fields
                     patchData.updated_at = new Date();
                     patchData.updated_by = state._sync.userId;
-                    // replace arrayUnion and arrayRemove
-                    function checkFn(foundVal) {
-                        if (isArrayHelper(foundVal)) {
-                            return foundVal.getFirestoreFieldValue();
-                        }
-                        return foundVal;
-                    }
-                    patchData = findAndReplaceAnything.findAndReplaceIf(patchData, checkFn);
                     // clean up item
                     var cleanedPatchData = filter(patchData, getters.fillables, getters.guard);
                     var itemToUpdate = flatten(cleanedPatchData);
@@ -1750,10 +1794,12 @@ function vuexEasyFirestore(easyFirestoreModule, _a) {
     var _b = _a === void 0 ? {
         logging: false,
         preventInitialDocInsertion: false,
-        FirebaseDependency: Firebase
-    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.preventInitialDocInsertion, preventInitialDocInsertion = _d === void 0 ? false : _d, _e = _b.FirebaseDependency, FirebaseDependency = _e === void 0 ? Firebase : _e;
-    if (FirebaseDependency)
-        setBaseFirebase(FirebaseDependency);
+        FirebaseDependency: Firebase$2
+    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.preventInitialDocInsertion, preventInitialDocInsertion = _d === void 0 ? false : _d, _e = _b.FirebaseDependency, FirebaseDependency = _e === void 0 ? Firebase$2 : _e;
+    if (FirebaseDependency) {
+        setFirebaseDependency(FirebaseDependency);
+        setFirebaseDependency$1(FirebaseDependency);
+    }
     return function (store) {
         // Get an array of config files
         if (!isWhat.isArray(easyFirestoreModule))
@@ -1773,4 +1819,5 @@ function vuexEasyFirestore(easyFirestoreModule, _a) {
 exports.vuexEasyFirestore = vuexEasyFirestore;
 exports.arrayUnion = arrayUnion;
 exports.arrayRemove = arrayRemove;
+exports.increment = increment;
 exports.default = vuexEasyFirestore;

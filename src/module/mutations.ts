@@ -1,9 +1,10 @@
-import { isPlainObject, isArray, isFunction } from 'is-what'
+import { isPlainObject, isArray, isFunction, isNumber } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
 import error from './errors'
 import merge from 'merge-anything'
 import { AnyObject } from '../declarations'
 import { isArrayHelper } from '../utils/arrayHelpers'
+import { isIncrementHelper } from '../utils/incrementHelper'
 
 /**
  * a function returning the mutations object
@@ -103,20 +104,17 @@ export default function (userState: object): AnyObject {
       if (!ref) return error('patchNoRef')
       return Object.keys(patches).forEach(key => {
         let newVal = patches[key]
-        // Array unions and deletions
-        if (isArray(ref[key]) && isArrayHelper(patches[key])) {
-          newVal = patches[key].executeOn(ref[key])
-        }
         // Merge if exists
-        function arrayHelpers (originVal, newVal) {
+        function helpers (originVal, newVal) {
           if (isArray(originVal) && isArrayHelper(newVal)) {
+            newVal = newVal.executeOn(originVal)
+          }
+          if (isNumber(originVal) && isIncrementHelper(newVal)) {
             newVal = newVal.executeOn(originVal)
           }
           return newVal // always return newVal as fallback!!
         }
-        if (isPlainObject(ref[key]) && isPlainObject(patches[key])) {
-          newVal = merge({extensions: [arrayHelpers]}, ref[key], patches[key])
-        }
+        newVal = merge({extensions: [helpers]}, ref[key], patches[key])
         this._vm.$set(ref, key, newVal)
       })
     },

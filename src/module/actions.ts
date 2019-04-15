@@ -1,4 +1,5 @@
 import { isArray, isPlainObject, isFunction, isNumber } from 'is-what'
+import { findAndReplaceIf } from 'find-and-replace-anything'
 import copy from 'copy-anything'
 import merge from 'merge-anything'
 import flatten from 'flatten-anything'
@@ -8,6 +9,8 @@ import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
 import { makeBatchFromSyncstack, createFetchIdentifier } from '../utils/apiHelpers'
 import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
+import { isArrayHelper } from '../utils/arrayHelpers'
+import { isIncrementHelper } from '../utils/incrementHelper'
 import error from './errors'
 
 /**
@@ -61,7 +64,7 @@ export default function (Firebase: any): AnyObject {
       {id = '', ids = [], doc}: {id?: string, ids?: string[], doc?: AnyObject} = {ids: [], doc: {}}
     ) {
       // 0. payload correction (only arrays)
-      if (!isArray(ids)) return console.error('[vuex-easy-firestore] ids needs to be an array')
+      if (!isArray(ids)) return console.error(`[vuex-easy-firestore] ids needs to be an array`)
       if (id) ids.push(id)
 
       // EXTRA: check if doc is being inserted if so
@@ -82,10 +85,45 @@ export default function (Firebase: any): AnyObject {
       const syncStackItems = getters.prepareForPatch(ids, doc)
 
       // 2. Push to syncStack
+
       Object.keys(syncStackItems).forEach(id => {
-        const newVal = (!state._sync.syncStack.updates[id])
-          ? syncStackItems[id]
-          : merge(state._sync.syncStack.updates[id], syncStackItems[id])
+        let newVal
+        if (!state._sync.syncStack.updates[id]) {
+          // replace arrayUnion and arrayRemove
+          newVal = findAndReplaceIf(syncStackItems[id], foundVal => {
+            if (isArrayHelper(foundVal)) {
+              return foundVal.getFirestoreFieldValue()
+            }
+            if (isIncrementHelper(foundVal)) {
+              return foundVal.getFirestoreFieldValue()
+            }
+            return foundVal
+          })
+        } else {
+          newVal = merge(
+            {extensions: [
+              (originVal, newVal) => {
+                if (
+                  originVal instanceof Firebase.firestore.FieldValue &&
+                  isArrayHelper(newVal)
+                ) {
+                  originVal._elements = originVal._elements.concat(newVal.payload)
+                  newVal = originVal
+                }
+                if (
+                  originVal instanceof Firebase.firestore.FieldValue &&
+                  isIncrementHelper(newVal)
+                ) {
+                  originVal._operand = originVal._operand + newVal.payload
+                  newVal = originVal
+                }
+                return newVal // always return newVal as fallback!!
+              }
+            ]},
+            state._sync.syncStack.updates[id],
+            syncStackItems[id]
+          )
+        }
         state._sync.syncStack.updates[id] = newVal
       })
 

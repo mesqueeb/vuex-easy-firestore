@@ -2,6 +2,7 @@ import 'firebase/firestore';
 import 'firebase/auth';
 import { IEasyFirestoreModule } from './declarations';
 import { arrayUnion, arrayRemove } from './utils/arrayHelpers';
+import { increment } from './utils/incrementHelper';
 /**
  * Create vuex-easy-firestore modules. Add as single plugin to Vuex Store.
  *
@@ -15,5 +16,5 @@ declare function vuexEasyFirestore(easyFirestoreModule: IEasyFirestoreModule | I
     preventInitialDocInsertion?: boolean;
     FirebaseDependency?: any;
 }): any;
-export { vuexEasyFirestore, arrayUnion, arrayRemove };
+export { vuexEasyFirestore, arrayUnion, arrayRemove, increment };
 export default vuexEasyFirestore;

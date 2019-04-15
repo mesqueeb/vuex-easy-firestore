@@ -79,4 +79,22 @@ test('[COLLECTION] set arrayUnion & arrayRemove', async t => {
   t.deepEqual(doc.arr2, [])
   t.deepEqual(doc.nested.arr1, [1, 2, 3, 0, 'a', 'b'])
   t.deepEqual(doc.nested.arr2, [])
+  // multiple values right after each other
+  store.dispatch('pokemonBox/set', {
+    id,
+    arr1: arrayRemove(1),
+    arr2: arrayUnion(1),
+  })
+  store.dispatch('pokemonBox/set', {
+    id,
+    arr1: arrayRemove('a'),
+    arr2: arrayUnion('a'),
+  })
+  t.deepEqual(box.pokemon[id].arr1, [2, 3, 0, 'b'])
+  t.deepEqual(box.pokemon[id].arr2, [1, 'a'])
+  await wait(2)
+  docR = await boxRef.doc(id).get()
+  doc = docR.data()
+  t.deepEqual(doc.arr1, [2, 3, 0, 'b'])
+  t.deepEqual(doc.arr2, [1, 'a'])
 })
