@@ -6,7 +6,8 @@ import { getKeysFromPath } from 'vuex-easy-access'
 import { isArray } from 'is-what'
 import iniModule from './module'
 import { IEasyFirestoreModule } from './declarations'
-import { arrayUnion, arrayRemove, setBaseFirebase } from './utils/arrayHelpers'
+import { arrayUnion, arrayRemove, setFirebaseDependency as setFirebase1 } from './utils/arrayHelpers'
+import { increment, setFirebaseDependency as setFirebase2 } from './utils/incrementHelper'
 
 /**
  * Create vuex-easy-firestore modules. Add as single plugin to Vuex Store.
@@ -16,7 +17,6 @@ import { arrayUnion, arrayRemove, setBaseFirebase } from './utils/arrayHelpers'
  * @param {{logging?: boolean, FirebaseDependency?: any}} extraConfig An object with `logging` and `FirebaseDependency` props. `logging` enables console logs for debugging. `FirebaseDependency` is the non-instanciated Firebase class you can pass. (defaults to the Firebase peer dependency)
  * @returns {*}
  */
-
 function vuexEasyFirestore (
   easyFirestoreModule: IEasyFirestoreModule | IEasyFirestoreModule[],
   {
@@ -33,7 +33,10 @@ function vuexEasyFirestore (
     FirebaseDependency: Firebase
   }
 ): any {
-  if (FirebaseDependency) setBaseFirebase(FirebaseDependency)
+  if (FirebaseDependency) {
+    setFirebase1(FirebaseDependency)
+    setFirebase2(FirebaseDependency)
+  }
   return store => {
     // Get an array of config files
     if (!isArray(easyFirestoreModule)) easyFirestoreModule = [easyFirestoreModule]
@@ -49,5 +52,5 @@ function vuexEasyFirestore (
   }
 }
 
-export { vuexEasyFirestore, arrayUnion, arrayRemove }
+export { vuexEasyFirestore, arrayUnion, arrayRemove, increment }
 export default vuexEasyFirestore

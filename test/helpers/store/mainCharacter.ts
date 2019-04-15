@@ -6,6 +6,7 @@ function initialState () {
     pokemonBelt: [],
     items: [],
     multipleFastEdits: null,
+    stepCounter: 0,
   }
 }
 

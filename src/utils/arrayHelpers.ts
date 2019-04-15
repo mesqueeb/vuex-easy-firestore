@@ -1,11 +1,11 @@
 import { isAnyObject, isPlainObject, isArray } from 'is-what'
-import * as Firebase from 'firebase/app'
+import * as firebase from 'firebase/app'
 import 'firebase/firestore'
 
-let _BaseFirebase = Firebase
+let Firebase = firebase
 
-export function setBaseFirebase (firebaseDependency) {
-  _BaseFirebase = firebaseDependency
+export function setFirebaseDependency (firebaseDependency) {
+  Firebase = firebaseDependency
 }
 
 export class ArrayUnion {
@@ -24,7 +24,7 @@ export class ArrayUnion {
     return array
   }
   getFirestoreFieldValue () {
-    return _BaseFirebase.firestore.FieldValue.arrayUnion(...this.payload)
+    return Firebase.firestore.FieldValue.arrayUnion(...this.payload)
   }
 }
 
@@ -45,7 +45,7 @@ export class ArrayRemove {
     return array
   }
   getFirestoreFieldValue () {
-    return _BaseFirebase.firestore.FieldValue.arrayRemove(...this.payload)
+    return Firebase.firestore.FieldValue.arrayRemove(...this.payload)
   }
 }
 
