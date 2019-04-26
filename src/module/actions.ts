@@ -362,6 +362,24 @@ export default function (Firebase: any): AnyObject {
           return querySnapshot
         })
     },
+    async fetchById ({dispatch, getters, state}, id) {
+      try {
+        if (!id) throw 'missing-id'
+        if (!getters.collectionMode) throw 'only-in-collection-mode'
+        const ref = getters.dbRef
+        const _doc = await ref.doc(id).get()
+        if (!_doc.exists) {
+          if (state._conf.logging) {
+            throw `Doc with id "${id}" not found!`
+          }
+        }
+        const doc = getters.cleanUpRetrievedDoc(_doc.data(), id)
+        dispatch('applyHooksAndUpdateState', {change: 'added', id, doc})
+        return doc
+      } catch (e) {
+        return logError(e)
+      }
+    },
     applyHooksAndUpdateState ( // this is only on server retrievals
       {getters, state, commit, dispatch},
       {change, id, doc = {}}: {change: 'added' | 'removed' | 'modified', id: string, doc: AnyObject}

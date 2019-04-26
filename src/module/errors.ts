@@ -19,6 +19,9 @@ const errorMessages = {
 
     Use \`.\` for sub props!
   `,
+  'missing-id': `
+    This action requires an id to be passed!
+  `,
   'patch-missing-id': `
     Missing an id of the doc you want to patch!
     Correct usage:

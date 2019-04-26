@@ -699,11 +699,12 @@ function pluginState () {
  * execute Error() based on an error id string
  *
  * @export
- * @param {string} error the error id
+ * @param {string} errorId the error id
+ * @param {any} [error] an actual error from an async request or something
  * @returns {string} the error id
  */
-function error (error) {
-    return error;
+function error (errorId, error) {
+    return errorId;
 }
 
 var Firebase = Firebase$1;
@@ -882,7 +883,7 @@ function pluginMutations (userState) {
                 ref = ref[patches.id];
             }
             if (!ref)
-                return error('patchNoRef');
+                return error('patch-no-ref');
             return Object.keys(patches).forEach(function (key) {
                 var newVal = patches[key];
                 // Merge if exists
@@ -1222,11 +1223,8 @@ function pluginActions (Firebase) {
                 userId = Firebase.auth().currentUser.uid;
             }
             commit('SET_USER_ID', userId);
-            if (getters.firestorePathComplete.includes('{userId}')) {
-                var error_1 = '[vuex-easy-firestore] error trying to set userId.\n Try doing \`dispatch(\'module/setUserId\', userId)\ before openDBChannel or fetchAndAdd.`';
-                console.error(error_1);
-                throw error_1;
-            }
+            if (getters.firestorePathComplete.includes('{userId}'))
+                return error('user-auth');
         },
         clearUser: function (_a) {
             var commit = _a.commit;
@@ -1244,7 +1242,7 @@ function pluginActions (Firebase) {
                     switch (_c.label) {
                         case 0:
                             if (!getters.collectionMode)
-                                return [2 /*return*/, console.error('[vuex-easy-firestore] You can only duplicate in \'collection\' mode.')];
+                                return [2 /*return*/, error('only-in-collection-mode')];
                             if (!id)
                                 return [2 /*return*/, {}];
                             doc = merge(getters.storeRef[id], { id: null });
@@ -1262,7 +1260,7 @@ function pluginActions (Firebase) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             if (ids === void 0) { ids = []; }
             if (!getters.collectionMode)
-                return console.error('[vuex-easy-firestore] You can only duplicate in \'collection\' mode.');
+                return error('only-in-collection-mode');
             if (!isWhat.isArray(ids) || !ids.length)
                 return {};
             var idsMap = ids.reduce(function (carry, id) { return __awaiter(_this, void 0, void 0, function () {
@@ -1286,7 +1284,7 @@ function pluginActions (Firebase) {
             var _c = _b === void 0 ? { ids: [], doc: {} } : _b, _d = _c.id, id = _d === void 0 ? '' : _d, _e = _c.ids, ids = _e === void 0 ? [] : _e, doc = _c.doc;
             // 0. payload correction (only arrays)
             if (!isWhat.isArray(ids))
-                return console.error("[vuex-easy-firestore] ids needs to be an array");
+                return error("`ids` prop passed to 'patch' needs to be an array");
             if (id)
                 ids.push(id);
             // EXTRA: check if doc is being inserted if so
@@ -1404,12 +1402,12 @@ function pluginActions (Firebase) {
                         transaction.set(initialDocRef, initialDocPrepared);
                     }
                 });
-            }).then(function () {
+            }).then(function (_) {
                 if (state._conf.logging) {
                     console.log('[vuex-easy-firestore] Initial doc succesfully inserted.');
                 }
-            }).catch(function (error) {
-                console.error('[vuex-easy-firestore] Initial doc succesfully insertion failed. Further `set` or `patch` actions will also fail. Requires an internet connection when the initial doc is inserted. Please connect to the internet and refresh the page.', error);
+            }).catch(function (error$1) {
+                return error('initial-doc-failed', error$1);
             });
         },
         handleSyncStackDebounce: function (_a) {
@@ -1440,11 +1438,10 @@ function pluginActions (Firebase) {
                     }
                     dispatch('_stopPatching');
                     return resolve();
-                }).catch(function (error) {
+                }).catch(function (error$1) {
                     state._sync.patching = 'error';
                     state._sync.syncStack.debounceTimer = null;
-                    console.error('Error during synchronisation ↓');
-                    return reject(error);
+                    return reject(error$1);
                 });
             });
         },
@@ -1511,7 +1508,7 @@ function pluginActions (Firebase) {
                     fRef = fRef.limit(limit);
                 // Stop if all records already fetched
                 if (fRequest.retrievedFetchRefs.includes(fRef)) {
-                    console.error('[vuex-easy-firestore] Already retrieved this part.');
+                    console.log('[vuex-easy-firestore] Already retrieved this part.');
                     return resolve();
                 }
                 // make fetch request
@@ -1532,9 +1529,8 @@ function pluginActions (Firebase) {
                     // set the reference for the next records.
                     var next = fRef.startAfter(lastVisible);
                     state._sync.fetched[identifier].nextFetchRef = next;
-                }).catch(function (error) {
-                    console.error('[vuex-easy-firestore]', error);
-                    return reject(error);
+                }).catch(function (error$1) {
+                    return reject(error(error$1));
                 });
             });
         },
@@ -1576,9 +1572,8 @@ function pluginActions (Firebase) {
                                 return [2 /*return*/, doc];
                         }
                     });
-                }); }).catch(function (error) {
-                    console.error('[vuex-easy-firestore]', error);
-                    return error;
+                }); }).catch(function (error$1) {
+                    return error(error$1);
                 });
             }
             // 'collection' mode:
@@ -1594,6 +1589,38 @@ function pluginActions (Firebase) {
                     });
                 }
                 return querySnapshot;
+            });
+        },
+        fetchById: function (_a, id) {
+            var dispatch = _a.dispatch, getters = _a.getters, state = _a.state;
+            return __awaiter(this, void 0, void 0, function () {
+                var ref, _doc, doc, e_1;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            _b.trys.push([0, 2, , 3]);
+                            if (!id)
+                                throw 'missing-id';
+                            if (!getters.collectionMode)
+                                throw 'only-in-collection-mode';
+                            ref = getters.dbRef;
+                            return [4 /*yield*/, ref.doc(id).get()];
+                        case 1:
+                            _doc = _b.sent();
+                            if (!_doc.exists) {
+                                if (state._conf.logging) {
+                                    throw "Doc with id \"" + id + "\" not found!";
+                                }
+                            }
+                            doc = getters.cleanUpRetrievedDoc(_doc.data(), id);
+                            dispatch('applyHooksAndUpdateState', { change: 'added', id: id, doc: doc });
+                            return [2 /*return*/, doc];
+                        case 2:
+                            e_1 = _b.sent();
+                            return [2 /*return*/, error(e_1)];
+                        case 3: return [2 /*return*/];
+                    }
+                });
             });
         },
         applyHooksAndUpdateState: function (// this is only on server retrievals
@@ -1741,9 +1768,9 @@ function pluginActions (Firebase) {
                                 return [2 /*return*/, resolve()];
                         }
                     });
-                }); }, function (error) {
+                }); }, function (error$1) {
                     state._sync.patching = 'error';
-                    return reject(error);
+                    return reject(error(error$1));
                 });
                 state._sync.unsubscribe[identifier] = unsubscribe;
             });
@@ -1845,7 +1872,7 @@ function pluginActions (Firebase) {
             var id = (getters.collectionMode) ? getId(doc) : getters.docModeId;
             var value = (getters.collectionMode) ? getValueFromPayloadPiece(doc) : doc;
             if (!id && getters.collectionMode)
-                return;
+                return error('patch-missing-id');
             // check userId
             dispatch('setUserId');
             // add id to value
@@ -1904,12 +1931,12 @@ function pluginActions (Firebase) {
                 if (pathDelete) {
                     var path = _id;
                     if (!path)
-                        return error('actionsDeleteMissingPath');
+                        return error('delete-missing-path');
                     commit('DELETE_PROP', path);
                     return dispatch('deleteProp', path);
                 }
                 if (!_id)
-                    return error('actionsDeleteMissingId');
+                    return error('delete-missing-id');
                 commit('DELETE_DOC', _id);
                 return dispatch('deleteDoc', _id);
             }
@@ -1937,12 +1964,12 @@ function pluginActions (Firebase) {
                     if (pathDelete) {
                         var path = _id;
                         if (!path)
-                            return error('actionsDeleteMissingPath');
+                            return error('delete-missing-path');
                         commit('DELETE_PROP', path);
                         return dispatch('deleteProp', path);
                     }
                     if (!_id)
-                        return error('actionsDeleteMissingId');
+                        return error('delete-missing-id');
                     commit('DELETE_DOC', _id);
                     return dispatch('deleteDoc', _id);
                 });
@@ -2151,7 +2178,7 @@ function pluginGetters (Firebase) {
                             return;
                         }
                         if (!Object.keys(state._sync.pathVariables).includes(key)) {
-                            return error('missingPathVarKey');
+                            return error('missing-path-variables');
                         }
                         var varVal = state._sync.pathVariables[key];
                         // if path is only a param we need to just assign to avoid stringification
