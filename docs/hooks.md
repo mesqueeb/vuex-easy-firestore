@@ -31,7 +31,7 @@ But you may choose not to call this to abort the mutation. If you do not call `u
 
 _Hooks after server changes_ work just like _hooks on local changes_ but for changes that have occured on the server. Just as with the hooks for local changes, you can use these hooks to make changes to incoming documents or prevent them from being added to your vuex module.
 
-These hooks will fire not only on modifications and inserts **but also when dispatching `openDBChannel` or `fetchAndAdd`**. Be sure to check the **execution timings of hooks** below to know when which are executed.
+These hooks will fire not only on modifications and inserts **but also when dispatching `openDBChannel` or `fetchAndAdd` or `fetchById`**. Be sure to check the **execution timings of hooks** below to know when which are executed.
 
 You also have some extra parameters to work with:
 
@@ -53,7 +53,7 @@ Please make sure to check the overview of execution timings of hooks, in the nex
 
 ## Hooks on openDBChannel / fetch
 
-The "Hooks after server changes" explained above also trigger once on `openDBChannel` and `fetchAndAdd`. Check the **execution timings of hooks** below to know precisely when which hooks are executed.
+The "Hooks after server changes" explained above also trigger once on `openDBChannel` and `fetchAndAdd` and `fetchById`. Check the **execution timings of hooks** below to know precisely when which hooks are executed.
 
 ## Execution timings of hooks
 
@@ -86,7 +86,13 @@ The "Hooks after server changes" explained above also trigger once on `openDBCha
     <td><code>serverChange.removedHook</code></td>
   </tr>
   <tr>
-    <td>on <code>openDBChannel</code><br>and<br><code>fetchAndAdd</code></td>
+    <td>
+      <ul>on
+        <li><code>openDBChannel</code></li>
+        <li><code>fetchAndAdd</code></li>
+        <li><code>fetchById</code></li>
+      </ul>
+    </td>
     <td colspan="2"><code>serverChange.addedHook</code> is executed once for each doc</td>
   </tr>
 </table>
@@ -105,7 +111,12 @@ The "Hooks after server changes" explained above also trigger once on `openDBCha
     <td><code>serverChange.modifiedHook</code></td>
   </tr>
   <tr>
-    <td>on <code>openDBChannel</code><br>and<br><code>fetchAndAdd</code></td>
+    <td>
+      <ul>on
+        <li><code>openDBChannel</code></li>
+        <li><code>fetchAndAdd</code></li>
+      </ul>
+    </td>
     <td colspan="2"><code>serverChange.modifiedHook</code> is executed once</td>
   </tr>
 </table>

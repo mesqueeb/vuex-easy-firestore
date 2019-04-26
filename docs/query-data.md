@@ -1,6 +1,4 @@
-# Query data
-
-## Get data
+# Read data
 
 The prime philosophy of Vuex Easy Firestore is to be able to have a vuex module (or several) which are all in sync with Firestore. When your app is openend there are two ways you can get data from Firestore and have it added to your vuex modules:
 
@@ -27,11 +25,16 @@ If you want to use _realtime updates_ the only thing you need to do is to dispat
 dispatch('moduleName/openDBChannel').catch(console.error)
 ```
 
-`openDBChannel` is just the same as the Firestore [onSnapshot](https://firebase.google.com/docs/firestore/query-data/listen) function, but the difference is that the documents from Firestore are automatically added to Vuex: in the module defined as `moduleName` and inside the object defined as `statePropName` as per your config (see [setup](setup.html#setup)).
+`openDBChannel` is just the same as the Firestore [onSnapshot](https://firebase.google.com/docs/firestore/query-data/listen) function, but the difference is:
+- the config from your module is used (see [setup](setup.html#setup))
+- the firestore doc(s) are retrieved from your `firestorePath`
+- these doc(s) are automatically added to your Vuex module under `moduleName/statePropName`
+
+Of course, just like the Firebase SDK, you can also use a [where filter](#where-orderby-filters).
 
 ### Close DB channel
 
-In most cases you never need to close the connection to Firestore. But if you do want to close it (unsubscribe from Firestore's `onSnapshot`) you can do so like this:
+In some cases you need to close the connection to Firestore (unsubscribe from Firestore's `onSnapshot` listener). Eg. when your user signs out. In this case, make sure you call `closeDBChannel` like so:
 
 ```js
 dispatch('moduleName/closeDBChannel')
@@ -49,13 +52,55 @@ dispatch('moduleName/closeDBChannel', {clearModule: true})
 
 ## Fetching docs
 
-If you want to fetching docs once (opposed to _realtime updates_) you just need to dispatch the `fetchAndAdd` action. Eg.
+If you want to fetch docs once (opposed to _realtime updates_) you can use the `fetchAndAdd` (or `fetchById`) action.
+
+These actions are a wrapper around the Firestore `db.collection(path).get()` and `db.doc(path).get()` functions.
+(See 'Read data' in the [Firestore documentation](https://firebase.google.com/docs/firestore/query-data/get-data))
+
+### Fetching in 'doc' mode
+
+In 'doc' mode your `firestorePath` is the path to a single document. Therefor just calling `fetchAndAdd` will (1) retrieve the doc and (2) add it to your module.
 
 ```js
-dispatch('myModule/fetchAndAdd')
+dispatch('myDocModule/fetchAndAdd')
 ```
 
-This is the same as doing `dbRef.collection(path).get()` with Firebase. The difference is that with `fetchAndAdd` your documents are automatically added to Vuex: in the module defined as `moduleName` and inside the object defined as `statePropName` as per your config (see [setup](setup.html#setup)).
+### Fetching in 'collection' mode
+
+In 'collection' mode you can use these actions to fetch docs:
+- `fetchById` retrieves a single doc and adds it to your module
+- `fetchAndAdd` retrieves multiple docs and adds them to your module
+
+Both these actions will (1) retrieve the doc(s) and (2) add it to your module.
+
+Let's see an example:
+```js
+const pokemonModule = {
+  firestorePath: 'pokemon',
+  firestoreRefType: 'collection',
+  moduleName: 'pokemon',
+  statePropName: 'data',
+  // ...
+}
+```
+
+You could retrieve a single Pokémon by ID like so:
+
+```js
+dispatch('pokemon/fetchById', '001')
+```
+
+Or you could retrieve all Pokémon like so:
+
+```js
+dispatch('pokemon/fetchAndAdd')
+```
+
+Of course, just like the Firebase SDK, you can also use a `where` filter to retrieve eg. all water Pokémon. (Read more on [where filters](#where-orderby-filters) down below)
+
+```js
+dispatch('pokemon/fetchAndAdd', {where: [['type', '==', 'water']]})
+```
 
 ### a note on fetch limit
 
