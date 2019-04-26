@@ -1,32 +1,42 @@
 
 const errorMessages = {
-  actionsDeleteMissingId: `
-    Missing Id of the Doc you want to delete!
+  'user-auth': `
+    Error trying to set userId.
+    Please double check if you have correctly authenticated the user with Firebase Auth before calling \`openDBChannel\` or \`fetchAndAdd\`.
+
+    If you still get this error, try passing your firebase instance to the plugin as described in the documentation:
+    https://mesqueeb.github.io/vuex-easy-firestore/extra-features.html#pass-firebase-dependency
+  `,
+  'delete-missing-id': `
+    Missing id of the doc you want to delete!
     Correct usage:
       dispatch('delete', id)
   `,
-  actionsDeleteMissingPath: `
+  'delete-missing-path': `
     Missing path to the prop you want to delete!
     Correct usage:
       dispatch('delete', 'path.to.prop')
 
     Use \`.\` for sub props!
   `,
-  missingId: `
-    Missing an id! Correct usage:
-
-    // \`id\` as prop of item:
-    dispatch('module/set', {id: '123', name: 'best item name'})
-
-    // or object with only 1 prop, which is the \`id\` as key, and item as its value:
-    dispatch('module/set', {'123': {name: 'best item name'}})
+  'missing-id': `
+    This action requires an id to be passed!
   `,
-  missingPathVarKey: `
+  'patch-missing-id': `
+    Missing an id of the doc you want to patch!
+    Correct usage:
+
+    // pass \`id\` as a prop:
+    dispatch('module/set', {id: '123', name: 'best item name'})
+    // or
+    dispatch('module/patch', {id: '123', name: 'best item name'})
+  `,
+  'missing-path-variables': `
     A path variable was passed without defining it!
     In VuexEasyFirestore you can create paths with variables:
     eg: \`groups/{groupId}/user/{userId}\`
 
-    \`userId\` is automatically replaces with the userId of the firebase user.
+    \`userId\` is automatically replaced with the userId of the firebase user.
     \`groupId\` or any other variable that needs to be set after authentication needs to be passed upon the \`openDBChannel\` action.
 
     // (in module config) Example path:
@@ -38,9 +48,19 @@ const errorMessages = {
     // pass as argument into openDBChannel:
     dispatch('moduleName/openDBChannel', {groupId})
   `,
-  patchNoRef: `
+  'patch-no-ref': `
     Something went wrong during the PATCH mutation:
     The document it's trying to patch does not exist.
+  `,
+  'only-in-collection-mode': `
+    The action you dispatched can only be used in 'collection' mode.
+  `,
+  'initial-doc-failed': `
+    Initial doc insertion failed. Further \`set\` or \`patch\` actions will also fail. Requires an internet connection when the initial doc is inserted. Please connect to the internet and refresh the page.
+  `,
+  'sync-error': `
+    Something went wrong while trying to synchronise data to Cloud Firestore.
+    The data is kept in queue, so that it will try to sync again upon the next 'set' or 'patch' action.
   `,
 }
 
@@ -48,11 +68,14 @@ const errorMessages = {
  * execute Error() based on an error id string
  *
  * @export
- * @param {string} error the error id
+ * @param {string} errorId the error id
+ * @param {any} [error] an actual error from an async request or something
  * @returns {string} the error id
  */
-export default function (error: string): string {
-  const log = `[vuex-easy-firestore] Error! ${errorMessages[error]}`
+export default function (errorId: string, error?: any): string {
+  const logData = errorMessages[errorId] || errorId
+  const log = `[vuex-easy-firestore] Error! ${logData}`
   Error(log)
-  return error
+  if (error) Error(error)
+  return errorId
 }

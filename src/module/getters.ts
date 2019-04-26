@@ -188,7 +188,7 @@ export default function (Firebase: any): AnyObject {
               return
             }
             if (!Object.keys(state._sync.pathVariables).includes(key)) {
-              return error('missingPathVarKey')
+              return error('missing-path-variables')
             }
             const varVal = state._sync.pathVariables[key]
             // if path is only a param we need to just assign to avoid stringification

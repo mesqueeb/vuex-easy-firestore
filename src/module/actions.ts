@@ -11,7 +11,7 @@ import { makeBatchFromSyncstack, createFetchIdentifier } from '../utils/apiHelpe
 import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
 import { isArrayHelper } from '../utils/arrayHelpers'
 import { isIncrementHelper } from '../utils/incrementHelper'
-import error from './errors'
+import logError from './errors'
 
 /**
  * A function returning the actions object
@@ -29,11 +29,7 @@ export default function (Firebase: any): AnyObject {
         userId = Firebase.auth().currentUser.uid
       }
       commit('SET_USER_ID', userId)
-      if (getters.firestorePathComplete.includes('{userId}')) {
-        const error = '[vuex-easy-firestore] error trying to set userId.\n Try doing \`dispatch(\'module/setUserId\', userId)\ before openDBChannel or fetchAndAdd.`'
-        console.error(error)
-        throw error
-      }
+      if (getters.firestorePathComplete.includes('{userId}')) return logError('user-auth')
     },
     clearUser: ({commit}) => {
       commit('CLEAR_USER')
@@ -42,7 +38,7 @@ export default function (Firebase: any): AnyObject {
       commit('SET_PATHVARS', pathVars)
     },
     duplicate: async ({state, getters, commit, dispatch}, id) => {
-      if (!getters.collectionMode) return console.error('[vuex-easy-firestore] You can only duplicate in \'collection\' mode.')
+      if (!getters.collectionMode) return logError('only-in-collection-mode')
       if (!id) return {}
       const doc = merge(getters.storeRef[id], {id: null})
       const dId = await dispatch('insert', doc)
@@ -50,7 +46,7 @@ export default function (Firebase: any): AnyObject {
       return idMap
     },
     duplicateBatch ({state, getters, commit, dispatch}, ids = []) {
-      if (!getters.collectionMode) return console.error('[vuex-easy-firestore] You can only duplicate in \'collection\' mode.')
+      if (!getters.collectionMode) return logError('only-in-collection-mode')
       if (!isArray(ids) || !ids.length) return {}
       const idsMap = ids.reduce(async (carry, id) => {
         const idMap = await dispatch('duplicate', id)
@@ -64,7 +60,7 @@ export default function (Firebase: any): AnyObject {
       {id = '', ids = [], doc}: {id?: string, ids?: string[], doc?: AnyObject} = {ids: [], doc: {}}
     ) {
       // 0. payload correction (only arrays)
-      if (!isArray(ids)) return console.error(`[vuex-easy-firestore] ids needs to be an array`)
+      if (!isArray(ids)) return logError(`\`ids\` prop passed to 'patch' needs to be an array`)
       if (id) ids.push(id)
 
       // EXTRA: check if doc is being inserted if so
@@ -200,12 +196,12 @@ export default function (Firebase: any): AnyObject {
               transaction.set(initialDocRef, initialDocPrepared)
             }
           })
-      }).then(function() {
+      }).then(_ => {
         if (state._conf.logging) {
           console.log('[vuex-easy-firestore] Initial doc succesfully inserted.')
         }
-      }).catch(function(error) {
-        console.error('[vuex-easy-firestore] Initial doc succesfully insertion failed. Further `set` or `patch` actions will also fail. Requires an internet connection when the initial doc is inserted. Please connect to the internet and refresh the page.', error)
+      }).catch(error => {
+        return logError('initial-doc-failed', error)
       })
     },
     handleSyncStackDebounce ({state, commit, dispatch, getters}) {
@@ -234,8 +230,7 @@ export default function (Firebase: any): AnyObject {
         }).catch(error => {
           state._sync.patching = 'error'
           state._sync.syncStack.debounceTimer = null
-          console.error('Error during synchronisation ↓')
-          Error(error)
+          logError('sync-error', error)
           return reject(error)
         })
       })
@@ -296,7 +291,7 @@ export default function (Firebase: any): AnyObject {
         if (limit > 0) fRef = fRef.limit(limit)
         // Stop if all records already fetched
         if (fRequest.retrievedFetchRefs.includes(fRef)) {
-          console.error('[vuex-easy-firestore] Already retrieved this part.')
+          console.log('[vuex-easy-firestore] Already retrieved this part.')
           return resolve()
         }
         // make fetch request
@@ -318,8 +313,7 @@ export default function (Firebase: any): AnyObject {
           const next = fRef.startAfter(lastVisible)
           state._sync.fetched[identifier].nextFetchRef = next
         }).catch(error => {
-          console.error('[vuex-easy-firestore]', error)
-          return reject(error)
+          return reject(logError(error))
         })
       })
     },
@@ -351,8 +345,7 @@ export default function (Firebase: any): AnyObject {
           dispatch('applyHooksAndUpdateState', {change: 'modified', id, doc})
           return doc
         }).catch(error => {
-          console.error('[vuex-easy-firestore]', error)
-          return error
+          return logError(error)
         })
       }
       // 'collection' mode:
@@ -368,6 +361,24 @@ export default function (Firebase: any): AnyObject {
           }
           return querySnapshot
         })
+    },
+    async fetchById ({dispatch, getters, state}, id) {
+      try {
+        if (!id) throw 'missing-id'
+        if (!getters.collectionMode) throw 'only-in-collection-mode'
+        const ref = getters.dbRef
+        const _doc = await ref.doc(id).get()
+        if (!_doc.exists) {
+          if (state._conf.logging) {
+            throw `Doc with id "${id}" not found!`
+          }
+        }
+        const doc = getters.cleanUpRetrievedDoc(_doc.data(), id)
+        dispatch('applyHooksAndUpdateState', {change: 'added', id, doc})
+        return doc
+      } catch (e) {
+        return logError(e)
+      }
     },
     applyHooksAndUpdateState ( // this is only on server retrievals
       {getters, state, commit, dispatch},
@@ -500,7 +511,7 @@ export default function (Firebase: any): AnyObject {
           return resolve()
         }, error => {
           state._sync.patching = 'error'
-          return reject(error)
+          return reject(logError(error))
         })
         state._sync.unsubscribe[identifier] = unsubscribe
       })
@@ -591,7 +602,7 @@ export default function (Firebase: any): AnyObject {
       if (!doc) return
       const id = (getters.collectionMode) ? getId(doc) : getters.docModeId
       const value = (getters.collectionMode) ? getValueFromPayloadPiece(doc) : doc
-      if (!id && getters.collectionMode) return
+      if (!id && getters.collectionMode) return logError('patch-missing-id')
       // check userId
       dispatch('setUserId')
       // add id to value
@@ -645,11 +656,11 @@ export default function (Firebase: any): AnyObject {
         const pathDelete = (_id.includes('.') || !getters.collectionMode)
         if (pathDelete) {
           const path = _id
-          if (!path) return error('actionsDeleteMissingPath')
+          if (!path) return logError('delete-missing-path')
           commit('DELETE_PROP', path)
           return dispatch('deleteProp', path)
         }
-        if (!_id) return error('actionsDeleteMissingId')
+        if (!_id) return logError('delete-missing-id')
         commit('DELETE_DOC', _id)
         return dispatch('deleteDoc', _id)
       }
@@ -677,11 +688,11 @@ export default function (Firebase: any): AnyObject {
           const pathDelete = (_id.includes('.') || !getters.collectionMode)
           if (pathDelete) {
             const path = _id
-            if (!path) return error('actionsDeleteMissingPath')
+            if (!path) return logError('delete-missing-path')
             commit('DELETE_PROP', path)
             return dispatch('deleteProp', path)
           }
-          if (!_id) return error('actionsDeleteMissingId')
+          if (!_id) return logError('delete-missing-id')
           commit('DELETE_DOC', _id)
           return dispatch('deleteDoc', _id)
         })

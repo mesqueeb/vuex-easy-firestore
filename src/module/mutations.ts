@@ -1,6 +1,6 @@
-import { isPlainObject, isArray, isFunction, isNumber } from 'is-what'
+import { isArray, isFunction, isNumber } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
-import error from './errors'
+import logError from './errors'
 import merge from 'merge-anything'
 import { AnyObject } from '../declarations'
 import { isArrayHelper } from '../utils/arrayHelpers'
@@ -101,7 +101,7 @@ export default function (userState: object): AnyObject {
       if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
         ref = ref[patches.id]
       }
-      if (!ref) return error('patchNoRef')
+      if (!ref) return logError('patch-no-ref')
       return Object.keys(patches).forEach(key => {
         let newVal = patches[key]
         // Merge if exists
