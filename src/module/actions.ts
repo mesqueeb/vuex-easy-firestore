@@ -241,6 +241,7 @@ export default function (Firebase: any): AnyObject {
       // where: [['archived', '==', true]]
       // orderBy: ['done_date', 'desc']
     ) {
+      if (!getters.collectionMode) return logError('only-in-collection-mode')
       dispatch('setUserId')
       let {where, whereFilters, orderBy} = pathVariables
       if (!isArray(where)) where = []
@@ -610,9 +611,14 @@ export default function (Firebase: any): AnyObject {
       // define the store update
       function storeUpdateFn (_val) {
         commit('PATCH_DOC', _val)
+        // check for a local hook before pushing to firestore
+        if (state._conf.sync.patchHook) {
+          state._conf.sync.patchHook(storeUpdateFn, value, store)
+          return id
+        }
         return dispatch('patchDoc', {id, doc: copy(_val)})
       }
-      // check for hooks
+      // check for a local hook before doing anything
       if (state._conf.sync.patchHook) {
         state._conf.sync.patchHook(storeUpdateFn, value, store)
         return id

@@ -400,6 +400,8 @@ It is usually much better to use the same `statePropName` (eg. `'data'`) for all
 
 ## Manual fetch handling
 
+> Only for 'collection' mode.
+
 Besides `fetchAndAdd` there is also the `fetch` action. The difference is that with just `fetch`  it will not add the documents to your vuex module, so you can handle the result yourself. `fetch` is useful because it will automatically use the Firestore path from your module.
 
 ```js
