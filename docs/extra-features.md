@@ -7,16 +7,41 @@ Besides `'{userId}'` in your `firestorePath` in the config or in where filters, 
 ```js
 // your vuex module
 SpecificGroupUserModule: {
+  firestorePath: 'groups/{groupId}/users/{userId}',
   moduleName: 'groupUserData',
-  firestorePath: 'groups/{groupId}/users/{userId}'
 }
-// Just pass the groupId as a parameter to openDBChannel!
-dispatch('groupUserData/openDBChannel', {groupId: 'group-A'})
 ```
 
-**Use case: Retrieve a variable from the user's Data**
+You can replace a path variable with the actual string by:
 
-Custom variables are especially useful if you need to first retrieve eg. a `groupId` from the user's data also on firestore. You can do so by waiting for the Promise to resolve after `openDBChannel` to retrieve the user's data (eg. another vuex-easy-firestore module called `userData`):
+```js
+// 1. Passing it as a parameter to openDBChannel
+dispatch('groupUserData/openDBChannel', {groupId: 'group-A'})
+
+// 2. Passing it as a parameter to fetchAndAdd
+dispatch('groupUserData/fetchAndAdd', {groupId: 'group-A'})
+
+// 3. Dispatching setPathVars
+dispatch('groupUserData/setPathVars', {groupId: 'group-A'})
+```
+
+Always clear out your Vuex module before you change a path variable. You can do so by:
+
+```js
+dispatch('moduleName/closeDBChannel', {clearModule: true})
+// or just
+commit('moduleName/RESET_VUEX_EASY_FIRESTORE_STATE')
+```
+
+### Warning: Do not overuse path variables!
+
+The original intend of Vuex Easy Firestore is to have _1 Firestore path_ in sync with _1 Vuex module_. Changing a path variable means that **each following patch/insert/deletion will use that path**.
+
+Only the last path variable you passed to a module is kept! So you cannot add documents from several different paths (eg. you call `fetchAndAdd` three times with different path variables provided) and still expect to be able to modify all these docs.
+
+### Use case: Retrieve a variable from the user's Data
+
+Custom variables are useful however, if you need to first retrieve eg. a `groupId` from the user's data also on firestore. You can do so by waiting for the Promise to resolve after `openDBChannel` to retrieve the user's data (eg. another vuex-easy-firestore module called `userData`):
 
 ```js
 // in this example the `userData` module will retrieve {userName: '', groupId: ''}
@@ -27,6 +52,63 @@ store.dispatch('userData/openDBChannel')
     // Then we can pass it as variable to the next openDBChannel:
     store.dispatch('groupUserData/openDBChannel', {groupId: userGroupId})
   })
+```
+
+### Bad use case example
+
+Do **not** use use a path variable as last param of a FirestorePath in 'doc' mode! Eg:
+
+```js
+// DO NOT DO THIS!
+SpecificGroupUserModule: {
+  firestorePath: 'pages/{pageId}',
+  firestoreRefType: 'doc',
+  moduleName: 'page',
+}
+
+// in your Vue file (DO NOT DO THIS!)
+export default {
+  created () {
+    const pageId = this.$route.params.id
+    this.$store.dispatch('page/fetchAndAdd', {pageId})
+  },
+  computed: {
+    openDoc () {
+      return this.$store.state.page
+    }
+  }
+}
+```
+
+The above example shows a Vuex module linked to a single doc, but this path is changed every time the user opens a page and then the doc is retrieved. The reasons not to do this are:
+
+- When opening a new page you will need to release the previous doc from memory every time, so when the user goes back you will be charged with a read every single time!
+- Please see [this thread](https://github.com/mesqueeb/vuex-easy-firestore/issues/172) for problems when there's an internet interruption.
+
+Instead, use 'collection' mode! This way you can keep the pages that were openend already and opening those pages again is much faster. That implementation would look like this:
+
+```js
+// MUCH BETTER:
+SpecificGroupUserModule: {
+  firestorePath: 'pages',
+  firestoreRefType: 'collection',
+  moduleName: 'pageData',
+  statePropName: 'data',
+}
+
+// in your Vue file
+export default {
+  created () {
+    const pageId = this.$route.params.id
+    this.$store.dispatch('pages/fetchById', pageId)
+  },
+  computed: {
+    openDoc () {
+      const pageId = this.$route.params.id
+      return this.$store.state.pages.data[pageId]
+    }
+  }
+}
 ```
 
 ## Fillables and guard

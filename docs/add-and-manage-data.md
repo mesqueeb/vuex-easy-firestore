@@ -198,7 +198,12 @@ Just as with 'collection' mode, you can disable these fields by adding them to y
 
 > Only for 'collection' mode.
 
-In cases you don't want to loop through items you can also use the special batch actions below. The main difference is you will have separate hooks (see [hooks](hooks.html#hooks)), and batches are optimised to update the vuex store first for all changes and the syncs to firestore last.
+Since Vuex Easy Firestore automatically batches any patch, insert or deletion you make, **you do not need a separate action for large batches**.
+
+Yet there are separate "batch actions" and the difference between regular actions is:
+
+- batch actions use different [hooks](hooks.html#hooks) that are only called once for the entire batch
+- `patchBatch` is used to update props with the same content to an array of IDs
 
 ```js
 dispatch('moduleName/insertBatch', docs)
@@ -212,6 +217,8 @@ dispatch('moduleName/deleteBatch', ids)
 ```
 
 > All batch actions will return a promise resolving to an array of the edited / added ids.
+
+In case you need to use `patchBatch` but have different content for each document you want to update, please use the regular `patch` action.
 
 ## Duplicating docs
 

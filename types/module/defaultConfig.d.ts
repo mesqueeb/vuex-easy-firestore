@@ -27,6 +27,9 @@ export declare type IConfig = {
         insertHook?: SyncHookDoc;
         patchHook?: SyncHookDoc;
         deleteHook?: SyncHookId;
+        insertHookBeforeSync?: SyncHookDoc;
+        patchHookBeforeSync?: SyncHookDoc;
+        deleteHookBeforeSync?: SyncHookId;
         insertBatchHook?: InsertBatchHook;
         patchBatchHook?: PatchBatchHook;
         deleteBatchHook?: DeleteBatchHook;
@@ -63,6 +66,9 @@ declare const _default: {
         insertHook: (updateStore: any, doc: any, store: any) => any;
         patchHook: (updateStore: any, doc: any, store: any) => any;
         deleteHook: (updateStore: any, id: any, store: any) => any;
+        insertHookBeforeSync: (updateFirestore: any, doc: any, store: any) => any;
+        patchHookBeforeSync: (updateFirestore: any, doc: any, store: any) => any;
+        deleteHookBeforeSync: (updateFirestore: any, id: any, store: any) => any;
         insertBatchHook: (updateStore: any, docs: any, store: any) => any;
         patchBatchHook: (updateStore: any, doc: any, ids: any, store: any) => any;
         deleteBatchHook: (updateStore: any, ids: any, store: any) => any;

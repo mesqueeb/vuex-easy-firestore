@@ -1,4 +1,4 @@
-import * as Firebase$2 from 'firebase/app';
+import * as firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
 import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
@@ -33,6 +33,10 @@ var defaultConfig = {
         insertHook: function (updateStore, doc, store) { return updateStore(doc); },
         patchHook: function (updateStore, doc, store) { return updateStore(doc); },
         deleteHook: function (updateStore, id, store) { return updateStore(id); },
+        // HOOKS after local changes before sync:
+        insertHookBeforeSync: function (updateFirestore, doc, store) { return updateFirestore(doc); },
+        patchHookBeforeSync: function (updateFirestore, doc, store) { return updateFirestore(doc); },
+        deleteHookBeforeSync: function (updateFirestore, id, store) { return updateFirestore(id); },
         // HOOKS for local batch changes:
         insertBatchHook: function (updateStore, docs, store) { return updateStore(docs); },
         patchBatchHook: function (updateStore, doc, ids, store) { return updateStore(doc, ids); },
@@ -93,7 +97,7 @@ function error (errorId, error) {
     return errorId;
 }
 
-var Firebase = Firebase$2;
+var Firebase = firebase;
 function setFirebaseDependency(firebaseDependency) {
     Firebase = firebaseDependency;
 }
@@ -170,7 +174,7 @@ function isArrayHelper(value) {
         value.isArrayHelper === true);
 }
 
-var Firebase$1 = Firebase$2;
+var Firebase$1 = firebase;
 function setFirebaseDependency$1(firebaseDependency) {
     Firebase$1 = firebaseDependency;
 }
@@ -934,6 +938,8 @@ function pluginActions (Firebase) {
         ) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             if (pathVariables === void 0) { pathVariables = { where: [], whereFilters: [], orderBy: [] }; }
+            if (!getters.collectionMode)
+                return error('only-in-collection-mode');
             dispatch('setUserId');
             var where = pathVariables.where, whereFilters = pathVariables.whereFilters, orderBy = pathVariables.orderBy;
             if (!isArray(where))
@@ -1303,12 +1309,20 @@ function pluginActions (Firebase) {
                 newDoc.id = getters.dbRef.doc().id;
             // apply default values
             var newDocWithDefaults = setDefaultValues(newDoc, state._conf.sync.defaultValues);
+            // define the firestore update
+            function firestoreUpdateFn(_doc) {
+                return dispatch('insertDoc', _doc);
+            }
             // define the store update
             function storeUpdateFn(_doc) {
                 commit('INSERT_DOC', _doc);
-                return dispatch('insertDoc', _doc);
+                // check for a hook after local change before sync
+                if (state._conf.sync.insertHookBeforeSync) {
+                    return state._conf.sync.insertHookBeforeSync(firestoreUpdateFn, _doc, store);
+                }
+                return firestoreUpdateFn(_doc);
             }
-            // check for hooks
+            // check for a hook before local change
             if (state._conf.sync.insertHook) {
                 state._conf.sync.insertHook(storeUpdateFn, newDocWithDefaults, store);
                 return newDocWithDefaults.id;
@@ -1338,7 +1352,7 @@ function pluginActions (Firebase) {
                 });
                 return dispatch('insertDoc', _docs);
             }
-            // check for hooks
+            // check for a hook before local change
             if (state._conf.sync.insertBatchHook) {
                 state._conf.sync.insertBatchHook(storeUpdateFn, newDocs, store);
                 return newDocs.map(function (_doc) { return _doc.id; });
@@ -1361,12 +1375,20 @@ function pluginActions (Firebase) {
             // add id to value
             if (!value.id)
                 value.id = id;
+            // define the firestore update
+            function firestoreUpdateFn(_val) {
+                return dispatch('patchDoc', { id: id, doc: copy(_val) });
+            }
             // define the store update
             function storeUpdateFn(_val) {
                 commit('PATCH_DOC', _val);
-                return dispatch('patchDoc', { id: id, doc: copy(_val) });
+                // check for a hook after local change before sync
+                if (state._conf.sync.patchHookBeforeSync) {
+                    return state._conf.sync.patchHookBeforeSync(firestoreUpdateFn, _val, store);
+                }
+                return firestoreUpdateFn(_val);
             }
-            // check for hooks
+            // check for a hook before local change
             if (state._conf.sync.patchHook) {
                 state._conf.sync.patchHook(storeUpdateFn, value, store);
                 return id;
@@ -1392,7 +1414,7 @@ function pluginActions (Firebase) {
                 });
                 return dispatch('patchDoc', { ids: _ids, doc: _doc });
             }
-            // check for hooks
+            // check for a hook before local change
             if (state._conf.sync.patchBatchHook) {
                 state._conf.sync.patchBatchHook(storeUpdateFn, doc, ids, store);
                 return ids;
@@ -1408,6 +1430,14 @@ function pluginActions (Firebase) {
                 return;
             // check userId
             dispatch('setUserId');
+            // define the firestore update
+            function firestoreUpdateFnId(_id) {
+                return dispatch('deleteDoc', _id);
+            }
+            function firestoreUpdateFnPath(_path) {
+                return dispatch('deleteProp', _path);
+            }
+            // define the store update
             function storeUpdateFn(_id) {
                 // id is a path
                 var pathDelete = (_id.includes('.') || !getters.collectionMode);
@@ -1416,14 +1446,22 @@ function pluginActions (Firebase) {
                     if (!path)
                         return error('delete-missing-path');
                     commit('DELETE_PROP', path);
-                    return dispatch('deleteProp', path);
+                    // check for a hook after local change before sync
+                    if (state._conf.sync.deleteHookBeforeSync) {
+                        return state._conf.sync.deleteHookBeforeSync(firestoreUpdateFnPath, path, store);
+                    }
+                    return firestoreUpdateFnPath(path);
                 }
                 if (!_id)
                     return error('delete-missing-id');
                 commit('DELETE_DOC', _id);
-                return dispatch('deleteDoc', _id);
+                // check for a hook after local change before sync
+                if (state._conf.sync.deleteHookBeforeSync) {
+                    return state._conf.sync.deleteHookBeforeSync(firestoreUpdateFnId, _id, store);
+                }
+                return firestoreUpdateFnId(_id);
             }
-            // check for hooks
+            // check for a hook before local change
             if (state._conf.sync.deleteHook) {
                 state._conf.sync.deleteHook(storeUpdateFn, id, store);
                 return id;
@@ -1457,7 +1495,7 @@ function pluginActions (Firebase) {
                     return dispatch('deleteDoc', _id);
                 });
             }
-            // check for hooks
+            // check for a hook before local change
             if (state._conf.sync.deleteBatchHook) {
                 state._conf.sync.deleteBatchHook(storeUpdateFn, ids, store);
                 return ids;
@@ -1815,8 +1853,8 @@ function vuexEasyFirestore(easyFirestoreModule, _a) {
     var _b = _a === void 0 ? {
         logging: false,
         preventInitialDocInsertion: false,
-        FirebaseDependency: Firebase$2
-    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.preventInitialDocInsertion, preventInitialDocInsertion = _d === void 0 ? false : _d, _e = _b.FirebaseDependency, FirebaseDependency = _e === void 0 ? Firebase$2 : _e;
+        FirebaseDependency: firebase
+    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.preventInitialDocInsertion, preventInitialDocInsertion = _d === void 0 ? false : _d, _e = _b.FirebaseDependency, FirebaseDependency = _e === void 0 ? firebase : _e;
     if (FirebaseDependency) {
         setFirebaseDependency(FirebaseDependency);
         setFirebaseDependency$1(FirebaseDependency);
@@ -1838,4 +1876,4 @@ function vuexEasyFirestore(easyFirestoreModule, _a) {
 }
 
 export default vuexEasyFirestore;
-export { vuexEasyFirestore, arrayUnion, arrayRemove, increment };
+export { arrayRemove, arrayUnion, increment, vuexEasyFirestore };

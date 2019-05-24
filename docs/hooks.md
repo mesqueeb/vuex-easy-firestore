@@ -1,10 +1,16 @@
 # Hooks
 
-A hook is a function do anything the doc (the doc object) before the store mutation occurs. You can also modify the docs, or add fields based on conditional checks etc. You can even prevent a doc to be added to your vuex module.
+A hook is a function that is triggered on `insert`, `patch` or `delete`. In this hook function you will receive the doc object _before_ the store mutation occurs. You can do all kind of things:
+- modify the docs before they get commited to Vuex
+- modify the docs before they get synced to Firestore
+- add or delete props (fields) based on conditional checks
+- prevent a doc to be added to your Vuex module & Firestore
+- allow a doc to be added to Vuex but prevent sync to Firestore
+- etc...
 
 ## Hooks on local changes
 
-Hooks must be defined inside your vuex module under `sync`. Below are the examples of all possible hooks that will trigger on 'local' changes. Please also check the overview of [execution timings of hooks](#execution-timings-of-hooks) to understand the difference between 'local' and 'server' changes.
+Hooks must be defined inside your vuex module under `sync`. Below are the examples of all possible hooks that will trigger _before_ 'local' changes. Please also check the overview of [execution timings of hooks](#execution-timings-of-hooks) to understand the difference between 'local' and 'server' changes.
 
 ```js
 {
@@ -27,11 +33,38 @@ The `doc` passed in the `insert` and `patch` hooks will also have an `id` field 
 But you may choose not to call this to abort the mutation. If you do not call `updateStore(doc)` nothing will happen.
 :::
 
+## Hooks after local changes before sync
+
+Below are the examples of all possible hooks that will trigger _after_ 'local' changes.
+
+Basically when you make a local change you can intercept the change just _before_ it gets synced to Firestore, but still make the change to Vuex.
+
+```js
+{
+  // place also in the `sync` prop
+  sync: {
+    insertHookBeforeSync: function (updateFirestore, doc, store) { updateFirestore(doc) },
+    patchHookBeforeSync: function (updateFirestore, doc, store) { updateFirestore(doc) },
+    deleteHookBeforeSync: function (updateFirestore, id, store) { updateFirestore(id) },
+  }
+}
+```
+
+An example of what happens on a patch call:
+
+1. eg. `dispatch('myModule/patch', data)`
+2. `patchHook` is fired
+3. if `updateStore` was **not** executed in the hook: abort!
+4. the patch is commited to the Vuex module
+5. `patchHookBeforeSync` is fired
+6. if `updateFirestore` was **not** executed in the hook: abort!
+7. the patch is synced to Firestore
+
 ## Hooks after server changes
 
 _Hooks after server changes_ work just like _hooks on local changes_ but for changes that have occured on the server. Just as with the hooks for local changes, you can use these hooks to make changes to incoming documents or prevent them from being added to your vuex module.
 
-These hooks will fire not only on modifications and inserts **but also when dispatching `openDBChannel` or `fetchAndAdd`**. Be sure to check the **execution timings of hooks** below to know when which are executed.
+These hooks will fire not only on modifications and inserts **but also when dispatching `openDBChannel` or `fetchAndAdd` or `fetchById`**. Be sure to check the **execution timings of hooks** below to know when which are executed.
 
 You also have some extra parameters to work with:
 
@@ -53,7 +86,7 @@ Please make sure to check the overview of execution timings of hooks, in the nex
 
 ## Hooks on openDBChannel / fetch
 
-The "Hooks after server changes" explained above also trigger once on `openDBChannel` and `fetchAndAdd`. Check the **execution timings of hooks** below to know precisely when which hooks are executed.
+The "Hooks after server changes" explained above also trigger once on `openDBChannel` and `fetchAndAdd` and `fetchById`. Check the **execution timings of hooks** below to know precisely when which hooks are executed.
 
 ## Execution timings of hooks
 
@@ -67,12 +100,22 @@ The "Hooks after server changes" explained above also trigger once on `openDBCha
   </tr>
   <tr>
     <td>insertion</td>
-    <td><code>sync.insertHook</code></td>
+    <td>
+      <ol>
+        <li><code>sync.insertHook</code></li>
+        <li><code>sync.insertHookBeforeSync</code></li>
+      </ol>
+    </td>
     <td><code>serverChange.addedHook</code></td>
   </tr>
   <tr>
     <td>modification</td>
-    <td><code>sync.patchHook</code></td>
+    <td>
+      <ol>
+        <li><code>sync.patchHook</code></li>
+        <li><code>sync.patchHookBeforeSync</code></li>
+      </ol>
+    </td>
     <td><code>serverChange.modifiedHook</code></td>
   </tr>
   <tr>
@@ -86,7 +129,13 @@ The "Hooks after server changes" explained above also trigger once on `openDBCha
     <td><code>serverChange.removedHook</code></td>
   </tr>
   <tr>
-    <td>on <code>openDBChannel</code><br>and<br><code>fetchAndAdd</code></td>
+    <td>
+      <ul>on
+        <li><code>openDBChannel</code></li>
+        <li><code>fetchAndAdd</code></li>
+        <li><code>fetchById</code></li>
+      </ul>
+    </td>
     <td colspan="2"><code>serverChange.addedHook</code> is executed once for each doc</td>
   </tr>
 </table>
@@ -101,11 +150,21 @@ The "Hooks after server changes" explained above also trigger once on `openDBCha
   </tr>
   <tr>
     <td>modification</td>
-    <td><code>sync.patchHook</code></td>
+    <td>
+      <ol>
+        <li><code>sync.patchHook</code></li>
+        <li><code>sync.patchHookBeforeSync</code></li>
+      </ol>
+    </td>
     <td><code>serverChange.modifiedHook</code></td>
   </tr>
   <tr>
-    <td>on <code>openDBChannel</code><br>and<br><code>fetchAndAdd</code></td>
+    <td>
+      <ul>on
+        <li><code>openDBChannel</code></li>
+        <li><code>fetchAndAdd</code></li>
+      </ul>
+    </td>
     <td colspan="2"><code>serverChange.modifiedHook</code> is executed once</td>
   </tr>
 </table>

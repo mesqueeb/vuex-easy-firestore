@@ -30,6 +30,9 @@ export type IConfig = {
     insertHook?: SyncHookDoc
     patchHook?: SyncHookDoc
     deleteHook?: SyncHookId
+    insertHookBeforeSync?: SyncHookDoc
+    patchHookBeforeSync?: SyncHookDoc
+    deleteHookBeforeSync?: SyncHookId
     insertBatchHook?: InsertBatchHook
     patchBatchHook?: PatchBatchHook
     deleteBatchHook?: DeleteBatchHook
@@ -73,6 +76,10 @@ export default {
     insertHook: function (updateStore, doc, store) { return updateStore(doc) },
     patchHook: function (updateStore, doc, store) { return updateStore(doc) },
     deleteHook: function (updateStore, id, store) { return updateStore(id) },
+    // HOOKS after local changes before sync:
+    insertHookBeforeSync: function (updateFirestore, doc, store) { return updateFirestore(doc) },
+    patchHookBeforeSync: function (updateFirestore, doc, store) { return updateFirestore(doc) },
+    deleteHookBeforeSync: function (updateFirestore, id, store) { return updateFirestore(id) },
     // HOOKS for local batch changes:
     insertBatchHook: function (updateStore, docs, store) { return updateStore(docs) },
     patchBatchHook: function (updateStore, doc, ids, store) { return updateStore(doc, ids) },
