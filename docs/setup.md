@@ -67,11 +67,14 @@ const easyFirestore = VuexEasyFirestore(
   {logging: true, FirebaseDependency: Firebase}
 )
 
-// include as PLUGIN in your vuex store:
+// include as PLUGIN in your vuex store
+// please note that "myModule" should ONLY be passed via the plugin
 const storeData = {
-  // ... your store
-  plugins: [easyFirestore]
+  plugins: [easyFirestore],
+  // ... your other store data
 }
+
+// initialise Vuex
 const store = new Vuex.Store(storeData)
 
 // initFirebase
