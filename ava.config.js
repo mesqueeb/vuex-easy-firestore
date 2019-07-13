@@ -5,5 +5,8 @@ export default {
   ],
   'require': [
     'ts-node/register'
+  ],
+  'helpers': [
+    '**/helpers/**/*'
   ]
 }

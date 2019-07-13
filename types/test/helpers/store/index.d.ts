@@ -1,1 +1,1 @@
-export declare const store: import("vuex").Store<{}>;
+export declare const store: import("vuex").Store<unknown>;

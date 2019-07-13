@@ -291,11 +291,11 @@ For this shortcut usage, import the npm module 'vuex-easy-access' when you initi
 Also add `{vuexEasyFirestore: true}` in the options when you initialise 'vuex-easy-access' like so:
 
 ```js
-import vuexEasyAccess from 'vuex-easy-access'
-const easyAccess = vuexEasyAccess({vuexEasyFirestore: true})
+import createEasyAccess from "vuex-easy-access";
+const easyAccess = createEasyAccess({ vuexEasyFirestore: true });
 
 const store = {
-  plugins: [easyFirestoreModules, easyAccess]
+  plugins: [easyFirestore, easyAccess]
 }
 ```
 

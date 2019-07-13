@@ -119,6 +119,7 @@ export default function (Firebase: any): AnyObject {
           const cleanedPatchData = filter(patchData, getters.fillables, getters.guard)
           const itemToUpdate = flatten(cleanedPatchData)
           // add id (required to get ref later at apiHelpers.ts)
+          // @ts-ignore
           itemToUpdate.id = id
           carry[id] = itemToUpdate
           return carry
@@ -173,10 +174,6 @@ export default function (Firebase: any): AnyObject {
       },
     getWhereArrays: (state, getters) => (whereArrays) => {
       if (!isArray(whereArrays)) whereArrays = state._conf.sync.where
-      if (Firebase.auth().currentUser) {
-        state._sync.signedIn = true
-        state._sync.userId = Firebase.auth().currentUser.uid
-      }
       return whereArrays.map(whereClause => {
         return whereClause.map(param => {
           if (!isString(param)) return param

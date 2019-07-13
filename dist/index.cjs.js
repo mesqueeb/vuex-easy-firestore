@@ -730,7 +730,8 @@ function pluginActions (Firebase) {
         duplicate: function (_a, id) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             return __awaiter(_this, void 0, void 0, function () {
-                var _b, doc, dId, idMap;
+                var doc, dId, idMap;
+                var _b;
                 return __generator(this, function (_c) {
                     switch (_c.label) {
                         case 0:
@@ -1626,6 +1627,7 @@ function pluginGetters (Firebase) {
                     var cleanedPatchData = filter(patchData, getters.fillables, getters.guard);
                     var itemToUpdate = flatten(cleanedPatchData);
                     // add id (required to get ref later at apiHelpers.ts)
+                    // @ts-ignore
                     itemToUpdate.id = id;
                     carry[id] = itemToUpdate;
                     return carry;
@@ -1634,8 +1636,8 @@ function pluginGetters (Firebase) {
         },
         prepareForPropDeletion: function (state, getters, rootState, rootGetters) {
             return function (path) {
-                if (path === void 0) { path = ''; }
                 var _a;
+                if (path === void 0) { path = ''; }
                 var collectionMode = getters.collectionMode;
                 var patchData = {};
                 // set default fields
@@ -1689,10 +1691,6 @@ function pluginGetters (Firebase) {
         getWhereArrays: function (state, getters) { return function (whereArrays) {
             if (!isWhat.isArray(whereArrays))
                 whereArrays = state._conf.sync.where;
-            if (Firebase.auth().currentUser) {
-                state._sync.signedIn = true;
-                state._sync.userId = Firebase.auth().currentUser.uid;
-            }
             return whereArrays.map(function (whereClause) {
                 return whereClause.map(function (param) {
                     if (!isWhat.isString(param))
