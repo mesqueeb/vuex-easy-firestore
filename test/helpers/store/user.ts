@@ -16,7 +16,6 @@ export default {
     },
     async logout ({dispatch, state}) {
       await firebase.auth().signOut()
-      await dispatch('closeDBChannel', {clearModule: true})
     }
   },
   // module
