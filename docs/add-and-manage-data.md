@@ -231,7 +231,7 @@ You can duplicate a document really simply by dispatching 'duplicate' and passin
 dispatch('pokemonBox/duplicate', '001')
 ```
 
-This will create a copy of Bulbasaur (and all its props) with a random new ID. The duplicated doc will automatically be added to your vuex module and synced as well.
+This will create a copy of Bulbasaur (and all its props but not sub-collections) with a random new ID. The duplicated doc will automatically be added to your vuex module and synced as well. The collection must have fetch or openDBChannel enabled since it needs to both read and write data.
 
 If you need to know which new ID was generated for the duplicate, you can retrieve it from the action:
 
