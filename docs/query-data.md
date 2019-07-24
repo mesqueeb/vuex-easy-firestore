@@ -59,7 +59,7 @@ These actions are a wrapper around the Firestore `db.collection(path).get()` and
 
 ### Fetching in 'doc' mode
 
-In 'doc' mode your `firestorePath` is the path to a single document. Therefor just calling `fetchAndAdd` will (1) retrieve the doc and (2) add it to your module.
+In 'doc' mode your `firestorePath` is the path to a single document. Therefor just calling `fetchAndAdd` will (1) retrieve the doc from Firestore and (2) add it to your Vuex module.
 
 ```js
 dispatch('myDocModule/fetchAndAdd')
@@ -71,7 +71,7 @@ In 'collection' mode you can use these actions to fetch docs:
 - `fetchById` retrieves a single doc and adds it to your module
 - `fetchAndAdd` retrieves multiple docs and adds them to your module
 
-Both these actions will (1) retrieve the doc(s) and (2) add it to your module.
+Both these actions will (1) retrieve the doc(s) from Firestore and (2) add it to your Vuex module.
 
 Let's see an example:
 ```js
