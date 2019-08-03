@@ -57,7 +57,7 @@ import VuexEasyFirestore from 'vuex-easy-firestore'
 Vue.use(Vuex)
 
 // import from step 1
-import { Firebase, initFirebase } from '~config/firebase.js'
+import { Firebase, initFirebase } from '~/config/firebase.js'
 // import from step 3 (below)
 import myModule from './modules/myModule.js'
 
