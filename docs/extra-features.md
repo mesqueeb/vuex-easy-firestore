@@ -281,26 +281,3 @@ const vuexModule = {
   }
 }
 ```
-
-## Shortcut: set(path, doc)
-
-Inside Vue component templates there is a shortcut for `dispatch('module/set', newVal)`. If you enable support for my other library called 'vuex-easy-access' you will be able to just use `set('module', newVal)` instead!
-
-For this shortcut usage, import the npm module 'vuex-easy-access' when you initialise your store and add it as plugin. Pass the 'vuex-easy-firestore' plugin first and **the 'vuex-easy-access' plugin second** for it to work properly.
-
-Also add `{vuexEasyFirestore: true}` in the options when you initialise 'vuex-easy-access' like so:
-
-```js
-import createEasyAccess from "vuex-easy-access";
-const easyAccess = createEasyAccess({ vuexEasyFirestore: true });
-
-const store = {
-  plugins: [easyFirestore, easyAccess]
-}
-```
-
-Please check the relevant documentation [on the vuex-easy-access repository](https://mesqueeb.github.io/vuex-easy-access/advanced.html#firestore-integration-for-google-firebase)!
-
-### About 'vuex-easy-access'
-
-Vuex easy access has a lot of different features to make working with your store extremely easy. The main purpose of that library is to be able to do any kind of mutation to your store directly from the templates without having to set up actions yourself. It is especially usefull when working with wildcards. Please see the [introduction on Vuex Easy Access here](https://mesqueeb.github.io/vuex-easy-access/).
