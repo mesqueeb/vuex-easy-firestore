@@ -1,13 +1,16 @@
 import { isPlainObject, isAnyObject } from 'is-what'
+import { findAndReplaceIf } from 'find-and-replace-anything'
+import { isArrayHelper } from '../utils/arrayHelpers'
+import { isIncrementHelper } from '../utils/incrementHelper'
 import { IPluginState, AnyObject } from '../declarations'
 
 /**
- * Grab until the api limit (500), put the rest back in the syncStack.
+ * Grab until the api limit (500), put the rest back in the syncStack. State will get modified!
  *
  * @param {string} syncStackProp the prop of _sync.syncStack[syncStackProp]
  * @param {number} count the current count
  * @param {number} maxCount the max count of the batch
- * @param {object} state the store's state, will be edited!
+ * @param {object} state the store's state, will get modified!
  * @returns {any[]} the targets for the batch. Add this array length to the count
  */
 export function grabUntilApiLimit (
@@ -51,25 +54,24 @@ export function grabUntilApiLimit (
  * Create a Firebase batch from a syncStack to be passed inside the state param.
  *
  * @export
- * @param {IPluginState} state The state which should have `_sync.syncStack`, `_sync.userId`, `state._conf.firestorePath`
+ * @param {IPluginState} state The state will get modified!
  * @param {AnyObject} getters The getters which should have `dbRef`, `storeRef`, `collectionMode` and `firestorePathComplete`
- * @param {any} Firebase dependency injection for Firebase & Firestore
+ * @param {any} firebaseBatch a firestore.batch() instance
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {*} A Firebase firestore batch object.
  */
 export function makeBatchFromSyncstack (
   state: IPluginState,
   getters: AnyObject,
-  Firebase: any,
+  firebaseBatch: any,
   batchMaxCount: number = 500,
 ): any {
   // get state & getter variables
-  const firestorePath = state._conf.firestorePath
-  const firestorePathComplete = getters.firestorePathComplete
-  const dbRef = getters.dbRef
-  const collectionMode = getters.collectionMode
+  const { firestorePath, logging } = state._conf
+  const { guard } = state._conf.sync
+  const { firestorePathComplete, dbRef, collectionMode } = getters
+  const batch = firebaseBatch
   // make batch
-  const batch = Firebase.firestore().batch()
   const log = {}
   let count = 0
   // Add 'updates' to batch
@@ -80,9 +82,25 @@ export function makeBatchFromSyncstack (
   updates.forEach(item => {
     const id = item.id
     const docRef = (collectionMode) ? dbRef.doc(id) : dbRef
-    if (state._conf.sync.guard.includes('id')) delete item.id
+    // replace arrayUnion and arrayRemove
+    const patchData = Object.entries(item)
+      .reduce((carry, [key, data]) => {
+        // replace arrayUnion and arrayRemove
+        carry[key] = findAndReplaceIf(data, foundVal => {
+          if (isArrayHelper(foundVal)) {
+            return foundVal.getFirestoreFieldValue()
+          }
+          if (isIncrementHelper(foundVal)) {
+            return foundVal.getFirestoreFieldValue()
+          }
+          return foundVal
+        })
+        return carry
+      }, {})
+    // delete id if it's guarded
+    if (guard.includes('id')) delete item.id
     // @ts-ignore
-    batch.update(docRef, item)
+    batch.update(docRef, patchData)
   })
   // Add 'propDeletions' to batch
   const propDeletions = grabUntilApiLimit('propDeletions', count, batchMaxCount, state)
@@ -92,7 +110,8 @@ export function makeBatchFromSyncstack (
   propDeletions.forEach(item => {
     const id = item.id
     const docRef = (collectionMode) ? dbRef.doc(id) : dbRef
-    if (state._conf.sync.guard.includes('id')) delete item.id
+    // delete id if it's guarded
+    if (guard.includes('id')) delete item.id
     // @ts-ignore
     batch.update(docRef, item)
   })
@@ -115,7 +134,7 @@ export function makeBatchFromSyncstack (
     batch.set(newRef, item)
   })
   // log the batch contents
-  if (state._conf.logging) {
+  if (logging) {
     console.group('[vuex-easy-firestore] api call batch:')
     console.log(`%cFirestore PATH: ${firestorePathComplete} [${firestorePath}]`, 'color: grey')
     Object.keys(log).forEach(key => {

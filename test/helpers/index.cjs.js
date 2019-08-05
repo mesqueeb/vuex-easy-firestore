@@ -12,9 +12,9 @@ require('firebase/firestore');
 var isWhat = require('is-what');
 var copy = _interopDefault(require('copy-anything'));
 var merge = _interopDefault(require('merge-anything'));
-var findAndReplaceAnything = require('find-and-replace-anything');
 var flatten = _interopDefault(require('flatten-anything'));
 var compareAnything = require('compare-anything');
+var findAndReplaceAnything = require('find-and-replace-anything');
 var filter = _interopDefault(require('filter-anything'));
 
 function initialState() {
@@ -995,12 +995,12 @@ function startDebounce (ms) {
 }
 
 /**
- * Grab until the api limit (500), put the rest back in the syncStack.
+ * Grab until the api limit (500), put the rest back in the syncStack. State will get modified!
  *
  * @param {string} syncStackProp the prop of _sync.syncStack[syncStackProp]
  * @param {number} count the current count
  * @param {number} maxCount the max count of the batch
- * @param {object} state the store's state, will be edited!
+ * @param {object} state the store's state, will get modified!
  * @returns {any[]} the targets for the batch. Add this array length to the count
  */
 function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
@@ -1039,21 +1039,20 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
  * Create a Firebase batch from a syncStack to be passed inside the state param.
  *
  * @export
- * @param {IPluginState} state The state which should have `_sync.syncStack`, `_sync.userId`, `state._conf.firestorePath`
+ * @param {IPluginState} state The state will get modified!
  * @param {AnyObject} getters The getters which should have `dbRef`, `storeRef`, `collectionMode` and `firestorePathComplete`
- * @param {any} Firebase dependency injection for Firebase & Firestore
+ * @param {any} firebaseBatch a firestore.batch() instance
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {*} A Firebase firestore batch object.
  */
-function makeBatchFromSyncstack(state, getters, Firebase, batchMaxCount) {
+function makeBatchFromSyncstack(state, getters, firebaseBatch, batchMaxCount) {
     if (batchMaxCount === void 0) { batchMaxCount = 500; }
     // get state & getter variables
-    var firestorePath = state._conf.firestorePath;
-    var firestorePathComplete = getters.firestorePathComplete;
-    var dbRef = getters.dbRef;
-    var collectionMode = getters.collectionMode;
+    var _a = state._conf, firestorePath = _a.firestorePath, logging = _a.logging;
+    var guard = state._conf.sync.guard;
+    var firestorePathComplete = getters.firestorePathComplete, dbRef = getters.dbRef, collectionMode = getters.collectionMode;
+    var batch = firebaseBatch;
     // make batch
-    var batch = Firebase.firestore().batch();
     var log = {};
     var count = 0;
     // Add 'updates' to batch
@@ -1064,10 +1063,27 @@ function makeBatchFromSyncstack(state, getters, Firebase, batchMaxCount) {
     updates.forEach(function (item) {
         var id = item.id;
         var docRef = (collectionMode) ? dbRef.doc(id) : dbRef;
-        if (state._conf.sync.guard.includes('id'))
+        // replace arrayUnion and arrayRemove
+        var patchData = Object.entries(item)
+            .reduce(function (carry, _a) {
+            var key = _a[0], data = _a[1];
+            // replace arrayUnion and arrayRemove
+            carry[key] = findAndReplaceAnything.findAndReplaceIf(data, function (foundVal) {
+                if (isArrayHelper(foundVal)) {
+                    return foundVal.getFirestoreFieldValue();
+                }
+                if (isIncrementHelper(foundVal)) {
+                    return foundVal.getFirestoreFieldValue();
+                }
+                return foundVal;
+            });
+            return carry;
+        }, {});
+        // delete id if it's guarded
+        if (guard.includes('id'))
             delete item.id;
         // @ts-ignore
-        batch.update(docRef, item);
+        batch.update(docRef, patchData);
     });
     // Add 'propDeletions' to batch
     var propDeletions = grabUntilApiLimit('propDeletions', count, batchMaxCount, state);
@@ -1077,7 +1093,8 @@ function makeBatchFromSyncstack(state, getters, Firebase, batchMaxCount) {
     propDeletions.forEach(function (item) {
         var id = item.id;
         var docRef = (collectionMode) ? dbRef.doc(id) : dbRef;
-        if (state._conf.sync.guard.includes('id'))
+        // delete id if it's guarded
+        if (guard.includes('id'))
             delete item.id;
         // @ts-ignore
         batch.update(docRef, item);
@@ -1101,7 +1118,7 @@ function makeBatchFromSyncstack(state, getters, Firebase, batchMaxCount) {
         batch.set(newRef, item);
     });
     // log the batch contents
-    if (state._conf.logging) {
+    if (logging) {
         console.group('[vuex-easy-firestore] api call batch:');
         console.log("%cFirestore PATH: " + firestorePathComplete + " [" + firestorePath + "]", 'color: grey');
         Object.keys(log).forEach(function (key) {
@@ -1306,36 +1323,28 @@ function pluginActions (Firebase) {
             // 1. Prepare for patching
             var syncStackItems = getters.prepareForPatch(ids, doc);
             // 2. Push to syncStack
-            Object.keys(syncStackItems).forEach(function (id) {
+            Object.entries(syncStackItems).forEach(function (_a) {
+                var id = _a[0], patchData = _a[1];
                 var newVal;
                 if (!state._sync.syncStack.updates[id]) {
-                    // replace arrayUnion and arrayRemove
-                    newVal = findAndReplaceAnything.findAndReplaceIf(syncStackItems[id], function (foundVal) {
-                        if (isArrayHelper(foundVal)) {
-                            return foundVal.getFirestoreFieldValue();
-                        }
-                        if (isIncrementHelper(foundVal)) {
-                            return foundVal.getFirestoreFieldValue();
-                        }
-                        return foundVal;
-                    });
+                    newVal = patchData;
                 }
                 else {
-                    newVal = merge({ extensions: [
+                    newVal = merge(
+                    // extension to update increment and array helpers
+                    { extensions: [
                             function (originVal, newVal) {
-                                if (originVal instanceof Firebase.firestore.FieldValue &&
-                                    isArrayHelper(newVal)) {
-                                    originVal._elements = originVal._elements.concat(newVal.payload);
+                                if (isArrayHelper(originVal)) {
+                                    originVal.payload = originVal.payload.concat(newVal.payload);
                                     newVal = originVal;
                                 }
-                                if (originVal instanceof Firebase.firestore.FieldValue &&
-                                    isIncrementHelper(newVal)) {
-                                    originVal._operand = originVal._operand + newVal.payload;
+                                if (isIncrementHelper(originVal)) {
+                                    originVal.payload = originVal.payload + newVal.payload;
                                     newVal = originVal;
                                 }
                                 return newVal; // always return newVal as fallback!!
                             }
-                        ] }, state._sync.syncStack.updates[id], syncStackItems[id]);
+                        ] }, state._sync.syncStack.updates[id], patchData);
                 }
                 state._sync.syncStack.updates[id] = newVal;
             });
@@ -1426,7 +1435,7 @@ function pluginActions (Firebase) {
         },
         batchSync: function (_a) {
             var getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch, state = _a.state;
-            var batch = makeBatchFromSyncstack(state, getters, Firebase);
+            var batch = makeBatchFromSyncstack(state, getters, Firebase.firestore().batch());
             dispatch('_startPatching');
             state._sync.syncStack.debounceTimer = null;
             return new Promise(function (resolve, reject) {

@@ -1,5 +1,4 @@
 import { isArray, isPlainObject, isFunction, isNumber } from 'is-what'
-import { findAndReplaceIf } from 'find-and-replace-anything'
 import copy from 'copy-anything'
 import merge from 'merge-anything'
 import flatten from 'flatten-anything'
@@ -82,42 +81,28 @@ export default function (Firebase: any): AnyObject {
 
       // 2. Push to syncStack
 
-      Object.keys(syncStackItems).forEach(id => {
+      Object.entries(syncStackItems).forEach(([id, patchData]) => {
         let newVal
         if (!state._sync.syncStack.updates[id]) {
-          // replace arrayUnion and arrayRemove
-          newVal = findAndReplaceIf(syncStackItems[id], foundVal => {
-            if (isArrayHelper(foundVal)) {
-              return foundVal.getFirestoreFieldValue()
-            }
-            if (isIncrementHelper(foundVal)) {
-              return foundVal.getFirestoreFieldValue()
-            }
-            return foundVal
-          })
+          newVal = patchData
         } else {
           newVal = merge(
+            // extension to update increment and array helpers
             {extensions: [
               (originVal, newVal) => {
-                if (
-                  originVal instanceof Firebase.firestore.FieldValue &&
-                  isArrayHelper(newVal)
-                ) {
-                  originVal._elements = originVal._elements.concat(newVal.payload)
+                if (isArrayHelper(originVal)) {
+                  originVal.payload = originVal.payload.concat(newVal.payload)
                   newVal = originVal
                 }
-                if (
-                  originVal instanceof Firebase.firestore.FieldValue &&
-                  isIncrementHelper(newVal)
-                ) {
-                  originVal._operand = originVal._operand + newVal.payload
+                if (isIncrementHelper(originVal)) {
+                  originVal.payload = originVal.payload + newVal.payload
                   newVal = originVal
                 }
                 return newVal // always return newVal as fallback!!
               }
             ]},
             state._sync.syncStack.updates[id],
-            syncStackItems[id]
+            patchData
           )
         }
         state._sync.syncStack.updates[id] = newVal
@@ -215,7 +200,7 @@ export default function (Firebase: any): AnyObject {
       state._sync.syncStack.debounceTimer.refresh()
     },
     batchSync ({getters, commit, dispatch, state}) {
-      const batch = makeBatchFromSyncstack(state, getters, Firebase)
+      const batch = makeBatchFromSyncstack(state, getters, Firebase.firestore().batch())
       dispatch('_startPatching')
       state._sync.syncStack.debounceTimer = null
       return new Promise((resolve, reject) => {
