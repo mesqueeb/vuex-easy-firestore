@@ -54,7 +54,11 @@ store.dispatch('userData/openDBChannel')
   })
 ```
 
-### Bad use case example
+### Use case: Retieve data based on the Vue Router path
+
+This is a great use case! But it has a good and a bad implementation. I'll go over both so you can see what I mean:
+
+#### Bad implementation of Vue Router
 
 Do **not** use use a path variable as last param of a FirestorePath in 'doc' mode! Eg:
 
@@ -84,6 +88,8 @@ The above example shows a Vuex module linked to a single doc, but this path is c
 
 - When opening a new page you will need to release the previous doc from memory every time, so when the user goes back you will be charged with a read every single time!
 - Please see [this thread](https://github.com/mesqueeb/vuex-easy-firestore/issues/172) for problems when there's an internet interruption.
+
+#### Good implementation of Vue Router
 
 Instead, use 'collection' mode! This way you can keep the pages that were openend already and opening those pages again is much faster. That implementation would look like this:
 
