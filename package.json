@@ -23,9 +23,13 @@
     "vuex",
     "firestore",
     "firebase",
+    "firebase-firestore",
+    "google-firebase",
+    "firebase-cloud-firestore",
     "boilerplate",
     "store",
-    "vue"
+    "vue",
+    "vuejs"
   ],
   "author": "Luca Ban - Mesqueeb",
   "license": "MIT",
