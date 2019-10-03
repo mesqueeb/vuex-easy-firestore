@@ -11,9 +11,9 @@ var vuexEasyAccess = require('vuex-easy-access');
 var isWhat = require('is-what');
 var copy = _interopDefault(require('copy-anything'));
 var merge = _interopDefault(require('merge-anything'));
-var findAndReplaceAnything = require('find-and-replace-anything');
 var flatten = _interopDefault(require('flatten-anything'));
 var compareAnything = require('compare-anything');
+var findAndReplaceAnything = require('find-and-replace-anything');
 var filter = _interopDefault(require('filter-anything'));
 
 var defaultConfig = {
@@ -103,6 +103,77 @@ function error (errorId, error) {
     return errorId;
 }
 
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+
+var __assign = function() {
+    __assign = Object.assign || function __assign(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+
+function __awaiter(thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+}
+
+function __generator(thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+}
+
+function __spreadArrays() {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+}
+
 var Firebase = firebase;
 function setFirebaseDependency(firebaseDependency) {
     Firebase = firebaseDependency;
@@ -159,14 +230,14 @@ function arrayUnion() {
     for (var _i = 0; _i < arguments.length; _i++) {
         payload[_i] = arguments[_i];
     }
-    return new (ArrayUnion.bind.apply(ArrayUnion, [void 0].concat(payload)))();
+    return new (ArrayUnion.bind.apply(ArrayUnion, __spreadArrays([void 0], payload)))();
 }
 function arrayRemove() {
     var payload = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         payload[_i] = arguments[_i];
     }
-    return new (ArrayRemove.bind.apply(ArrayRemove, [void 0].concat(payload)))();
+    return new (ArrayRemove.bind.apply(ArrayRemove, __spreadArrays([void 0], payload)))();
 }
 function isArrayHelper(value) {
     // this is bugged in vuex actions, I DONT KNOW WHY
@@ -355,69 +426,6 @@ function pluginMutations (userState) {
     };
 }
 
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation. All rights reserved.
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-this file except in compliance with the License. You may obtain a copy of the
-License at http://www.apache.org/licenses/LICENSE-2.0
-
-THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-MERCHANTABLITY OR NON-INFRINGEMENT.
-
-See the Apache Version 2.0 License for specific language governing permissions
-and limitations under the License.
-***************************************************************************** */
-
-var __assign = function() {
-    __assign = Object.assign || function __assign(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
-
-function __awaiter(thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-}
-
-function __generator(thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-}
-
 /**
  * convert to new Date() if defaultValue == '%convertTimestamp%'
  *
@@ -487,12 +495,12 @@ function startDebounce (ms) {
 }
 
 /**
- * Grab until the api limit (500), put the rest back in the syncStack.
+ * Grab until the api limit (500), put the rest back in the syncStack. State will get modified!
  *
  * @param {string} syncStackProp the prop of _sync.syncStack[syncStackProp]
  * @param {number} count the current count
  * @param {number} maxCount the max count of the batch
- * @param {object} state the store's state, will be edited!
+ * @param {object} state the store's state, will get modified!
  * @returns {any[]} the targets for the batch. Add this array length to the count
  */
 function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
@@ -531,21 +539,20 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
  * Create a Firebase batch from a syncStack to be passed inside the state param.
  *
  * @export
- * @param {IPluginState} state The state which should have `_sync.syncStack`, `_sync.userId`, `state._conf.firestorePath`
+ * @param {IPluginState} state The state will get modified!
  * @param {AnyObject} getters The getters which should have `dbRef`, `storeRef`, `collectionMode` and `firestorePathComplete`
- * @param {any} Firebase dependency injection for Firebase & Firestore
+ * @param {any} firebaseBatch a firestore.batch() instance
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {*} A Firebase firestore batch object.
  */
-function makeBatchFromSyncstack(state, getters, Firebase, batchMaxCount) {
+function makeBatchFromSyncstack(state, getters, firebaseBatch, batchMaxCount) {
     if (batchMaxCount === void 0) { batchMaxCount = 500; }
     // get state & getter variables
-    var firestorePath = state._conf.firestorePath;
-    var firestorePathComplete = getters.firestorePathComplete;
-    var dbRef = getters.dbRef;
-    var collectionMode = getters.collectionMode;
+    var _a = state._conf, firestorePath = _a.firestorePath, logging = _a.logging;
+    var guard = state._conf.sync.guard;
+    var firestorePathComplete = getters.firestorePathComplete, dbRef = getters.dbRef, collectionMode = getters.collectionMode;
+    var batch = firebaseBatch;
     // make batch
-    var batch = Firebase.firestore().batch();
     var log = {};
     var count = 0;
     // Add 'updates' to batch
@@ -556,10 +563,27 @@ function makeBatchFromSyncstack(state, getters, Firebase, batchMaxCount) {
     updates.forEach(function (item) {
         var id = item.id;
         var docRef = (collectionMode) ? dbRef.doc(id) : dbRef;
-        if (state._conf.sync.guard.includes('id'))
+        // replace arrayUnion and arrayRemove
+        var patchData = Object.entries(item)
+            .reduce(function (carry, _a) {
+            var key = _a[0], data = _a[1];
+            // replace arrayUnion and arrayRemove
+            carry[key] = findAndReplaceAnything.findAndReplaceIf(data, function (foundVal) {
+                if (isArrayHelper(foundVal)) {
+                    return foundVal.getFirestoreFieldValue();
+                }
+                if (isIncrementHelper(foundVal)) {
+                    return foundVal.getFirestoreFieldValue();
+                }
+                return foundVal;
+            });
+            return carry;
+        }, {});
+        // delete id if it's guarded
+        if (guard.includes('id'))
             delete item.id;
         // @ts-ignore
-        batch.update(docRef, item);
+        batch.update(docRef, patchData);
     });
     // Add 'propDeletions' to batch
     var propDeletions = grabUntilApiLimit('propDeletions', count, batchMaxCount, state);
@@ -569,7 +593,8 @@ function makeBatchFromSyncstack(state, getters, Firebase, batchMaxCount) {
     propDeletions.forEach(function (item) {
         var id = item.id;
         var docRef = (collectionMode) ? dbRef.doc(id) : dbRef;
-        if (state._conf.sync.guard.includes('id'))
+        // delete id if it's guarded
+        if (guard.includes('id'))
             delete item.id;
         // @ts-ignore
         batch.update(docRef, item);
@@ -593,7 +618,7 @@ function makeBatchFromSyncstack(state, getters, Firebase, batchMaxCount) {
         batch.set(newRef, item);
     });
     // log the batch contents
-    if (state._conf.logging) {
+    if (logging) {
         console.group('[vuex-easy-firestore] api call batch:');
         console.log("%cFirestore PATH: " + firestorePathComplete + " [" + firestorePath + "]", 'color: grey');
         Object.keys(log).forEach(function (key) {
@@ -798,36 +823,28 @@ function pluginActions (Firebase) {
             // 1. Prepare for patching
             var syncStackItems = getters.prepareForPatch(ids, doc);
             // 2. Push to syncStack
-            Object.keys(syncStackItems).forEach(function (id) {
+            Object.entries(syncStackItems).forEach(function (_a) {
+                var id = _a[0], patchData = _a[1];
                 var newVal;
                 if (!state._sync.syncStack.updates[id]) {
-                    // replace arrayUnion and arrayRemove
-                    newVal = findAndReplaceAnything.findAndReplaceIf(syncStackItems[id], function (foundVal) {
-                        if (isArrayHelper(foundVal)) {
-                            return foundVal.getFirestoreFieldValue();
-                        }
-                        if (isIncrementHelper(foundVal)) {
-                            return foundVal.getFirestoreFieldValue();
-                        }
-                        return foundVal;
-                    });
+                    newVal = patchData;
                 }
                 else {
-                    newVal = merge({ extensions: [
+                    newVal = merge(
+                    // extension to update increment and array helpers
+                    { extensions: [
                             function (originVal, newVal) {
-                                if (originVal instanceof Firebase.firestore.FieldValue &&
-                                    isArrayHelper(newVal)) {
-                                    originVal._elements = originVal._elements.concat(newVal.payload);
+                                if (isArrayHelper(originVal)) {
+                                    originVal.payload = originVal.payload.concat(newVal.payload);
                                     newVal = originVal;
                                 }
-                                if (originVal instanceof Firebase.firestore.FieldValue &&
-                                    isIncrementHelper(newVal)) {
-                                    originVal._operand = originVal._operand + newVal.payload;
+                                if (isIncrementHelper(originVal)) {
+                                    originVal.payload = originVal.payload + newVal.payload;
                                     newVal = originVal;
                                 }
                                 return newVal; // always return newVal as fallback!!
                             }
-                        ] }, state._sync.syncStack.updates[id], syncStackItems[id]);
+                        ] }, state._sync.syncStack.updates[id], patchData);
                 }
                 state._sync.syncStack.updates[id] = newVal;
             });
@@ -918,7 +935,7 @@ function pluginActions (Firebase) {
         },
         batchSync: function (_a) {
             var getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch, state = _a.state;
-            var batch = makeBatchFromSyncstack(state, getters, Firebase);
+            var batch = makeBatchFromSyncstack(state, getters, Firebase.firestore().batch());
             dispatch('_startPatching');
             state._sync.syncStack.debounceTimer = null;
             return new Promise(function (resolve, reject) {

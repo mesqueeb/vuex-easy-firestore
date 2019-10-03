@@ -225,13 +225,21 @@ In case you need to use `patchBatch` but have different content for each documen
 > Only for 'collection' mode.
 
 You can duplicate a document really simply by dispatching 'duplicate' and passing the id of the target document.
+In the example we will add a document and duplicate it afterwards, so we have 2 documents that look exactly like each other.
 
 ```js
-// let's duplicate Bulbasaur who has the id '001'
+const newBulbasaur = {id: '001', name: Bulbasaur, types: {grass: true, poison: true}}
+dispatch('pokemonBox/insert', newBulbasaur)
+
+// Bulbasaur is added with the id '001'.
+// In another part of your app, you can now duplicate this document like so:
+
 dispatch('pokemonBox/duplicate', '001')
 ```
 
-This will create a copy of Bulbasaur (and all its props) with a random new ID. The duplicated doc will automatically be added to your vuex module and synced as well.
+You have to pass the doc ID of an existing doc in your 'collection'. The document also has to be loaded in the Vuex module, so you will have to make sure you either (1) added the document locally or (2) [retrieved the document](query-data.html#read-data) from Firestore first.
+
+In our example above we have copied the Bulbasaur document with all its props and added a **duplicate doc with a new random ID**. The duplicated doc will automatically be added to your Vuex module and synced to Firestore as well.
 
 If you need to know which new ID was generated for the duplicate, you can retrieve it from the action:
 

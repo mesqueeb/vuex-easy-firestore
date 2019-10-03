@@ -54,7 +54,11 @@ store.dispatch('userData/openDBChannel')
   })
 ```
 
-### Bad use case example
+### Use case: Retieve data based on the Vue Router path
+
+This is a great use case! But it has a good and a bad implementation. I'll go over both so you can see what I mean:
+
+#### Bad implementation of Vue Router
 
 Do **not** use use a path variable as last param of a FirestorePath in 'doc' mode! Eg:
 
@@ -84,6 +88,8 @@ The above example shows a Vuex module linked to a single doc, but this path is c
 
 - When opening a new page you will need to release the previous doc from memory every time, so when the user goes back you will be charged with a read every single time!
 - Please see [this thread](https://github.com/mesqueeb/vuex-easy-firestore/issues/172) for problems when there's an internet interruption.
+
+#### Good implementation of Vue Router
 
 Instead, use 'collection' mode! This way you can keep the pages that were openend already and opening those pages again is much faster. That implementation would look like this:
 
@@ -281,26 +287,3 @@ const vuexModule = {
   }
 }
 ```
-
-## Shortcut: set(path, doc)
-
-Inside Vue component templates there is a shortcut for `dispatch('module/set', newVal)`. If you enable support for my other library called 'vuex-easy-access' you will be able to just use `set('module', newVal)` instead!
-
-For this shortcut usage, import the npm module 'vuex-easy-access' when you initialise your store and add it as plugin. Pass the 'vuex-easy-firestore' plugin first and **the 'vuex-easy-access' plugin second** for it to work properly.
-
-Also add `{vuexEasyFirestore: true}` in the options when you initialise 'vuex-easy-access' like so:
-
-```js
-import createEasyAccess from "vuex-easy-access";
-const easyAccess = createEasyAccess({ vuexEasyFirestore: true });
-
-const store = {
-  plugins: [easyFirestore, easyAccess]
-}
-```
-
-Please check the relevant documentation [on the vuex-easy-access repository](https://mesqueeb.github.io/vuex-easy-access/advanced.html#firestore-integration-for-google-firebase)!
-
-### About 'vuex-easy-access'
-
-Vuex easy access has a lot of different features to make working with your store extremely easy. The main purpose of that library is to be able to do any kind of mutation to your store directly from the templates without having to set up actions yourself. It is especially usefull when working with wildcards. Please see the [introduction on Vuex Easy Access here](https://mesqueeb.github.io/vuex-easy-access/).
