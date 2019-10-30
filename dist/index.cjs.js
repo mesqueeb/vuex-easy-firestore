@@ -65,7 +65,7 @@ var defaultConfig = {
 };
 
 /**
- * a function returning the state object
+ * a function returning the state object with ONLY the ._sync prop
  *
  * @export
  * @returns {IState} the state object
@@ -323,29 +323,11 @@ function pluginMutations (userState) {
                     unsubscribe();
             });
             var self = this;
-            var _sync = merge(state._sync, {
-                // make null once to be able to overwrite with empty object
-                unsubscribe: null,
-                pathVariables: null,
-                syncStack: { updates: null, propDeletions: null },
-                fetched: null,
-            }, {
-                unsubscribe: {},
-                pathVariables: {},
-                patching: false,
-                syncStack: {
-                    inserts: [],
-                    updates: {},
-                    propDeletions: {},
-                    deletions: [],
-                    debounceTimer: null,
-                },
-                fetched: {},
-                stopPatchingTimeout: null
-            });
-            var newState = merge(userState, { _sync: _sync });
-            var docContainer = (state._conf.statePropName)
-                ? state[state._conf.statePropName]
+            var _sync = pluginState()._sync;
+            var newState = merge(copy(userState), { _sync: _sync });
+            var statePropName = state._conf.statePropName;
+            var docContainer = (statePropName)
+                ? state[statePropName]
                 : state;
             Object.keys(newState).forEach(function (key) {
                 self._vm.$set(state, key, newState[key]);
@@ -357,12 +339,9 @@ function pluginMutations (userState) {
             });
         },
         resetSyncStack: function (state) {
-            state._sync.syncStack = {
-                updates: {},
-                deletions: [],
-                inserts: [],
-                debounceTimer: null
-            };
+            var _sync = pluginState()._sync;
+            var syncStack = _sync.syncStack;
+            state._sync.syncStack = syncStack;
         },
         INSERT_DOC: function (state, doc) {
             if (state._conf.firestoreRefType.toLowerCase() !== 'collection')
@@ -978,7 +957,7 @@ function pluginActions (Firebase) {
             return new Promise(function (resolve, reject) {
                 // log
                 if (state._conf.logging) {
-                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: lightcoral');
+                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
                 }
                 if (!getters.signedIn)
                     return resolve();
@@ -1061,7 +1040,7 @@ function pluginActions (Firebase) {
             if (!getters.collectionMode) {
                 dispatch('setUserId');
                 if (state._conf.logging) {
-                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: lightcoral');
+                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
                 }
                 return getters.dbRef.get().then(function (_doc) { return __awaiter(_this, void 0, void 0, function () {
                     var id, doc;
@@ -1239,7 +1218,7 @@ function pluginActions (Firebase) {
             return new Promise(function (resolve, reject) {
                 // log
                 if (state._conf.logging) {
-                    console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: lightcoral');
+                    console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
                 }
                 var unsubscribe = dbRef.onSnapshot(function (querySnapshot) { return __awaiter(_this, void 0, void 0, function () {
                     var source, id, doc;

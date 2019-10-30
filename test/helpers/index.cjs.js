@@ -215,11 +215,11 @@ function initialState$5() {
         items: []
     };
 }
-var testMutations1 = {
+var testPathVar2 = {
     // easy firestore config
-    firestorePath: 'coll/{name}',
+    firestorePath: 'testPathVar2/{name}',
     firestoreRefType: 'doc',
-    moduleName: 'testMutationsNoStateProp',
+    moduleName: 'testPathVar2',
     statePropName: '',
     // module
     state: initialState$5(),
@@ -235,12 +235,12 @@ function initialState$6() {
         items: []
     };
 }
-var testMutations2 = {
+var testMutations1 = {
     // easy firestore config
     firestorePath: 'coll/{name}',
-    firestoreRefType: 'collection',
-    moduleName: 'testMutationsWithStateProp',
-    statePropName: 'putItHere',
+    firestoreRefType: 'doc',
+    moduleName: 'testMutationsNoStateProp',
+    statePropName: '',
     // module
     state: initialState$6(),
     mutations: createEasyAccess.defaultMutations(initialState$6()),
@@ -249,6 +249,26 @@ var testMutations2 = {
 };
 
 function initialState$7() {
+    return {
+        name: 'Satoshi',
+        pokemonBelt: [],
+        items: []
+    };
+}
+var testMutations2 = {
+    // easy firestore config
+    firestorePath: 'coll/{name}',
+    firestoreRefType: 'collection',
+    moduleName: 'testMutationsWithStateProp',
+    statePropName: 'putItHere',
+    // module
+    state: initialState$7(),
+    mutations: createEasyAccess.defaultMutations(initialState$7()),
+    actions: {},
+    getters: {},
+};
+
+function initialState$8() {
     return {
         nested: {
             fillables: {
@@ -268,13 +288,13 @@ var testNestedFillables = {
         fillables: ['nested.fillables.yes'],
     },
     // module
-    state: initialState$7(),
-    mutations: createEasyAccess.defaultMutations(initialState$7()),
+    state: initialState$8(),
+    mutations: createEasyAccess.defaultMutations(initialState$8()),
     actions: {},
     getters: {},
 };
 
-function initialState$8() {
+function initialState$9() {
     return {
         nested: {
             guard: true,
@@ -291,13 +311,13 @@ var testNestedGuard = {
         guard: ['nested.guard'],
     },
     // module
-    state: initialState$8(),
-    mutations: createEasyAccess.defaultMutations(initialState$8()),
+    state: initialState$9(),
+    mutations: createEasyAccess.defaultMutations(initialState$9()),
     actions: {},
     getters: {},
 };
 
-function initialState$9() {
+function initialState$a() {
     return {
         iniProp: true,
     };
@@ -309,13 +329,13 @@ var initialDoc = {
     moduleName: 'initialDoc',
     statePropName: '',
     // module
-    state: initialState$9(),
-    mutations: createEasyAccess.defaultMutations(initialState$9()),
+    state: initialState$a(),
+    mutations: createEasyAccess.defaultMutations(initialState$a()),
     actions: {},
     getters: {},
 };
 
-function initialState$a() {
+function initialState$b() {
     return {
         iniProp: true,
     };
@@ -330,13 +350,13 @@ var preventInitialDoc = {
         preventInitialDocInsertion: true,
     },
     // module
-    state: initialState$a(),
-    mutations: createEasyAccess.defaultMutations(initialState$a()),
+    state: initialState$b(),
+    mutations: createEasyAccess.defaultMutations(initialState$b()),
     actions: {},
     getters: {},
 };
 
-function initialState$b() {
+function initialState$c() {
     return {
         iniProp: true,
         defaultPropsNotToBeDeleted: true
@@ -349,8 +369,8 @@ var serverHooks = {
     moduleName: 'serverHooks',
     statePropName: '',
     // module
-    state: initialState$b(),
-    mutations: createEasyAccess.defaultMutations(initialState$b()),
+    state: initialState$c(),
+    mutations: createEasyAccess.defaultMutations(initialState$c()),
     actions: {},
     getters: {},
     sync: {
@@ -467,7 +487,7 @@ var user = {
     getters: {},
 };
 
-function initialState$c() {
+function initialState$d() {
     return {
         defaultVal1: true,
         nestedDefaultVal: {
@@ -490,13 +510,13 @@ var defaultValuesSetupColNOProp = {
         },
     },
     // module
-    state: initialState$c(),
-    mutations: createEasyAccess.defaultMutations(initialState$c()),
+    state: initialState$d(),
+    mutations: createEasyAccess.defaultMutations(initialState$d()),
     actions: {},
     getters: {},
 };
 
-function initialState$d() {
+function initialState$e() {
     return {
         NOT: false,
         prop: {
@@ -522,13 +542,13 @@ var defaultValuesSetupColProp = {
         },
     },
     // module
-    state: initialState$d(),
-    mutations: createEasyAccess.defaultMutations(initialState$d()),
+    state: initialState$e(),
+    mutations: createEasyAccess.defaultMutations(initialState$e()),
     actions: {},
     getters: {},
 };
 
-function initialState$e() {
+function initialState$f() {
     return {
         defaultVal1: true,
         nestedDefaultVal: {
@@ -551,13 +571,13 @@ var defaultValuesSetupDocNOProp = {
         },
     },
     // module
-    state: initialState$e(),
-    mutations: createEasyAccess.defaultMutations(initialState$e()),
+    state: initialState$f(),
+    mutations: createEasyAccess.defaultMutations(initialState$f()),
     actions: {},
     getters: {},
 };
 
-function initialState$f() {
+function initialState$g() {
     return {
         NOT: false,
         prop: {
@@ -583,22 +603,6 @@ var defaultValuesSetupDocProp = {
         },
     },
     // module
-    state: initialState$f(),
-    mutations: createEasyAccess.defaultMutations(initialState$f()),
-    actions: {},
-    getters: {},
-};
-
-function initialState$g() {
-    return {};
-}
-var multipleOpenDBChannels = {
-    // easy firestore config
-    firestorePath: 'coll/{name}/data',
-    firestoreRefType: 'collection',
-    moduleName: 'multipleOpenDBChannels',
-    statePropName: '',
-    // module
     state: initialState$g(),
     mutations: createEasyAccess.defaultMutations(initialState$g()),
     actions: {},
@@ -608,6 +612,22 @@ var multipleOpenDBChannels = {
 function initialState$h() {
     return {};
 }
+var multipleOpenDBChannels = {
+    // easy firestore config
+    firestorePath: 'coll/{name}/data',
+    firestoreRefType: 'collection',
+    moduleName: 'multipleOpenDBChannels',
+    statePropName: '',
+    // module
+    state: initialState$h(),
+    mutations: createEasyAccess.defaultMutations(initialState$h()),
+    actions: {},
+    getters: {},
+};
+
+function initialState$i() {
+    return {};
+}
 var docModeWithPathVar = {
     // easy firestore config
     firestorePath: 'playerCharacters/{name}',
@@ -615,8 +635,8 @@ var docModeWithPathVar = {
     moduleName: 'docModeWithPathVar',
     statePropName: '',
     // module
-    state: initialState$h(),
-    mutations: createEasyAccess.defaultMutations(initialState$h()),
+    state: initialState$i(),
+    mutations: createEasyAccess.defaultMutations(initialState$i()),
     actions: {},
     getters: {},
 };
@@ -670,7 +690,7 @@ var defaultConfig = {
 };
 
 /**
- * a function returning the state object
+ * a function returning the state object with ONLY the ._sync prop
  *
  * @export
  * @returns {IState} the state object
@@ -823,29 +843,11 @@ function pluginMutations (userState) {
                     unsubscribe();
             });
             var self = this;
-            var _sync = merge(state._sync, {
-                // make null once to be able to overwrite with empty object
-                unsubscribe: null,
-                pathVariables: null,
-                syncStack: { updates: null, propDeletions: null },
-                fetched: null,
-            }, {
-                unsubscribe: {},
-                pathVariables: {},
-                patching: false,
-                syncStack: {
-                    inserts: [],
-                    updates: {},
-                    propDeletions: {},
-                    deletions: [],
-                    debounceTimer: null,
-                },
-                fetched: {},
-                stopPatchingTimeout: null
-            });
-            var newState = merge(userState, { _sync: _sync });
-            var docContainer = (state._conf.statePropName)
-                ? state[state._conf.statePropName]
+            var _sync = pluginState()._sync;
+            var newState = merge(copy(userState), { _sync: _sync });
+            var statePropName = state._conf.statePropName;
+            var docContainer = (statePropName)
+                ? state[statePropName]
                 : state;
             Object.keys(newState).forEach(function (key) {
                 self._vm.$set(state, key, newState[key]);
@@ -857,12 +859,9 @@ function pluginMutations (userState) {
             });
         },
         resetSyncStack: function (state) {
-            state._sync.syncStack = {
-                updates: {},
-                deletions: [],
-                inserts: [],
-                debounceTimer: null
-            };
+            var _sync = pluginState()._sync;
+            var syncStack = _sync.syncStack;
+            state._sync.syncStack = syncStack;
         },
         INSERT_DOC: function (state, doc) {
             if (state._conf.firestoreRefType.toLowerCase() !== 'collection')
@@ -1478,7 +1477,7 @@ function pluginActions (Firebase) {
             return new Promise(function (resolve, reject) {
                 // log
                 if (state._conf.logging) {
-                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: lightcoral');
+                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
                 }
                 if (!getters.signedIn)
                     return resolve();
@@ -1561,7 +1560,7 @@ function pluginActions (Firebase) {
             if (!getters.collectionMode) {
                 dispatch('setUserId');
                 if (state._conf.logging) {
-                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: lightcoral');
+                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
                 }
                 return getters.dbRef.get().then(function (_doc) { return __awaiter(_this, void 0, void 0, function () {
                     var id, doc;
@@ -1739,7 +1738,7 @@ function pluginActions (Firebase) {
             return new Promise(function (resolve, reject) {
                 // log
                 if (state._conf.logging) {
-                    console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: lightcoral');
+                    console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
                 }
                 var unsubscribe = dbRef.onSnapshot(function (querySnapshot) { return __awaiter(_this, void 0, void 0, function () {
                     var source, id, doc;
@@ -2411,6 +2410,7 @@ var easyFirestores = vuexEasyFirestore([
     pokemonBoxVEA,
     mainCharacterVEA,
     testPathVar,
+    testPathVar2,
     testMutations1,
     testMutations2,
     testNestedFillables,

@@ -20,7 +20,7 @@ export type IState = {
   [key: string]: any
 }
 /**
- * a function returning the state object
+ * a function returning the state object with ONLY the ._sync prop
  *
  * @export
  * @returns {IState} the state object
