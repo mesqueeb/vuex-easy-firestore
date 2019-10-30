@@ -3,6 +3,7 @@ import mainCharacter from './mainCharacter'
 import pokemonBoxVEA from './pokemonBoxVEA'
 import mainCharacterVEA from './mainCharacterVEA'
 import testPathVar from './testPathVar'
+import testPathVar2 from './testPathVar2'
 import testMutations1 from './testMutationsNoStateProp'
 import testMutations2 from './testMutationsWithStateProp'
 import testNestedFillables from './testNestedFillables'
@@ -30,6 +31,7 @@ const easyFirestores = createFirestores(
     pokemonBoxVEA,
     mainCharacterVEA,
     testPathVar,
+    testPathVar2,
     testMutations1,
     testMutations2,
     testNestedFillables,

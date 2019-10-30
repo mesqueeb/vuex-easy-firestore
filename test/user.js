@@ -28,17 +28,17 @@ test('check {userId} on change users with logout', async t => {
   await store.dispatch('user/logout')
   await store.dispatch('user/closeDBChannel', { clearModule: true })
   await wait(3)
-  t.is(state._sync.userId, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
-  t.is(state._sync.signedIn, true)
+  t.is(state._sync.userId, null)
+  t.is(state._sync.signedIn, false)
   t.is(firebase.auth().currentUser, null)
   await store.dispatch('user/loginWithEmail', 2)
   // await wait(3) don't wait
   // new ID set
   t.is(firebase.auth().currentUser.uid, 'psqOfK5yLYVTT0LDTfuZUTxuYrE2')
   // path not updated yet
-  t.is(state._sync.signedIn, true)
-  t.is(state._sync.userId, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
-  t.is(getters['user/firestorePathComplete'], 'user/LH3AIbCFMPMeeLclvRkmXghIaOx1')
+  t.is(state._sync.signedIn, false)
+  t.is(state._sync.userId, null)
+  t.is(getters['user/firestorePathComplete'], 'user/{userId}')
   // let's open the DBChannel
   await store.dispatch('user/openDBChannel').catch(console.error)
   // openDBChannel sets userId

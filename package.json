@@ -1,6 +1,6 @@
 {
   "name": "vuex-easy-firestore",
-  "version": "1.34.3",
+  "version": "1.34.4",
   "description": "Easy coupling of firestore and a vuex module. 2-way sync with 0 boilerplate!",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
@@ -49,7 +49,7 @@
   },
   "devDependencies": {
     "@vue/eslint-config-standard": "^4.0.0",
-    "@vuepress/plugin-google-analytics": "^1.1.0",
+    "@vuepress/plugin-google-analytics": "^1.2.0",
     "ava": "^2.4.0",
     "babel-eslint": "^10.0.3",
     "eslint": "^5.16.0",
@@ -60,9 +60,9 @@
     "rollup-plugin-node-resolve": "^4.2.4",
     "rollup-plugin-typescript2": "^0.22.1",
     "ts-node": "^8.4.1",
-    "typescript": "^3.6.3",
+    "typescript": "^3.6.4",
     "vue": "^2.6.10",
-    "vuepress": "^1.1.0",
+    "vuepress": "^1.2.0",
     "vuex": "^3.1.1"
   },
   "peerDependencies": {

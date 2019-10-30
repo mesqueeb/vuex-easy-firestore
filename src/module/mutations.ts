@@ -1,10 +1,12 @@
 import { isArray, isFunction, isNumber } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
 import logError from './errors'
+import copy from 'copy-anything'
 import merge from 'merge-anything'
 import { AnyObject } from '../declarations'
 import { isArrayHelper } from '../utils/arrayHelpers'
 import { isIncrementHelper } from '../utils/incrementHelper'
+import getStateWithSync from './state'
 
 /**
  * a function returning the mutations object
@@ -45,29 +47,11 @@ export default function (userState: object): AnyObject {
         if (isFunction(unsubscribe)) unsubscribe()
       })
       const self = this
-      const _sync = merge(state._sync, {
-        // make null once to be able to overwrite with empty object
-        unsubscribe: null,
-        pathVariables: null,
-        syncStack: { updates: null, propDeletions: null },
-        fetched: null,
-      }, {
-        unsubscribe: {},
-        pathVariables: {},
-        patching: false,
-        syncStack: {
-          inserts: [],
-          updates: {},
-          propDeletions: {},
-          deletions: [],
-          debounceTimer: null,
-        },
-        fetched: {},
-        stopPatchingTimeout: null
-      })
-      const newState = merge(userState, {_sync})
-      const docContainer = (state._conf.statePropName)
-        ? state[state._conf.statePropName]
+      const { _sync } = getStateWithSync()
+      const newState = merge(copy(userState), {_sync})
+      const { statePropName } = state._conf
+      const docContainer = (statePropName)
+        ? state[statePropName]
         : state
       Object.keys(newState).forEach(key => {
         self._vm.$set(state, key, newState[key])
@@ -78,12 +62,9 @@ export default function (userState: object): AnyObject {
       })
     },
     resetSyncStack (state) {
-      state._sync.syncStack = {
-        updates: {},
-        deletions: [],
-        inserts: [],
-        debounceTimer: null
-      }
+      const { _sync } = getStateWithSync()
+      const { syncStack } = _sync
+      state._sync.syncStack = syncStack
     },
     INSERT_DOC (state, doc) {
       if (state._conf.firestoreRefType.toLowerCase() !== 'collection') return
