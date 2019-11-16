@@ -955,7 +955,11 @@ function pluginActions (Firebase) {
                 }
                 if (!getters.signedIn)
                     return resolve();
-                var identifier = createFetchIdentifier({ where: where, orderBy: orderBy });
+                var identifier = createFetchIdentifier({
+                    where: where,
+                    orderBy: orderBy,
+                    pathVariables: state._sync.pathVariables
+                });
                 var fetched = state._sync.fetched[identifier];
                 // We've never fetched this before:
                 if (!fetched) {

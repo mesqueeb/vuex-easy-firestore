@@ -241,7 +241,11 @@ export default function (Firebase: any): AnyObject {
           console.log(`%c fetch for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: goldenrod')
         }
         if (!getters.signedIn) return resolve()
-        const identifier = createFetchIdentifier({where, orderBy})
+        const identifier = createFetchIdentifier({
+          where,
+          orderBy,
+          pathVariables: state._sync.pathVariables
+        })
         const fetched = state._sync.fetched[identifier]
         // We've never fetched this before:
         if (!fetched) {
