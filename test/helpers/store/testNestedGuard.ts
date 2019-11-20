@@ -13,7 +13,7 @@ export default {
   firestorePath: 'configTests/nestedGuard',
   firestoreRefType: 'doc',
   moduleName: 'nestedGuard',
-  statePropName: '',
+  statePropName: null,
   sync: {
     guard: ['nested.guard'],
   },

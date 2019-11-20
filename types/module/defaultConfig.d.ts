@@ -14,7 +14,7 @@ export declare type IConfig = {
     firestorePath: string;
     firestoreRefType: string;
     moduleName: string;
-    statePropName: string;
+    statePropName: string | null;
     logging?: boolean;
     sync?: {
         where?: any[][];
@@ -53,7 +53,7 @@ declare const _default: {
     firestorePath: string;
     firestoreRefType: string;
     moduleName: string;
-    statePropName: string;
+    statePropName: any;
     logging: boolean;
     sync: {
         where: any[];

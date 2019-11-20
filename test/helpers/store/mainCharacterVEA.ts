@@ -14,7 +14,7 @@ export default {
   firestorePath: 'playerCharactersVEA/Satoshi',
   firestoreRefType: 'doc',
   moduleName: 'mainCharacterVEA',
-  statePropName: '',
+  statePropName: null,
   // module
   state: initialState(),
   mutations: defaultMutations(initialState()),

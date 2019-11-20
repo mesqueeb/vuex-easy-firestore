@@ -12,7 +12,7 @@ export default {
   firestorePath: 'configTests/serverHooks', // this should be randomized each test
   firestoreRefType: 'doc',
   moduleName: 'serverHooks',
-  statePropName: '',
+  statePropName: null,
   // module
   state: initialState(),
   mutations: defaultMutations(initialState()),

@@ -16,8 +16,11 @@ export default function (config: IEasyFirestoreModule): boolean {
       errors.push(`Missing \`${prop}\` in your module!`)
     }
   })
-  if (/(\.|\/)/.test(config.statePropName)) {
-    errors.push(`statePropName must only include letters from [a-z]`)
+  if (config.statePropName !== null && !isString(config.statePropName)) {
+    errors.push('statePropName must be null or a string')
+  }
+  if (isString(config.statePropName) && /(\.|\/)/.test(config.statePropName)) {
+    errors.push(`statePropName must be null or a string without special characters`)
   }
   if (/\./.test(config.moduleName)) {
     errors.push(`moduleName must only include letters from [a-z] and forward slashes '/'`)
@@ -59,7 +62,7 @@ export default function (config: IEasyFirestoreModule): boolean {
       : config[prop]
     if (!isPlainObject(_prop)) errors.push(`\`${prop}\` should be an Object, but is not.`)
   })
-  const stringProps = ['firestorePath', 'firestoreRefType', 'moduleName', 'statePropName']
+  const stringProps = ['firestorePath', 'firestoreRefType', 'moduleName']
   stringProps.forEach(prop => {
     const _prop = config[prop]
     if (!isString(_prop)) errors.push(`\`${prop}\` should be a String, but is not.`)

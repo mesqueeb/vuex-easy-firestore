@@ -17,7 +17,7 @@ export type IConfig = {
   firestorePath: string
   firestoreRefType: string
   moduleName: string
-  statePropName: string
+  statePropName: string | null
   logging?: boolean
   sync?: {
     where?: any[][]
@@ -60,7 +60,7 @@ export default {
     // `'collection'` or `'doc'`. Depending on your `firestorePath`.
   moduleName: '',
     // The module name. Can be nested, eg. `'user/items'`
-  statePropName: '',
+  statePropName: null,
     // The name of the property where the docs or doc will be synced to. If left blank it will be synced on the state of the module.
   logging: false,
   // Related to the 2-way sync:

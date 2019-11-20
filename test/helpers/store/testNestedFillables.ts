@@ -16,7 +16,7 @@ export default {
   firestorePath: 'configTests/nestedFillables',
   firestoreRefType: 'doc',
   moduleName: 'nestedFillables',
-  statePropName: '',
+  statePropName: null,
   sync: {
     fillables: ['nested.fillables.yes'],
   },
