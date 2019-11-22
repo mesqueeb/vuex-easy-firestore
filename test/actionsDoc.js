@@ -14,11 +14,11 @@ test('store set up', async t => {
 test('[DOC] edit twice right after each other', async t => {
   await wait(2)
   // insert
-  await store.dispatch('mainCharacter/set', {multipleFastEdits: true})
+  await store.dispatch('mainCharacter/patch', {multipleFastEdits: true})
   t.is(char.multipleFastEdits, true)
   // patch once
   await wait(0.8)
-  store.dispatch('mainCharacter/set', {multipleFastEdits: false})
+  store.dispatch('mainCharacter/patch', {multipleFastEdits: false})
   t.is(char.multipleFastEdits, false)
   await wait(0.1)
   t.is(char.multipleFastEdits, false)
@@ -52,18 +52,18 @@ test('[DOC] edit twice right after each other', async t => {
   t.is(char.multipleFastEdits, false)
 })
 
-test('[DOC] set & delete: top lvl', async t => {
+test('[DOC] patch & delete: top lvl', async t => {
   let docR, doc
-  // EXISTING prop set
-  await store.dispatch('mainCharacter/set', {items: ['Pokeball']})
+  // EXISTING prop patch
+  await store.dispatch('mainCharacter/patch', {items: ['Pokeball']})
   t.deepEqual(char.items, ['Pokeball'])
   await wait(2)
   docR = await charRef.get()
   doc = docR.data()
   t.deepEqual(doc.items, ['Pokeball'])
 
-  // NEW prop set string
-  await store.dispatch('mainCharacter/set', {newProp: 'Klappie'})
+  // NEW prop patch string
+  await store.dispatch('mainCharacter/patch', {newProp: 'Klappie'})
   t.is(char.newProp, 'Klappie')
   await wait(2)
   docR = await charRef.get()
@@ -78,8 +78,8 @@ test('[DOC] set & delete: top lvl', async t => {
   doc = docR.data()
   t.falsy(doc.newProp)
 
-  // NEW prop set to an object
-  await store.dispatch('mainCharacter/set', {newObjectProp: {deep: {object: true}}})
+  // NEW prop patch to an object
+  await store.dispatch('mainCharacter/patch', {newObjectProp: {deep: {object: true}}})
   t.deepEqual(char.newObjectProp, {deep: {object: true}})
   await wait(2)
   docR = await charRef.get()
@@ -95,32 +95,56 @@ test('[DOC] set & delete: top lvl', async t => {
   t.falsy(doc.newObjectProp)
 })
 
-test('[DOC] set & delete: deep', async t => {
+test('[DOC] set, patch & delete: deep', async t => {
   await wait(3)
   let docR, doc
-  // set
-  store.dispatch('mainCharacter/set', {nestedInDoc: {a: {met: {de: 'aba'}}}})
-  t.deepEqual(char.nestedInDoc, {a: {met: {de: 'aba'}}})
+  // patch new stuff
+  store.dispatch('mainCharacter/patch', {nestedInDoc: {a: {bb: {ccc: 'red', ddd: 'blue'}}}})
+  t.deepEqual(char.nestedInDoc, {a: {bb: {ccc: 'red', ddd: 'blue'}}})
   await wait(2)
   docR = await charRef.get()
   doc = docR.data()
-  t.deepEqual(doc.nestedInDoc, {a: {met: {de: 'aba'}}})
+  t.deepEqual(doc.nestedInDoc, {a: {bb: {ccc: 'red', ddd: 'blue'}}})
 
-  // update
-  await store.dispatch('mainCharacter/set', {nestedInDoc: {a: {met: {de: 'ebe'}}}})
-  t.deepEqual(char.nestedInDoc, {a: {met: {de: 'ebe'}}})
+  // patch existing object
+  await store.dispatch('mainCharacter/patch', {nestedInDoc: {a: {bb: {ccc: 'pink'}}}})
+  t.deepEqual(char.nestedInDoc, {a: {bb: {ccc: 'pink', ddd: 'blue'}}})
   await wait(2)
   docR = await charRef.get()
   doc = docR.data()
-  t.deepEqual(doc.nestedInDoc, {a: {met: {de: 'ebe'}}})
-
+  t.deepEqual(doc.nestedInDoc, {a: {bb: {ccc: 'pink', ddd: 'blue'}}})
+  
+  // patch an object, string path
+  await store.dispatch('mainCharacter/patch', {'nestedInDoc.a.bb.ccc': 'fuchsia'})
+  t.deepEqual(char.nestedInDoc, {a: {bb: {ccc: 'fuchsia', ddd: 'blue'}}})
+  await wait(2)
+  docR = await charRef.get()
+  doc = docR.data()
+  t.deepEqual(doc.nestedInDoc, {a: {bb: {ccc: 'fuchsia', ddd: 'blue'}}})
+  
+  // set a nested string (equivalent to a patch)
+  await store.dispatch('mainCharacter/set', {'nestedInDoc.a.bb.ccc': 'carmine'})
+  t.deepEqual(char.nestedInDoc, {a: {bb: {ccc: 'carmine', ddd: 'blue'}}})
+  await wait(2)
+  docR = await charRef.get()
+  doc = docR.data()
+  t.deepEqual(doc.nestedInDoc, {a: {bb: {ccc: 'carmine', ddd: 'blue'}}})
+  
+  // set a nested object (replaces the object)
+  await store.dispatch('mainCharacter/set', {'nestedInDoc.a.bb': {ccc: 'crimson'}})
+  t.deepEqual(char.nestedInDoc, {a: {bb: {ccc: 'crimson'}}})
+  await wait(2)
+  docR = await charRef.get()
+  doc = docR.data()
+  t.deepEqual(doc.nestedInDoc, {a: {bb: {ccc: 'crimson'}}})
+  
   // delete 4 levels deep
-  await store.dispatch('mainCharacter/delete', 'nestedInDoc.a.met.de')
-  t.deepEqual(char.nestedInDoc, {a: {met: {}}})
+  await store.dispatch('mainCharacter/delete', 'nestedInDoc.a.bb.ccc')
+  t.deepEqual(char.nestedInDoc, {a: {bb: {ddd: 'blue'}}})
   await wait(2)
   docR = await charRef.get()
   doc = docR.data()
-  t.deepEqual(doc.nestedInDoc, {a: {met: {}}})
+  t.deepEqual(doc.nestedInDoc, {a: {bb: {ddd: 'blue'}}})
 
   // delete entire object prop
   store.dispatch('mainCharacter/delete', 'nestedInDoc')
