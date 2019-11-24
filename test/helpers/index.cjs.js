@@ -95,7 +95,7 @@ var mainCharacter = {
     firestorePath: 'playerCharacters/Satoshi',
     firestoreRefType: 'doc',
     moduleName: 'mainCharacter',
-    statePropName: '',
+    statePropName: null,
     // module
     state: initialState$1(),
     mutations: createEasyAccess.defaultMutations(initialState$1()),
@@ -180,7 +180,7 @@ var mainCharacterVEA = {
     firestorePath: 'playerCharactersVEA/Satoshi',
     firestoreRefType: 'doc',
     moduleName: 'mainCharacterVEA',
-    statePropName: '',
+    statePropName: null,
     // module
     state: initialState$3(),
     mutations: createEasyAccess.defaultMutations(initialState$3()),
@@ -200,7 +200,7 @@ var testPathVar = {
     firestorePath: 'coll/{name}',
     firestoreRefType: 'doc',
     moduleName: 'testPathVar',
-    statePropName: '',
+    statePropName: null,
     // module
     state: initialState$4(),
     mutations: createEasyAccess.defaultMutations(initialState$4()),
@@ -220,7 +220,7 @@ var testPathVar2 = {
     firestorePath: 'testPathVar2/{name}',
     firestoreRefType: 'doc',
     moduleName: 'testPathVar2',
-    statePropName: '',
+    statePropName: null,
     // module
     state: initialState$5(),
     mutations: createEasyAccess.defaultMutations(initialState$5()),
@@ -240,7 +240,7 @@ var testMutations1 = {
     firestorePath: 'coll/{name}',
     firestoreRefType: 'doc',
     moduleName: 'testMutationsNoStateProp',
-    statePropName: '',
+    statePropName: null,
     // module
     state: initialState$6(),
     mutations: createEasyAccess.defaultMutations(initialState$6()),
@@ -283,7 +283,7 @@ var testNestedFillables = {
     firestorePath: 'configTests/nestedFillables',
     firestoreRefType: 'doc',
     moduleName: 'nestedFillables',
-    statePropName: '',
+    statePropName: null,
     sync: {
         fillables: ['nested.fillables.yes'],
     },
@@ -306,7 +306,7 @@ var testNestedGuard = {
     firestorePath: 'configTests/nestedGuard',
     firestoreRefType: 'doc',
     moduleName: 'nestedGuard',
-    statePropName: '',
+    statePropName: null,
     sync: {
         guard: ['nested.guard'],
     },
@@ -327,7 +327,7 @@ var initialDoc = {
     firestorePath: 'docs/{randomId}',
     firestoreRefType: 'doc',
     moduleName: 'initialDoc',
-    statePropName: '',
+    statePropName: null,
     // module
     state: initialState$a(),
     mutations: createEasyAccess.defaultMutations(initialState$a()),
@@ -345,7 +345,7 @@ var preventInitialDoc = {
     firestorePath: 'docs/{randomId}',
     firestoreRefType: 'doc',
     moduleName: 'preventInitialDoc',
-    statePropName: '',
+    statePropName: null,
     sync: {
         preventInitialDocInsertion: true,
     },
@@ -367,7 +367,7 @@ var serverHooks = {
     firestorePath: 'configTests/serverHooks',
     firestoreRefType: 'doc',
     moduleName: 'serverHooks',
-    statePropName: '',
+    statePropName: null,
     // module
     state: initialState$c(),
     mutations: createEasyAccess.defaultMutations(initialState$c()),
@@ -445,7 +445,7 @@ var user = {
     firestorePath: 'user/{userId}',
     firestoreRefType: 'doc',
     moduleName: 'user',
-    statePropName: '',
+    statePropName: null,
     actions: {
         loginWithEmail: function (_a, userNr) {
             var dispatch = _a.dispatch;
@@ -500,7 +500,7 @@ var defaultValuesSetupColNOProp = {
     firestorePath: 'configTests/defaultValuesSetupColNOProp',
     firestoreRefType: 'collection',
     moduleName: 'defaultValuesSetupColNOProp',
-    statePropName: '',
+    statePropName: null,
     sync: {
         defaultValues: {
             defaultVal: true,
@@ -561,7 +561,7 @@ var defaultValuesSetupDocNOProp = {
     firestorePath: 'configTests/defaultValuesSetupDocNOProp',
     firestoreRefType: 'doc',
     moduleName: 'defaultValuesSetupDocNOProp',
-    statePropName: '',
+    statePropName: null,
     sync: {
         defaultValues: {
             defaultVal2: true,
@@ -617,7 +617,7 @@ var multipleOpenDBChannels = {
     firestorePath: 'coll/{name}/data',
     firestoreRefType: 'collection',
     moduleName: 'multipleOpenDBChannels',
-    statePropName: '',
+    statePropName: null,
     // module
     state: initialState$h(),
     mutations: createEasyAccess.defaultMutations(initialState$h()),
@@ -633,7 +633,7 @@ var docModeWithPathVar = {
     firestorePath: 'playerCharacters/{name}',
     firestoreRefType: 'doc',
     moduleName: 'docModeWithPathVar',
-    statePropName: '',
+    statePropName: null,
     // module
     state: initialState$i(),
     mutations: createEasyAccess.defaultMutations(initialState$i()),
@@ -648,7 +648,7 @@ var defaultConfig = {
     // `'collection'` or `'doc'`. Depending on your `firestorePath`.
     moduleName: '',
     // The module name. Can be nested, eg. `'user/items'`
-    statePropName: '',
+    statePropName: null,
     // The name of the property where the docs or doc will be synced to. If left blank it will be synced on the state of the module.
     logging: false,
     // Related to the 2-way sync:
@@ -1416,8 +1416,8 @@ function pluginActions (Firebase) {
                 if (state._conf.logging) {
                     console.log('[vuex-easy-firestore] Initial doc succesfully inserted.');
                 }
-            }).catch(function (error$1) {
-                return error('initial-doc-failed', error$1);
+            }).catch(function (error) {
+                return error('initial-doc-failed');
             });
         },
         handleSyncStackDebounce: function (_a) {
@@ -2255,8 +2255,11 @@ function errorCheck (config) {
             errors.push("Missing `" + prop + "` in your module!");
         }
     });
-    if (/(\.|\/)/.test(config.statePropName)) {
-        errors.push("statePropName must only include letters from [a-z]");
+    if (config.statePropName !== null && !isWhat.isString(config.statePropName)) {
+        errors.push('statePropName must be null or a string');
+    }
+    if (isWhat.isString(config.statePropName) && /(\.|\/)/.test(config.statePropName)) {
+        errors.push("statePropName must be null or a string without special characters");
     }
     if (/\./.test(config.moduleName)) {
         errors.push("moduleName must only include letters from [a-z] and forward slashes '/'");
@@ -2301,7 +2304,7 @@ function errorCheck (config) {
         if (!isWhat.isPlainObject(_prop))
             errors.push("`" + prop + "` should be an Object, but is not.");
     });
-    var stringProps = ['firestorePath', 'firestoreRefType', 'moduleName', 'statePropName'];
+    var stringProps = ['firestorePath', 'firestoreRefType', 'moduleName'];
     stringProps.forEach(function (prop) {
         var _prop = config[prop];
         if (!isWhat.isString(_prop))

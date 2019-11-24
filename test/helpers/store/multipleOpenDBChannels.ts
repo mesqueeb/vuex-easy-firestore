@@ -10,7 +10,7 @@ export default {
   firestorePath: 'coll/{name}/data',
   firestoreRefType: 'collection',
   moduleName: 'multipleOpenDBChannels',
-  statePropName: '',
+  statePropName: null,
   // module
   state: initialState(),
   mutations: defaultMutations(initialState()),

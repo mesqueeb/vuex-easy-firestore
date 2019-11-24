@@ -14,7 +14,7 @@ export default {
   firestorePath: 'configTests/defaultValuesSetupColNOProp',
   firestoreRefType: 'collection',
   moduleName: 'defaultValuesSetupColNOProp',
-  statePropName: '',
+  statePropName: null,
   sync: {
     defaultValues: {
       defaultVal: true,

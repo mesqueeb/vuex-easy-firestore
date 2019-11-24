@@ -17,7 +17,7 @@ var defaultConfig = {
     // `'collection'` or `'doc'`. Depending on your `firestorePath`.
     moduleName: '',
     // The module name. Can be nested, eg. `'user/items'`
-    statePropName: '',
+    statePropName: null,
     // The name of the property where the docs or doc will be synced to. If left blank it will be synced on the state of the module.
     logging: false,
     // Related to the 2-way sync:
@@ -890,8 +890,8 @@ function pluginActions (Firebase) {
                 if (state._conf.logging) {
                     console.log('[vuex-easy-firestore] Initial doc succesfully inserted.');
                 }
-            }).catch(function (error$1) {
-                return error('initial-doc-failed', error$1);
+            }).catch(function (error) {
+                return error('initial-doc-failed');
             });
         },
         handleSyncStackDebounce: function (_a) {
@@ -1729,8 +1729,11 @@ function errorCheck (config) {
             errors.push("Missing `" + prop + "` in your module!");
         }
     });
-    if (/(\.|\/)/.test(config.statePropName)) {
-        errors.push("statePropName must only include letters from [a-z]");
+    if (config.statePropName !== null && !isString(config.statePropName)) {
+        errors.push('statePropName must be null or a string');
+    }
+    if (isString(config.statePropName) && /(\.|\/)/.test(config.statePropName)) {
+        errors.push("statePropName must be null or a string without special characters");
     }
     if (/\./.test(config.moduleName)) {
         errors.push("moduleName must only include letters from [a-z] and forward slashes '/'");
@@ -1775,7 +1778,7 @@ function errorCheck (config) {
         if (!isPlainObject(_prop))
             errors.push("`" + prop + "` should be an Object, but is not.");
     });
-    var stringProps = ['firestorePath', 'firestoreRefType', 'moduleName', 'statePropName'];
+    var stringProps = ['firestorePath', 'firestoreRefType', 'moduleName'];
     stringProps.forEach(function (prop) {
         var _prop = config[prop];
         if (!isString(_prop))

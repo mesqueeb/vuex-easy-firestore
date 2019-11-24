@@ -14,7 +14,7 @@ export default {
   firestorePath: 'configTests/defaultValuesSetupDocNOProp',
   firestoreRefType: 'doc',
   moduleName: 'defaultValuesSetupDocNOProp',
-  statePropName: '',
+  statePropName: null,
   sync: {
     defaultValues: {
       defaultVal2: true,

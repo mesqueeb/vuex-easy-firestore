@@ -11,7 +11,7 @@ export default {
   firestorePath: 'docs/{randomId}', // this should be randomized each test
   firestoreRefType: 'doc',
   moduleName: 'initialDoc',
-  statePropName: '',
+  statePropName: null,
   // module
   state: initialState(),
   mutations: defaultMutations(initialState()),
