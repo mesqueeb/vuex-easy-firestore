@@ -12,6 +12,8 @@ export declare type IState = {
             propDeletions: AnyObject;
             deletions: any[];
             debounceTimer: any;
+            resolves: Promise<any>[];
+            rejects: Promise<any>[];
         };
         fetched: AnyObject;
         stopPatchingTimeout: any;

@@ -80,7 +80,6 @@ export default function (Firebase: any): AnyObject {
       const syncStackItems = getters.prepareForPatch(ids, doc)
 
       // 2. Push to syncStack
-
       Object.entries(syncStackItems).forEach(([id, patchData]) => {
         let newVal
         if (!state._sync.syncStack.updates[id]) {
@@ -108,15 +107,15 @@ export default function (Firebase: any): AnyObject {
         state._sync.syncStack.updates[id] = newVal
       })
 
-      // 3. Create or refresh debounce
-      return dispatch('handleSyncStackDebounce')
+      // 3. Create or refresh debounce & pass id to resolve
+      return dispatch('handleSyncStackDebounce', id || ids)
     },
     deleteDoc (
       {state, getters, commit, dispatch},
-      ids = []
+      payload = []
     ) {
       // 0. payload correction (only arrays)
-      if (!isArray(ids)) ids = [ids]
+      const ids = !isArray(payload) ? [payload] : payload
 
       // 1. Prepare for patching
       // 2. Push to syncStack
@@ -124,8 +123,8 @@ export default function (Firebase: any): AnyObject {
       state._sync.syncStack.deletions = deletions
 
       if (!state._sync.syncStack.deletions.length) return
-      // 3. Create or refresh debounce
-      return dispatch('handleSyncStackDebounce')
+      // 3. Create or refresh debounce & pass id to resolve
+      return dispatch('handleSyncStackDebounce', payload)
     },
     deleteProp (
       {state, getters, commit, dispatch},
@@ -142,15 +141,15 @@ export default function (Firebase: any): AnyObject {
         state._sync.syncStack.propDeletions[id] = newVal
       })
 
-      // 3. Create or refresh debounce
-      return dispatch('handleSyncStackDebounce')
+      // 3. Create or refresh debounce & pass id to resolve
+      return dispatch('handleSyncStackDebounce', path)
     },
     insertDoc (
       {state, getters, commit, dispatch},
-      docs = []
+      payload: (AnyObject | AnyObject[]) = []
     ) {
       // 0. payload correction (only arrays)
-      if (!isArray(docs)) docs = [docs]
+      const docs = !isArray(payload) ? [payload] : payload
 
       // 1. Prepare for patching
       const syncStack = getters.prepareForInsert(docs)
@@ -159,9 +158,11 @@ export default function (Firebase: any): AnyObject {
       const inserts = state._sync.syncStack.inserts.concat(syncStack)
       state._sync.syncStack.inserts = inserts
 
-      // 3. Create or refresh debounce
-      dispatch('handleSyncStackDebounce')
-      return docs.map(d => d.id)
+      // 3. Create or refresh debounce & pass id to resolve
+      const payloadToResolve = isArray(payload)
+        ? payload.map(doc => doc.id)
+        : payload.id
+      return dispatch('handleSyncStackDebounce', payloadToResolve)
     },
     insertInitialDoc ({state, getters, commit, dispatch}) {
       // 0. only docMode
@@ -189,15 +190,31 @@ export default function (Firebase: any): AnyObject {
         return logError('initial-doc-failed', error)
       })
     },
-    handleSyncStackDebounce ({state, commit, dispatch, getters}) {
-      if (!getters.signedIn) return false
-      if (!state._sync.syncStack.debounceTimer) {
-        const ms = state._conf.sync.debounceTimerMs
-        const debounceTimer = startDebounce(ms)
-        debounceTimer.done.then(_ => dispatch('batchSync'))
-        state._sync.syncStack.debounceTimer = debounceTimer
-      }
-      state._sync.syncStack.debounceTimer.refresh()
+    handleSyncStackDebounce ({state, commit, dispatch, getters}, payloadToResolve) {
+      return new Promise((resolve, reject) => {
+        state._sync.syncStack.resolves.push(() => resolve(payloadToResolve))
+        state._sync.syncStack.rejects.push(reject)
+        if (!getters.signedIn) return false
+        if (!state._sync.syncStack.debounceTimer) {
+          const ms = state._conf.sync.debounceTimerMs
+          const debounceTimer = startDebounce(ms)
+          state._sync.syncStack.debounceTimer = debounceTimer
+          debounceTimer.done.then(() => {
+            dispatch('batchSync')
+              .then(() => dispatch('resolveSyncStack'))
+              .catch(e => dispatch('rejectSyncStack', e))
+          })
+        }
+        state._sync.syncStack.debounceTimer.refresh()
+      })
+    },
+    resolveSyncStack ({state}) {
+      state._sync.syncStack.rejects = []
+      state._sync.syncStack.resolves.forEach(r => r())
+    },
+    rejectSyncStack ({state}, error) {
+      state._sync.syncStack.resolves = []
+      state._sync.syncStack.rejects.forEach(r => r(error))
     },
     batchSync ({getters, commit, dispatch, state}) {
       const batch = makeBatchFromSyncstack(state, getters, Firebase.firestore().batch())
@@ -561,11 +578,9 @@ export default function (Firebase: any): AnyObject {
       }
       // check for a hook before local change
       if (state._conf.sync.insertHook) {
-        state._conf.sync.insertHook(storeUpdateFn, newDocWithDefaults, store)
-        return newDocWithDefaults.id
+        return state._conf.sync.insertHook(storeUpdateFn, newDocWithDefaults, store)
       }
-      storeUpdateFn(newDocWithDefaults)
-      return newDocWithDefaults.id
+      return storeUpdateFn(newDocWithDefaults)
     },
     insertBatch ({state, getters, commit, dispatch}, docs) {
       const store = this
@@ -588,11 +603,9 @@ export default function (Firebase: any): AnyObject {
       }
       // check for a hook before local change
       if (state._conf.sync.insertBatchHook) {
-        state._conf.sync.insertBatchHook(storeUpdateFn, newDocs, store)
-        return newDocs.map(_doc => _doc.id)
+        return state._conf.sync.insertBatchHook(storeUpdateFn, newDocs, store)
       }
-      storeUpdateFn(newDocs)
-      return newDocs.map(_doc => _doc.id)
+      return storeUpdateFn(newDocs)
     },
     patch ({state, getters, commit, dispatch}, doc) {
       const store = this
@@ -620,11 +633,9 @@ export default function (Firebase: any): AnyObject {
       }
       // check for a hook before local change
       if (state._conf.sync.patchHook) {
-        state._conf.sync.patchHook(storeUpdateFn, value, store)
-        return id
+        return state._conf.sync.patchHook(storeUpdateFn, value, store)
       }
-      storeUpdateFn(value)
-      return id
+      return storeUpdateFn(value)
     },
     patchBatch (
       {state, getters, commit, dispatch},
@@ -645,11 +656,9 @@ export default function (Firebase: any): AnyObject {
       }
       // check for a hook before local change
       if (state._conf.sync.patchBatchHook) {
-        state._conf.sync.patchBatchHook(storeUpdateFn, doc, ids, store)
-        return ids
+        return state._conf.sync.patchBatchHook(storeUpdateFn, doc, ids, store)
       }
-      storeUpdateFn(doc, ids)
-      return ids
+      return storeUpdateFn(doc, ids)
     },
     delete ({state, getters, commit, dispatch}, id) {
       const store = this
@@ -688,11 +697,9 @@ export default function (Firebase: any): AnyObject {
       }
       // check for a hook before local change
       if (state._conf.sync.deleteHook) {
-        state._conf.sync.deleteHook(storeUpdateFn, id, store)
-        return id
+        return state._conf.sync.deleteHook(storeUpdateFn, id, store)
       }
-      storeUpdateFn(id)
-      return id
+      return storeUpdateFn(id)
     },
     deleteBatch (
       {state, getters, commit, dispatch}: {state: IPluginState, getters: any, commit: any, dispatch: any},
@@ -721,11 +728,9 @@ export default function (Firebase: any): AnyObject {
       }
       // check for a hook before local change
       if (state._conf.sync.deleteBatchHook) {
-        state._conf.sync.deleteBatchHook(storeUpdateFn, ids, store)
-        return ids
+        return state._conf.sync.deleteBatchHook(storeUpdateFn, ids, store)
       }
-      storeUpdateFn(ids)
-      return ids
+      return storeUpdateFn(ids)
     },
     _stopPatching ({state, commit}) {
       if (state._sync.stopPatchingTimeout) { clearTimeout(state._sync.stopPatchingTimeout) }

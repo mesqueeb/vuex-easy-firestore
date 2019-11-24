@@ -84,6 +84,8 @@ function pluginState () {
                 propDeletions: {},
                 deletions: [],
                 debounceTimer: null,
+                resolves: [],
+                rejects: [],
             },
             fetched: {},
             stopPatchingTimeout: null
@@ -827,23 +829,22 @@ function pluginActions (Firebase) {
                 }
                 state._sync.syncStack.updates[id] = newVal;
             });
-            // 3. Create or refresh debounce
-            return dispatch('handleSyncStackDebounce');
+            // 3. Create or refresh debounce & pass id to resolve
+            return dispatch('handleSyncStackDebounce', id || ids);
         },
-        deleteDoc: function (_a, ids) {
+        deleteDoc: function (_a, payload) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
-            if (ids === void 0) { ids = []; }
+            if (payload === void 0) { payload = []; }
             // 0. payload correction (only arrays)
-            if (!isWhat.isArray(ids))
-                ids = [ids];
+            var ids = !isWhat.isArray(payload) ? [payload] : payload;
             // 1. Prepare for patching
             // 2. Push to syncStack
             var deletions = state._sync.syncStack.deletions.concat(ids);
             state._sync.syncStack.deletions = deletions;
             if (!state._sync.syncStack.deletions.length)
                 return;
-            // 3. Create or refresh debounce
-            return dispatch('handleSyncStackDebounce');
+            // 3. Create or refresh debounce & pass id to resolve
+            return dispatch('handleSyncStackDebounce', payload);
         },
         deleteProp: function (_a, path) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
@@ -856,23 +857,24 @@ function pluginActions (Firebase) {
                     : merge(state._sync.syncStack.propDeletions[id], syncStackItem[id]);
                 state._sync.syncStack.propDeletions[id] = newVal;
             });
-            // 3. Create or refresh debounce
-            return dispatch('handleSyncStackDebounce');
+            // 3. Create or refresh debounce & pass id to resolve
+            return dispatch('handleSyncStackDebounce', path);
         },
-        insertDoc: function (_a, docs) {
+        insertDoc: function (_a, payload) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
-            if (docs === void 0) { docs = []; }
+            if (payload === void 0) { payload = []; }
             // 0. payload correction (only arrays)
-            if (!isWhat.isArray(docs))
-                docs = [docs];
+            var docs = !isWhat.isArray(payload) ? [payload] : payload;
             // 1. Prepare for patching
             var syncStack = getters.prepareForInsert(docs);
             // 2. Push to syncStack
             var inserts = state._sync.syncStack.inserts.concat(syncStack);
             state._sync.syncStack.inserts = inserts;
-            // 3. Create or refresh debounce
-            dispatch('handleSyncStackDebounce');
-            return docs.map(function (d) { return d.id; });
+            // 3. Create or refresh debounce & pass id to resolve
+            var payloadToResolve = isWhat.isArray(payload)
+                ? payload.map(function (doc) { return doc.id; })
+                : payload.id;
+            return dispatch('handleSyncStackDebounce', payloadToResolve);
         },
         insertInitialDoc: function (_a) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
@@ -896,21 +898,39 @@ function pluginActions (Firebase) {
                 if (state._conf.logging) {
                     console.log('[vuex-easy-firestore] Initial doc succesfully inserted.');
                 }
-            }).catch(function (error) {
+            }).catch(function (error$1) {
                 return error('initial-doc-failed');
             });
         },
-        handleSyncStackDebounce: function (_a) {
+        handleSyncStackDebounce: function (_a, payloadToResolve) {
             var state = _a.state, commit = _a.commit, dispatch = _a.dispatch, getters = _a.getters;
-            if (!getters.signedIn)
-                return false;
-            if (!state._sync.syncStack.debounceTimer) {
-                var ms = state._conf.sync.debounceTimerMs;
-                var debounceTimer = startDebounce(ms);
-                debounceTimer.done.then(function (_) { return dispatch('batchSync'); });
-                state._sync.syncStack.debounceTimer = debounceTimer;
-            }
-            state._sync.syncStack.debounceTimer.refresh();
+            return new Promise(function (resolve, reject) {
+                state._sync.syncStack.resolves.push(function () { return resolve(payloadToResolve); });
+                state._sync.syncStack.rejects.push(reject);
+                if (!getters.signedIn)
+                    return false;
+                if (!state._sync.syncStack.debounceTimer) {
+                    var ms = state._conf.sync.debounceTimerMs;
+                    var debounceTimer = startDebounce(ms);
+                    state._sync.syncStack.debounceTimer = debounceTimer;
+                    debounceTimer.done.then(function () {
+                        dispatch('batchSync')
+                            .then(function () { return dispatch('resolveSyncStack'); })
+                            .catch(function (e) { return dispatch('rejectSyncStack', e); });
+                    });
+                }
+                state._sync.syncStack.debounceTimer.refresh();
+            });
+        },
+        resolveSyncStack: function (_a) {
+            var state = _a.state;
+            state._sync.syncStack.rejects = [];
+            state._sync.syncStack.resolves.forEach(function (r) { return r(); });
+        },
+        rejectSyncStack: function (_a, error) {
+            var state = _a.state;
+            state._sync.syncStack.resolves = [];
+            state._sync.syncStack.rejects.forEach(function (r) { return r(error); });
         },
         batchSync: function (_a) {
             var getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch, state = _a.state;
@@ -1331,11 +1351,9 @@ function pluginActions (Firebase) {
             }
             // check for a hook before local change
             if (state._conf.sync.insertHook) {
-                state._conf.sync.insertHook(storeUpdateFn, newDocWithDefaults, store);
-                return newDocWithDefaults.id;
+                return state._conf.sync.insertHook(storeUpdateFn, newDocWithDefaults, store);
             }
-            storeUpdateFn(newDocWithDefaults);
-            return newDocWithDefaults.id;
+            return storeUpdateFn(newDocWithDefaults);
         },
         insertBatch: function (_a, docs) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
@@ -1361,11 +1379,9 @@ function pluginActions (Firebase) {
             }
             // check for a hook before local change
             if (state._conf.sync.insertBatchHook) {
-                state._conf.sync.insertBatchHook(storeUpdateFn, newDocs, store);
-                return newDocs.map(function (_doc) { return _doc.id; });
+                return state._conf.sync.insertBatchHook(storeUpdateFn, newDocs, store);
             }
-            storeUpdateFn(newDocs);
-            return newDocs.map(function (_doc) { return _doc.id; });
+            return storeUpdateFn(newDocs);
         },
         patch: function (_a, doc) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
@@ -1397,11 +1413,9 @@ function pluginActions (Firebase) {
             }
             // check for a hook before local change
             if (state._conf.sync.patchHook) {
-                state._conf.sync.patchHook(storeUpdateFn, value, store);
-                return id;
+                return state._conf.sync.patchHook(storeUpdateFn, value, store);
             }
-            storeUpdateFn(value);
-            return id;
+            return storeUpdateFn(value);
         },
         patchBatch: function (_a, _b) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
@@ -1423,11 +1437,9 @@ function pluginActions (Firebase) {
             }
             // check for a hook before local change
             if (state._conf.sync.patchBatchHook) {
-                state._conf.sync.patchBatchHook(storeUpdateFn, doc, ids, store);
-                return ids;
+                return state._conf.sync.patchBatchHook(storeUpdateFn, doc, ids, store);
             }
-            storeUpdateFn(doc, ids);
-            return ids;
+            return storeUpdateFn(doc, ids);
         },
         delete: function (_a, id) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
@@ -1470,11 +1482,9 @@ function pluginActions (Firebase) {
             }
             // check for a hook before local change
             if (state._conf.sync.deleteHook) {
-                state._conf.sync.deleteHook(storeUpdateFn, id, store);
-                return id;
+                return state._conf.sync.deleteHook(storeUpdateFn, id, store);
             }
-            storeUpdateFn(id);
-            return id;
+            return storeUpdateFn(id);
         },
         deleteBatch: function (_a, ids) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
@@ -1504,11 +1514,9 @@ function pluginActions (Firebase) {
             }
             // check for a hook before local change
             if (state._conf.sync.deleteBatchHook) {
-                state._conf.sync.deleteBatchHook(storeUpdateFn, ids, store);
-                return ids;
+                return state._conf.sync.deleteBatchHook(storeUpdateFn, ids, store);
             }
-            storeUpdateFn(ids);
-            return ids;
+            return storeUpdateFn(ids);
         },
         _stopPatching: function (_a) {
             var state = _a.state, commit = _a.commit;
