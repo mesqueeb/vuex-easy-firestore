@@ -13,6 +13,8 @@ export type IState = {
       propDeletions: AnyObject
       deletions: any[]
       debounceTimer: any
+      resolves: Promise<any>[]
+      rejects: Promise<any>[]
     }
     fetched: AnyObject
     stopPatchingTimeout: any
@@ -39,6 +41,8 @@ export default function (): IState {
         propDeletions: {},
         deletions: [],
         debounceTimer: null,
+        resolves: [],
+        rejects: [],
       },
       fetched: {},
       stopPatchingTimeout: null

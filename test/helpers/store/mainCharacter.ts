@@ -15,7 +15,7 @@ export default {
   firestorePath: 'playerCharacters/Satoshi',
   firestoreRefType: 'doc',
   moduleName: 'mainCharacter',
-  statePropName: '',
+  statePropName: null,
   // module
   state: initialState(),
   mutations: defaultMutations(initialState()),

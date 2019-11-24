@@ -13,7 +13,7 @@ export default {
   firestorePath: 'coll/{name}',
   firestoreRefType: 'doc',
   moduleName: 'testMutationsNoStateProp',
-  statePropName: '',
+  statePropName: null,
   // module
   state: initialState(),
   mutations: defaultMutations(initialState()),

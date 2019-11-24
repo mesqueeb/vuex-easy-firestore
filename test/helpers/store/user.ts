@@ -5,7 +5,7 @@ export default {
   firestorePath: 'user/{userId}',
   firestoreRefType: 'doc',
   moduleName: 'user',
-  statePropName: '',
+  statePropName: null,
   actions: {
     async loginWithEmail ({dispatch}, userNr) {
       let userEmail

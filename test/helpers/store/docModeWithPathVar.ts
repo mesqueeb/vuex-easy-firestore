@@ -10,7 +10,7 @@ export default {
   firestorePath: 'playerCharacters/{name}',
   firestoreRefType: 'doc',
   moduleName: 'docModeWithPathVar',
-  statePropName: '',
+  statePropName: null,
   // module
   state: initialState(),
   mutations: defaultMutations(initialState()),

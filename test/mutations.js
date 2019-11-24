@@ -28,6 +28,8 @@ test('RESET_VUEX_EASY_FIRESTORE_STATE', t => {
       propDeletions: {},
       deletions: [],
       debounceTimer: null,
+      rejects: [],
+      resolves: [],
     },
     fetched: {},
     stopPatchingTimeout: null

@@ -13,7 +13,7 @@ export default {
   firestorePath: 'testPathVar2/{name}',
   firestoreRefType: 'doc',
   moduleName: 'testPathVar2',
-  statePropName: '',
+  statePropName: null,
   // module
   state: initialState(),
   mutations: defaultMutations(initialState()),

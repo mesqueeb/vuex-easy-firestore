@@ -5,3 +5,4 @@ docs/.vuepress/dist
 .cache
 .env
 .env.js
+.idea

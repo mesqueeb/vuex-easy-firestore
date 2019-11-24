@@ -2,7 +2,7 @@ declare const _default: {
     firestorePath: string;
     firestoreRefType: string;
     moduleName: string;
-    statePropName: string;
+    statePropName: any;
     state: {
         iniProp: boolean;
         defaultPropsNotToBeDeleted: boolean;
