@@ -700,6 +700,7 @@ function pluginState () {
         _sync: {
             signedIn: false,
             userId: null,
+            streaming: {},
             unsubscribe: {},
             pathVariables: {},
             patching: false,
@@ -1418,7 +1419,7 @@ function pluginActions (Firebase) {
                 if (state._conf.logging) {
                     console.log('[vuex-easy-firestore] Initial doc succesfully inserted.');
                 }
-            }).catch(function (error$1) {
+            }).catch(function (error) {
                 return error('initial-doc-failed');
             });
         },
@@ -1726,8 +1727,8 @@ function pluginActions (Firebase) {
             var _this = this;
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             dispatch('setUserId');
-            // `first` makes sure that local changes made during offline are reflected as server changes which the app is refreshed during offline mode
-            var first = true;
+            // `firstCall` makes sure that local changes made during offline are reflected as server changes which the app is refreshed during offline mode
+            var firstCall = true;
             // set state for pathVariables
             if (pathVariables && isWhat.isPlainObject(pathVariables)) {
                 commit('SET_SYNCFILTERS', pathVariables);
@@ -1741,11 +1742,11 @@ function pluginActions (Firebase) {
                 pathVariables: state._sync.pathVariables
             });
             if (isWhat.isFunction(state._sync.unsubscribe[identifier])) {
-                var channelAlreadyOpenError_1 = "openDBChannel was already called for these filters and pathvariables. Identifier: " + identifier;
+                var channelAlreadyOpenError = "openDBChannel was already called for these filters and pathvariables. Identifier: " + identifier;
                 if (state._conf.logging) {
-                    console.log(channelAlreadyOpenError_1);
+                    console.log(channelAlreadyOpenError);
                 }
-                return new Promise(function (resolve, reject) { reject(channelAlreadyOpenError_1); });
+                return Promise.reject(channelAlreadyOpenError);
             }
             // getters.dbRef should already have pathVariables swapped out
             var dbRef = getters.dbRef;
@@ -1764,6 +1765,20 @@ function pluginActions (Firebase) {
                 if (state._conf.logging) {
                     console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
                 }
+                var okToStream = function () {
+                    // create a promise for the life of the snapshot that can be resolved from outside its scope.
+                    // this promise will be resolved when the user calls closeDBChannel, or rejected if the
+                    // stream is ended prematurely by the error() callback
+                    var promiseMethods = { resolve: null, reject: null };
+                    var streaming = new Promise(function (resolve, reject) {
+                        promiseMethods.resolve = resolve;
+                        promiseMethods.reject = reject;
+                    });
+                    Object.assign(streaming, promiseMethods);
+                    state._sync.streaming[identifier] = streaming;
+                    // we can't resolve the promise with a promise, it would hang, so we wrap it
+                    resolve(function () { return streaming; });
+                };
                 var unsubscribe = dbRef.onSnapshot(function (querySnapshot) { return __awaiter(_this, void 0, void 0, function () {
                     var source, id, doc;
                     return __generator(this, function (_a) {
@@ -1773,40 +1788,48 @@ function pluginActions (Firebase) {
                                 if (!!getters.collectionMode) return [3 /*break*/, 3];
                                 if (!!querySnapshot.data()) return [3 /*break*/, 2];
                                 // No initial doc found in docMode
-                                if (state._conf.sync.preventInitialDocInsertion)
-                                    return [2 /*return*/, reject('preventInitialDocInsertion')];
+                                if (state._conf.sync.preventInitialDocInsertion) {
+                                    unsubscribe();
+                                    reject('preventInitialDocInsertion');
+                                    return [2 /*return*/];
+                                }
                                 if (state._conf.logging)
                                     console.log('[vuex-easy-firestore] inserting initial doc');
                                 return [4 /*yield*/, dispatch('insertInitialDoc')];
                             case 1:
                                 _a.sent();
-                                return [2 /*return*/, resolve()];
+                                okToStream();
+                                return [2 /*return*/];
                             case 2:
-                                if (source === 'local' && !first)
-                                    return [2 /*return*/, resolve()];
+                                if (source === 'local' && !firstCall)
+                                    return [2 /*return*/];
                                 id = getters.docModeId;
                                 doc = getters.cleanUpRetrievedDoc(querySnapshot.data(), id);
                                 dispatch('applyHooksAndUpdateState', { change: 'modified', id: id, doc: doc });
-                                first = false;
-                                return [2 /*return*/, resolve()];
+                                firstCall = false;
+                                okToStream();
+                                return [2 /*return*/];
                             case 3:
                                 // 'collection' mode:
                                 querySnapshot.docChanges().forEach(function (change) {
                                     var changeType = change.type;
                                     // Don't do anything for local modifications & removals
-                                    if (source === 'local' && !first)
-                                        return resolve();
+                                    if (source === 'local' && !firstCall)
+                                        return;
                                     var id = change.doc.id;
                                     var doc = getters.cleanUpRetrievedDoc(change.doc.data(), id);
                                     dispatch('applyHooksAndUpdateState', { change: changeType, id: id, doc: doc });
                                 });
-                                first = false;
-                                return [2 /*return*/, resolve()];
+                                firstCall = false;
+                                okToStream();
+                                return [2 /*return*/];
                         }
                     });
-                }); }, function (error$1) {
+                }); }, function (error) {
                     state._sync.patching = 'error';
-                    return reject(error(error$1));
+                    state._sync.streaming[identifier].reject(error);
+                    state._sync.streaming[identifier] = null;
+                    state._sync.unsubscribe[identifier] = null;
                 });
                 state._sync.unsubscribe[identifier] = unsubscribe;
             });
@@ -1822,6 +1845,8 @@ function pluginActions (Firebase) {
             var unsubscribeDBChannel = state._sync.unsubscribe[identifier];
             if (isWhat.isFunction(unsubscribeDBChannel)) {
                 unsubscribeDBChannel();
+                state._sync.streaming[identifier].resolve();
+                state._sync.streaming[identifier] = null;
                 state._sync.unsubscribe[identifier] = null;
             }
             if (clearModule) {
@@ -2449,7 +2474,6 @@ Vue.use(Vuex);
 var store = new Vuex.Store(storeObj);
 
 var stores = /*#__PURE__*/Object.freeze({
-  __proto__: null,
   store: store
 });
 
