@@ -492,9 +492,9 @@ export default function (Firebase: any): AnyObject {
           // this promise will be resolved when the user calls closeDBChannel, or rejected if the
           // stream is ended prematurely by the error() callback
           const promiseMethods = {resolve: null, reject: null}
-          const streaming = new Promise((resolve, reject) => {
-            promiseMethods.resolve = resolve
-            promiseMethods.reject = reject
+          const streaming = new Promise((_resolve, _reject) => {
+            promiseMethods.resolve = _resolve
+            promiseMethods.reject = _reject
           })
           Object.assign(streaming, promiseMethods)
           state._sync.streaming[identifier] = streaming
