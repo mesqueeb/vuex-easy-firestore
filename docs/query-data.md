@@ -25,12 +25,36 @@ If you want to use _realtime updates_ the only thing you need to do is to dispat
 dispatch('moduleName/openDBChannel').catch(console.error)
 ```
 
-`openDBChannel` is just the same as the Firestore [onSnapshot](https://firebase.google.com/docs/firestore/query-data/listen) function, but the difference is:
-- the config from your module is used (see [setup](setup.html#setup))
-- the firestore doc(s) are retrieved from your `firestorePath`
-- these doc(s) are automatically added to your Vuex module under `moduleName/statePropName`
+`openDBChannel` relies on the Firestore [onSnapshot](https://firebase.google.com/docs/firestore/query-data/listen) function to get notified of remote changes.  The doc(s) are automatically added to/updated in your Vuex module under `moduleName/statePropName`
 
-Of course, just like the Firebase SDK, you can also use a [where filter](#where-orderby-filters).
+Mind that:
+- if the channel is opened on a document which does not exist yet at Firebase, the document gets automatically created, unless you set `preventInitialDocInsertion` to `true`
+- the action returns a promise that lets you know you when the streaming through the channel has successfully started
+- when this promise is resolved, it resolves with a function which wraps a promise that lets you know when an error occurs
+
+Just like the Firebase SDK, you can also use a [where filter](#where-orderby-filters).
+
+```js
+dispatch('moduleName/openDBChannel')
+  .then(streaming => {
+    // streaming data through the channel has started (ie. data was received)
+    
+    // you must monitor if the channel keeps streaming to catch errors. Mind that
+    // even after going offline, the channel is still considered as "streaming"
+    // and will remain so until you close it or an error occurs.
+    streaming()
+      .then(() => {
+        // this gets resolved when you close the channel yourself
+      })
+      .catch(error => {
+        // an error occured and the channel has been closed by Firestore, you
+        // should figure out what happened and open a new channel.
+      })
+  })
+  .catch(error => {
+    // the document didn't exist and `preventInitialDocInsertion` is `false`
+  })
+```
 
 ### Close DB channel
 

@@ -449,8 +449,8 @@ export default function (Firebase: any): AnyObject {
     },
     openDBChannel ({getters, state, commit, dispatch}, pathVariables) {
       dispatch('setUserId')
-      // `first` makes sure that local changes made during offline are reflected as server changes which the app is refreshed during offline mode
-      let first = true
+      // `firstCall` makes sure that local changes made during offline are reflected as server changes which the app is refreshed during offline mode
+      let firstCall = true
       // set state for pathVariables
       if (pathVariables && isPlainObject(pathVariables)) {
         commit('SET_SYNCFILTERS', pathVariables)
@@ -468,7 +468,7 @@ export default function (Firebase: any): AnyObject {
         if (state._conf.logging) {
           console.log(channelAlreadyOpenError)
         }
-        return new Promise((resolve, reject) => { reject(channelAlreadyOpenError) })
+        return Promise.reject(channelAlreadyOpenError)
       }
       // getters.dbRef should already have pathVariables swapped out
       let dbRef = getters.dbRef
@@ -487,38 +487,60 @@ export default function (Firebase: any): AnyObject {
         if (state._conf.logging) {
           console.log(`%c openDBChannel for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: goldenrod')
         }
+        const okToStream = function () {
+          // create a promise for the life of the snapshot that can be resolved from outside its scope.
+          // this promise will be resolved when the user calls closeDBChannel, or rejected if the
+          // stream is ended prematurely by the error() callback
+          const promiseMethods = {resolve: null, reject: null}
+          const streaming = new Promise((_resolve, _reject) => {
+            promiseMethods.resolve = _resolve
+            promiseMethods.reject = _reject
+          })
+          Object.assign(streaming, promiseMethods)
+          state._sync.streaming[identifier] = streaming
+          // we can't resolve the promise with a promise, it would hang, so we wrap it
+          resolve(() => streaming)
+        }
         const unsubscribe = dbRef.onSnapshot(async querySnapshot => {
           const source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
           // 'doc' mode:
           if (!getters.collectionMode) {
             if (!querySnapshot.data()) {
               // No initial doc found in docMode
-              if (state._conf.sync.preventInitialDocInsertion) return reject('preventInitialDocInsertion')
+              if (state._conf.sync.preventInitialDocInsertion) {
+                unsubscribe()
+                reject('preventInitialDocInsertion')
+                return
+              }
               if (state._conf.logging) console.log('[vuex-easy-firestore] inserting initial doc')
               await dispatch('insertInitialDoc')
-              return resolve()
+              okToStream()
+              return
             }
-            if (source === 'local' && !first) return resolve()
+            if (source === 'local' && !firstCall) return
             const id = getters.docModeId
             const doc = getters.cleanUpRetrievedDoc(querySnapshot.data(), id)
             dispatch('applyHooksAndUpdateState', {change: 'modified', id, doc})
-            first = false
-            return resolve()
+            firstCall = false
+            okToStream()
+            return
           }
           // 'collection' mode:
           querySnapshot.docChanges().forEach(change => {
             const changeType = change.type
             // Don't do anything for local modifications & removals
-            if (source === 'local' && !first) return resolve()
+            if (source === 'local' && !firstCall) return
             const id = change.doc.id
             const doc = getters.cleanUpRetrievedDoc(change.doc.data(), id)
             dispatch('applyHooksAndUpdateState', {change: changeType, id, doc})
           })
-          first = false
-          return resolve()
+          firstCall = false
+          okToStream()
         }, error => {
           state._sync.patching = 'error'
-          return reject(logError(error))
+          state._sync.streaming[identifier].reject(error)
+          state._sync.streaming[identifier] = null
+          state._sync.unsubscribe[identifier] = null
         })
         state._sync.unsubscribe[identifier] = unsubscribe
       })
@@ -532,6 +554,8 @@ export default function (Firebase: any): AnyObject {
       const unsubscribeDBChannel = state._sync.unsubscribe[identifier]
       if (isFunction(unsubscribeDBChannel)) {
         unsubscribeDBChannel()
+        state._sync.streaming[identifier].resolve()
+        state._sync.streaming[identifier] = null
         state._sync.unsubscribe[identifier] = null
       }
       if (clearModule) {

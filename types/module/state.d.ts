@@ -3,6 +3,7 @@ export declare type IState = {
     _sync: {
         signedIn: boolean;
         userId: any;
+        streaming: AnyObject;
         unsubscribe: AnyObject;
         pathVariables: AnyObject;
         patching: boolean;
