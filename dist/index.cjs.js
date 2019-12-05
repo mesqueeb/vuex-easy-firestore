@@ -899,7 +899,7 @@ function pluginActions (Firebase) {
                 if (state._conf.logging) {
                     console.log('[vuex-easy-firestore] Initial doc succesfully inserted.');
                 }
-            }).catch(function (error) {
+            }).catch(function (error$1) {
                 return error('initial-doc-failed');
             });
         },
@@ -1250,9 +1250,9 @@ function pluginActions (Firebase) {
                     // this promise will be resolved when the user calls closeDBChannel, or rejected if the
                     // stream is ended prematurely by the error() callback
                     var promiseMethods = { resolve: null, reject: null };
-                    var streaming = new Promise(function (resolve, reject) {
-                        promiseMethods.resolve = resolve;
-                        promiseMethods.reject = reject;
+                    var streaming = new Promise(function (_resolve, _reject) {
+                        promiseMethods.resolve = _resolve;
+                        promiseMethods.reject = _reject;
                     });
                     Object.assign(streaming, promiseMethods);
                     state._sync.streaming[identifier] = streaming;
