@@ -4,6 +4,7 @@ export type IState = {
   _sync: {
     signedIn: boolean
     userId: any
+    streaming: AnyObject
     unsubscribe: AnyObject
     pathVariables: AnyObject
     patching: boolean
@@ -32,6 +33,7 @@ export default function (): IState {
     _sync: {
       signedIn: false,
       userId: null,
+      streaming: {},
       unsubscribe: {},
       pathVariables: {},
       patching: false,
