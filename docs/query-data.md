@@ -19,17 +19,17 @@ Both with _realtime updates_ and with _fetching docs_ you can use `where` filter
 
 ## Realtime updates: openDBChannel
 
-If you want to use _realtime updates_ the only thing you need to do is to dispatch the `openDBChannel` action. Eg.
+If you want to use _realtime updates_, you need to dispatch the `openDBChannel` action. Eg.
 
 ```js
-dispatch('moduleName/openDBChannel').catch(console.error)
+dispatch('moduleName/openDBChannel')
 ```
 
 `openDBChannel` relies on the Firestore [onSnapshot](https://firebase.google.com/docs/firestore/query-data/listen) function to get notified of remote changes.  The doc(s) are automatically added to/updated in your Vuex module under `moduleName/statePropName`
 
 Mind that:
-- if the channel is opened on a document which does not exist yet at Firebase, the document gets automatically created, unless you set `preventInitialDocInsertion` to `true`
-- the action returns a promise that lets you know you when the streaming through the channel has successfully started
+- if the channel is opened on a document which does not exist yet at Firebase, the document gets automatically (re)created, unless you set `preventInitialDocInsertion` to `true`
+- the action returns a promise which resolves when the state of the Vuex module has been populated with data (served either from cache or server), so you know you can start working on it
 - when this promise is resolved, it resolves with a function which wraps a promise that lets you know when an error occurs
 
 Just like the Firebase SDK, you can also use a [where filter](#where-orderby-filters).
@@ -37,22 +37,28 @@ Just like the Firebase SDK, you can also use a [where filter](#where-orderby-fil
 ```js
 dispatch('moduleName/openDBChannel')
   .then(streaming => {
-    // streaming data through the channel has started (ie. data was received)
+    // the state has been populated with data, you may start working with it
+    startDoingThings()
     
-    // you must monitor if the channel keeps streaming to catch errors. Mind that
-    // even after going offline, the channel is still considered as "streaming"
-    // and will remain so until you close it or an error occurs.
+    // you must check that the channel keeps streaming and catch errors. Mind that
+    // even while offline, the channel is considered as "streaming" and will remain
+    // so until you close it or until an error occurs.
     streaming()
       .then(() => {
         // this gets resolved when you close the channel yourself
       })
       .catch(error => {
-        // an error occured and the channel has been closed by Firestore, you
-        // should figure out what happened and open a new channel.
+        // an error occured and the channel has been closed, you should figure
+        // out what happened and open a new channel.
+        
+        // Perhaps the user lost his `read` rights on the resource, or maybe the
+        // document got deleted and it wasn't possible to recreate it (possibly
+        // because `preventInitialDocInsertion` is `false`). Or some other error
+        // from Firestore.
       })
   })
   .catch(error => {
-    // the document didn't exist and `preventInitialDocInsertion` is `false`
+    // Same as the other `catch` block above
   })
 ```
 
