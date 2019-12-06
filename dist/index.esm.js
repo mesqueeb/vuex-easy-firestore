@@ -1201,8 +1201,7 @@ function pluginActions (Firebase) {
             var _this = this;
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             dispatch('setUserId');
-            // `firstCall` makes sure that local changes made during offline are reflected as server changes which the app is refreshed during offline mode
-            var firstCall = true;
+            var isFirstServerResponse = true;
             // set state for pathVariables
             if (pathVariables && isPlainObject(pathVariables)) {
                 commit('SET_SYNCFILTERS', pathVariables);
@@ -1240,6 +1239,7 @@ function pluginActions (Firebase) {
                     console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
                 }
                 var okToStream = function () {
+                    isFirstServerResponse = false;
                     // create a promise for the life of the snapshot that can be resolved from outside its scope.
                     // this promise will be resolved when the user calls closeDBChannel, or rejected if the
                     // stream is ended prematurely by the error() callback
@@ -1253,58 +1253,87 @@ function pluginActions (Firebase) {
                     // we can't resolve the promise with a promise, it would hang, so we wrap it
                     resolve(function () { return streaming; });
                 };
-                var unsubscribe = dbRef.onSnapshot(function (querySnapshot) { return __awaiter(_this, void 0, void 0, function () {
-                    var source, id, doc;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server';
-                                if (!!getters.collectionMode) return [3 /*break*/, 3];
-                                if (!!querySnapshot.data()) return [3 /*break*/, 2];
-                                // No initial doc found in docMode
-                                if (state._conf.sync.preventInitialDocInsertion) {
-                                    unsubscribe();
-                                    reject('preventInitialDocInsertion');
-                                    return [2 /*return*/];
-                                }
-                                if (state._conf.logging)
-                                    console.log('[vuex-easy-firestore] inserting initial doc');
-                                return [4 /*yield*/, dispatch('insertInitialDoc')];
-                            case 1:
-                                _a.sent();
-                                okToStream();
-                                return [2 /*return*/];
-                            case 2:
-                                if (source === 'local' && !firstCall)
-                                    return [2 /*return*/];
-                                id = getters.docModeId;
-                                doc = getters.cleanUpRetrievedDoc(querySnapshot.data(), id);
-                                dispatch('applyHooksAndUpdateState', { change: 'modified', id: id, doc: doc });
-                                firstCall = false;
-                                okToStream();
-                                return [2 /*return*/];
-                            case 3:
-                                // 'collection' mode:
-                                querySnapshot.docChanges().forEach(function (change) {
-                                    var changeType = change.type;
-                                    // Don't do anything for local modifications & removals
-                                    if (source === 'local' && !firstCall)
-                                        return;
-                                    var id = change.doc.id;
-                                    var doc = getters.cleanUpRetrievedDoc(change.doc.data(), id);
-                                    dispatch('applyHooksAndUpdateState', { change: changeType, id: id, doc: doc });
-                                });
-                                firstCall = false;
-                                okToStream();
-                                return [2 /*return*/];
-                        }
-                    });
-                }); }, function (error) {
+                var streamFailure = function (error) {
                     state._sync.patching = 'error';
                     state._sync.streaming[identifier].reject(error);
                     state._sync.streaming[identifier] = null;
                     state._sync.unsubscribe[identifier] = null;
-                });
+                };
+                var unsubscribe = dbRef.onSnapshot({ includeMetadataChanges: true }, function (querySnapshot) { return __awaiter(_this, void 0, void 0, function () {
+                    var message, resp, id, doc;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                // ignore the initial load from cache and later local modifications
+                                if (querySnapshot.metadata.fromCache)
+                                    return [2 /*return*/];
+                                if (!!getters.collectionMode) return [3 /*break*/, 6];
+                                if (!!querySnapshot.data()) return [3 /*break*/, 4];
+                                if (!!state._conf.sync.preventInitialDocInsertion) return [3 /*break*/, 2];
+                                if (state._conf.logging) {
+                                    message = isFirstServerResponse
+                                        ? '[vuex-easy-firestore] inserting initial doc'
+                                        : '[vuex-easy-firestore] recreating doc after remote deletion';
+                                    console.log(message);
+                                }
+                                return [4 /*yield*/, dispatch('insertInitialDoc')
+                                    // if successful (error system TODO)
+                                ];
+                            case 1:
+                                resp = _a.sent();
+                                // if successful (error system TODO)
+                                if (!resp) {
+                                    // if it's not the first response, the initial promise is already fullfilled
+                                    if (isFirstServerResponse)
+                                        okToStream();
+                                }
+                                else {
+                                    // we close the channel ourselves. Firestore does not, as it leaves the
+                                    // channel open as long as the user has read rights on the document, even
+                                    // if it does not exist. But since the dev enabled `insertInitialDoc`,
+                                    // it makes sense to close as we can assume the user should have had write
+                                    // rights
+                                    unsubscribe();
+                                    // it it's not the first response, the initial promise is already fullfilled
+                                    if (isFirstServerResponse) {
+                                        reject('preventInitialDocInsertion');
+                                    }
+                                    else {
+                                        // reject the streaming promise instead
+                                        streamFailure('failedRecreatingDoc');
+                                    }
+                                }
+                                return [3 /*break*/, 3];
+                            case 2:
+                                unsubscribe();
+                                // it it's not the first response, the initial promise is already fullfilled
+                                if (isFirstServerResponse) {
+                                    reject('preventInitialDocInsertion');
+                                }
+                                else {
+                                    // reject the streaming promise instead
+                                    streamFailure('docDeleted');
+                                }
+                                _a.label = 3;
+                            case 3: return [3 /*break*/, 5];
+                            case 4:
+                                id = getters.docModeId;
+                                doc = getters.cleanUpRetrievedDoc(querySnapshot.data(), id);
+                                dispatch('applyHooksAndUpdateState', { change: 'modified', id: id, doc: doc });
+                                okToStream();
+                                _a.label = 5;
+                            case 5: return [3 /*break*/, 7];
+                            case 6:
+                                querySnapshot.docChanges().forEach(function (change) {
+                                    var doc = getters.cleanUpRetrievedDoc(change.doc.data(), change.doc.id);
+                                    dispatch('applyHooksAndUpdateState', { change: change.type, id: change.doc.id, doc: doc });
+                                });
+                                okToStream();
+                                _a.label = 7;
+                            case 7: return [2 /*return*/];
+                        }
+                    });
+                }); }, streamFailure);
                 state._sync.unsubscribe[identifier] = unsubscribe;
             });
         },
