@@ -239,19 +239,34 @@ export default function (Firebase: any): AnyObject {
     },
     fetch (
       {state, getters, commit, dispatch},
-      pathVariables: AnyObject = {where: [], whereFilters: [], orderBy: []}
-      // where: [['archived', '==', true]]
-      // orderBy: ['done_date', 'desc']
+      parameters:any = {clauses: {}, pathVariables: {}}
     ) {
+      /* COMPATIBILITY START
+       * this ensures backward compatibility for people who passed pathVariables and
+       * clauses directly at the root of the `parameters` object. Can be removed in
+       * a later version
+       */
+      if (!parameters.clauses && !parameters.pathVariables) {
+        const pathVariables = Object.assign({}, parameters)
+        // @ts-ignore
+        delete pathVariables.where
+        // @ts-ignore
+        delete pathVariables.orderBy
+        Object.entries(pathVariables).forEach(entry => {
+          if (typeof entry[1] === 'object') {
+            delete pathVariables[entry[0]]
+          }
+        })
+        parameters = Object.assign({}, {clauses: parameters, pathVariables})
+      }
+      /* COMPATIBILITY END */
       if (!getters.collectionMode) return logError('only-in-collection-mode')
       dispatch('setUserId')
-      let {where, whereFilters, orderBy} = pathVariables
+      let {where, whereFilters, orderBy} = parameters.clauses
       if (!isArray(where)) where = []
       if (!isArray(orderBy)) orderBy = []
-      if (isArray(whereFilters) && whereFilters.length) where = whereFilters // depreciated
-      if (pathVariables && isPlainObject(pathVariables)) {
-        commit('SET_PATHVARS', pathVariables)
-      }
+      if (isArray(whereFilters) && whereFilters.length) where = whereFilters // deprecated
+      commit('SET_PATHVARS', parameters.pathVariables)
       return new Promise((resolve, reject) => {
         // log
         if (state._conf.logging) {
@@ -267,7 +282,7 @@ export default function (Firebase: any): AnyObject {
         // We've never fetched this before:
         if (!fetched) {
           let ref = getters.dbRef
-          // apply where filters and orderBy
+          // apply where clauses and orderBy
           getters.getWhereArrays(where).forEach(paramsArr => {
             ref = ref.where(...paramsArr)
           })
@@ -285,15 +300,15 @@ export default function (Firebase: any): AnyObject {
           if (state._conf.logging) console.log('[vuex-easy-firestore] done fetching')
           return resolve({done: true})
         }
-        // attach fetch filters
+        // attach fetch clauses
         let fRef = state._sync.fetched[identifier].ref
         if (fRequest.nextFetchRef) {
           // get next ref if saved in state
           fRef = state._sync.fetched[identifier].nextFetchRef
         }
         // add doc limit
-        let limit = (isNumber(pathVariables.limit))
-          ? pathVariables.limit
+        let limit = (isNumber(parameters.clauses.limit))
+          ? parameters.clauses.limit
           : state._conf.fetch.docLimit
         if (limit > 0) fRef = fRef.limit(limit)
         // Stop if all records already fetched
@@ -324,15 +339,32 @@ export default function (Firebase: any): AnyObject {
         })
       })
     },
+    // where: [['archived', '==', true]]
+    // orderBy: ['done_date', 'desc']
     fetchAndAdd (
       {state, getters, commit, dispatch},
-      pathVariables = {where: [], whereFilters: [], orderBy: []}
-      // where: [['archived', '==', true]]
-      // orderBy: ['done_date', 'desc']
+      parameters = {clauses: {}, pathVariables: {}}
     ) {
-      if (pathVariables && isPlainObject(pathVariables)) {
-        commit('SET_PATHVARS', pathVariables)
+      /* COMPATIBILITY START
+       * this ensures backward compatibility for people who passed pathVariables and
+       * clauses directly at the root of the `parameters` object. Can be removed in
+       * a later version
+       */
+      if (!parameters.clauses && !parameters.pathVariables) {
+        const pathVariables = Object.assign({}, parameters)
+        // @ts-ignore
+        delete pathVariables.where
+        // @ts-ignore
+        delete pathVariables.orderBy
+        Object.entries(pathVariables).forEach(entry => {
+          if (typeof entry[1] === 'object') {
+            delete pathVariables[entry[0]]
+          }
+        })
+        parameters = Object.assign({}, {clauses: parameters, pathVariables})
       }
+      /* COMPATIBILITY END */
+      commit('SET_PATHVARS', parameters.pathVariables)
       // 'doc' mode:
       if (!getters.collectionMode) {
         dispatch('setUserId')
@@ -356,7 +388,7 @@ export default function (Firebase: any): AnyObject {
         })
       }
       // 'collection' mode:
-      return dispatch('fetch', pathVariables)
+      return dispatch('fetch', parameters)
         .then(querySnapshot => {
           if (querySnapshot.done === true) return querySnapshot
           if (isFunction(querySnapshot.forEach)) {
@@ -447,35 +479,31 @@ export default function (Firebase: any): AnyObject {
         }
       })
     },
-    openDBChannel ({getters, state, commit, dispatch}, parameters = {filters: {}, pathVariables: {}, includeMetadataChanges: false}) {
+    openDBChannel ({getters, state, commit, dispatch}, parameters = {clauses: {}, pathVariables: {}, includeMetadataChanges: false}) {
       /* COMPATIBILITY START
        * this ensures backward compatibility for people who passed pathVariables and
-       * filters directly at the root of the `parameters` object. Can be removed in
+       * clauses directly at the root of the `parameters` object. Can be removed in
        * a later version
        */
-      if (!parameters.filters && !parameters.pathVariables && parameters.includeMetadataChanges === undefined) {
-        const filters = parameters.filters || parameters
-        let pathVariables = parameters.pathVariables
-        if (pathVariables === undefined) {
-          pathVariables = Object.assign({}, parameters)
-          // @ts-ignore
-          delete pathVariables.where
-          // @ts-ignore
-          delete pathVariables.orderBy
-          Object.entries(pathVariables).forEach(entry => {
-            if (typeof entry[1] === 'object') {
-              delete pathVariables[entry[0]]
-            }
-          })
-        }
+      if (!parameters.clauses && !parameters.pathVariables && parameters.includeMetadataChanges === undefined) {
+        const pathVariables = Object.assign({}, parameters)
+        // @ts-ignore
+        delete pathVariables.where
+        // @ts-ignore
+        delete pathVariables.orderBy
+        Object.entries(pathVariables).forEach(entry => {
+          if (typeof entry[1] === 'object') {
+            delete pathVariables[entry[0]]
+          }
+        })
         parameters = Object.assign(
           {includeMetadataChanges: parameters.includeMetadataChanges || false},
-          {filters, pathVariables}
+          {clauses: parameters, pathVariables}
         )
       }
       /* COMPATIBILITY END */
       const defaultParameters = {
-        filters: {},
+        clauses: {},
         pathVariables: {},
         includeMetadataChanges: false
       }
@@ -505,8 +533,8 @@ export default function (Firebase: any): AnyObject {
           .finally(() => p.isPending = false)
         return p
       }
-      // set state for filters and pathVariables
-      commit('SET_SYNCFILTERS', parameters.filters)
+      // set state for clauses and pathVariables
+      commit('SET_SYNCCLAUSES', parameters.clauses)
       commit('SET_PATHVARS', parameters.pathVariables)
       const identifier = createFetchIdentifier({
         where: state._conf.sync.where,
@@ -514,7 +542,7 @@ export default function (Firebase: any): AnyObject {
         pathVariables: state._sync.pathVariables
       })
       if (isFunction(state._sync.unsubscribe[identifier])) {
-        const channelAlreadyOpenError = `openDBChannel was already called for these filters and pathvariables. Identifier: ${identifier}`
+        const channelAlreadyOpenError = `openDBChannel was already called for these clauses and pathvariables. Identifier: ${identifier}`
         if (state._conf.logging) {
           console.log(channelAlreadyOpenError)
         }
@@ -522,7 +550,7 @@ export default function (Firebase: any): AnyObject {
       }
       // getters.dbRef should already have pathVariables swapped out
       let dbRef = getters.dbRef
-      // apply where filters and orderBy
+      // apply where and orderBy clauses
       if (getters.collectionMode) {
         getters.getWhereArrays().forEach(whereParams => {
           dbRef = dbRef.where(...whereParams)

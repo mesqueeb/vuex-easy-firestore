@@ -40,7 +40,7 @@ test('initialDoc through openDBRef & fetchAndAdd', async t => {
   docR = await Firebase.firestore().doc(path).get()
   t.is(docR.exists, false)
   try {
-    store.dispatch('initialDoc/fetchAndAdd', {randomId: randomId2})
+    store.dispatch('initialDoc/fetchAndAdd', {pathVariables: {randomId: randomId2}})
   } catch (error) {
     t.fail()
   }

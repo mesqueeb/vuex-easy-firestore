@@ -15,28 +15,28 @@ With Vuex easy firestore using _realtime updates_ will effectively make **a 2-wa
 
 Fetching the document(s) once is when you want to retrieve the document(s) once, when your application or a page is opened, but do not require to have the data to be live updated when the server data changes.
 
-Both with _realtime updates_ and with _fetching docs_ you can use `where` filters to specify which docs you want to retrieve (just like Firestore). In some modules you might initially open a channel for _realtime updates_ with a certain `where` filter, and later when the user requests other docs do an additional `fetch` with another `where` filter.
+Both with _realtime updates_ and with _fetching docs_ you can use `where` clauses to specify which docs you want to retrieve (just like Firestore). In some modules you might initially open a channel for _realtime updates_ with a certain `where` clause, and later when the user requests other docs do an additional `fetch` with another `where` clause.
 
 ## Realtime updates: openDBChannel
 
-If you want to use _realtime updates_, you need to dispatch the `openDBChannel` action. Eg.
+If you want to get _realtime updates_, you need to dispatch the `openDBChannel` action. Eg.
 
 ```js
 dispatch('moduleName/openDBChannel')
 ```
 
-`openDBChannel` relies on the Firestore [onSnapshot](https://firebase.google.com/docs/firestore/query-data/listen) function to get notified of remote changes.  The doc(s) are automatically added to/updated in your Vuex module under `moduleName/statePropName`
+`openDBChannel` relies on the Firestore [onSnapshot](https://firebase.google.com/docs/firestore/query-data/listen) function to get notified of remote changes.  The doc(s) are automatically added to/updated in your Vuex module under `moduleName/statePropName`.
 
 Mind that:
 - if the channel is opened on a document which does not exist yet at Firebase, the document gets automatically (re)created, unless you set `preventInitialDocInsertion` to `true`
-- the action returns a promise which resolves when the state of the Vuex module has been populated with data (served either from cache or server), so you know you can start working on it
-- when this promise is resolved, it resolves with a function which wraps a promise that lets you know when an error occurs
+- the action returns a promise which resolves when the state of the module has been populated with data (served either from cache or server), so you know you can start working with it
+- when this promise is resolved, you get another one which lets you know when an error occurs
 
-Just like the Firebase SDK, you can also use a [where filter](#where-orderby-filters).
+Just like the Firebase SDK, you can also use a [`where` clause](#where-orderby-clauses).
 
 ```js
 dispatch('moduleName/openDBChannel')
-  .then(streaming => {
+  .then(({streaming}) => {
     // the state has been populated with data, you may start working with it
     startDoingThings()
     
@@ -61,6 +61,39 @@ dispatch('moduleName/openDBChannel')
     // Same as the other `catch` block above
   })
 ```
+
+Sometimes the promise returned by the action might not be enough for you, because you need to know when the module has been populated with fresh data, not cached data. In that case, you need to pass an option when calling the action, which in turn will provide you with an additional promise. This, however, will also trigger your server hook listeners more frequently. Read [Firestore's documentation](https://firebase.google.com/docs/firestore/query-data/listen#events-metadata-changes) to know more about this.
+
+```js
+dispatch('moduleName/openDBChannel', {includeMetadataChanges: true})
+  .then(({refreshed, streaming}) => {
+  
+    refreshed
+     .then(() => {
+       // the state has been populated with fresh data
+     })
+     .catch(error => {...})
+
+    streaming()
+      .then(() => {...})
+      .catch(error => {...})
+  })
+  .catch(error => {...})
+```
+
+Finally, if you open multiple channels on a same module with different clauses, you will need to use the `stop` method provided in the promise to handle their closing at your discretion:
+
+```js
+dispatch('moduleName/openDBChannel')
+  .then(({streaming, stop}) => {
+  
+    stop().then(() => {
+      // the channel has been closed
+    })
+  })
+  .catch(error => {...})
+```
+
 
 ### Close DB channel
 
@@ -126,7 +159,7 @@ Or you could retrieve all Pokémon like so:
 dispatch('pokemon/fetchAndAdd')
 ```
 
-Of course, just like the Firebase SDK, you can also use a `where` filter to retrieve eg. all water Pokémon. (Read more on [where filters](#where-orderby-filters) down below)
+Of course, just like the Firebase SDK, you can also use a `where` clause to retrieve eg. all water Pokémon. (Read more on [where clauses](#where-orderby-clauses) down below)
 
 ```js
 dispatch('pokemon/fetchAndAdd', {where: [['type', '==', 'water']]})
@@ -148,9 +181,9 @@ You can pass a custom fetch limit or disable the fetch limit by passing 0:
 
 ```js
 // custom fetch limit:
-dispatch('myModule/fetchAndAdd', {limit: 1000})
+dispatch('myModule/fetchAndAdd', {clauses: {limit: 1000}})
 // no fetch limit:
-dispatch('myModule/fetchAndAdd', {limit: 0})
+dispatch('myModule/fetchAndAdd', {clauses: {limit: 0}})
 ```
 
 The `fetchAndAdd` action will return a promise resolving in `{done: true}` if there are no more docs to be fetched. You can use this to check when to stop fetching like so:
@@ -209,11 +242,11 @@ Firebase.auth().onAuthStateChanged(user => {
 
 When required you can also manually pass a user id like so: `dispatch('userData/setUserId', id)`
 
-## where / orderBy filters
+## where / orderBy clauses
 
 > Only for 'collection' mode.
 
-Just like Firestore, you can use `where` and `orderBy` to filter which docs are retrieved and synced.
+Just like Firestore, you can use `where` and `orderBy` to clauses which docs are retrieved and synced.
 
 - *where:* arrays of "parameters" that get passed on to firestore's `.where(...parameters)`
 - *orderBy:* a single "array" that gets passed on to firestore's `.orderBy(...array)`
@@ -221,23 +254,25 @@ Just like Firestore, you can use `where` and `orderBy` to filter which docs are 
 There are three ways to use where and orderBy. As per example we will define `where` and `orderBy` variables first, then show how you can use them:
 
 ```js
-const where = [ // an array of arrays
+// an array of arrays
+const where = [
   ['some_field', '==', false],
   ['another_field', '==', true],
 ]
-const orderBy = ['created_at'] // or more params
+// can have several parameters
+const orderBy = ['created_at']
 ```
 
 1. Pass together with openDBChannel:
 
 ```js
-dispatch('myModule/openDBChannel', {where, orderBy})
+dispatch('myModule/openDBChannel', {clauses: {where, orderBy}})
 ```
 
 2. Pass together with fetchAndAdd:
 
 ```js
-dispatch('myModule/fetchAndAdd', {where, orderBy})
+dispatch('myModule/fetchAndAdd', {clauses: {where, orderBy}})
 ```
 
 3. Define inside your vuex module, to set as default when for `openDBChannel`:
@@ -276,7 +311,7 @@ getters: {
 
 ### userId in where/orderBy
 
-You can also use variables like `userId` (of the authenticated user) inside where filters. Eg.
+You can also use variables like `userId` (of the authenticated user) inside where clauses. Eg.
 
 ```js
 store.dispatch('myModule/openDBChannel', {
@@ -286,7 +321,7 @@ store.dispatch('myModule/openDBChannel', {
 
 `{userId}` will be automatically replaced with the authenticated user id.
 
-Besides `userId` you can also use "custom variables". For more information on this, see the chapter on [variables for firestorePath or filters](extra-features.html#variables-for-firestorepath-or-filters).
+Besides `userId` you can also use "custom variables". For more information on this, see the chapter on [variables for firestorePath or clauses](extra-features.html#variables-for-firestorepath-or-clauses).
 
 ### Example usage: openDBChannel and fetchAndAdd
 
@@ -453,7 +488,7 @@ Please note, just like [fetchAndAdd](#fetching-docs) explained above, `fetch` al
 
 ```js
 // custom fetch limit:
-dispatch('myModule/fetch', {limit: 1000})
+dispatch('myModule/fetch', {clauses: {limit: 1000}})
 // no fetch limit:
-dispatch('myModule/fetch', {limit: 0})
+dispatch('myModule/fetch', {clauses: {limit: 0}})
 ```
