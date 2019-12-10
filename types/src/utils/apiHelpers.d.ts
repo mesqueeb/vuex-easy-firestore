@@ -37,7 +37,7 @@ export declare function getPathVarMatches(pathPiece: string): string[];
  */
 export declare function trimAccolades(pathPiece: string): string;
 /**
- * Gets an object with {where, orderBy} filters and returns a unique identifier for that
+ * Gets an object with {where, orderBy} clauses and returns a unique identifier for that
  *
  * @export
  * @param {AnyObject} [whereOrderBy={}] whereOrderBy {where, orderBy, pathVariables}

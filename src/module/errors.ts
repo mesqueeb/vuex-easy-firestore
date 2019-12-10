@@ -56,7 +56,7 @@ const errorMessages = {
     The action you dispatched can only be used in 'collection' mode.
   `,
   'initial-doc-failed': `
-    Initial doc insertion failed. Further \`set\` or \`patch\` actions will also fail. Requires an internet connection when the initial doc is inserted. Please connect to the internet and refresh the page.
+    Initial doc insertion failed. Further \`set\` or \`patch\` actions will also fail. Requires an internet connection when the initial doc is inserted. Check the error returned by Firebase:
   `,
   'sync-error': `
     Something went wrong while trying to synchronise data to Cloud Firestore.
@@ -74,8 +74,7 @@ const errorMessages = {
  */
 export default function (errorId: string, error?: any): string {
   const logData = errorMessages[errorId] || errorId
-  const log = `[vuex-easy-firestore] Error! ${logData}`
-  Error(log)
-  if (error) Error(error)
+  console.error(`[vuex-easy-firestore] Error! ${logData}`)
+  if (error) console.error(error)
   return errorId
 }

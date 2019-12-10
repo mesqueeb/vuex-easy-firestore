@@ -96,7 +96,7 @@ export default {
     removedHook: function (updateStore, doc, id, store) { return updateStore(doc) },
   },
 
-  // When items are fetched through `dispatch('module/fetch', filters)`.
+  // When items are fetched through `dispatch('module/fetch', {clauses})`.
   fetch: {
     // The max amount of documents to be fetched. Defaults to 50.
     docLimit: 50,
