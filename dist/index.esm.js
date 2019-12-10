@@ -953,6 +953,8 @@ function pluginActions (Firebase) {
         fetch: function (_a, parameters) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             if (parameters === void 0) { parameters = { clauses: {}, pathVariables: {} }; }
+            if (!isPlainObject(parameters))
+                parameters = {};
             /* COMPATIBILITY START
              * this ensures backward compatibility for people who passed pathVariables and
              * clauses directly at the root of the `parameters` object. Can be removed in
@@ -1065,6 +1067,8 @@ function pluginActions (Firebase) {
             var _this = this;
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             if (parameters === void 0) { parameters = { clauses: {}, pathVariables: {} }; }
+            if (!isPlainObject(parameters))
+                parameters = {};
             /* COMPATIBILITY START
              * this ensures backward compatibility for people who passed pathVariables and
              * clauses directly at the root of the `parameters` object. Can be removed in
@@ -1231,6 +1235,8 @@ function pluginActions (Firebase) {
             var _this = this;
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             if (parameters === void 0) { parameters = { clauses: {}, pathVariables: {}, includeMetadataChanges: false }; }
+            if (!isPlainObject(parameters))
+                parameters = {};
             /* COMPATIBILITY START
              * this ensures backward compatibility for people who passed pathVariables and
              * clauses directly at the root of the `parameters` object. Can be removed in

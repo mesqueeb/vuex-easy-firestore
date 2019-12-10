@@ -241,6 +241,7 @@ export default function (Firebase: any): AnyObject {
       {state, getters, commit, dispatch},
       parameters:any = {clauses: {}, pathVariables: {}}
     ) {
+      if (!isPlainObject(parameters)) parameters = {}
       /* COMPATIBILITY START
        * this ensures backward compatibility for people who passed pathVariables and
        * clauses directly at the root of the `parameters` object. Can be removed in
@@ -343,8 +344,9 @@ export default function (Firebase: any): AnyObject {
     // orderBy: ['done_date', 'desc']
     fetchAndAdd (
       {state, getters, commit, dispatch},
-      parameters = {clauses: {}, pathVariables: {}}
+      parameters: any = {clauses: {}, pathVariables: {}}
     ) {
+      if (!isPlainObject(parameters)) parameters = {}
       /* COMPATIBILITY START
        * this ensures backward compatibility for people who passed pathVariables and
        * clauses directly at the root of the `parameters` object. Can be removed in
@@ -479,7 +481,11 @@ export default function (Firebase: any): AnyObject {
         }
       })
     },
-    openDBChannel ({getters, state, commit, dispatch}, parameters = {clauses: {}, pathVariables: {}, includeMetadataChanges: false}) {
+    openDBChannel (
+      {getters, state, commit, dispatch},
+      parameters: any = {clauses: {}, pathVariables: {}, includeMetadataChanges: false}
+    ) {
+      if (!isPlainObject(parameters)) parameters = {}
       /* COMPATIBILITY START
        * this ensures backward compatibility for people who passed pathVariables and
        * clauses directly at the root of the `parameters` object. Can be removed in
@@ -700,7 +706,7 @@ export default function (Firebase: any): AnyObject {
         streamingStop
       )
       state._sync.unsubscribe[identifier] = unsubscribe
-      
+
       return initialPromise
     },
     closeDBChannel ({getters, state, commit, dispatch}, { clearModule = false, _identifier = null } = { clearModule: false, _identifier: null }) {
