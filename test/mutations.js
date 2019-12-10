@@ -94,11 +94,11 @@ test('RESET_VUEX_EASY_FIRESTORE_STATE', t => {
   t.falsy(noStatePropModule.rain)
 })
 
-test('SET_SYNCFILTERS', t => {
+test('SET_SYNCCLAUSES', t => {
   const sync = char._conf.sync
   t.deepEqual(sync.where, [])
   t.deepEqual(sync.orderBy, [])
-  store.commit('mainCharacter/SET_SYNCFILTERS', {
+  store.commit('mainCharacter/SET_SYNCCLAUSES', {
     where: [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']],
     orderBy: ['date']
   })

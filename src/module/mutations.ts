@@ -24,7 +24,7 @@ export default function (userState: object): AnyObject {
         self._vm.$set(state._sync.pathVariables, key, pathPiece)
       })
     },
-    SET_SYNCFILTERS (state, {where, orderBy}) {
+    SET_SYNCCLAUSES (state, {where, orderBy}) {
       if (where && isArray(where)) state._conf.sync.where = where
       if (orderBy && isArray(orderBy)) state._conf.sync.orderBy = orderBy
     },
