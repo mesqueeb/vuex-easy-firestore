@@ -896,17 +896,9 @@ function pluginActions (Firebase) {
             var initialDoc = (getters.storeRef) ? getters.storeRef : {};
             var initialDocPrepared = getters.prepareInitialDocForInsert(initialDoc);
             // 2. Create a reference to the SF doc.
-            var initialDocRef = getters.dbRef;
             return new Promise(function (resolve, reject) {
-                Firebase.firestore().runTransaction(function (transaction) {
-                    // This code may get re-run multiple times if there are conflicts.
-                    return transaction.get(initialDocRef)
-                        .then(function (foundInitialDoc) {
-                        if (!foundInitialDoc.exists) {
-                            transaction.set(initialDocRef, initialDocPrepared);
-                        }
-                    });
-                }).then(function (_) {
+                getters.dbRef.set(initialDocPrepared)
+                    .then(function () {
                     if (state._conf.logging) {
                         var message = 'Initial doc succesfully inserted';
                         console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: SeaGreen');
@@ -1418,7 +1410,7 @@ function pluginActions (Firebase) {
                             return [3 /*break*/, 12];
                         case 1:
                             if (!!getters.collectionMode) return [3 /*break*/, 10];
-                            if (!!querySnapshot.data()) return [3 /*break*/, 8];
+                            if (!!querySnapshot.exists) return [3 /*break*/, 8];
                             if (!!state._conf.sync.preventInitialDocInsertion) return [3 /*break*/, 6];
                             if (state._conf.logging) {
                                 message = gotFirstServerResponse

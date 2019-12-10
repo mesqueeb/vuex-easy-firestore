@@ -1,6 +1,6 @@
 import test from 'ava'
 import wait from './helpers/wait'
-import {store} from './helpers/index.cjs.js'
+import { store } from './helpers/index.cjs.js'
 
 import * as Firebase from 'firebase/app'
 import 'firebase/firestore'
@@ -15,7 +15,7 @@ test('initialDoc through openDBRef & fetchAndAdd', async t => {
   // doc doesn't exist yet
   t.is(docR.exists, false)
   try {
-    await store.dispatch('initialDoc/openDBChannel', {randomId})
+    await store.dispatch('initialDoc/openDBChannel', { randomId })
   } catch (error) {
     console.error(error)
     t.fail()
@@ -40,7 +40,7 @@ test('initialDoc through openDBRef & fetchAndAdd', async t => {
   docR = await Firebase.firestore().doc(path).get()
   t.is(docR.exists, false)
   try {
-    store.dispatch('initialDoc/fetchAndAdd', {pathVariables: {randomId: randomId2}})
+    store.dispatch('initialDoc/fetchAndAdd', { pathVariables: { randomId: randomId2 } })
   } catch (error) {
     t.fail()
   }
@@ -63,17 +63,12 @@ test('preventInitialDoc through openDBRef & fetchAndAdd', async t => {
   docR = await Firebase.firestore().doc(path).get()
   // doc doesn't exist yet
   t.is(docR.exists, false)
-  // WHY DOES THIS GIVE 1 unhandled rejection:
-  // try {
-  //   store.dispatch('preventInitialDoc/openDBChannel', {randomId})
-  // } catch (error) {
-  //   t.is(error, 'preventInitialDocInsertion')
-  // }
-  // THIS WORKS:
-  store.dispatch('preventInitialDoc/openDBChannel', {randomId})
-    .catch(error => {
-      t.is(error, 'preventInitialDocInsertion')
-    })
+  try {
+    await store.dispatch('preventInitialDoc/openDBChannel', { randomId })
+  } catch (error) {
+    console.error(error)
+    t.is(error, 'preventInitialDocInsertion')
+  }
   const testFullPath = store.getters['preventInitialDoc/firestorePathComplete']
   t.is(testFullPath.split('/').pop(), randomId)
   const fullPath = store.getters['preventInitialDoc/firestorePathComplete']
@@ -91,8 +86,9 @@ test('preventInitialDoc through openDBRef & fetchAndAdd', async t => {
   docR = await Firebase.firestore().doc(path).get()
   t.is(docR.exists, false)
   try {
-    store.dispatch('preventInitialDoc/fetchAndAdd', {randomId: randomId2})
+    await store.dispatch('preventInitialDoc/fetchAndAdd', { randomId: randomId2 })
   } catch (error) {
+    console.error(error)
     t.is(error, 'preventInitialDocInsertion')
   }
   const fullPath2 = store.getters['preventInitialDoc/firestorePathComplete']
