@@ -173,17 +173,9 @@ export default function (Firebase: any): AnyObject {
       const initialDocPrepared = getters.prepareInitialDocForInsert(initialDoc)
 
       // 2. Create a reference to the SF doc.
-      const initialDocRef = getters.dbRef
       return new Promise((resolve, reject) => {
-        Firebase.firestore().runTransaction(transaction => {
-          // This code may get re-run multiple times if there are conflicts.
-          return transaction.get(initialDocRef)
-            .then(foundInitialDoc => {
-              if (!foundInitialDoc.exists) {
-                transaction.set(initialDocRef, initialDocPrepared)
-              }
-            })
-          }).then(_ => {
+        getters.dbRef.set(initialDocPrepared)
+          .then(() => {
             if (state._conf.logging) {
               const message = 'Initial doc succesfully inserted'
               console.log(
@@ -660,7 +652,7 @@ export default function (Firebase: any): AnyObject {
             // 'doc' mode:
             if (!getters.collectionMode) {
               // if the document doesn't exist yet
-              if (!querySnapshot.data()) {
+              if (!querySnapshot.exists) {
                 // if it's ok to insert an initial document
                 if (!state._conf.sync.preventInitialDocInsertion) {
                   if (state._conf.logging) {
