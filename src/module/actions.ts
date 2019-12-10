@@ -173,21 +173,21 @@ export default function (Firebase: any): AnyObject {
       const initialDocPrepared = getters.prepareInitialDocForInsert(initialDoc)
 
       // 2. Create a reference to the SF doc.
-      var initialDocRef = getters.dbRef
-      return Firebase.firestore().runTransaction(transaction => {
-        // This code may get re-run multiple times if there are conflicts.
-        return transaction.get(initialDocRef)
-          .then(foundInitialDoc => {
-            if (!foundInitialDoc.exists) {
-              transaction.set(initialDocRef, initialDocPrepared)
+      return new Promise((resolve, reject) => {
+        getters.dbRef.set(initialDocPrepared)
+          .then(() => {
+            if (state._conf.logging) {
+              const message = 'Initial doc succesfully inserted'
+              console.log(
+                `%c [vuex-easy-firestore] ${message}; for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`,
+                'color: SeaGreen'
+              )
             }
+            resolve()
+          }).catch(error => {
+            logError('initial-doc-failed', error)
+            reject(error)
           })
-      }).then(_ => {
-        if (state._conf.logging) {
-          console.log('[vuex-easy-firestore] Initial doc succesfully inserted.')
-        }
-      }).catch(error => {
-        return logError('initial-doc-failed', error)
       })
     },
     handleSyncStackDebounce ({state, commit, dispatch, getters}, payloadToResolve) {
@@ -239,19 +239,35 @@ export default function (Firebase: any): AnyObject {
     },
     fetch (
       {state, getters, commit, dispatch},
-      pathVariables: AnyObject = {where: [], whereFilters: [], orderBy: []}
-      // where: [['archived', '==', true]]
-      // orderBy: ['done_date', 'desc']
+      parameters:any = {clauses: {}, pathVariables: {}}
     ) {
+      if (!isPlainObject(parameters)) parameters = {}
+      /* COMPATIBILITY START
+       * this ensures backward compatibility for people who passed pathVariables and
+       * clauses directly at the root of the `parameters` object. Can be removed in
+       * a later version
+       */
+      if (!parameters.clauses && !parameters.pathVariables) {
+        const pathVariables = Object.assign({}, parameters)
+        // @ts-ignore
+        delete pathVariables.where
+        // @ts-ignore
+        delete pathVariables.orderBy
+        Object.entries(pathVariables).forEach(entry => {
+          if (typeof entry[1] === 'object') {
+            delete pathVariables[entry[0]]
+          }
+        })
+        parameters = Object.assign({}, {clauses: parameters, pathVariables})
+      }
+      /* COMPATIBILITY END */
       if (!getters.collectionMode) return logError('only-in-collection-mode')
       dispatch('setUserId')
-      let {where, whereFilters, orderBy} = pathVariables
+      let {where, whereFilters, orderBy} = parameters.clauses
       if (!isArray(where)) where = []
       if (!isArray(orderBy)) orderBy = []
-      if (isArray(whereFilters) && whereFilters.length) where = whereFilters // depreciated
-      if (pathVariables && isPlainObject(pathVariables)) {
-        commit('SET_PATHVARS', pathVariables)
-      }
+      if (isArray(whereFilters) && whereFilters.length) where = whereFilters // deprecated
+      commit('SET_PATHVARS', parameters.pathVariables)
       return new Promise((resolve, reject) => {
         // log
         if (state._conf.logging) {
@@ -267,7 +283,7 @@ export default function (Firebase: any): AnyObject {
         // We've never fetched this before:
         if (!fetched) {
           let ref = getters.dbRef
-          // apply where filters and orderBy
+          // apply where clauses and orderBy
           getters.getWhereArrays(where).forEach(paramsArr => {
             ref = ref.where(...paramsArr)
           })
@@ -285,15 +301,15 @@ export default function (Firebase: any): AnyObject {
           if (state._conf.logging) console.log('[vuex-easy-firestore] done fetching')
           return resolve({done: true})
         }
-        // attach fetch filters
+        // attach fetch clauses
         let fRef = state._sync.fetched[identifier].ref
         if (fRequest.nextFetchRef) {
           // get next ref if saved in state
           fRef = state._sync.fetched[identifier].nextFetchRef
         }
         // add doc limit
-        let limit = (isNumber(pathVariables.limit))
-          ? pathVariables.limit
+        let limit = (isNumber(parameters.clauses.limit))
+          ? parameters.clauses.limit
           : state._conf.fetch.docLimit
         if (limit > 0) fRef = fRef.limit(limit)
         // Stop if all records already fetched
@@ -324,15 +340,33 @@ export default function (Firebase: any): AnyObject {
         })
       })
     },
+    // where: [['archived', '==', true]]
+    // orderBy: ['done_date', 'desc']
     fetchAndAdd (
       {state, getters, commit, dispatch},
-      pathVariables = {where: [], whereFilters: [], orderBy: []}
-      // where: [['archived', '==', true]]
-      // orderBy: ['done_date', 'desc']
+      parameters: any = {clauses: {}, pathVariables: {}}
     ) {
-      if (pathVariables && isPlainObject(pathVariables)) {
-        commit('SET_PATHVARS', pathVariables)
+      if (!isPlainObject(parameters)) parameters = {}
+      /* COMPATIBILITY START
+       * this ensures backward compatibility for people who passed pathVariables and
+       * clauses directly at the root of the `parameters` object. Can be removed in
+       * a later version
+       */
+      if (!parameters.clauses && !parameters.pathVariables) {
+        const pathVariables = Object.assign({}, parameters)
+        // @ts-ignore
+        delete pathVariables.where
+        // @ts-ignore
+        delete pathVariables.orderBy
+        Object.entries(pathVariables).forEach(entry => {
+          if (typeof entry[1] === 'object') {
+            delete pathVariables[entry[0]]
+          }
+        })
+        parameters = Object.assign({}, {clauses: parameters, pathVariables})
       }
+      /* COMPATIBILITY END */
+      commit('SET_PATHVARS', parameters.pathVariables)
       // 'doc' mode:
       if (!getters.collectionMode) {
         dispatch('setUserId')
@@ -343,8 +377,15 @@ export default function (Firebase: any): AnyObject {
           if (!_doc.exists) {
             // No initial doc found in docMode
             if (state._conf.sync.preventInitialDocInsertion) throw 'preventInitialDocInsertion'
-            if (state._conf.logging) console.log('[vuex-easy-firestore] inserting initial doc')
+            if (state._conf.logging) {
+              const message = 'inserting initial doc'
+              console.log(
+                `%c [vuex-easy-firestore] ${message}; for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`,
+                'color: MediumSeaGreen'
+              )
+            }
             await dispatch('insertInitialDoc')
+            // an error in await here is (somehow) caught in the catch down below
             return _doc
           }
           const id = getters.docModeId
@@ -352,11 +393,12 @@ export default function (Firebase: any): AnyObject {
           dispatch('applyHooksAndUpdateState', {change: 'modified', id, doc})
           return doc
         }).catch(error => {
-          return logError(error)
+          logError(error)
+          throw error
         })
       }
       // 'collection' mode:
-      return dispatch('fetch', pathVariables)
+      return dispatch('fetch', parameters)
         .then(querySnapshot => {
           if (querySnapshot.done === true) return querySnapshot
           if (isFunction(querySnapshot.forEach)) {
@@ -447,24 +489,74 @@ export default function (Firebase: any): AnyObject {
         }
       })
     },
-    openDBChannel ({getters, state, commit, dispatch}, pathVariables) {
-      dispatch('setUserId')
-      // `firstCall` makes sure that local changes made during offline are reflected as server changes which the app is refreshed during offline mode
-      let firstCall = true
-      // set state for pathVariables
-      if (pathVariables && isPlainObject(pathVariables)) {
-        commit('SET_SYNCFILTERS', pathVariables)
+    openDBChannel (
+      {getters, state, commit, dispatch},
+      parameters: any = {clauses: {}, pathVariables: {}, includeMetadataChanges: false}
+    ) {
+      if (!isPlainObject(parameters)) parameters = {}
+      /* COMPATIBILITY START
+       * this ensures backward compatibility for people who passed pathVariables and
+       * clauses directly at the root of the `parameters` object. Can be removed in
+       * a later version
+       */
+      if (!parameters.clauses && !parameters.pathVariables && parameters.includeMetadataChanges === undefined) {
+        const pathVariables = Object.assign({}, parameters)
+        // @ts-ignore
         delete pathVariables.where
+        // @ts-ignore
         delete pathVariables.orderBy
-        commit('SET_PATHVARS', pathVariables)
+        Object.entries(pathVariables).forEach(entry => {
+          if (typeof entry[1] === 'object') {
+            delete pathVariables[entry[0]]
+          }
+        })
+        parameters = Object.assign(
+          {includeMetadataChanges: parameters.includeMetadataChanges || false},
+          {clauses: parameters, pathVariables}
+        )
       }
+      /* COMPATIBILITY END */
+      const defaultParameters = {
+        clauses: {},
+        pathVariables: {},
+        includeMetadataChanges: false
+      }
+      parameters = Object.assign(defaultParameters, parameters)
+      dispatch('setUserId')
+      // creates promises that can be resolved from outside their scope and that
+      // can give their status
+      const nicePromise = ():any => {
+        const m = {
+          resolve: null,
+          reject: null,
+          isFulfilled: false,
+          isRejected: false,
+          isPending: true
+        }
+        const p = new Promise((resolve, reject) => {
+          m.resolve = resolve
+          m.reject = reject
+        })
+        Object.assign(p, m)
+        p
+          // @ts-ignore
+          .then(() => p.isFulfilled = true)
+          // @ts-ignore
+          .catch(() => p.isRejected = true)
+          // @ts-ignore
+          .finally(() => p.isPending = false)
+        return p
+      }
+      // set state for clauses and pathVariables
+      commit('SET_SYNCCLAUSES', parameters.clauses)
+      commit('SET_PATHVARS', parameters.pathVariables)
       const identifier = createFetchIdentifier({
         where: state._conf.sync.where,
         orderBy: state._conf.sync.orderBy,
         pathVariables: state._sync.pathVariables
       })
       if (isFunction(state._sync.unsubscribe[identifier])) {
-        const channelAlreadyOpenError = `openDBChannel was already called for these filters and pathvariables. Identifier: ${identifier}`
+        const channelAlreadyOpenError = `openDBChannel was already called for these clauses and pathvariables. Identifier: ${identifier}`
         if (state._conf.logging) {
           console.log(channelAlreadyOpenError)
         }
@@ -472,7 +564,7 @@ export default function (Firebase: any): AnyObject {
       }
       // getters.dbRef should already have pathVariables swapped out
       let dbRef = getters.dbRef
-      // apply where filters and orderBy
+      // apply where and orderBy clauses
       if (getters.collectionMode) {
         getters.getWhereArrays().forEach(whereParams => {
           dbRef = dbRef.where(...whereParams)
@@ -481,72 +573,154 @@ export default function (Firebase: any): AnyObject {
           dbRef = dbRef.orderBy(...state._conf.sync.orderBy)
         }
       }
-      // make a promise
-      return new Promise((resolve, reject) => {
-        // log
-        if (state._conf.logging) {
-          console.log(`%c openDBChannel for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: goldenrod')
-        }
-        const okToStream = function () {
-          // create a promise for the life of the snapshot that can be resolved from outside its scope.
-          // this promise will be resolved when the user calls closeDBChannel, or rejected if the
-          // stream is ended prematurely by the error() callback
-          const promiseMethods = {resolve: null, reject: null}
-          const streaming = new Promise((_resolve, _reject) => {
-            promiseMethods.resolve = _resolve
-            promiseMethods.reject = _reject
-          })
-          Object.assign(streaming, promiseMethods)
-          state._sync.streaming[identifier] = streaming
-          // we can't resolve the promise with a promise, it would hang, so we wrap it
-          resolve(() => streaming)
-        }
-        const unsubscribe = dbRef.onSnapshot(async querySnapshot => {
-          const source = querySnapshot.metadata.hasPendingWrites ? 'local' : 'server'
-          // 'doc' mode:
-          if (!getters.collectionMode) {
-            if (!querySnapshot.data()) {
-              // No initial doc found in docMode
-              if (state._conf.sync.preventInitialDocInsertion) {
-                unsubscribe()
-                reject('preventInitialDocInsertion')
-                return
-              }
-              if (state._conf.logging) console.log('[vuex-easy-firestore] inserting initial doc')
-              await dispatch('insertInitialDoc')
-              okToStream()
-              return
-            }
-            if (source === 'local' && !firstCall) return
-            const id = getters.docModeId
-            const doc = getters.cleanUpRetrievedDoc(querySnapshot.data(), id)
-            dispatch('applyHooksAndUpdateState', {change: 'modified', id, doc})
-            firstCall = false
-            okToStream()
-            return
-          }
-          // 'collection' mode:
-          querySnapshot.docChanges().forEach(change => {
-            const changeType = change.type
-            // Don't do anything for local modifications & removals
-            if (source === 'local' && !firstCall) return
-            const id = change.doc.id
-            const doc = getters.cleanUpRetrievedDoc(change.doc.data(), id)
-            dispatch('applyHooksAndUpdateState', {change: changeType, id, doc})
-          })
-          firstCall = false
-          okToStream()
-        }, error => {
-          state._sync.patching = 'error'
-          state._sync.streaming[identifier].reject(error)
-          state._sync.streaming[identifier] = null
-          state._sync.unsubscribe[identifier] = null
+      // log
+      if (state._conf.logging) {
+        console.log(`%c openDBChannel for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: goldenrod')
+      }
+      const initialPromise = nicePromise()
+      const refreshedPromise = nicePromise()
+      const streamingPromise = nicePromise()
+      let gotFirstLocalResponse = false
+      let gotFirstServerResponse = false
+      const includeMetadataChanges = parameters.includeMetadataChanges
+      const streamingStart = () => {
+        // create a promise for the life of the snapshot that can be resolved from
+        // outside its scope. This promise will be resolved when the user calls
+        // closeDBChannel, or rejected if the stream is ended prematurely by the
+        // error() callback
+        state._sync.streaming[identifier] = streamingPromise
+        initialPromise.resolve({
+          refreshed: includeMetadataChanges ? refreshedPromise : null,
+          streaming: streamingPromise,
+          stop: () => dispatch('closeDBChannel', { _identifier: identifier })
         })
-        state._sync.unsubscribe[identifier] = unsubscribe
-      })
+      }
+      const streamingStop = error => {
+        // when this function is called by the error callback of onSnapshot, the
+        // subscription will actually already have been cancelled
+        unsubscribe()
+        if (initialPromise.isPending) {
+          initialPromise.reject(error)
+        }
+        if (refreshedPromise.isPending) {
+          refreshedPromise.reject(error)
+        }
+        streamingPromise.reject(error)
+        state._sync.patching = 'error'
+        state._sync.unsubscribe[identifier] = null
+        state._sync.streaming[identifier] = null
+      }
+      const processDocument = data => {
+        const doc = getters.cleanUpRetrievedDoc(data, getters.docModeId)
+        dispatch('applyHooksAndUpdateState', {change: 'modified', id: getters.docModeId, doc})
+      }
+      const processCollection = docChanges => {
+        docChanges.forEach(change => {
+          const doc = getters.cleanUpRetrievedDoc(change.doc.data(), change.doc.id)
+          dispatch('applyHooksAndUpdateState', {change: change.type, id: change.doc.id, doc})
+        })
+      }
+      const unsubscribe = dbRef.onSnapshot(
+        { includeMetadataChanges },
+        async querySnapshot => {
+          // if the data comes from cache
+          if (querySnapshot.metadata.fromCache) {
+            // if it's the very first call, we are at the initial app load. If so, we'll use
+            // the data in cache (if available) to populate the state.
+            // if it's not, this is only the result of a local modification which does not
+            // require to do anything else.
+            if (!gotFirstLocalResponse) {
+              // 'doc' mode:
+              if (!getters.collectionMode) {
+                // note: we don't want to insert a document ever when the data comes from cache,
+                // and we don't want to start the app if the data doesn't exist (no persistence)
+                if (querySnapshot.data()) {
+                  processDocument(querySnapshot.data())
+                  streamingStart()
+                }
+              }
+              // 'collection' mode
+              else {
+                processCollection(querySnapshot.docChanges())
+                streamingStart()
+              }
+              gotFirstLocalResponse = true
+            }
+          }
+          // if data comes from server
+          else {
+            // 'doc' mode:
+            if (!getters.collectionMode) {
+              // if the document doesn't exist yet
+              if (!querySnapshot.exists) {
+                // if it's ok to insert an initial document
+                if (!state._conf.sync.preventInitialDocInsertion) {
+                  if (state._conf.logging) {
+                    const message = gotFirstServerResponse
+                      ? 'recreating doc after remote deletion'
+                      : 'inserting initial doc'
+                    console.log(
+                      `%c [vuex-easy-firestore] ${message}; for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`,
+                      'color: MediumSeaGreen'
+                    )
+                  }
+                  try {
+                    await dispatch('insertInitialDoc')
+                    // if the initial document was successfully inserted
+                    if (initialPromise.isPending) {
+                      streamingStart()
+                    }
+                    if (refreshedPromise.isPending) {
+                      refreshedPromise.resolve()
+                    }
+                  } catch (error) {
+                    // we close the channel ourselves. Firestore does not, as it leaves the
+                    // channel open as long as the user has read rights on the document, even
+                    // if it does not exist. But since the dev enabled `insertInitialDoc`,
+                    // it makes some sense to close as we can assume the user should have had
+                    // write rights
+                    streamingStop(error)
+                  }
+                }
+                // we are not allowed to (re)create the doc: close the channel and reject
+                else {
+                  streamingStop('preventInitialDocInsertion')
+                }
+              }
+              // the remote document exists: apply to the local store
+              else {
+                processDocument(querySnapshot.data())
+                if (initialPromise.isPending) {
+                  streamingStart()
+                }
+                // the promise should still be pending at this point only if there is no persistence,
+                // as only then the first call to our listener will have `fromCache` === `false`
+                if (refreshedPromise.isPending) {
+                  refreshedPromise.resolve()
+                }
+              }
+            }
+            // 'collection' mode:
+            else {
+              processCollection(querySnapshot.docChanges())
+              if (initialPromise.isPending) {
+                streamingStart()
+              }
+              if (refreshedPromise.isPending) {
+                refreshedPromise.resolve()
+              }
+            }
+            gotFirstServerResponse = true
+          }
+        },
+        streamingStop
+      )
+      state._sync.unsubscribe[identifier] = unsubscribe
+
+      return initialPromise
     },
-    closeDBChannel ({getters, state, commit, dispatch}, { clearModule = false } = { clearModule: false }) {
-      const identifier = createFetchIdentifier({
+    closeDBChannel ({getters, state, commit, dispatch}, { clearModule = false, _identifier = null } = { clearModule: false, _identifier: null }) {
+      const identifier = _identifier || createFetchIdentifier({
         where: state._conf.sync.where,
         orderBy: state._conf.sync.orderBy,
         pathVariables: state._sync.pathVariables

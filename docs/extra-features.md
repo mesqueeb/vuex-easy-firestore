@@ -1,8 +1,8 @@
 # Extra features
 
-## Variables for firestorePath or filters
+## Variables for firestorePath or clauses
 
-Besides `'{userId}'` in your `firestorePath` in the config or in where filters, you can also use **any variable** in the `firestorePath` or the `where` filter.
+Besides `'{userId}'` in your `firestorePath` in the config or in `where` clauses, you can also use **any variable** in the `firestorePath` or the `where` filter.
 
 ```js
 // your vuex module
@@ -16,10 +16,10 @@ You can replace a path variable with the actual string by:
 
 ```js
 // 1. Passing it as a parameter to openDBChannel
-dispatch('groupUserData/openDBChannel', {groupId: 'group-A'})
+dispatch('groupUserData/openDBChannel', {pathVariables: {groupId: 'group-A'}})
 
 // 2. Passing it as a parameter to fetchAndAdd
-dispatch('groupUserData/fetchAndAdd', {groupId: 'group-A'})
+dispatch('groupUserData/fetchAndAdd', {pathVariables: {groupId: 'group-A'}})
 
 // 3. Dispatching setPathVars
 dispatch('groupUserData/setPathVars', {groupId: 'group-A'})
@@ -50,11 +50,11 @@ store.dispatch('userData/openDBChannel')
     // Then we can get the groupId:
     const userGroupId = store.state.userData.groupId
     // Then we can pass it as variable to the next openDBChannel:
-    store.dispatch('groupUserData/openDBChannel', {groupId: userGroupId})
+    store.dispatch('groupUserData/openDBChannel', {pathVariables: {groupId: userGroupId}})
   })
 ```
 
-### Use case: Retieve data based on the Vue Router path
+### Use case: Retrieve data based on the Vue Router path
 
 This is a great use case! But it has a good and a bad implementation. I'll go over both so you can see what I mean:
 
@@ -74,7 +74,7 @@ SpecificGroupUserModule: {
 export default {
   created () {
     const pageId = this.$route.params.id
-    this.$store.dispatch('page/fetchAndAdd', {pageId})
+    this.$store.dispatch('page/fetchAndAdd', {pathVariables: {pageId}})
   },
   computed: {
     openDoc () {
@@ -84,14 +84,12 @@ export default {
 }
 ```
 
-The above example shows a Vuex module linked to a single doc, but this path is changed every time the user opens a page and then the doc is retrieved. The reasons not to do this are:
-
-- When opening a new page you will need to release the previous doc from memory every time, so when the user goes back you will be charged with a read every single time!
-- Please see [this thread](https://github.com/mesqueeb/vuex-easy-firestore/issues/172) for problems when there's an internet interruption.
+The above example shows a Vuex module linked to a single doc, but this path is changed every time the user opens a page and then the doc is retrieved.
+When opening a new page you will need to release the previous doc from memory every time, so when the user goes back you will be charged with a read again.
 
 #### Good implementation of Vue Router
 
-Instead, use 'collection' mode! This way you can keep the pages that were openend already and opening those pages again is much faster. That implementation would look like this:
+Instead, use 'collection' mode! This way you can keep the pages that were opened already and opening those pages again is much faster. That implementation would look like this:
 
 ```js
 // MUCH BETTER:
