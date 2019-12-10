@@ -88,6 +88,18 @@ function pluginState () {
     };
 }
 
+var errorMessages = {
+    'user-auth': "\n    Error trying to set userId.\n    Please double check if you have correctly authenticated the user with Firebase Auth before calling `openDBChannel` or `fetchAndAdd`.\n\n    If you still get this error, try passing your firebase instance to the plugin as described in the documentation:\n    https://mesqueeb.github.io/vuex-easy-firestore/extra-features.html#pass-firebase-dependency\n  ",
+    'delete-missing-id': "\n    Missing id of the doc you want to delete!\n    Correct usage:\n      dispatch('delete', id)\n  ",
+    'delete-missing-path': "\n    Missing path to the prop you want to delete!\n    Correct usage:\n      dispatch('delete', 'path.to.prop')\n\n    Use `.` for sub props!\n  ",
+    'missing-id': "\n    This action requires an id to be passed!\n  ",
+    'patch-missing-id': "\n    Missing an id of the doc you want to patch!\n    Correct usage:\n\n    // pass `id` as a prop:\n    dispatch('module/set', {id: '123', name: 'best item name'})\n    // or\n    dispatch('module/patch', {id: '123', name: 'best item name'})\n  ",
+    'missing-path-variables': "\n    A path variable was passed without defining it!\n    In VuexEasyFirestore you can create paths with variables:\n    eg: `groups/{groupId}/user/{userId}`\n\n    `userId` is automatically replaced with the userId of the firebase user.\n    `groupId` or any other variable that needs to be set after authentication needs to be passed upon the `openDBChannel` action.\n\n    // (in module config) Example path:\n    firestorePath: 'groups/{groupId}/user/{userId}'\n\n    // Then before openDBChannel:\n    // retrieve the value\n    const groupId = someIdRetrievedAfterSignin\n    // pass as argument into openDBChannel:\n    dispatch('moduleName/openDBChannel', {groupId})\n  ",
+    'patch-no-ref': "\n    Something went wrong during the PATCH mutation:\n    The document it's trying to patch does not exist.\n  ",
+    'only-in-collection-mode': "\n    The action you dispatched can only be used in 'collection' mode.\n  ",
+    'initial-doc-failed': "\n    Initial doc insertion failed. Further `set` or `patch` actions will also fail. Requires an internet connection when the initial doc is inserted. Check the error returned by Firebase:\n  ",
+    'sync-error': "\n    Something went wrong while trying to synchronise data to Cloud Firestore.\n    The data is kept in queue, so that it will try to sync again upon the next 'set' or 'patch' action.\n  ",
+};
 /**
  * execute Error() based on an error id string
  *
@@ -97,6 +109,10 @@ function pluginState () {
  * @returns {string} the error id
  */
 function error (errorId, error) {
+    var logData = errorMessages[errorId] || errorId;
+    console.error("[vuex-easy-firestore] Error! " + logData);
+    if (error)
+        console.error(error);
     return errorId;
 }
 
@@ -881,20 +897,25 @@ function pluginActions (Firebase) {
             var initialDocPrepared = getters.prepareInitialDocForInsert(initialDoc);
             // 2. Create a reference to the SF doc.
             var initialDocRef = getters.dbRef;
-            return Firebase.firestore().runTransaction(function (transaction) {
-                // This code may get re-run multiple times if there are conflicts.
-                return transaction.get(initialDocRef)
-                    .then(function (foundInitialDoc) {
-                    if (!foundInitialDoc.exists) {
-                        transaction.set(initialDocRef, initialDocPrepared);
+            return new Promise(function (resolve, reject) {
+                Firebase.firestore().runTransaction(function (transaction) {
+                    // This code may get re-run multiple times if there are conflicts.
+                    return transaction.get(initialDocRef)
+                        .then(function (foundInitialDoc) {
+                        if (!foundInitialDoc.exists) {
+                            transaction.set(initialDocRef, initialDocPrepared);
+                        }
+                    });
+                }).then(function (_) {
+                    if (state._conf.logging) {
+                        var message = 'Initial doc succesfully inserted';
+                        console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: SeaGreen');
                     }
+                    resolve();
+                }).catch(function (error$1) {
+                    error('initial-doc-failed', error$1);
+                    reject(error$1);
                 });
-            }).then(function (_) {
-                if (state._conf.logging) {
-                    console.log('[vuex-easy-firestore] Initial doc succesfully inserted.');
-                }
-            }).catch(function (error$1) {
-                return error('initial-doc-failed');
             });
         },
         handleSyncStackDebounce: function (_a, payloadToResolve) {
@@ -946,6 +967,7 @@ function pluginActions (Firebase) {
                 }).catch(function (error$1) {
                     state._sync.patching = 'error';
                     state._sync.syncStack.debounceTimer = null;
+                    error('sync-error', error$1);
                     return reject(error$1);
                 });
             });
@@ -1096,7 +1118,7 @@ function pluginActions (Firebase) {
                     console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
                 }
                 return getters.dbRef.get().then(function (_doc) { return __awaiter(_this, void 0, void 0, function () {
-                    var id, doc;
+                    var message, id, doc;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
@@ -1104,11 +1126,16 @@ function pluginActions (Firebase) {
                                 // No initial doc found in docMode
                                 if (state._conf.sync.preventInitialDocInsertion)
                                     throw 'preventInitialDocInsertion';
-                                if (state._conf.logging)
-                                    console.log('[vuex-easy-firestore] inserting initial doc');
-                                return [4 /*yield*/, dispatch('insertInitialDoc')];
+                                if (state._conf.logging) {
+                                    message = 'inserting initial doc';
+                                    console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: MediumSeaGreen');
+                                }
+                                return [4 /*yield*/, dispatch('insertInitialDoc')
+                                    // an error in await here is (somehow) caught in the catch down below
+                                ];
                             case 1:
                                 _a.sent();
+                                // an error in await here is (somehow) caught in the catch down below
                                 return [2 /*return*/, _doc];
                             case 2:
                                 id = getters.docModeId;
@@ -1118,7 +1145,8 @@ function pluginActions (Firebase) {
                         }
                     });
                 }); }).catch(function (error$1) {
-                    return error(error$1);
+                    error(error$1);
+                    throw error$1;
                 });
             }
             // 'collection' mode:
@@ -1361,7 +1389,7 @@ function pluginActions (Firebase) {
                 });
             };
             var unsubscribe = dbRef.onSnapshot({ includeMetadataChanges: includeMetadataChanges }, function (querySnapshot) { return __awaiter(_this, void 0, void 0, function () {
-                var message, resp;
+                var message, error_1;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
@@ -1387,45 +1415,48 @@ function pluginActions (Firebase) {
                                 }
                                 gotFirstLocalResponse = true;
                             }
-                            return [3 /*break*/, 9];
+                            return [3 /*break*/, 12];
                         case 1:
-                            if (!!getters.collectionMode) return [3 /*break*/, 7];
-                            if (!!querySnapshot.data()) return [3 /*break*/, 5];
-                            if (!!state._conf.sync.preventInitialDocInsertion) return [3 /*break*/, 3];
+                            if (!!getters.collectionMode) return [3 /*break*/, 10];
+                            if (!!querySnapshot.data()) return [3 /*break*/, 8];
+                            if (!!state._conf.sync.preventInitialDocInsertion) return [3 /*break*/, 6];
                             if (state._conf.logging) {
                                 message = gotFirstServerResponse
-                                    ? '[vuex-easy-firestore] recreating doc after remote deletion'
-                                    : '[vuex-easy-firestore] inserting initial doc';
-                                console.log(message);
+                                    ? 'recreating doc after remote deletion'
+                                    : 'inserting initial doc';
+                                console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: MediumSeaGreen');
                             }
+                            _a.label = 2;
+                        case 2:
+                            _a.trys.push([2, 4, , 5]);
                             return [4 /*yield*/, dispatch('insertInitialDoc')
                                 // if the initial document was successfully inserted
                             ];
-                        case 2:
-                            resp = _a.sent();
-                            // if the initial document was successfully inserted
-                            if (!resp) {
-                                if (initialPromise.isPending) {
-                                    streamingStart();
-                                }
-                                if (refreshedPromise.isPending) {
-                                    refreshedPromise.resolve();
-                                }
-                            }
-                            else {
-                                // we close the channel ourselves. Firestore does not, as it leaves the
-                                // channel open as long as the user has read rights on the document, even
-                                // if it does not exist. But since the dev enabled `insertInitialDoc`,
-                                // it makes some sense to close as we can assume the user should have had
-                                // write rights
-                                streamingStop('failedRecreatingDoc');
-                            }
-                            return [3 /*break*/, 4];
                         case 3:
+                            _a.sent();
+                            // if the initial document was successfully inserted
+                            if (initialPromise.isPending) {
+                                streamingStart();
+                            }
+                            if (refreshedPromise.isPending) {
+                                refreshedPromise.resolve();
+                            }
+                            return [3 /*break*/, 5];
+                        case 4:
+                            error_1 = _a.sent();
+                            // we close the channel ourselves. Firestore does not, as it leaves the
+                            // channel open as long as the user has read rights on the document, even
+                            // if it does not exist. But since the dev enabled `insertInitialDoc`,
+                            // it makes some sense to close as we can assume the user should have had
+                            // write rights
+                            streamingStop(error_1);
+                            return [3 /*break*/, 5];
+                        case 5: return [3 /*break*/, 7];
+                        case 6:
                             streamingStop('preventInitialDocInsertion');
-                            _a.label = 4;
-                        case 4: return [3 /*break*/, 6];
-                        case 5:
+                            _a.label = 7;
+                        case 7: return [3 /*break*/, 9];
+                        case 8:
                             processDocument(querySnapshot.data());
                             if (initialPromise.isPending) {
                                 streamingStart();
@@ -1435,9 +1466,9 @@ function pluginActions (Firebase) {
                             if (refreshedPromise.isPending) {
                                 refreshedPromise.resolve();
                             }
-                            _a.label = 6;
-                        case 6: return [3 /*break*/, 8];
-                        case 7:
+                            _a.label = 9;
+                        case 9: return [3 /*break*/, 11];
+                        case 10:
                             processCollection(querySnapshot.docChanges());
                             if (initialPromise.isPending) {
                                 streamingStart();
@@ -1445,11 +1476,11 @@ function pluginActions (Firebase) {
                             if (refreshedPromise.isPending) {
                                 refreshedPromise.resolve();
                             }
-                            _a.label = 8;
-                        case 8:
+                            _a.label = 11;
+                        case 11:
                             gotFirstServerResponse = true;
-                            _a.label = 9;
-                        case 9: return [2 /*return*/];
+                            _a.label = 12;
+                        case 12: return [2 /*return*/];
                     }
                 });
             }); }, streamingStop);

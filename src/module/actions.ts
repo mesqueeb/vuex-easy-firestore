@@ -173,21 +173,29 @@ export default function (Firebase: any): AnyObject {
       const initialDocPrepared = getters.prepareInitialDocForInsert(initialDoc)
 
       // 2. Create a reference to the SF doc.
-      var initialDocRef = getters.dbRef
-      return Firebase.firestore().runTransaction(transaction => {
-        // This code may get re-run multiple times if there are conflicts.
-        return transaction.get(initialDocRef)
-          .then(foundInitialDoc => {
-            if (!foundInitialDoc.exists) {
-              transaction.set(initialDocRef, initialDocPrepared)
+      const initialDocRef = getters.dbRef
+      return new Promise((resolve, reject) => {
+        Firebase.firestore().runTransaction(transaction => {
+          // This code may get re-run multiple times if there are conflicts.
+          return transaction.get(initialDocRef)
+            .then(foundInitialDoc => {
+              if (!foundInitialDoc.exists) {
+                transaction.set(initialDocRef, initialDocPrepared)
+              }
+            })
+          }).then(_ => {
+            if (state._conf.logging) {
+              const message = 'Initial doc succesfully inserted'
+              console.log(
+                `%c [vuex-easy-firestore] ${message}; for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`,
+                'color: SeaGreen'
+              )
             }
+            resolve()
+          }).catch(error => {
+            logError('initial-doc-failed', error)
+            reject(error)
           })
-      }).then(_ => {
-        if (state._conf.logging) {
-          console.log('[vuex-easy-firestore] Initial doc succesfully inserted.')
-        }
-      }).catch(error => {
-        return logError('initial-doc-failed', error)
       })
     },
     handleSyncStackDebounce ({state, commit, dispatch, getters}, payloadToResolve) {
@@ -377,8 +385,15 @@ export default function (Firebase: any): AnyObject {
           if (!_doc.exists) {
             // No initial doc found in docMode
             if (state._conf.sync.preventInitialDocInsertion) throw 'preventInitialDocInsertion'
-            if (state._conf.logging) console.log('[vuex-easy-firestore] inserting initial doc')
+            if (state._conf.logging) {
+              const message = 'inserting initial doc'
+              console.log(
+                `%c [vuex-easy-firestore] ${message}; for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`,
+                'color: MediumSeaGreen'
+              )
+            }
             await dispatch('insertInitialDoc')
+            // an error in await here is (somehow) caught in the catch down below
             return _doc
           }
           const id = getters.docModeId
@@ -386,7 +401,8 @@ export default function (Firebase: any): AnyObject {
           dispatch('applyHooksAndUpdateState', {change: 'modified', id, doc})
           return doc
         }).catch(error => {
-          return logError(error)
+          logError(error)
+          throw error
         })
       }
       // 'collection' mode:
@@ -649,27 +665,29 @@ export default function (Firebase: any): AnyObject {
                 if (!state._conf.sync.preventInitialDocInsertion) {
                   if (state._conf.logging) {
                     const message = gotFirstServerResponse
-                      ? '[vuex-easy-firestore] recreating doc after remote deletion'
-                      : '[vuex-easy-firestore] inserting initial doc'
-                    console.log(message)
+                      ? 'recreating doc after remote deletion'
+                      : 'inserting initial doc'
+                    console.log(
+                      `%c [vuex-easy-firestore] ${message}; for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`,
+                      'color: MediumSeaGreen'
+                    )
                   }
-                  const resp = await dispatch('insertInitialDoc')
-                  // if the initial document was successfully inserted
-                  if (!resp) {
+                  try {
+                    await dispatch('insertInitialDoc')
+                    // if the initial document was successfully inserted
                     if (initialPromise.isPending) {
                       streamingStart()
                     }
                     if (refreshedPromise.isPending) {
                       refreshedPromise.resolve()
                     }
-                  }
-                  else {
+                  } catch (error) {
                     // we close the channel ourselves. Firestore does not, as it leaves the
                     // channel open as long as the user has read rights on the document, even
                     // if it does not exist. But since the dev enabled `insertInitialDoc`,
                     // it makes some sense to close as we can assume the user should have had
                     // write rights
-                    streamingStop('failedRecreatingDoc')
+                    streamingStop(error)
                   }
                 }
                 // we are not allowed to (re)create the doc: close the channel and reject
