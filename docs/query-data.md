@@ -62,10 +62,10 @@ dispatch('moduleName/openDBChannel')
   })
 ```
 
-Sometimes the promise returned by the action might not be enough for you, because you need to know when the module has been populated with fresh data, not cached data. In that case, you need to pass an option when calling the action, which in turn will provide you with an additional promise. This, however, will also trigger your server hook listeners more frequently. Read [Firestore's documentation](https://firebase.google.com/docs/firestore/query-data/listen#events-metadata-changes) to know more about this.
+Sometimes the promise returned by the action might not be enough for you, because you need to know when the module has been populated with fresh data, not cached data. In that case, bind on the `refreshed` promise which is also provided.
 
 ```js
-dispatch('moduleName/openDBChannel', {includeMetadataChanges: true})
+dispatch('moduleName/openDBChannel')
   .then(({refreshed, streaming}) => {
   
     refreshed
