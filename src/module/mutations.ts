@@ -2,7 +2,7 @@ import { isArray, isFunction, isNumber } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
 import logError from './errors'
 import copy from 'copy-anything'
-import merge from 'merge-anything'
+import { merge } from 'merge-anything'
 import { AnyObject } from '../declarations'
 import { isArrayHelper } from '../utils/arrayHelpers'
 import { isIncrementHelper } from '../utils/incrementHelper'
@@ -24,7 +24,7 @@ export default function (userState: object): AnyObject {
         self._vm.$set(state._sync.pathVariables, key, pathPiece)
       })
     },
-    SET_SYNCCLAUSES (state, {where, orderBy}) {
+    SET_SYNCCLAUSES (state, { where, orderBy }) {
       if (where && isArray(where)) state._conf.sync.where = where
       if (orderBy && isArray(orderBy)) state._conf.sync.orderBy = orderBy
     },
@@ -48,11 +48,9 @@ export default function (userState: object): AnyObject {
       })
       const self = this
       const { _sync } = getStateWithSync()
-      const newState = merge(copy(userState), {_sync})
+      const newState = merge(copy(userState), { _sync })
       const { statePropName } = state._conf
-      const docContainer = (statePropName)
-        ? state[statePropName]
-        : state
+      const docContainer = statePropName ? state[statePropName] : state
       Object.keys(newState).forEach(key => {
         self._vm.$set(state, key, newState[key])
       })
@@ -76,7 +74,7 @@ export default function (userState: object): AnyObject {
     },
     PATCH_DOC (state, patches) {
       // Get the state prop ref
-      let ref = (state._conf.statePropName)
+      let ref = state._conf.statePropName
         ? state[state._conf.statePropName]
         : state
       if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
@@ -95,7 +93,7 @@ export default function (userState: object): AnyObject {
           }
           return newVal // always return newVal as fallback!!
         }
-        newVal = merge({extensions: [helpers]}, ref[key], patches[key])
+        newVal = merge({ extensions: [helpers] }, ref[key], patches[key])
         this._vm.$set(ref, key, newVal)
       })
     },
@@ -108,7 +106,7 @@ export default function (userState: object): AnyObject {
       }
     },
     DELETE_PROP (state, path) {
-      const searchTarget = (state._conf.statePropName)
+      const searchTarget = state._conf.statePropName
         ? state[state._conf.statePropName]
         : state
       const propArr = path.split('.')

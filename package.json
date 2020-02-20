@@ -1,6 +1,6 @@
 {
   "name": "vuex-easy-firestore",
-  "version": "1.35.1",
+  "version": "1.35.3",
   "description": "Easy coupling of firestore and a vuex module. 2-way sync with 0 boilerplate!",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
@@ -39,33 +39,34 @@
   "homepage": "https://github.com/mesqueeb/vuex-easy-firestore#readme",
   "dependencies": {
     "compare-anything": "^0.1.3",
-    "copy-anything": "^1.5.1",
-    "filter-anything": "^1.1.4",
+    "copy-anything": "^1.6.0",
+    "filter-anything": "^1.1.5",
     "find-and-replace-anything": "^2.0.4",
     "flatten-anything": "^1.4.1",
-    "is-what": "^3.4.0",
+    "is-what": "^3.6.0",
     "merge-anything": "^2.4.4",
     "vuex-easy-access": "^3.1.8"
   },
   "devDependencies": {
     "@vue/eslint-config-standard": "^4.0.0",
-    "@vuepress/plugin-google-analytics": "^1.2.0",
+    "@vuepress/plugin-google-analytics": "^1.3.1",
     "ava": "^2.4.0",
     "babel-eslint": "^10.0.3",
     "eslint": "^5.16.0",
     "eslint-loader": "^2.2.1",
     "eslint-plugin-vue": "^5.2.3",
-    "firebase": "^6.6.2",
+    "firebase": "^7.8.2",
     "mock-cloud-firestore": "^0.9.3",
+    "rollup": "^1.31.1",
     "rollup-plugin-node-resolve": "^4.2.4",
     "rollup-plugin-typescript2": "^0.22.1",
-    "ts-node": "^8.5.4",
-    "typescript": "^3.7.3",
-    "vue": "^2.6.10",
-    "vuepress": "^1.2.0",
+    "ts-node": "^8.6.2",
+    "typescript": "^3.7.5",
+    "vue": "^2.6.11",
+    "vuepress": "^1.3.1",
     "vuex": "^3.1.2"
   },
   "peerDependencies": {
-    "firebase": "^6.3.0"
+    "firebase": "^7.8.2"
   }
 }
