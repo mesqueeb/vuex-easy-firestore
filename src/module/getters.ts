@@ -1,7 +1,7 @@
 import { isString, isArray } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
 import filter from 'filter-anything'
-import merge from 'merge-anything'
+import { merge } from 'merge-anything'
 import flatten from 'flatten-anything'
 import { getPathVarMatches } from '../utils/apiHelpers'
 import setDefaultValues from '../utils/setDefaultValues'
@@ -9,14 +9,49 @@ import { AnyObject } from '../declarations'
 import error from './errors'
 
 export type IPluginGetters = {
-  firestorePathComplete: (state: any, getters?: any, rootState?: any, rootGetters?: any) => string
-  signedIn: (state: any, getters?: any, rootState?: any, rootGetters?: any) => boolean
+  firestorePathComplete: (
+    state: any,
+    getters?: any,
+    rootState?: any,
+    rootGetters?: any
+  ) => string
+  signedIn: (
+    state: any,
+    getters?: any,
+    rootState?: any,
+    rootGetters?: any
+  ) => boolean
   dbRef: (state: any, getters?: any, rootState?: any, rootGetters?: any) => any
-  storeRef: (state: any, getters?: any, rootState?: any, rootGetters?: any) => AnyObject
-  collectionMode: (state: any, getters?: any, rootState?: any, rootGetters?: any) => boolean
-  prepareForPatch: (state: any, getters?: any, rootState?: any, rootGetters?: any) => (ids: string[], doc: AnyObject) => AnyObject
-  prepareForInsert: (state: any, getters?: any, rootState?: any, rootGetters?: any) => (items: any[]) => any[]
-  prepareInitialDocForInsert: (state: any, getters?: any, rootState?: any, rootGetters?: any) => (doc: AnyObject) => AnyObject
+  storeRef: (
+    state: any,
+    getters?: any,
+    rootState?: any,
+    rootGetters?: any
+  ) => AnyObject
+  collectionMode: (
+    state: any,
+    getters?: any,
+    rootState?: any,
+    rootGetters?: any
+  ) => boolean
+  prepareForPatch: (
+    state: any,
+    getters?: any,
+    rootState?: any,
+    rootGetters?: any
+  ) => (ids: string[], doc: AnyObject) => AnyObject
+  prepareForInsert: (
+    state: any,
+    getters?: any,
+    rootState?: any,
+    rootGetters?: any
+  ) => (items: any[]) => any[]
+  prepareInitialDocForInsert: (
+    state: any,
+    getters?: any,
+    rootState?: any,
+    rootGetters?: any
+  ) => (doc: AnyObject) => AnyObject
 }
 
 /**
@@ -55,29 +90,34 @@ export default function (Firebase: any): AnyObject {
     },
     dbRef: (state, getters, rootState, rootGetters) => {
       const path = getters.firestorePathComplete
-      return (getters.collectionMode)
+      return getters.collectionMode
         ? Firebase.firestore().collection(path)
         : Firebase.firestore().doc(path)
     },
     storeRef: (state, getters, rootState) => {
-      const path = (state._conf.statePropName)
+      const path = state._conf.statePropName
         ? `${state._conf.moduleName}/${state._conf.statePropName}`
         : state._conf.moduleName
       return getDeepRef(rootState, path)
     },
     collectionMode: (state, getters, rootState) => {
-      return (state._conf.firestoreRefType.toLowerCase() === 'collection')
+      return state._conf.firestoreRefType.toLowerCase() === 'collection'
     },
     docModeId: (state, getters) => {
       return getters.firestorePathComplete.split('/').pop()
     },
-    fillables: (state) => {
+    fillables: state => {
       let fillables = state._conf.sync.fillables
       if (!fillables.length) return fillables
-      return fillables
-        .concat(['updated_at', 'updated_by', 'id', 'created_at', 'created_by'])
+      return fillables.concat([
+        'updated_at',
+        'updated_by',
+        'id',
+        'created_at',
+        'created_by'
+      ])
     },
-    guard: (state) => {
+    guard: state => {
       return state._conf.sync.guard.concat(['_conf', '_sync'])
     },
     defaultValues: (state, getters) => {
@@ -86,93 +126,109 @@ export default function (Firebase: any): AnyObject {
         state._conf.serverChange.defaultValues // depreciated
       )
     },
-    cleanUpRetrievedDoc: (state, getters, rootState, rootGetters) =>
-      (doc, id) => {
-        const defaultValues = merge(
-          getters.defaultValues,
-          state._conf.serverChange.convertTimestamps,
-        )
-        const cleanDoc = setDefaultValues(doc, defaultValues)
-        cleanDoc.id = id
-        return cleanDoc
-      },
-    prepareForPatch: (state, getters, rootState, rootGetters) =>
-      (ids = [], doc = {}) => {
-        // get relevant data from the storeRef
-        const collectionMode = getters.collectionMode
-        if (!collectionMode) ids.push(getters.docModeId)
-        // returns {object} -> {id: data}
-        return ids.reduce((carry, id) => {
-          let patchData: AnyObject = {}
-          // retrieve full object in case there's an empty doc passed
-          if (!Object.keys(doc).length) {
-            patchData = (collectionMode)
-              ? getters.storeRef[id]
-              : getters.storeRef
-          } else {
-            patchData = doc
-          }
-          // set default fields
-          patchData.updated_at = new Date()
-          patchData.updated_by = state._sync.userId
-          // clean up item
-          const cleanedPatchData = filter(patchData, getters.fillables, getters.guard)
-          const itemToUpdate = flatten(cleanedPatchData)
-          // add id (required to get ref later at apiHelpers.ts)
-          // @ts-ignore
-          itemToUpdate.id = id
-          carry[id] = itemToUpdate
-          return carry
-        }, {})
-      },
-    prepareForPropDeletion: (state, getters, rootState, rootGetters) =>
-      (path = '') => {
-        const collectionMode = getters.collectionMode
-        const patchData: AnyObject = {}
+    cleanUpRetrievedDoc: (state, getters, rootState, rootGetters) => (
+      doc,
+      id
+    ) => {
+      const defaultValues = merge(
+        getters.defaultValues,
+        state._conf.serverChange.convertTimestamps
+      )
+      const cleanDoc = setDefaultValues(doc, defaultValues)
+      cleanDoc.id = id
+      return cleanDoc
+    },
+    prepareForPatch: (state, getters, rootState, rootGetters) => (
+      ids = [],
+      doc = {}
+    ) => {
+      // get relevant data from the storeRef
+      const collectionMode = getters.collectionMode
+      if (!collectionMode) ids.push(getters.docModeId)
+      // returns {object} -> {id: data}
+      return ids.reduce((carry, id) => {
+        let patchData: AnyObject = {}
+        // retrieve full object in case there's an empty doc passed
+        if (!Object.keys(doc).length) {
+          patchData = collectionMode ? getters.storeRef[id] : getters.storeRef
+        } else {
+          patchData = doc
+        }
         // set default fields
         patchData.updated_at = new Date()
         patchData.updated_by = state._sync.userId
-        // add fillable and guard defaults
         // clean up item
-        const cleanedPatchData = filter(patchData, getters.fillables, getters.guard)
+        const cleanedPatchData = filter(
+          patchData,
+          getters.fillables,
+          getters.guard
+        )
+        const itemToUpdate = flatten(cleanedPatchData)
         // add id (required to get ref later at apiHelpers.ts)
-        let id, cleanedPath
-        if (collectionMode) {
-          id = path.substring(0, path.indexOf('.'))
-          cleanedPath = path.substring(path.indexOf('.') + 1)
-        } else {
-          id = getters.docModeId
-          cleanedPath = path
-        }
-        cleanedPatchData[cleanedPath] = Firebase.firestore.FieldValue.delete()
-        cleanedPatchData.id = id
-        return {[id]: cleanedPatchData}
-      },
-    prepareForInsert: (state, getters, rootState, rootGetters) =>
-      (items = []) => {
-        // add fillable and guard defaults
-        return items.reduce((carry, item) => {
-          // set default fields
-          item.created_at = new Date()
-          item.created_by = state._sync.userId
-          // clean up item
-          item = filter(item, getters.fillables, getters.guard)
-          carry.push(item)
-          return carry
-        }, [])
-      },
-    prepareInitialDocForInsert: (state, getters, rootState, rootGetters) =>
-      (doc) => {
-        // add fillable and guard defaults
+        // @ts-ignore
+        itemToUpdate.id = id
+        carry[id] = itemToUpdate
+        return carry
+      }, {})
+    },
+    prepareForPropDeletion: (state, getters, rootState, rootGetters) => (
+      path = ''
+    ) => {
+      const collectionMode = getters.collectionMode
+      const patchData: AnyObject = {}
+      // set default fields
+      patchData.updated_at = new Date()
+      patchData.updated_by = state._sync.userId
+      // add fillable and guard defaults
+      // clean up item
+      const cleanedPatchData = filter(
+        patchData,
+        getters.fillables,
+        getters.guard
+      )
+      // add id (required to get ref later at apiHelpers.ts)
+      let id, cleanedPath
+      if (collectionMode) {
+        id = path.substring(0, path.indexOf('.'))
+        cleanedPath = path.substring(path.indexOf('.') + 1)
+      } else {
+        id = getters.docModeId
+        cleanedPath = path
+      }
+      cleanedPatchData[cleanedPath] = Firebase.firestore.FieldValue.delete()
+      cleanedPatchData.id = id
+      return { [id]: cleanedPatchData }
+    },
+    prepareForInsert: (state, getters, rootState, rootGetters) => (
+      items = []
+    ) => {
+      // add fillable and guard defaults
+      return items.reduce((carry, item) => {
         // set default fields
-        doc.created_at = new Date()
-        doc.created_by = state._sync.userId
-        doc.id = getters.docModeId
+        item.created_at = new Date()
+        item.created_by = state._sync.userId
         // clean up item
-        doc = filter(doc, getters.fillables, getters.guard)
-        return doc
-      },
-    getWhereArrays: (state, getters) => (whereArrays) => {
+        item = filter(item, getters.fillables, getters.guard)
+        carry.push(item)
+        return carry
+      }, [])
+    },
+    prepareInitialDocForInsert: (
+      state,
+      getters,
+      rootState,
+      rootGetters
+    ) => doc => {
+      // add fillable and guard defaults
+      // set default fields
+      doc.created_at = new Date()
+      doc.created_by = state._sync.userId
+      doc.id = getters.docModeId
+      // clean up item
+      doc = filter(doc, getters.fillables, getters.guard)
+      return doc
+    },
+    getWhereArrays: (state, getters) => whereArrays => {
       if (!isArray(whereArrays)) whereArrays = state._conf.sync.where
       return whereArrays.map(whereClause => {
         return whereClause.map(param => {
@@ -198,6 +254,6 @@ export default function (Firebase: any): AnyObject {
           return cleanedParam
         })
       })
-    },
+    }
   }
 }
