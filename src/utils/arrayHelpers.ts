@@ -17,9 +17,16 @@ export class ArrayUnion {
   }
   executeOn (array: any[]) {
     this.payload.forEach(item => {
-      if (!array.includes(item)) {
-        array.push(item)
-      }
+        let index = -1
+        // if array of object, find it by "id" (ex.: works with doc reference)
+        if(typeof item === 'object') {
+            index = array.findIndex(i => i.id === item.id)
+        } else {
+            index = array.indexOf(item)
+        }
+        if (index === -1) {
+            array.push(index, 1)
+        }
     })
     return array
   }
@@ -37,10 +44,16 @@ export class ArrayRemove {
   }
   executeOn (array: any[]) {
     this.payload.forEach(item => {
-      const index = array.indexOf(item)
-      if (index > -1) {
-        array.splice(index, 1)
-      }
+        let index = -1
+        // if array of object, remove it by "id" (ex.: works with doc reference)
+        if(typeof item === 'object') {
+            index = array.findIndex(i => i.id === item.id)
+        } else {
+            index = array.indexOf(item)
+        }
+        if (index > -1) {
+            array.splice(index, 1)
+        }
     })
     return array
   }
