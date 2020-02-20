@@ -17,15 +17,12 @@ export class ArrayUnion {
   }
   executeOn (array: any[]) {
     this.payload.forEach(item => {
-      let index = -1
       // if array of object, find it by "id" (ex.: works with doc reference)
-      if (isAnyObject(item)) {
-        index = array.findIndex(i => i.id === item.id)
-      } else {
-        index = array.indexOf(item)
-      }
+      const index = isAnyObject(item)
+        ? array.findIndex(i => i.id === item.id)
+        : array.indexOf(item)
       if (index === -1) {
-        array.push(index, 1)
+        array.push(item)
       }
     })
     return array
@@ -44,13 +41,10 @@ export class ArrayRemove {
   }
   executeOn (array: any[]) {
     this.payload.forEach(item => {
-      let index = -1
       // if array of object, remove it by "id" (ex.: works with doc reference)
-      if (isAnyObject(item)) {
-        index = array.findIndex(i => i.id === item.id)
-      } else {
-        index = array.indexOf(item)
-      }
+      const index = isAnyObject(item)
+        ? array.findIndex(i => i.id === item.id)
+        : array.indexOf(item)
       if (index > -1) {
         array.splice(index, 1)
       }
