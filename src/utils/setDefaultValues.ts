@@ -1,10 +1,4 @@
-import {
-  isPlainObject,
-  isFunction,
-  isString,
-  isDate,
-  isAnyObject
-} from 'is-what'
+import { isPlainObject, isFunction, isString, isDate, isAnyObject } from 'is-what'
 import { merge } from 'merge-anything'
 import { findAndReplace } from 'find-and-replace-anything'
 import { AnyObject } from '../declarations'
@@ -61,6 +55,6 @@ export default function (obj: object, defaultValues: object): AnyObject {
     )
   const result = merge({ extensions: [convertTimestamps] }, defaultValues, obj)
   return findAndReplace(result, '%convertTimestamp%', null, {
-    onlyPlainObjects: true
+    onlyPlainObjects: true,
   })
 }

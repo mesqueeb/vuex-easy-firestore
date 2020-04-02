@@ -16,6 +16,7 @@ test('[COLLECTION] set with no id', async t => {
   await wait(3)
   // insert set
   id = await store.dispatch('pokemonBox/insert', { name: 'Unown' })
+  console.log('id → ', id)
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Unown')
   await wait(3)

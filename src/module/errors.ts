@@ -1,4 +1,3 @@
-
 const errorMessages = {
   'user-auth': `
     Error trying to set userId.

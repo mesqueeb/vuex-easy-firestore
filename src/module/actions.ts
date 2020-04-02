@@ -6,10 +6,7 @@ import { compareObjectProps } from 'compare-anything'
 import { AnyObject, IPluginState } from '../declarations'
 import setDefaultValues from '../utils/setDefaultValues'
 import startDebounce from '../utils/debounceHelper'
-import {
-  makeBatchFromSyncstack,
-  createFetchIdentifier
-} from '../utils/apiHelpers'
+import { makeBatchFromSyncstack, createFetchIdentifier } from '../utils/apiHelpers'
 import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
 import { isArrayHelper } from '../utils/arrayHelpers'
 import { isIncrementHelper } from '../utils/incrementHelper'
@@ -31,8 +28,7 @@ export default function (Firebase: any): AnyObject {
         userId = Firebase.auth().currentUser.uid
       }
       commit('SET_USER_ID', userId)
-      if (getters.firestorePathComplete.includes('{userId}'))
-        return logError('user-auth')
+      if (getters.firestorePathComplete.includes('{userId}')) return logError('user-auth')
     },
     clearUser: ({ commit }) => {
       commit('CLEAR_USER')
@@ -60,15 +56,13 @@ export default function (Firebase: any): AnyObject {
     },
     patchDoc (
       { state, getters, commit, dispatch },
-      {
-        id = '',
-        ids = [],
-        doc
-      }: { id?: string; ids?: string[]; doc?: AnyObject } = { ids: [], doc: {} }
+      { id = '', ids = [], doc }: { id?: string; ids?: string[]; doc?: AnyObject } = {
+        ids: [],
+        doc: {},
+      }
     ) {
       // 0. payload correction (only arrays)
-      if (!isArray(ids))
-        return logError(`\`ids\` prop passed to 'patch' needs to be an array`)
+      if (!isArray(ids)) return logError(`\`ids\` prop passed to 'patch' needs to be an array`)
       if (id) ids.push(id)
 
       // EXTRA: check if doc is being inserted if so
@@ -108,8 +102,8 @@ export default function (Firebase: any): AnyObject {
                     newVal = originVal
                   }
                   return newVal // always return newVal as fallback!!
-                }
-              ]
+                },
+              ],
             },
             state._sync.syncStack.updates[id],
             patchData
@@ -149,10 +143,7 @@ export default function (Firebase: any): AnyObject {
       // 3. Create or refresh debounce & pass id to resolve
       return dispatch('handleSyncStackDebounce', path)
     },
-    insertDoc (
-      { state, getters, commit, dispatch },
-      payload: AnyObject | AnyObject[] = []
-    ) {
+    insertDoc ({ state, getters, commit, dispatch }, payload: AnyObject | AnyObject[] = []) {
       // 0. payload correction (only arrays)
       const docs = !isArray(payload) ? [payload] : payload
 
@@ -164,9 +155,7 @@ export default function (Firebase: any): AnyObject {
       state._sync.syncStack.inserts = inserts
 
       // 3. Create or refresh debounce & pass id to resolve
-      const payloadToResolve = isArray(payload)
-        ? payload.map(doc => doc.id)
-        : payload.id
+      const payloadToResolve = isArray(payload) ? payload.map(doc => doc.id) : payload.id
       return dispatch('handleSyncStackDebounce', payloadToResolve)
     },
     insertInitialDoc ({ state, getters, commit, dispatch }) {
@@ -197,10 +186,7 @@ export default function (Firebase: any): AnyObject {
           })
       })
     },
-    handleSyncStackDebounce (
-      { state, commit, dispatch, getters },
-      payloadToResolve
-    ) {
+    handleSyncStackDebounce ({ state, commit, dispatch, getters }, payloadToResolve) {
       return new Promise((resolve, reject) => {
         state._sync.syncStack.resolves.push(() => resolve(payloadToResolve))
         state._sync.syncStack.rejects.push(reject)
@@ -227,11 +213,7 @@ export default function (Firebase: any): AnyObject {
       state._sync.syncStack.rejects.forEach(r => r(error))
     },
     batchSync ({ getters, commit, dispatch, state }) {
-      const batch = makeBatchFromSyncstack(
-        state,
-        getters,
-        Firebase.firestore().batch()
-      )
+      const batch = makeBatchFromSyncstack(state, getters, Firebase.firestore().batch())
       dispatch('_startPatching')
       state._sync.syncStack.debounceTimer = null
       return new Promise((resolve, reject) => {
@@ -300,7 +282,7 @@ export default function (Firebase: any): AnyObject {
         const identifier = createFetchIdentifier({
           where,
           orderBy,
-          pathVariables: state._sync.pathVariables
+          pathVariables: state._sync.pathVariables,
         })
         const fetched = state._sync.fetched[identifier]
         // We've never fetched this before:
@@ -315,14 +297,13 @@ export default function (Firebase: any): AnyObject {
             ref,
             done: false,
             retrievedFetchRefs: [],
-            nextFetchRef: null
+            nextFetchRef: null,
           }
         }
         const fRequest = state._sync.fetched[identifier]
         // We're already done fetching everything:
         if (fRequest.done) {
-          if (state._conf.logging)
-            console.log('[vuex-easy-firestore] done fetching')
+          if (state._conf.logging) console.log('[vuex-easy-firestore] done fetching')
           return resolve({ done: true })
         }
         // attach fetch clauses
@@ -408,8 +389,7 @@ export default function (Firebase: any): AnyObject {
           .then(async _doc => {
             if (!_doc.exists) {
               // No initial doc found in docMode
-              if (state._conf.sync.preventInitialDocInsertion)
-                throw 'preventInitialDocInsertion'
+              if (state._conf.sync.preventInitialDocInsertion) throw 'preventInitialDocInsertion'
               if (state._conf.logging) {
                 const message = 'inserting initial doc'
                 console.log(
@@ -426,7 +406,7 @@ export default function (Firebase: any): AnyObject {
             dispatch('applyHooksAndUpdateState', {
               change: 'modified',
               id,
-              doc
+              doc,
             })
             return doc
           })
@@ -472,7 +452,7 @@ export default function (Firebase: any): AnyObject {
       {
         change,
         id,
-        doc = {}
+        doc = {},
       }: {
         change: 'added' | 'removed' | 'modified'
         id: string
@@ -505,9 +485,7 @@ export default function (Firebase: any): AnyObject {
     },
     deleteMissingProps ({ getters, commit }, doc) {
       const defaultValues = getters.defaultValues
-      const searchTarget = getters.collectionMode
-        ? getters.storeRef[doc.id]
-        : getters.storeRef
+      const searchTarget = getters.collectionMode ? getters.storeRef[doc.id] : getters.storeRef
       const compareInfo = compareObjectProps(
         flatten(doc), // presentIn 0
         flatten(defaultValues), // presentIn 1
@@ -521,8 +499,7 @@ export default function (Firebase: any): AnyObject {
         // don't worry about props in guard
         if (getters.guard.includes(prop)) return
         // don't worry about props starting with _sync or _conf
-        if (prop.split('.')[0] === '_sync' || prop.split('.')[0] === '_conf')
-          return
+        if (prop.split('.')[0] === '_sync' || prop.split('.')[0] === '_conf') return
         // where is the prop present?
         const presence = compareInfo.presentIn[prop]
         const propNotInDoc = !presence.includes(0)
@@ -539,7 +516,7 @@ export default function (Firebase: any): AnyObject {
       parameters: any = {
         clauses: {},
         pathVariables: {},
-        includeMetadataChanges: false
+        includeMetadataChanges: false,
       }
     ) {
       if (!isPlainObject(parameters)) parameters = {}
@@ -565,7 +542,7 @@ export default function (Firebase: any): AnyObject {
         })
         parameters = Object.assign(
           {
-            includeMetadataChanges: parameters.includeMetadataChanges || false
+            includeMetadataChanges: parameters.includeMetadataChanges || false,
           },
           { clauses: parameters, pathVariables }
         )
@@ -574,7 +551,7 @@ export default function (Firebase: any): AnyObject {
       const defaultParameters = {
         clauses: {},
         pathVariables: {},
-        includeMetadataChanges: false
+        includeMetadataChanges: false,
       }
       parameters = Object.assign(defaultParameters, parameters)
       dispatch('setUserId')
@@ -586,7 +563,7 @@ export default function (Firebase: any): AnyObject {
           reject: null,
           isFulfilled: false,
           isRejected: false,
-          isPending: true
+          isPending: true,
         }
         const p = new Promise((resolve, reject) => {
           m.resolve = resolve
@@ -608,7 +585,7 @@ export default function (Firebase: any): AnyObject {
       const identifier = createFetchIdentifier({
         where: state._conf.sync.where,
         orderBy: state._conf.sync.orderBy,
-        pathVariables: state._sync.pathVariables
+        pathVariables: state._sync.pathVariables,
       })
       if (isFunction(state._sync.unsubscribe[identifier])) {
         const channelAlreadyOpenError = `openDBChannel was already called for these clauses and pathvariables. Identifier: ${identifier}`
@@ -650,7 +627,7 @@ export default function (Firebase: any): AnyObject {
         initialPromise.resolve({
           refreshed: includeMetadataChanges ? refreshedPromise : null,
           streaming: streamingPromise,
-          stop: () => dispatch('closeDBChannel', { _identifier: identifier })
+          stop: () => dispatch('closeDBChannel', { _identifier: identifier }),
         })
       }
       const streamingStop = error => {
@@ -673,19 +650,16 @@ export default function (Firebase: any): AnyObject {
         dispatch('applyHooksAndUpdateState', {
           change: 'modified',
           id: getters.docModeId,
-          doc
+          doc,
         })
       }
       const processCollection = docChanges => {
         docChanges.forEach(change => {
-          const doc = getters.cleanUpRetrievedDoc(
-            change.doc.data(),
-            change.doc.id
-          )
+          const doc = getters.cleanUpRetrievedDoc(change.doc.data(), change.doc.id)
           dispatch('applyHooksAndUpdateState', {
             change: change.type,
             id: change.doc.id,
-            doc
+            doc,
           })
         })
       }
@@ -792,7 +766,7 @@ export default function (Firebase: any): AnyObject {
       { getters, state, commit, dispatch },
       { clearModule = false, _identifier = null } = {
         clearModule: false,
-        _identifier: null
+        _identifier: null,
       }
     ) {
       const identifier =
@@ -800,7 +774,7 @@ export default function (Firebase: any): AnyObject {
         createFetchIdentifier({
           where: state._conf.sync.where,
           orderBy: state._conf.sync.orderBy,
-          pathVariables: state._sync.pathVariables
+          pathVariables: state._sync.pathVariables,
         })
       const unsubscribeDBChannel = state._sync.unsubscribe[identifier]
       if (isFunction(unsubscribeDBChannel)) {
@@ -837,10 +811,7 @@ export default function (Firebase: any): AnyObject {
       const newDoc = doc
       if (!newDoc.id) newDoc.id = getters.dbRef.doc().id
       // apply default values
-      const newDocWithDefaults = setDefaultValues(
-        newDoc,
-        state._conf.sync.defaultValues
-      )
+      const newDocWithDefaults = setDefaultValues(newDoc, state._conf.sync.defaultValues)
       // define the firestore update
       function firestoreUpdateFn (_doc) {
         return dispatch('insertDoc', _doc)
@@ -850,21 +821,13 @@ export default function (Firebase: any): AnyObject {
         commit('INSERT_DOC', _doc)
         // check for a hook after local change before sync
         if (state._conf.sync.insertHookBeforeSync) {
-          return state._conf.sync.insertHookBeforeSync(
-            firestoreUpdateFn,
-            _doc,
-            store
-          )
+          return state._conf.sync.insertHookBeforeSync(firestoreUpdateFn, _doc, store)
         }
         return firestoreUpdateFn(_doc)
       }
       // check for a hook before local change
       if (state._conf.sync.insertHook) {
-        return state._conf.sync.insertHook(
-          storeUpdateFn,
-          newDocWithDefaults,
-          store
-        )
+        return state._conf.sync.insertHook(storeUpdateFn, newDocWithDefaults, store)
       }
       return storeUpdateFn(newDocWithDefaults)
     },
@@ -913,11 +876,7 @@ export default function (Firebase: any): AnyObject {
         commit('PATCH_DOC', _val)
         // check for a hook after local change before sync
         if (state._conf.sync.patchHookBeforeSync) {
-          return state._conf.sync.patchHookBeforeSync(
-            firestoreUpdateFn,
-            _val,
-            store
-          )
+          return state._conf.sync.patchHookBeforeSync(firestoreUpdateFn, _val, store)
         }
         return firestoreUpdateFn(_val)
       }
@@ -970,11 +929,7 @@ export default function (Firebase: any): AnyObject {
           commit('DELETE_PROP', path)
           // check for a hook after local change before sync
           if (state._conf.sync.deleteHookBeforeSync) {
-            return state._conf.sync.deleteHookBeforeSync(
-              firestoreUpdateFnPath,
-              path,
-              store
-            )
+            return state._conf.sync.deleteHookBeforeSync(firestoreUpdateFnPath, path, store)
           }
           return firestoreUpdateFnPath(path)
         }
@@ -982,11 +937,7 @@ export default function (Firebase: any): AnyObject {
         commit('DELETE_DOC', _id)
         // check for a hook after local change before sync
         if (state._conf.sync.deleteHookBeforeSync) {
-          return state._conf.sync.deleteHookBeforeSync(
-            firestoreUpdateFnId,
-            _id,
-            store
-          )
+          return state._conf.sync.deleteHookBeforeSync(firestoreUpdateFnId, _id, store)
         }
         return firestoreUpdateFnId(_id)
       }
@@ -1001,7 +952,7 @@ export default function (Firebase: any): AnyObject {
         state,
         getters,
         commit,
-        dispatch
+        dispatch,
       }: { state: IPluginState; getters: any; commit: any; dispatch: any },
       ids
     ) {
@@ -1045,6 +996,6 @@ export default function (Firebase: any): AnyObject {
         clearTimeout(state._sync.stopPatchingTimeout)
       }
       state._sync.patching = true
-    }
+    },
   }
 }

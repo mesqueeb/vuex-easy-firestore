@@ -1,4 +1,3 @@
-
 export default function () {
   let inGroup = false
 

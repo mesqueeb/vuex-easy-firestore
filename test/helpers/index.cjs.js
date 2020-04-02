@@ -24,7 +24,7 @@ function initialState() {
         stats: {
             pokemonCount: 0,
             freedCount: 0,
-        }
+        },
     };
 }
 var pokemonBox = {
@@ -50,13 +50,13 @@ var pokemonBox = {
             'arr2',
             'guarded',
             'defaultVal',
-            'nestedDefaultVal'
+            'nestedDefaultVal',
         ],
         guard: ['guarded'],
         defaultValues: {
             defaultVal: true,
             nestedDefaultVal: {
-                types: 'moon'
+                types: 'moon',
             },
         },
         // HOOKS for local changes:
@@ -72,7 +72,7 @@ var pokemonBox = {
             if (id === 'stopBeforeDelete')
                 return;
             return updateStore(id);
-        }
+        },
     },
     // module
     state: initialState(),
@@ -110,7 +110,7 @@ function initialState$2() {
         stats: {
             pokemonCount: 0,
             freedCount: 0,
-        }
+        },
     };
 }
 var pokemonBoxVEA = {
@@ -136,13 +136,13 @@ var pokemonBoxVEA = {
             'arr2',
             'guarded',
             'defaultVal',
-            'nestedDefaultVal'
+            'nestedDefaultVal',
         ],
         guard: ['guarded'],
         defaultValues: {
             defaultVal: true,
             nestedDefaultVal: {
-                types: 'moon'
+                types: 'moon',
             },
         },
         // HOOKS for local changes:
@@ -158,7 +158,7 @@ var pokemonBoxVEA = {
             if (id === 'stopBeforeDelete')
                 return;
             return updateStore(id);
-        }
+        },
     },
     // module
     state: initialState$2(),
@@ -192,7 +192,7 @@ function initialState$4() {
     return {
         name: 'Satoshi',
         pokemonBelt: [],
-        items: []
+        items: [],
     };
 }
 var testPathVar = {
@@ -212,7 +212,7 @@ function initialState$5() {
     return {
         name: 'Satoshi',
         pokemonBelt: [],
-        items: []
+        items: [],
     };
 }
 var testPathVar2 = {
@@ -232,7 +232,7 @@ function initialState$6() {
     return {
         name: 'Satoshi',
         pokemonBelt: [],
-        items: []
+        items: [],
     };
 }
 var testMutations1 = {
@@ -252,7 +252,7 @@ function initialState$7() {
     return {
         name: 'Satoshi',
         pokemonBelt: [],
-        items: []
+        items: [],
     };
 }
 var testMutations2 = {
@@ -275,7 +275,7 @@ function initialState$8() {
                 yes: 0,
                 no: 0,
             },
-        }
+        },
     };
 }
 var testNestedFillables = {
@@ -298,7 +298,7 @@ function initialState$9() {
     return {
         nested: {
             guard: true,
-        }
+        },
     };
 }
 var testNestedGuard = {
@@ -359,7 +359,7 @@ var preventInitialDoc = {
 function initialState$c() {
     return {
         iniProp: true,
-        defaultPropsNotToBeDeleted: true
+        defaultPropsNotToBeDeleted: true,
     };
 }
 var serverHooks = {
@@ -374,8 +374,8 @@ var serverHooks = {
     actions: {},
     getters: {},
     sync: {
-        guard: ['created_by', 'created_at', 'updated_by', 'updated_at']
-    }
+        guard: ['created_by', 'created_at', 'updated_by', 'updated_at'],
+    },
 };
 
 /*! *****************************************************************************
@@ -458,8 +458,7 @@ var user = {
                                 userEmail = 'test@test.com';
                             if (userNr === 2)
                                 userEmail = 'test2@test.com';
-                            return [4 /*yield*/, Firebase$1.auth()
-                                    .signInWithEmailAndPassword(userEmail, 'test1234')];
+                            return [4 /*yield*/, Firebase$1.auth().signInWithEmailAndPassword(userEmail, 'test1234')];
                         case 1:
                             _b.sent();
                             return [2 /*return*/];
@@ -479,7 +478,7 @@ var user = {
                     }
                 });
             });
-        }
+        },
     },
     // module
     state: {},
@@ -491,7 +490,7 @@ function initialState$d() {
     return {
         defaultVal1: true,
         nestedDefaultVal: {
-            type1: 'sun'
+            type1: 'sun',
         },
     };
 }
@@ -505,7 +504,7 @@ var defaultValuesSetupColNOProp = {
         defaultValues: {
             defaultVal: true,
             nestedDefaultVal: {
-                type: 'moon'
+                type: 'moon',
             },
         },
     },
@@ -522,9 +521,9 @@ function initialState$e() {
         prop: {
             defaultVal1: true,
             nestedDefaultVal: {
-                type1: 'sun'
+                type1: 'sun',
             },
-        }
+        },
     };
 }
 var defaultValuesSetupColProp = {
@@ -537,7 +536,7 @@ var defaultValuesSetupColProp = {
         defaultValues: {
             defaultVal: true,
             nestedDefaultVal: {
-                type: 'moon'
+                type: 'moon',
             },
         },
     },
@@ -552,7 +551,7 @@ function initialState$f() {
     return {
         defaultVal1: true,
         nestedDefaultVal: {
-            type1: 'sun'
+            type1: 'sun',
         },
     };
 }
@@ -566,7 +565,7 @@ var defaultValuesSetupDocNOProp = {
         defaultValues: {
             defaultVal2: true,
             nestedDefaultVal: {
-                type2: 'moon'
+                type2: 'moon',
             },
         },
     },
@@ -2674,10 +2673,10 @@ var easyFirestores = vuexEasyFirestore([
     defaultValuesSetupDocNOProp,
     defaultValuesSetupDocProp,
     multipleOpenDBChannels,
-    docModeWithPathVar
+    docModeWithPathVar,
 ], { logging: false, FirebaseDependency: Firebase$1 });
 var storeObj = {
-    plugins: [easyFirestores, easyAccess]
+    plugins: [easyFirestores, easyAccess],
 };
 
 Vue.use(Vuex);
