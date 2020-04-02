@@ -33,7 +33,7 @@ test('RESET_VUEX_EASY_FIRESTORE_STATE', t => {
       resolves: [],
     },
     fetched: {},
-    stopPatchingTimeout: null
+    stopPatchingTimeout: null,
   }
   const testState = {
     unsubscribe: true,
@@ -42,12 +42,12 @@ test('RESET_VUEX_EASY_FIRESTORE_STATE', t => {
     syncStack: {
       inserts: [{ a: true }],
       updates: { a: true },
-      propDeletions: { '2': { 'a': Firebase.firestore.FieldValue.delete() } },
+      propDeletions: { '2': { a: Firebase.firestore.FieldValue.delete() } },
       deletions: ['2'],
       debounceTimer: true,
     },
     fetched: { a: true },
-    stopPatchingTimeout: 1
+    stopPatchingTimeout: 1,
   }
   // 1. WithStateProp (collection)
   const statePropModule = store.state.testMutationsWithStateProp
@@ -99,10 +99,16 @@ test('SET_SYNCCLAUSES', t => {
   t.deepEqual(sync.where, [])
   t.deepEqual(sync.orderBy, [])
   store.commit('mainCharacter/SET_SYNCCLAUSES', {
-    where: [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']],
-    orderBy: ['date']
+    where: [
+      ['hi.{userId}.docs.{nr}', '==', '{big}'],
+      ['{userId}', '==', '{userId}'],
+    ],
+    orderBy: ['date'],
   })
-  t.deepEqual(sync.where, [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']])
+  t.deepEqual(sync.where, [
+    ['hi.{userId}.docs.{nr}', '==', '{big}'],
+    ['{userId}', '==', '{userId}'],
+  ])
   t.deepEqual(sync.orderBy, ['date'])
 })
 

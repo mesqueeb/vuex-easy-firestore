@@ -29,7 +29,7 @@ test('[COLLECTION] set arrayUnion & arrayRemove', async t => {
     nested: {
       arr1: [1, 2, 3],
       arr2: [1, 2, 3],
-    }
+    },
   }
   store.dispatch('pokemonBox/insert', pokemonValues)
   t.truthy(box.pokemon[id])
@@ -41,7 +41,7 @@ test('[COLLECTION] set arrayUnion & arrayRemove', async t => {
     nested: {
       arr1: arrayUnion(0),
       arr2: arrayRemove(2),
-    }
+    },
   }
   store.dispatch('pokemonBox/set', pokemonValuesNew)
   t.truthy(box.pokemon[id])
@@ -64,7 +64,7 @@ test('[COLLECTION] set arrayUnion & arrayRemove', async t => {
     nested: {
       arr1: arrayUnion(0, 'a', 'b'),
       arr2: arrayRemove(1, 3),
-    }
+    },
   }
   store.dispatch('pokemonBox/set', pokemonValuesNewMultiple)
   t.truthy(box.pokemon[id])

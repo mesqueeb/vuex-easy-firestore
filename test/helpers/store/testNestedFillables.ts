@@ -7,7 +7,7 @@ function initialState () {
         yes: 0,
         no: 0,
       },
-    }
+    },
   }
 }
 

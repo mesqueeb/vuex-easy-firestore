@@ -1,6 +1,6 @@
 import test from 'ava'
 import wait from './helpers/wait'
-import {store} from './helpers/index.cjs.js'
+import { store } from './helpers/index.cjs.js'
 
 const box = store.state.pokemonBox
 const boxRef = store.getters['pokemonBox/dbRef']
@@ -10,7 +10,7 @@ const boxRef = store.getters['pokemonBox/dbRef']
 test('[COLLECTION] sync: insertHook & patchHook', async t => {
   let doc, docR
   const id = boxRef.doc().id
-  await store.dispatch('pokemonBox/set', {name: 'Horsea', id, type: ['water']})
+  await store.dispatch('pokemonBox/set', { name: 'Horsea', id, type: ['water'] })
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Horsea')
   t.is(box.pokemon[id].addedBeforeInsert, true)
@@ -23,7 +23,7 @@ test('[COLLECTION] sync: insertHook & patchHook', async t => {
   t.is(doc.addedBeforeInsert, true)
   t.is(doc.addedBeforePatch, undefined)
 
-  await store.dispatch('pokemonBox/set', {id, name: 'James'})
+  await store.dispatch('pokemonBox/set', { id, name: 'James' })
   t.is(box.pokemon[id].addedBeforeInsert, true)
   t.is(box.pokemon[id].addedBeforePatch, true)
   await wait(2)
@@ -41,7 +41,7 @@ test('[COLLECTION] sync: insertHook & patchHook', async t => {
 
 test('[COLLECTION] sync: deleteHook', async t => {
   const id = 'stopBeforeDelete'
-  store.dispatch('pokemonBox/set', {name: 'Ditto', id, type: ['normal']})
+  store.dispatch('pokemonBox/set', { name: 'Ditto', id, type: ['normal'] })
   t.truthy(box.pokemon[id])
   store.dispatch('pokemonBox/delete', id)
   t.truthy(box.pokemon[id])

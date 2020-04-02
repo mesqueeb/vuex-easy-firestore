@@ -23,7 +23,7 @@ import createEasyAccess from 'vuex-easy-access'
 // import Firebase from '../firestoreMock'
 import Firebase from '../firestore'
 
-const easyAccess = createEasyAccess({vuexEasyFirestore: true})
+const easyAccess = createEasyAccess({ vuexEasyFirestore: true })
 const easyFirestores = createFirestores(
   [
     pokemonBox,
@@ -45,11 +45,11 @@ const easyFirestores = createFirestores(
     defaultValuesSetupDocNOProp,
     defaultValuesSetupDocProp,
     multipleOpenDBChannels,
-    docModeWithPathVar
+    docModeWithPathVar,
   ],
-  {logging: false, FirebaseDependency: Firebase}
+  { logging: false, FirebaseDependency: Firebase }
 )
 
 export default {
-  plugins: [easyFirestores, easyAccess]
+  plugins: [easyFirestores, easyAccess],
 }

@@ -4,7 +4,7 @@ function initialState () {
   return {
     defaultVal1: true,
     nestedDefaultVal: {
-      type1: 'sun'
+      type1: 'sun',
     },
   }
 }
@@ -19,7 +19,7 @@ export default {
     defaultValues: {
       defaultVal2: true,
       nestedDefaultVal: {
-        type2: 'moon'
+        type2: 'moon',
       },
     },
   },

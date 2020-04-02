@@ -7,7 +7,7 @@ function initialState () {
     stats: {
       pokemonCount: 0,
       freedCount: 0,
-    }
+    },
   }
 }
 
@@ -34,13 +34,13 @@ export default {
       'arr2',
       'guarded',
       'defaultVal',
-      'nestedDefaultVal'
+      'nestedDefaultVal',
     ],
     guard: ['guarded'],
     defaultValues: {
       defaultVal: true,
       nestedDefaultVal: {
-        types: 'moon'
+        types: 'moon',
       },
     },
     // HOOKS for local changes:
@@ -55,7 +55,7 @@ export default {
     deleteHook: function (updateStore, id, store) {
       if (id === 'stopBeforeDelete') return
       return updateStore(id)
-    }
+    },
   },
   // module
   state: initialState(),
