@@ -4,12 +4,12 @@ export declare type HandleId = (id: string) => any;
 export declare type HandleDocs = (docs: any[]) => any;
 export declare type HandleDocIds = (doc: any, ids: string[]) => any;
 export declare type HandleIds = (ids: string[]) => any;
-export declare type SyncHookDoc = (updateStore: HandleDoc, doc: any, store: any) => (void | HandleDoc);
-export declare type SyncHookId = (updateStore: HandleId, id: string, store: any) => (void | HandleId);
-export declare type InsertBatchHook = (updateStore: HandleDocs, docs: any[], store: any) => (void | HandleDocs);
-export declare type PatchBatchHook = (updateStore: HandleDocIds, doc: any, ids: string[], store: any) => (void | HandleDocIds);
-export declare type DeleteBatchHook = (updateStore: HandleIds, ids: string[], store: any) => (void | HandleIds);
-export declare type ServerChangeHook = (updateStore: HandleDoc, doc: any, id: any, store: any) => (void | HandleDoc);
+export declare type SyncHookDoc = (updateStore: HandleDoc, doc: any, store: any) => void | HandleDoc;
+export declare type SyncHookId = (updateStore: HandleId, id: string, store: any) => void | HandleId;
+export declare type InsertBatchHook = (updateStore: HandleDocs, docs: any[], store: any) => void | HandleDocs;
+export declare type PatchBatchHook = (updateStore: HandleDocIds, doc: any, ids: string[], store: any) => void | HandleDocIds;
+export declare type DeleteBatchHook = (updateStore: HandleIds, ids: string[], store: any) => void | HandleIds;
+export declare type ServerChangeHook = (updateStore: HandleDoc, doc: any, id: any, store: any) => void | HandleDoc;
 export declare type IConfig = {
     firestorePath: string;
     firestoreRefType: string;

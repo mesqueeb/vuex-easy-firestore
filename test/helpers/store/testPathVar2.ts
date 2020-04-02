@@ -4,7 +4,7 @@ function initialState () {
   return {
     name: 'Satoshi',
     pokemonBelt: [],
-    items: []
+    items: [],
   }
 }
 

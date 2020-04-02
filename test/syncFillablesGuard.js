@@ -1,6 +1,6 @@
 import test from 'ava'
 import wait from './helpers/wait'
-import {store} from './helpers/index.cjs.js'
+import { store } from './helpers/index.cjs.js'
 
 const box = store.state.pokemonBox
 const boxRef = store.getters['pokemonBox/dbRef']
@@ -9,7 +9,15 @@ const boxRef = store.getters['pokemonBox/dbRef']
 
 test('[COLLECTION] sync: fillables & guard', async t => {
   const id = boxRef.doc().id
-  store.dispatch('pokemonBox/insert', {name: 'Squirtle', id, type: ['water'], fillable: true, guarded: true, unmentionedProp: true})
+  store
+    .dispatch('pokemonBox/insert', {
+      name: 'Squirtle',
+      id,
+      type: ['water'],
+      fillable: true,
+      guarded: true,
+      unmentionedProp: true,
+    })
     .catch(console.error)
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Squirtle')
@@ -37,10 +45,12 @@ const fil = store.state.nestedFillables
 const filRef = store.getters['nestedFillables/dbRef']
 
 test('[DOC] sync: nested fillables', async t => {
-  store.dispatch('nestedFillables/set', {
-    nested: {fillables: {yes: 1, no: 2}},
-    newProp: 3,
-  }).catch(console.error)
+  store
+    .dispatch('nestedFillables/set', {
+      nested: { fillables: { yes: 1, no: 2 } },
+      newProp: 3,
+    })
+    .catch(console.error)
   t.is(fil.nested.fillables.yes, 1)
   t.is(fil.nested.fillables.no, 2)
   t.is(fil.newProp, 3)
@@ -58,10 +68,12 @@ const gar = store.state.nestedGuard
 const garRef = store.getters['nestedGuard/dbRef']
 
 test('[DOC] sync: nested guard', async t => {
-  store.dispatch('nestedGuard/set', {
-    nested: {guard: 1, unguarded: 2},
-    unguarded: 3,
-  }).catch(console.error)
+  store
+    .dispatch('nestedGuard/set', {
+      nested: { guard: 1, unguarded: 2 },
+      unguarded: 3,
+    })
+    .catch(console.error)
   t.is(gar.nested.guard, 1)
   t.is(gar.nested.unguarded, 2)
   t.is(gar.unguarded, 3)

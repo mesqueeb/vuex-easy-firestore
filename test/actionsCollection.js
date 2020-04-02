@@ -1,7 +1,7 @@
 import test from 'ava'
 import { isPlainObject } from 'is-what'
 import wait from './helpers/wait'
-import {store} from './helpers/index.cjs.js'
+import { store } from './helpers/index.cjs.js'
 
 const box = store.state.pokemonBox
 const boxRef = store.getters['pokemonBox/dbRef']
@@ -15,7 +15,8 @@ test('[COLLECTION] set with no id', async t => {
   let id, docR, doc
   await wait(3)
   // insert set
-  id = await store.dispatch('pokemonBox/insert', {name: 'Unown'})
+  id = await store.dispatch('pokemonBox/insert', { name: 'Unown' })
+  console.log('id → ', id)
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Unown')
   await wait(3)
@@ -23,7 +24,7 @@ test('[COLLECTION] set with no id', async t => {
   doc = docR.data()
   t.is(doc.name, 'Unown')
   // set set
-  id = await store.dispatch('pokemonBox/set', {name: 'Unown1'})
+  id = await store.dispatch('pokemonBox/set', { name: 'Unown1' })
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Unown1')
   await wait(3)
@@ -31,57 +32,65 @@ test('[COLLECTION] set with no id', async t => {
   doc = docR.data()
   t.is(doc.name, 'Unown1')
   // insert set
-  id = await store.dispatch('pokemonBox/insert', {name: {is: 'nested'}})
+  id = await store.dispatch('pokemonBox/insert', { name: { is: 'nested' } })
   t.truthy(box.pokemon[id])
-  t.deepEqual(box.pokemon[id].name, {is: 'nested'})
+  t.deepEqual(box.pokemon[id].name, { is: 'nested' })
   await wait(3)
   docR = await boxRef.doc(id).get()
   doc = docR.data()
-  t.deepEqual(doc.name, {is: 'nested'})
+  t.deepEqual(doc.name, { is: 'nested' })
   // set set
-  id = await store.dispatch('pokemonBox/set', {name: {is: 'nested1'}})
+  id = await store.dispatch('pokemonBox/set', { name: { is: 'nested1' } })
   t.truthy(box.pokemon[id])
-  t.deepEqual(box.pokemon[id].name, {is: 'nested1'})
+  t.deepEqual(box.pokemon[id].name, { is: 'nested1' })
   await wait(3)
   docR = await boxRef.doc(id).get()
   doc = docR.data()
-  t.deepEqual(doc.name, {is: 'nested1'})
+  t.deepEqual(doc.name, { is: 'nested1' })
 })
 
 test('[COLLECTION] insert and patch right after each other', async t => {
   await wait(3)
   // insert
   const id = boxRef.doc().id
-  store.dispatch('pokemonBox/insert', {id, name: 'Mew', type: {normal: true}})
+  store.dispatch('pokemonBox/insert', {
+    id,
+    name: 'Mew',
+    type: { normal: true },
+  })
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Mew')
-  t.deepEqual(box.pokemon[id].type, {normal: true})
+  t.deepEqual(box.pokemon[id].type, { normal: true })
   // patch
-  store.dispatch('pokemonBox/patch', {id, type: {psychic: true}})
+  store.dispatch('pokemonBox/patch', { id, type: { psychic: true } })
   t.is(box.pokemon[id].name, 'Mew')
-  t.deepEqual(box.pokemon[id].type, {normal: true, psychic: true})
+  t.deepEqual(box.pokemon[id].type, { normal: true, psychic: true })
   // await server
   await wait(3)
   const docR = await boxRef.doc(id).get()
   const doc = docR.data()
   t.is(doc.name, 'Mew')
-  t.deepEqual(doc.type, {normal: true, psychic: true})
+  t.deepEqual(doc.type, { normal: true, psychic: true })
 })
 
 test('[COLLECTION] edit twice right after each other', async t => {
   await wait(3)
   // insert
   const id = boxRef.doc().id
-  store.dispatch('pokemonBox/insert', {id, name: 'Mew', type: {normal: true}})
+  store.dispatch('pokemonBox/insert', {
+    id,
+    name: 'Mew',
+    type: { normal: true },
+  })
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Mew')
   await wait(3)
   // patch once
-  store.dispatch('pokemonBox/patch', {id, name: 'Mew!'})
+  store.dispatch('pokemonBox/patch', { id, name: 'Mew!' })
   t.is(box.pokemon[id].name, 'Mew!')
   await wait(0.5)
   t.is(box.pokemon[id].name, 'Mew!')
-  store.dispatch('pokemonBox/patch', {id, name: 'Mew!!'})
+  store.dispatch('pokemonBox/patch', { id, name: 'Mew!!' })
   t.is(box.pokemon[id].name, 'Mew!!')
   await wait(0.1)
   t.is(box.pokemon[id].name, 'Mew!!')
@@ -120,7 +129,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
     id,
     name: 'Squirtle',
     type: ['water'],
-    meta: {date}
+    meta: { date },
   }
   store.dispatch('pokemonBox/insert', pokemonValues)
   t.truthy(box.pokemon[id])
@@ -139,7 +148,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   const pokemonValuesNew = {
     id,
     name: 'COOL Squirtle!',
-    meta: {date: date2}
+    meta: { date: date2 },
   }
   store.dispatch('pokemonBox/set', pokemonValuesNew)
   t.truthy(box.pokemon[id])
@@ -154,7 +163,9 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.deepEqual(doc.type, ['water'])
 
   // update with {id: val}
-  store.dispatch('pokemonBox/set', {[id]: {name: 'very berry COOL Squirtle!'}})
+  store.dispatch('pokemonBox/set', {
+    [id]: { name: 'very berry COOL Squirtle!' },
+  })
   t.is(box.pokemon[id].name, 'very berry COOL Squirtle!')
   await wait(3)
   docR = await boxRef.doc(id).get()
@@ -162,15 +173,18 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.is(doc.name, 'very berry COOL Squirtle!')
 
   // add a new prop (deep)
-  store.dispatch('pokemonBox/set', {id, nested: {new: {deep: {prop: true}}}})
-  t.deepEqual(box.pokemon[id].nested, {new: {deep: {prop: true}}})
+  store.dispatch('pokemonBox/set', {
+    id,
+    nested: { new: { deep: { prop: true } } },
+  })
+  t.deepEqual(box.pokemon[id].nested, { new: { deep: { prop: true } } })
   await wait(3)
   docR = await boxRef.doc(id).get()
   doc = docR.data()
-  t.deepEqual(doc.nested, {new: {deep: {prop: true}}})
+  t.deepEqual(doc.nested, { new: { deep: { prop: true } } })
 
   // update arrays
-  store.dispatch('pokemonBox/set', {type: ['water', 'normal'], id})
+  store.dispatch('pokemonBox/set', { type: ['water', 'normal'], id })
   t.deepEqual(box.pokemon[id].type, ['water', 'normal'])
   await wait(3)
   docR = await boxRef.doc(id).get()
@@ -178,7 +192,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.deepEqual(doc.type, ['water', 'normal'])
 
   // SECOND SET + set chooses insert appropriately
-  store.dispatch('pokemonBox/set', {name: 'Charmander', id: id2})
+  store.dispatch('pokemonBox/set', { name: 'Charmander', id: id2 })
   t.truthy(box.pokemon[id2])
   t.is(box.pokemon[id2].name, 'Charmander')
   await wait(3)
@@ -204,52 +218,59 @@ test('[COLLECTION] set & delete: deep', async t => {
   let docR, doc
 
   const id = boxRef.doc().id
-  await store.dispatch('pokemonBox/insert', {id, nested: {a: {met: {de: 'aba'}}}})
+  await store.dispatch('pokemonBox/insert', {
+    id,
+    nested: { a: { met: { de: 'aba' } } },
+  })
   t.truthy(box.pokemon[id])
-  t.deepEqual(box.pokemon[id].nested, {a: {met: {de: 'aba'}}})
+  t.deepEqual(box.pokemon[id].nested, { a: { met: { de: 'aba' } } })
   await wait(3)
   docR = await boxRef.doc(id).get()
   doc = docR.data()
-  t.deepEqual(doc.nested, {a: {met: {de: 'aba'}}})
+  t.deepEqual(doc.nested, { a: { met: { de: 'aba' } } })
 
   // update {id, val}
-  await store.dispatch('pokemonBox/set', {id, nested: {a: {met: {de: 'ebe'}}}})
-  t.deepEqual(box.pokemon[id].nested, {a: {met: {de: 'ebe'}}})
+  await store.dispatch('pokemonBox/set', {
+    id,
+    nested: { a: { met: { de: 'ebe' } } },
+  })
+  t.deepEqual(box.pokemon[id].nested, { a: { met: { de: 'ebe' } } })
   await wait(3)
   docR = await boxRef.doc(id).get()
   doc = docR.data()
-  t.deepEqual(doc.nested.a.met, {de: 'ebe'})
-  t.deepEqual(doc.nested, {a: {met: {de: 'ebe'}}})
+  t.deepEqual(doc.nested.a.met, { de: 'ebe' })
+  t.deepEqual(doc.nested, { a: { met: { de: 'ebe' } } })
 
   // update {id: val}
-  await store.dispatch('pokemonBox/patch', {[id]: {nested: {a: {met: {de: 'ibi'}}}}})
-  t.deepEqual(box.pokemon[id].nested, {a: {met: {de: 'ibi'}}})
+  await store.dispatch('pokemonBox/patch', {
+    [id]: { nested: { a: { met: { de: 'ibi' } } } },
+  })
+  t.deepEqual(box.pokemon[id].nested, { a: { met: { de: 'ibi' } } })
   await wait(3)
   docR = await boxRef.doc(id).get()
   doc = docR.data()
-  t.deepEqual(doc.nested.a.met, {de: 'ibi'})
-  t.deepEqual(doc.nested, {a: {met: {de: 'ibi'}}})
+  t.deepEqual(doc.nested.a.met, { de: 'ibi' })
+  t.deepEqual(doc.nested, { a: { met: { de: 'ibi' } } })
 
   // delete via prop Delete
   await store.dispatch('pokemonBox/delete', `${id}.nested.a.met.de`)
-  t.deepEqual(box.pokemon[id].nested, {a: {met: {}}})
+  t.deepEqual(box.pokemon[id].nested, { a: { met: {} } })
   await wait(3)
   docR = await boxRef.doc(id).get()
   doc = docR.data()
-  t.deepEqual(doc.nested, {a: {met: {}}})
+  t.deepEqual(doc.nested, { a: { met: {} } })
 })
 
 test('[COLLECTION] set & delete: batches', async t => {
   // ini set
   const id1 = boxRef.doc().id
-  const a = {id: id1, name: 'Bulbasaur', type: {grass: true}}
+  const a = { id: id1, name: 'Bulbasaur', type: { grass: true } }
   const id2 = boxRef.doc().id
-  const b = {id: id2, name: 'Charmander', type: {fire: true}}
+  const b = { id: id2, name: 'Charmander', type: { fire: true } }
   const id3 = boxRef.doc().id
-  const c = {id: id3, name: 'Squirtle', type: {water: true}}
+  const c = { id: id3, name: 'Squirtle', type: { water: true } }
   const pokemonValues = [a, b, c]
-  await store.dispatch('pokemonBox/insertBatch', pokemonValues)
-    .catch(console.error)
+  await store.dispatch('pokemonBox/insertBatch', pokemonValues).catch(console.error)
   t.deepEqual(box.pokemon[id1], a)
   t.deepEqual(box.pokemon[id2], b)
   t.deepEqual(box.pokemon[id3], c)
@@ -271,7 +292,7 @@ test('[COLLECTION] set & delete: batches', async t => {
 test('[COLLECTION] duplicate', async t => {
   let res
   const id = boxRef.doc().id
-  await store.dispatch('pokemonBox/insert', {id, name: 'Jamie Lannister'})
+  await store.dispatch('pokemonBox/insert', { id, name: 'Jamie Lannister' })
   t.is(box.pokemon[id].name, 'Jamie Lannister')
   // dupe 1
   res = await store.dispatch('pokemonBox/duplicate', id)

@@ -18,7 +18,7 @@ test('my recursive object assign', async t => {
     body: '',
     head: null,
     toes: { big: true },
-    fingers: { '12': false }
+    fingers: { '12': false },
   }
   target = { body: {}, head: {}, toes: {}, fingers: null }
   res = setDefaultValues(target, defaultValues)
@@ -38,20 +38,20 @@ test('my recursive object assign', async t => {
       newDate,
       very: {
         deep: {
-          prop: false
-        }
-      }
-    }
+          prop: false,
+        },
+      },
+    },
   }
   target = {
     info: {
       date: 'tomorrow',
       very: {
         deep: {
-          prop: true
-        }
-      }
-    }
+          prop: true,
+        },
+      },
+    },
   }
   res = setDefaultValues(target, defaultValues)
   t.deepEqual(res, {
@@ -61,27 +61,27 @@ test('my recursive object assign', async t => {
       date: 'tomorrow',
       very: {
         deep: {
-          prop: true
-        }
-      }
-    }
+          prop: true,
+        },
+      },
+    },
   })
   t.deepEqual(defaultValues, {
     info: {
       time: 'now',
       newDate,
       very: {
-        deep: { prop: false }
-      }
-    }
+        deep: { prop: false },
+      },
+    },
   })
   t.deepEqual(target, {
     info: {
       date: 'tomorrow',
       very: {
-        deep: { prop: true }
-      }
-    }
+        deep: { prop: true },
+      },
+    },
   })
   t.true(isDate(res.info.newDate))
 
@@ -89,15 +89,15 @@ test('my recursive object assign', async t => {
     info: {
       time: { when: 'now' },
       very: {
-        deep: { prop: false }
-      }
-    }
+        deep: { prop: false },
+      },
+    },
   }
   target = {
     info: {
       time: {},
-      very: { whole: 1 }
-    }
+      very: { whole: 1 },
+    },
   }
   res = setDefaultValues(target, defaultValues)
   t.deepEqual(res, {
@@ -105,40 +105,40 @@ test('my recursive object assign', async t => {
       time: { when: 'now' },
       very: {
         deep: { prop: false },
-        whole: 1
-      }
-    }
+        whole: 1,
+      },
+    },
   })
 
   defaultValues = {
     body: 'a',
     body2: { head: false },
-    tail: {}
+    tail: {},
   }
   target = {
     body: { head: true },
-    body2: { head: { eyes: true } }
+    body2: { head: { eyes: true } },
   }
   res = setDefaultValues(target, defaultValues)
   t.deepEqual(res, {
     body: { head: true },
     body2: { head: { eyes: true } },
-    tail: {}
+    tail: {},
   })
   t.deepEqual(defaultValues, {
     body: 'a',
     body2: { head: false },
-    tail: {}
+    tail: {},
   })
   t.deepEqual(target, {
     body: { head: true },
-    body2: { head: { eyes: true } }
+    body2: { head: { eyes: true } },
   })
 
   defaultValues = {
     body: 'a',
     body2: { head: false },
-    tail: {}
+    tail: {},
   }
   target = 'a'
   res = setDefaultValues(target, defaultValues)
@@ -146,7 +146,7 @@ test('my recursive object assign', async t => {
   t.deepEqual(defaultValues, {
     body: 'a',
     body2: { head: false },
-    tail: {}
+    tail: {},
   })
 })
 
@@ -159,18 +159,18 @@ test('custom %convertTimestamp% defaultValue - fireBase', async t => {
     body: '%convertTimestamp%',
     body2: { nd: '%convertTimestamp%' },
     dateStr2: '%convertTimestamp%',
-    firebase: { specialTS: { _ts: '%convertTimestamp%' } }
+    firebase: { specialTS: { _ts: '%convertTimestamp%' } },
   }
   target = {
     body: dateStr,
     body2: { nd },
     dateStr2,
-    firebase: { specialTS: { _ts: {} } }
+    firebase: { specialTS: { _ts: {} } },
   }
   const TimestampProto = {
     toDate: _ => {
       return nd
-    }
+    },
   }
   Object.setPrototypeOf(target.firebase.specialTS._ts, TimestampProto)
   res = setDefaultValues(target, defaultValues)
@@ -178,13 +178,13 @@ test('custom %convertTimestamp% defaultValue - fireBase', async t => {
     body: nd,
     body2: { nd },
     dateStr2: new Date(dateStr2),
-    firebase: { specialTS: { _ts: nd } }
+    firebase: { specialTS: { _ts: nd } },
   })
   t.deepEqual(defaultValues, {
     body: '%convertTimestamp%',
     body2: { nd: '%convertTimestamp%' },
     dateStr2: '%convertTimestamp%',
-    firebase: { specialTS: { _ts: '%convertTimestamp%' } }
+    firebase: { specialTS: { _ts: '%convertTimestamp%' } },
   })
   t.is(target.body, dateStr)
   t.deepEqual(target.body2, { nd })
@@ -195,23 +195,23 @@ test('custom %convertTimestamp% defaultValue - delete %convertTimestamp%', async
   defaultValues = {
     body: '%convertTimestamp%',
     body2: { nd: '%convertTimestamp%' },
-    firebase: { specialTS: { _ts: '%convertTimestamp%' } }
+    firebase: { specialTS: { _ts: '%convertTimestamp%' } },
   }
   target = {
     body: '',
     body2: { nd: null },
-    firebase: { specialTS: {} }
+    firebase: { specialTS: {} },
   }
   res = setDefaultValues(target, defaultValues)
   t.deepEqual(res, {
     body: '',
     body2: { nd: null },
-    firebase: { specialTS: { _ts: null } }
+    firebase: { specialTS: { _ts: null } },
   })
 
   defaultValues = {
     body: '%convertTimestamp%',
-    soup: { time: '%convertTimestamp%' }
+    soup: { time: '%convertTimestamp%' },
   }
   res = setDefaultValues({}, defaultValues)
   t.deepEqual(res, { body: null, soup: { time: null } })
@@ -220,10 +220,10 @@ test('custom %convertTimestamp% defaultValue - delete %convertTimestamp%', async
 test('overwrites null with empty object', t => {
   let res, defaultValues, target
   defaultValues = {
-    body: null
+    body: null,
   }
   target = {
-    body: {}
+    body: {},
   }
   res = setDefaultValues(target, defaultValues)
   t.deepEqual(res, { body: {} })
@@ -231,10 +231,10 @@ test('overwrites null with empty object', t => {
 test('overwrites null with object with props', t => {
   let res, defaultValues, target
   defaultValues = {
-    body: null
+    body: null,
   }
   target = {
-    body: { props: true }
+    body: { props: true },
   }
   res = setDefaultValues(target, defaultValues)
   t.deepEqual(res, { body: { props: true } })

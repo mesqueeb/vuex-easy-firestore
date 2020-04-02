@@ -11,7 +11,7 @@
  * @author Adam Dorling
  * @contact https://codepen.io/naito
  */
-export default function (ms: number): {done: any, refresh: () => {}} {
+export default function (ms: number): { done: any; refresh: () => {} } {
   let startTime = Date.now()
   const done = new Promise((resolve, reject) => {
     const interval = setInterval(_ => {

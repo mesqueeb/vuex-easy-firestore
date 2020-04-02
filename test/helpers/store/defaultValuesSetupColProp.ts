@@ -6,9 +6,9 @@ function initialState () {
     prop: {
       defaultVal1: true,
       nestedDefaultVal: {
-        type1: 'sun'
+        type1: 'sun',
       },
-    }
+    },
   }
 }
 
@@ -22,7 +22,7 @@ export default {
     defaultValues: {
       defaultVal: true,
       nestedDefaultVal: {
-        type: 'moon'
+        type: 'moon',
       },
     },
   },

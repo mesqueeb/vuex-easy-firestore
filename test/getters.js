@@ -3,7 +3,7 @@ import { isDate } from 'is-what'
 // import wait from './helpers/wait'
 import * as Firebase from 'firebase/app'
 import 'firebase/firestore'
-import {store} from './helpers/index.cjs.js'
+import { store } from './helpers/index.cjs.js'
 
 const box = store.state.pokemonBox
 const char = store.state.mainCharacter
@@ -16,7 +16,10 @@ test('[prepareForPatch] collection', async t => {
   box._conf.sync.fillables = ['body', 'del', 'pathdel']
   box._conf.sync.guard = []
   // prepareForPatch
-  res = store.getters['pokemonBox/prepareForPatch'](['1', '2'], {body: 'new', del: Firebase.firestore.FieldValue.delete()})
+  res = store.getters['pokemonBox/prepareForPatch'](['1', '2'], {
+    body: 'new',
+    del: Firebase.firestore.FieldValue.delete(),
+  })
   t.deepEqual(Object.keys(res), ['1', '2'])
   t.is(res['1'].body, 'new')
   t.is(res['2'].body, 'new')
@@ -53,7 +56,10 @@ test('[prepareForPatch] doc', async t => {
   char._conf.sync.guard = []
   // prepareForPatch
   const docModeId = store.getters['mainCharacter/docModeId']
-  res = store.getters['mainCharacter/prepareForPatch']([], {body: 'new', del: Firebase.firestore.FieldValue.delete()})
+  res = store.getters['mainCharacter/prepareForPatch']([], {
+    body: 'new',
+    del: Firebase.firestore.FieldValue.delete(),
+  })
   t.deepEqual(Object.keys(res), [docModeId])
   t.is(res[docModeId].body, 'new')
   t.is(res[docModeId].del._methodName, 'FieldValue.delete')
@@ -77,22 +83,40 @@ test('[prepareForPatch] doc', async t => {
 
 test('[where]', async t => {
   let res
-  char._conf.sync.where = [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']]
+  char._conf.sync.where = [
+    ['hi.{userId}.docs.{nr}', '==', '{big}'],
+    ['{userId}', '==', '{userId}'],
+  ]
   char._sync.userId = 'charlie'
-  char._sync.pathVariables = {nr: '1', big: 'shot'}
+  char._sync.pathVariables = { nr: '1', big: 'shot' }
   res = store.getters['mainCharacter/getWhereArrays']()
-  t.deepEqual(res, [['hi.charlie.docs.1', '==', 'shot'], ['charlie', '==', 'charlie']])
-  t.deepEqual(char._conf.sync.where, [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']])
+  t.deepEqual(res, [
+    ['hi.charlie.docs.1', '==', 'shot'],
+    ['charlie', '==', 'charlie'],
+  ])
+  t.deepEqual(char._conf.sync.where, [
+    ['hi.{userId}.docs.{nr}', '==', '{big}'],
+    ['{userId}', '==', '{userId}'],
+  ])
   // accept other values than strings
-  char._conf.sync.where = [[1, '==', true], ['{userId}', '==', '{date}', '{nulll}', '{undef}']]
+  char._conf.sync.where = [
+    [1, '==', true],
+    ['{userId}', '==', '{date}', '{nulll}', '{undef}'],
+  ]
   char._sync.userId = ''
   const date = new Date()
-  char._sync.pathVariables = {date, nulll: null, undef: undefined}
+  char._sync.pathVariables = { date, nulll: null, undef: undefined }
   res = store.getters['mainCharacter/getWhereArrays']()
-  t.deepEqual(res, [[1, '==', true], ['', '==', date, null, undefined]])
-  t.deepEqual(char._conf.sync.where, [[1, '==', true], ['{userId}', '==', '{date}', '{nulll}', '{undef}']])
+  t.deepEqual(res, [
+    [1, '==', true],
+    ['', '==', date, null, undefined],
+  ])
+  t.deepEqual(char._conf.sync.where, [
+    [1, '==', true],
+    ['{userId}', '==', '{date}', '{nulll}', '{undef}'],
+  ])
   char._conf.sync.where = [[1, true, undefined, '{a}', NaN]]
-  char._sync.pathVariables = {a: {}}
+  char._sync.pathVariables = { a: {} }
   res = store.getters['mainCharacter/getWhereArrays']()
   t.deepEqual(res, [[1, true, undefined, {}, NaN]])
   t.deepEqual(char._conf.sync.where, [[1, true, undefined, '{a}', NaN]])

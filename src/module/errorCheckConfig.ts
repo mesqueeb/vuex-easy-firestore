@@ -25,22 +25,40 @@ export default function (config: IEasyFirestoreModule): boolean {
   if (/\./.test(config.moduleName)) {
     errors.push(`moduleName must only include letters from [a-z] and forward slashes '/'`)
   }
-  const syncProps = ['where', 'orderBy', 'fillables', 'guard', 'defaultValues', 'insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook']
+  const syncProps = [
+    'where',
+    'orderBy',
+    'fillables',
+    'guard',
+    'defaultValues',
+    'insertHook',
+    'patchHook',
+    'deleteHook',
+    'insertBatchHook',
+    'patchBatchHook',
+    'deleteBatchHook',
+  ]
   syncProps.forEach(prop => {
     if (config[prop]) {
-      errors.push(`We found \`${prop}\` on your module, are you sure this shouldn't be inside a prop called \`sync\`?`)
+      errors.push(
+        `We found \`${prop}\` on your module, are you sure this shouldn't be inside a prop called \`sync\`?`
+      )
     }
   })
   const serverChangeProps = ['modifiedHook', 'defaultValues', 'addedHook', 'removedHook']
   serverChangeProps.forEach(prop => {
     if (config[prop]) {
-      errors.push(`We found \`${prop}\` on your module, are you sure this shouldn't be inside a prop called \`serverChange\`?`)
+      errors.push(
+        `We found \`${prop}\` on your module, are you sure this shouldn't be inside a prop called \`serverChange\`?`
+      )
     }
   })
   const fetchProps = ['docLimit']
   fetchProps.forEach(prop => {
     if (config[prop]) {
-      errors.push(`We found \`${prop}\` on your module, are you sure this shouldn't be inside a prop called \`fetch\`?`)
+      errors.push(
+        `We found \`${prop}\` on your module, are you sure this shouldn't be inside a prop called \`fetch\`?`
+      )
     }
   })
   const numberProps = ['docLimit']
@@ -48,18 +66,24 @@ export default function (config: IEasyFirestoreModule): boolean {
     const _prop = config.fetch[prop]
     if (!isNumber(_prop)) errors.push(`\`${prop}\` should be a Number, but is not.`)
   })
-  const functionProps = ['insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook', 'addedHook', 'modifiedHook', 'removedHook']
+  const functionProps = [
+    'insertHook',
+    'patchHook',
+    'deleteHook',
+    'insertBatchHook',
+    'patchBatchHook',
+    'deleteBatchHook',
+    'addedHook',
+    'modifiedHook',
+    'removedHook',
+  ]
   functionProps.forEach(prop => {
-    const _prop = (syncProps.includes(prop))
-      ? config.sync[prop]
-      : config.serverChange[prop]
+    const _prop = syncProps.includes(prop) ? config.sync[prop] : config.serverChange[prop]
     if (!isFunction(_prop)) errors.push(`\`${prop}\` should be a Function, but is not.`)
   })
   const objectProps = ['sync', 'serverChange', 'defaultValues', 'fetch']
   objectProps.forEach(prop => {
-    const _prop = (prop === 'defaultValues')
-      ? config.sync[prop]
-      : config[prop]
+    const _prop = prop === 'defaultValues' ? config.sync[prop] : config[prop]
     if (!isPlainObject(_prop)) errors.push(`\`${prop}\` should be an Object, but is not.`)
   })
   const stringProps = ['firestorePath', 'firestoreRefType', 'moduleName']

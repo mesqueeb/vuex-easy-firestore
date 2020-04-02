@@ -3,7 +3,7 @@ import { defaultMutations } from 'vuex-easy-access'
 function initialState () {
   return {
     iniProp: true,
-    defaultPropsNotToBeDeleted: true
+    defaultPropsNotToBeDeleted: true,
   }
 }
 
@@ -19,6 +19,6 @@ export default {
   actions: {},
   getters: {},
   sync: {
-    guard: ['created_by', 'created_at', 'updated_by', 'updated_at']
-  }
+    guard: ['created_by', 'created_at', 'updated_by', 'updated_at'],
+  },
 }

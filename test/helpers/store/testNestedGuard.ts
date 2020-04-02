@@ -4,7 +4,7 @@ function initialState () {
   return {
     nested: {
       guard: true,
-    }
+    },
   }
 }
 

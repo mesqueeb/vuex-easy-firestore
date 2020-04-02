@@ -6,7 +6,11 @@ import { getKeysFromPath } from 'vuex-easy-access'
 import { isArray } from 'is-what'
 import iniModule from './module'
 import { IEasyFirestoreModule } from './declarations'
-import { arrayUnion, arrayRemove, setFirebaseDependency as setFirebase1 } from './utils/arrayHelpers'
+import {
+  arrayUnion,
+  arrayRemove,
+  setFirebaseDependency as setFirebase1,
+} from './utils/arrayHelpers'
 import { increment, setFirebaseDependency as setFirebase2 } from './utils/incrementHelper'
 
 /**
@@ -22,15 +26,15 @@ function vuexEasyFirestore (
   {
     logging = false,
     preventInitialDocInsertion = false,
-    FirebaseDependency = Firebase
+    FirebaseDependency = Firebase,
   }: {
-    logging?: boolean,
-    preventInitialDocInsertion?: boolean,
+    logging?: boolean
+    preventInitialDocInsertion?: boolean
     FirebaseDependency?: any
   } = {
     logging: false,
     preventInitialDocInsertion: false,
-    FirebaseDependency: Firebase
+    FirebaseDependency: Firebase,
   }
 ): any {
   if (FirebaseDependency) {

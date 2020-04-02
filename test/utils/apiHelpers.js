@@ -1,5 +1,10 @@
-import { grabUntilApiLimit, makeBatchFromSyncstack, getPathVarMatches, createFetchIdentifier } from '../../src/utils/apiHelpers'
-import {store} from '../helpers/index.cjs.js'
+import {
+  grabUntilApiLimit,
+  makeBatchFromSyncstack,
+  getPathVarMatches,
+  createFetchIdentifier,
+} from '../../src/utils/apiHelpers'
+import { store } from '../helpers/index.cjs.js'
 import test from 'ava'
 
 const state = {
@@ -10,8 +15,8 @@ const state = {
       propDeletions: {},
       deletions: [],
       debounceTimer: null,
-    }
-  }
+    },
+  },
 }
 
 test('grabUntilApiLimit', t => {
@@ -21,8 +26,8 @@ test('grabUntilApiLimit', t => {
   // INSERTS
   syncStackProp = 'inserts'
   ex = [
-    {id: 1, name: '1'},
-    {id: 2, name: '2'},
+    { id: 1, name: '1' },
+    { id: 2, name: '2' },
   ]
   state._sync.syncStack.inserts = ex
   res = grabUntilApiLimit(syncStackProp, count, maxCount, state)
@@ -31,21 +36,21 @@ test('grabUntilApiLimit', t => {
   // UPDATES
   syncStackProp = 'updates'
   ex = {
-    '1': {name: '_1', id: '1'},
-    '2': {name: '_2', id: '2'}
+    '1': { name: '_1', id: '1' },
+    '2': { name: '_2', id: '2' },
   }
   state._sync.syncStack.updates = ex
   res = grabUntilApiLimit(syncStackProp, count, maxCount, state)
   t.deepEqual(res, [
-    {name: '_1', id: '1'},
-    {name: '_2', id: '2'}
+    { name: '_1', id: '1' },
+    { name: '_2', id: '2' },
   ])
   t.deepEqual(state._sync.syncStack.updates, {})
   // OVER 5000!!!!!
   syncStackProp = 'inserts'
   let i = 0
   while (i < 600) {
-    state._sync.syncStack.inserts.push({id: 1, name: '1'})
+    state._sync.syncStack.inserts.push({ id: 1, name: '1' })
     i++
   }
   res = grabUntilApiLimit(syncStackProp, count, maxCount, state)
@@ -69,12 +74,15 @@ test('getPathVarMatches', t => {
 test('createFetchIdentifier', t => {
   let res
   res = createFetchIdentifier({
-    where: [['hi.{userId}.docs.{nr}', '==', '{big}'], ['{userId}', '==', '{userId}']],
-    orderBy: ['date']
+    where: [
+      ['hi.{userId}.docs.{nr}', '==', '{big}'],
+      ['{userId}', '==', '{userId}'],
+    ],
+    orderBy: ['date'],
   })
   t.is(res, '[where]hi.{userId}.docs.{nr},==,{big},{userId},==,{userId}[orderBy]date')
   res = createFetchIdentifier({
-    where: [['thatRef', '==', store.getters['mainCharacter/dbRef']]]
+    where: [['thatRef', '==', store.getters['mainCharacter/dbRef']]],
   })
   t.is(res, `[where]thatRef,==,DocumentReferenceSatoshi`)
 })
