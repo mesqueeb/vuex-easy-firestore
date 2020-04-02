@@ -36,32 +36,56 @@ var defaultConfig = {
         preventInitialDocInsertion: false,
         debounceTimerMs: 1000,
         // HOOKS for local changes:
-        insertHook: function (updateStore, doc, store) { return updateStore(doc); },
-        patchHook: function (updateStore, doc, store) { return updateStore(doc); },
-        deleteHook: function (updateStore, id, store) { return updateStore(id); },
+        insertHook: function (updateStore, doc, store) {
+            return updateStore(doc);
+        },
+        patchHook: function (updateStore, doc, store) {
+            return updateStore(doc);
+        },
+        deleteHook: function (updateStore, id, store) {
+            return updateStore(id);
+        },
         // HOOKS after local changes before sync:
-        insertHookBeforeSync: function (updateFirestore, doc, store) { return updateFirestore(doc); },
-        patchHookBeforeSync: function (updateFirestore, doc, store) { return updateFirestore(doc); },
-        deleteHookBeforeSync: function (updateFirestore, id, store) { return updateFirestore(id); },
+        insertHookBeforeSync: function (updateFirestore, doc, store) {
+            return updateFirestore(doc);
+        },
+        patchHookBeforeSync: function (updateFirestore, doc, store) {
+            return updateFirestore(doc);
+        },
+        deleteHookBeforeSync: function (updateFirestore, id, store) {
+            return updateFirestore(id);
+        },
         // HOOKS for local batch changes:
-        insertBatchHook: function (updateStore, docs, store) { return updateStore(docs); },
-        patchBatchHook: function (updateStore, doc, ids, store) { return updateStore(doc, ids); },
-        deleteBatchHook: function (updateStore, ids, store) { return updateStore(ids); },
+        insertBatchHook: function (updateStore, docs, store) {
+            return updateStore(docs);
+        },
+        patchBatchHook: function (updateStore, doc, ids, store) {
+            return updateStore(doc, ids);
+        },
+        deleteBatchHook: function (updateStore, ids, store) {
+            return updateStore(ids);
+        },
     },
     // When items on the server side are changed:
     serverChange: {
         defaultValues: {},
         convertTimestamps: {},
         // HOOKS for changes on SERVER:
-        addedHook: function (updateStore, doc, id, store) { return updateStore(doc); },
-        modifiedHook: function (updateStore, doc, id, store) { return updateStore(doc); },
-        removedHook: function (updateStore, doc, id, store) { return updateStore(doc); },
+        addedHook: function (updateStore, doc, id, store) {
+            return updateStore(doc);
+        },
+        modifiedHook: function (updateStore, doc, id, store) {
+            return updateStore(doc);
+        },
+        removedHook: function (updateStore, doc, id, store) {
+            return updateStore(doc);
+        },
     },
     // When items are fetched through `dispatch('module/fetch', {clauses})`.
     fetch: {
         // The max amount of documents to be fetched. Defaults to 50.
         docLimit: 50,
-    }
+    },
 };
 
 /**
@@ -468,7 +492,7 @@ function setDefaultValues (obj, defaultValues) {
         console.error('[vuex-easy-firestore] Trying to merge a non-object:', obj, 'onto the defaultValues:', defaultValues);
     var result = mergeAnything.merge({ extensions: [convertTimestamps] }, defaultValues, obj);
     return findAndReplaceAnything.findAndReplace(result, '%convertTimestamp%', null, {
-        onlyPlainObjects: true
+        onlyPlainObjects: true,
     });
 }
 
@@ -807,7 +831,10 @@ function pluginActions (Firebase) {
         },
         patchDoc: function (_a, _b) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
-            var _c = _b === void 0 ? { ids: [], doc: {} } : _b, _d = _c.id, id = _d === void 0 ? '' : _d, _e = _c.ids, ids = _e === void 0 ? [] : _e, doc = _c.doc;
+            var _c = _b === void 0 ? {
+                ids: [],
+                doc: {},
+            } : _b, _d = _c.id, id = _d === void 0 ? '' : _d, _e = _c.ids, ids = _e === void 0 ? [] : _e, doc = _c.doc;
             // 0. payload correction (only arrays)
             if (!isWhat.isArray(ids))
                 return error("`ids` prop passed to 'patch' needs to be an array");
@@ -851,8 +878,8 @@ function pluginActions (Firebase) {
                                     newVal = originVal;
                                 }
                                 return newVal; // always return newVal as fallback!!
-                            }
-                        ]
+                            },
+                        ],
                     }, state._sync.syncStack.updates[id], patchData);
                 }
                 state._sync.syncStack.updates[id] = newVal;
@@ -899,9 +926,7 @@ function pluginActions (Firebase) {
             var inserts = state._sync.syncStack.inserts.concat(syncStack);
             state._sync.syncStack.inserts = inserts;
             // 3. Create or refresh debounce & pass id to resolve
-            var payloadToResolve = isWhat.isArray(payload)
-                ? payload.map(function (doc) { return doc.id; })
-                : payload.id;
+            var payloadToResolve = isWhat.isArray(payload) ? payload.map(function (doc) { return doc.id; }) : payload.id;
             return dispatch('handleSyncStackDebounce', payloadToResolve);
         },
         insertInitialDoc: function (_a) {
@@ -1009,6 +1034,12 @@ function pluginActions (Firebase) {
                 });
                 parameters = Object.assign({}, { clauses: parameters, pathVariables: pathVariables_1 });
             }
+            var defaultParameters = {
+                clauses: {},
+                pathVariables: {},
+                includeMetadataChanges: false,
+            };
+            parameters = Object.assign(defaultParameters, parameters);
             /* COMPATIBILITY END */
             if (!getters.collectionMode)
                 return error('only-in-collection-mode');
@@ -1031,7 +1062,7 @@ function pluginActions (Firebase) {
                 var identifier = createFetchIdentifier({
                     where: where,
                     orderBy: orderBy,
-                    pathVariables: state._sync.pathVariables
+                    pathVariables: state._sync.pathVariables,
                 });
                 var fetched = state._sync.fetched[identifier];
                 // We've never fetched this before:
@@ -1047,7 +1078,7 @@ function pluginActions (Firebase) {
                         ref: ref_1,
                         done: false,
                         retrievedFetchRefs: [],
-                        nextFetchRef: null
+                        nextFetchRef: null,
                     };
                 }
                 var fRequest = state._sync.fetched[identifier];
@@ -1126,6 +1157,12 @@ function pluginActions (Firebase) {
                 });
                 parameters = Object.assign({}, { clauses: parameters, pathVariables: pathVariables_2 });
             }
+            var defaultParameters = {
+                clauses: {},
+                pathVariables: {},
+                includeMetadataChanges: false,
+            };
+            parameters = Object.assign(defaultParameters, parameters);
             /* COMPATIBILITY END */
             commit('SET_PATHVARS', parameters.pathVariables);
             // 'doc' mode:
@@ -1162,7 +1199,7 @@ function pluginActions (Firebase) {
                                 dispatch('applyHooksAndUpdateState', {
                                     change: 'modified',
                                     id: id,
-                                    doc: doc
+                                    doc: doc,
                                 });
                                 return [2 /*return*/, doc];
                         }
@@ -1252,9 +1289,7 @@ function pluginActions (Firebase) {
         deleteMissingProps: function (_a, doc) {
             var getters = _a.getters, commit = _a.commit;
             var defaultValues = getters.defaultValues;
-            var searchTarget = getters.collectionMode
-                ? getters.storeRef[doc.id]
-                : getters.storeRef;
+            var searchTarget = getters.collectionMode ? getters.storeRef[doc.id] : getters.storeRef;
             var compareInfo = compareAnything.compareObjectProps(flatten(doc), // presentIn 0
             flatten(defaultValues), // presentIn 1
             flatten(searchTarget) // presentIn 2
@@ -1287,7 +1322,7 @@ function pluginActions (Firebase) {
             if (parameters === void 0) { parameters = {
                 clauses: {},
                 pathVariables: {},
-                includeMetadataChanges: false
+                includeMetadataChanges: false,
             }; }
             if (!isWhat.isPlainObject(parameters))
                 parameters = {};
@@ -1310,16 +1345,16 @@ function pluginActions (Firebase) {
                     }
                 });
                 parameters = Object.assign({
-                    includeMetadataChanges: parameters.includeMetadataChanges || false
+                    includeMetadataChanges: parameters.includeMetadataChanges || false,
                 }, { clauses: parameters, pathVariables: pathVariables_3 });
             }
-            /* COMPATIBILITY END */
             var defaultParameters = {
                 clauses: {},
                 pathVariables: {},
-                includeMetadataChanges: false
+                includeMetadataChanges: false,
             };
             parameters = Object.assign(defaultParameters, parameters);
+            /* COMPATIBILITY END */
             dispatch('setUserId');
             // creates promises that can be resolved from outside their scope and that
             // can give their status
@@ -1329,7 +1364,7 @@ function pluginActions (Firebase) {
                     reject: null,
                     isFulfilled: false,
                     isRejected: false,
-                    isPending: true
+                    isPending: true,
                 };
                 var p = new Promise(function (resolve, reject) {
                     m.resolve = resolve;
@@ -1351,7 +1386,7 @@ function pluginActions (Firebase) {
             var identifier = createFetchIdentifier({
                 where: state._conf.sync.where,
                 orderBy: state._conf.sync.orderBy,
-                pathVariables: state._sync.pathVariables
+                pathVariables: state._sync.pathVariables,
             });
             if (isWhat.isFunction(state._sync.unsubscribe[identifier])) {
                 var channelAlreadyOpenError = "openDBChannel was already called for these clauses and pathvariables. Identifier: " + identifier;
@@ -1390,7 +1425,7 @@ function pluginActions (Firebase) {
                 initialPromise.resolve({
                     refreshed: includeMetadataChanges ? refreshedPromise : null,
                     streaming: streamingPromise,
-                    stop: function () { return dispatch('closeDBChannel', { _identifier: identifier }); }
+                    stop: function () { return dispatch('closeDBChannel', { _identifier: identifier }); },
                 });
             };
             var streamingStop = function (error) {
@@ -1413,7 +1448,7 @@ function pluginActions (Firebase) {
                 dispatch('applyHooksAndUpdateState', {
                     change: 'modified',
                     id: getters.docModeId,
-                    doc: doc
+                    doc: doc,
                 });
             };
             var processCollection = function (docChanges) {
@@ -1422,7 +1457,7 @@ function pluginActions (Firebase) {
                     dispatch('applyHooksAndUpdateState', {
                         change: change.type,
                         id: change.doc.id,
-                        doc: doc
+                        doc: doc,
                     });
                 });
             };
@@ -1529,13 +1564,13 @@ function pluginActions (Firebase) {
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             var _c = _b === void 0 ? {
                 clearModule: false,
-                _identifier: null
+                _identifier: null,
             } : _b, _d = _c.clearModule, clearModule = _d === void 0 ? false : _d, _e = _c._identifier, _identifier = _e === void 0 ? null : _e;
             var identifier = _identifier ||
                 createFetchIdentifier({
                     where: state._conf.sync.where,
                     orderBy: state._conf.sync.orderBy,
-                    pathVariables: state._sync.pathVariables
+                    pathVariables: state._sync.pathVariables,
                 });
             var unsubscribeDBChannel = state._sync.unsubscribe[identifier];
             if (isWhat.isFunction(unsubscribeDBChannel)) {
@@ -1773,7 +1808,7 @@ function pluginActions (Firebase) {
                 clearTimeout(state._sync.stopPatchingTimeout);
             }
             state._sync.patching = true;
-        }
+        },
     };
 }
 
@@ -1795,10 +1830,7 @@ function pluginGetters (Firebase) {
             var requireUser = path.includes('{userId}');
             if (requireUser) {
                 var userId = state._sync.userId;
-                if (getters.signedIn &&
-                    isWhat.isString(userId) &&
-                    userId !== '' &&
-                    userId !== '{userId}') {
+                if (getters.signedIn && isWhat.isString(userId) && userId !== '' && userId !== '{userId}') {
                     path = path.replace('{userId}', userId);
                 }
             }
@@ -1832,13 +1864,7 @@ function pluginGetters (Firebase) {
             var fillables = state._conf.sync.fillables;
             if (!fillables.length)
                 return fillables;
-            return fillables.concat([
-                'updated_at',
-                'updated_by',
-                'id',
-                'created_at',
-                'created_by'
-            ]);
+            return fillables.concat(['updated_at', 'updated_by', 'id', 'created_at', 'created_by']);
         },
         guard: function (state) {
             return state._conf.sync.guard.concat(['_conf', '_sync']);
@@ -1959,7 +1985,7 @@ function pluginGetters (Firebase) {
                     return cleanedParam;
                 });
             });
-        }; }
+        }; },
     };
 }
 
@@ -1987,7 +2013,19 @@ function errorCheck (config) {
     if (/\./.test(config.moduleName)) {
         errors.push("moduleName must only include letters from [a-z] and forward slashes '/'");
     }
-    var syncProps = ['where', 'orderBy', 'fillables', 'guard', 'defaultValues', 'insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook'];
+    var syncProps = [
+        'where',
+        'orderBy',
+        'fillables',
+        'guard',
+        'defaultValues',
+        'insertHook',
+        'patchHook',
+        'deleteHook',
+        'insertBatchHook',
+        'patchBatchHook',
+        'deleteBatchHook',
+    ];
     syncProps.forEach(function (prop) {
         if (config[prop]) {
             errors.push("We found `" + prop + "` on your module, are you sure this shouldn't be inside a prop called `sync`?");
@@ -2011,19 +2049,25 @@ function errorCheck (config) {
         if (!isWhat.isNumber(_prop))
             errors.push("`" + prop + "` should be a Number, but is not.");
     });
-    var functionProps = ['insertHook', 'patchHook', 'deleteHook', 'insertBatchHook', 'patchBatchHook', 'deleteBatchHook', 'addedHook', 'modifiedHook', 'removedHook'];
+    var functionProps = [
+        'insertHook',
+        'patchHook',
+        'deleteHook',
+        'insertBatchHook',
+        'patchBatchHook',
+        'deleteBatchHook',
+        'addedHook',
+        'modifiedHook',
+        'removedHook',
+    ];
     functionProps.forEach(function (prop) {
-        var _prop = (syncProps.includes(prop))
-            ? config.sync[prop]
-            : config.serverChange[prop];
+        var _prop = syncProps.includes(prop) ? config.sync[prop] : config.serverChange[prop];
         if (!isWhat.isFunction(_prop))
             errors.push("`" + prop + "` should be a Function, but is not.");
     });
     var objectProps = ['sync', 'serverChange', 'defaultValues', 'fetch'];
     objectProps.forEach(function (prop) {
-        var _prop = (prop === 'defaultValues')
-            ? config.sync[prop]
-            : config[prop];
+        var _prop = prop === 'defaultValues' ? config.sync[prop] : config[prop];
         if (!isWhat.isPlainObject(_prop))
             errors.push("`" + prop + "` should be an Object, but is not.");
     });
@@ -2076,9 +2120,7 @@ function iniModule (userConfig, FirebaseDependency) {
     var restOfState = mergeAnything.merge(userState, docContainer);
     // if 'doc' mode, set merge initial state onto default values
     if (conf.firestoreRefType === 'doc') {
-        var defaultValsInState = conf.statePropName
-            ? restOfState[conf.statePropName]
-            : restOfState;
+        var defaultValsInState = conf.statePropName ? restOfState[conf.statePropName] : restOfState;
         conf.sync.defaultValues = copy(mergeAnything.merge(defaultValsInState, conf.sync.defaultValues));
     }
     return {
@@ -2086,7 +2128,7 @@ function iniModule (userConfig, FirebaseDependency) {
         state: mergeAnything.merge(pluginState(), restOfState, { _conf: conf }),
         mutations: mergeAnything.merge(userMutations, pluginMutations(mergeAnything.merge(userState, { _conf: conf }))),
         actions: mergeAnything.merge(userActions, pluginActions(FirebaseDependency)),
-        getters: mergeAnything.merge(userGetters, pluginGetters(FirebaseDependency))
+        getters: mergeAnything.merge(userGetters, pluginGetters(FirebaseDependency)),
     };
 }
 
@@ -2103,7 +2145,7 @@ function vuexEasyFirestore(easyFirestoreModule, _a) {
     var _b = _a === void 0 ? {
         logging: false,
         preventInitialDocInsertion: false,
-        FirebaseDependency: firebase
+        FirebaseDependency: firebase,
     } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.preventInitialDocInsertion, preventInitialDocInsertion = _d === void 0 ? false : _d, _e = _b.FirebaseDependency, FirebaseDependency = _e === void 0 ? firebase : _e;
     if (FirebaseDependency) {
         setFirebaseDependency(FirebaseDependency);

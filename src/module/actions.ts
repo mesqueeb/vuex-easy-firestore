@@ -262,6 +262,12 @@ export default function (Firebase: any): AnyObject {
         })
         parameters = Object.assign({}, { clauses: parameters, pathVariables })
       }
+      const defaultParameters = {
+        clauses: {},
+        pathVariables: {},
+        includeMetadataChanges: false,
+      }
+      parameters = Object.assign(defaultParameters, parameters)
       /* COMPATIBILITY END */
       if (!getters.collectionMode) return logError('only-in-collection-mode')
       dispatch('setUserId')
@@ -373,6 +379,12 @@ export default function (Firebase: any): AnyObject {
         })
         parameters = Object.assign({}, { clauses: parameters, pathVariables })
       }
+      const defaultParameters = {
+        clauses: {},
+        pathVariables: {},
+        includeMetadataChanges: false,
+      }
+      parameters = Object.assign(defaultParameters, parameters)
       /* COMPATIBILITY END */
       commit('SET_PATHVARS', parameters.pathVariables)
       // 'doc' mode:
@@ -547,13 +559,13 @@ export default function (Firebase: any): AnyObject {
           { clauses: parameters, pathVariables }
         )
       }
-      /* COMPATIBILITY END */
       const defaultParameters = {
         clauses: {},
         pathVariables: {},
         includeMetadataChanges: false,
       }
       parameters = Object.assign(defaultParameters, parameters)
+      /* COMPATIBILITY END */
       dispatch('setUserId')
       // creates promises that can be resolved from outside their scope and that
       // can give their status
