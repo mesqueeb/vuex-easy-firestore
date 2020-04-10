@@ -2645,9 +2645,9 @@ function iniModule (userConfig, FirebaseDependency) {
     return {
         namespaced: true,
         state: mergeAnything.merge(pluginState(), restOfState, { _conf: conf }),
-        mutations: mergeAnything.merge(userMutations, pluginMutations(mergeAnything.merge(userState, { _conf: conf }))),
-        actions: mergeAnything.merge(userActions, pluginActions(FirebaseDependency)),
-        getters: mergeAnything.merge(userGetters, pluginGetters(FirebaseDependency)),
+        mutations: __assign(__assign({}, userMutations), pluginMutations(mergeAnything.merge(userState, { _conf: conf }))),
+        actions: __assign(__assign({}, userActions), pluginActions(FirebaseDependency)),
+        getters: __assign(__assign({}, userGetters), pluginGetters(FirebaseDependency)),
     };
 }
 
