@@ -42,8 +42,8 @@ export default function (userConfig: IEasyFirestoreModule, FirebaseDependency: a
   return {
     namespaced: true,
     state: merge(pluginState(), restOfState, { _conf: conf }),
-    mutations: merge(userMutations, pluginMutations(merge(userState, { _conf: conf }))),
-    actions: merge(userActions, pluginActions(FirebaseDependency)),
-    getters: merge(userGetters, pluginGetters(FirebaseDependency)),
+    mutations: { ...userMutations, ...pluginMutations(merge(userState, { _conf: conf })) },
+    actions: { ...userActions, ...pluginActions(FirebaseDependency) },
+    getters: { ...userGetters, ...pluginGetters(FirebaseDependency) },
   }
 }
