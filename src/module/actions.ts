@@ -682,8 +682,6 @@ export default function (Firebase: any): AnyObject {
           if (querySnapshot.metadata.fromCache) {
             // if it's the very first call, we are at the initial app load. If so, we'll use
             // the data in cache (if available) to populate the state.
-            // if it's not, this is only the result of a local modification which does not
-            // require to do anything else.
             if (!gotFirstLocalResponse) {
               // 'doc' mode:
               if (!getters.collectionMode) {
@@ -702,7 +700,14 @@ export default function (Firebase: any): AnyObject {
               gotFirstLocalResponse = true
             }
           }
-          // if data comes from server
+          // if data comes from server... BUT REALLY NOT: the data comes from local change
+          else if (querySnapshot.metadata.hasPendingWrites) {
+            // this is only the result of a local modification which does not
+            // require to do anything else.
+            // https://firebase.google.com/docs/reference/js/firebase.firestore.SnapshotMetadata
+            // True if the snapshot contains the result of local writes (e.g. set() or update() calls) that have not yet been committed to the backend. If your listener has opted into metadata updates (via SnapshotListenOptions) you will receive another snapshot with hasPendingWrites equal to false once the writes have been committed to the backend.
+          }
+          // the data really comes from a change on the server
           else {
             // 'doc' mode:
             if (!getters.collectionMode) {

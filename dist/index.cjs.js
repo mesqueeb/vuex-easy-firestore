@@ -1469,8 +1469,6 @@ function pluginActions (Firebase) {
                             if (!querySnapshot.metadata.fromCache) return [3 /*break*/, 1];
                             // if it's the very first call, we are at the initial app load. If so, we'll use
                             // the data in cache (if available) to populate the state.
-                            // if it's not, this is only the result of a local modification which does not
-                            // require to do anything else.
                             if (!gotFirstLocalResponse) {
                                 // 'doc' mode:
                                 if (!getters.collectionMode) {
@@ -1488,24 +1486,27 @@ function pluginActions (Firebase) {
                                 }
                                 gotFirstLocalResponse = true;
                             }
-                            return [3 /*break*/, 12];
+                            return [3 /*break*/, 13];
                         case 1:
-                            if (!!getters.collectionMode) return [3 /*break*/, 10];
-                            if (!!querySnapshot.exists) return [3 /*break*/, 8];
-                            if (!!state._conf.sync.preventInitialDocInsertion) return [3 /*break*/, 6];
+                            if (!querySnapshot.metadata.hasPendingWrites) return [3 /*break*/, 2];
+                            return [3 /*break*/, 13];
+                        case 2:
+                            if (!!getters.collectionMode) return [3 /*break*/, 11];
+                            if (!!querySnapshot.exists) return [3 /*break*/, 9];
+                            if (!!state._conf.sync.preventInitialDocInsertion) return [3 /*break*/, 7];
                             if (state._conf.logging) {
                                 message = gotFirstServerResponse
                                     ? 'recreating doc after remote deletion'
                                     : 'inserting initial doc';
                                 console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: MediumSeaGreen');
                             }
-                            _a.label = 2;
-                        case 2:
-                            _a.trys.push([2, 4, , 5]);
+                            _a.label = 3;
+                        case 3:
+                            _a.trys.push([3, 5, , 6]);
                             return [4 /*yield*/, dispatch('insertInitialDoc')
                                 // if the initial document was successfully inserted
                             ];
-                        case 3:
+                        case 4:
                             _a.sent();
                             // if the initial document was successfully inserted
                             if (initialPromise.isPending) {
@@ -1514,8 +1515,8 @@ function pluginActions (Firebase) {
                             if (refreshedPromise.isPending) {
                                 refreshedPromise.resolve();
                             }
-                            return [3 /*break*/, 5];
-                        case 4:
+                            return [3 /*break*/, 6];
+                        case 5:
                             error_1 = _a.sent();
                             // we close the channel ourselves. Firestore does not, as it leaves the
                             // channel open as long as the user has read rights on the document, even
@@ -1523,13 +1524,13 @@ function pluginActions (Firebase) {
                             // it makes some sense to close as we can assume the user should have had
                             // write rights
                             streamingStop(error_1);
-                            return [3 /*break*/, 5];
-                        case 5: return [3 /*break*/, 7];
-                        case 6:
+                            return [3 /*break*/, 6];
+                        case 6: return [3 /*break*/, 8];
+                        case 7:
                             streamingStop('preventInitialDocInsertion');
-                            _a.label = 7;
-                        case 7: return [3 /*break*/, 9];
-                        case 8:
+                            _a.label = 8;
+                        case 8: return [3 /*break*/, 10];
+                        case 9:
                             processDocument(querySnapshot.data());
                             if (initialPromise.isPending) {
                                 streamingStart();
@@ -1539,9 +1540,9 @@ function pluginActions (Firebase) {
                             if (refreshedPromise.isPending) {
                                 refreshedPromise.resolve();
                             }
-                            _a.label = 9;
-                        case 9: return [3 /*break*/, 11];
-                        case 10:
+                            _a.label = 10;
+                        case 10: return [3 /*break*/, 12];
+                        case 11:
                             processCollection(querySnapshot.docChanges());
                             if (initialPromise.isPending) {
                                 streamingStart();
@@ -1549,11 +1550,11 @@ function pluginActions (Firebase) {
                             if (refreshedPromise.isPending) {
                                 refreshedPromise.resolve();
                             }
-                            _a.label = 11;
-                        case 11:
-                            gotFirstServerResponse = true;
                             _a.label = 12;
-                        case 12: return [2 /*return*/];
+                        case 12:
+                            gotFirstServerResponse = true;
+                            _a.label = 13;
+                        case 13: return [2 /*return*/];
                     }
                 });
             }); }, streamingStop);
