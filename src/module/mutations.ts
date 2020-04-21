@@ -1,5 +1,7 @@
 import { isArray, isFunction, isNumber } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
+import { flattenObject } from 'flatten-anything'
+import pathToProp from 'path-to-prop'
 import logError from './errors'
 import copy from 'copy-anything'
 import { merge } from 'merge-anything'
@@ -79,21 +81,35 @@ export default function (userState: object): AnyObject {
         ref = ref[patches.id]
       }
       if (!ref) return logError('patch-no-ref')
-      return Object.keys(patches).forEach(key => {
-        let newVal = patches[key]
-        // Merge if exists
-        function helpers (originVal, newVal) {
-          if (isArray(originVal) && isArrayHelper(newVal)) {
-            newVal = newVal.executeOn(originVal)
-          }
-          if (isNumber(originVal) && isIncrementHelper(newVal)) {
-            newVal = newVal.executeOn(originVal)
-          }
-          return newVal // always return newVal as fallback!!
+
+      function convertHelpers (originVal, newVal) {
+        if (isArray(originVal) && isArrayHelper(newVal)) {
+          newVal = newVal.executeOn(originVal)
         }
-        newVal = merge({ extensions: [helpers] }, ref[key], patches[key])
-        this._vm.$set(ref, key, newVal)
-      })
+        if (isNumber(originVal) && isIncrementHelper(newVal)) {
+          newVal = newVal.executeOn(originVal)
+        }
+        return newVal // always return newVal as fallback!!
+      }
+
+      // const refPropsPicked = filter(ref, Object.keys(patches))
+      // const patchesSanitised = merge({ extensions: [convertHelpers] }, refPropsPicked, patches)
+
+      const patchesFlat = flattenObject(patches)
+
+      for (const [path, value] of Object.entries(patchesFlat)) {
+        const targetVal = pathToProp(ref, path)
+        const newVal = convertHelpers(targetVal, value)
+        // do not update anything if the values are the same
+        // this is technically not required, because vue takes care of this as well:
+        if (targetVal === newVal) return
+        // update just the nested value
+        const pathParts = path.split('.')
+        const prop = pathParts.pop()
+        const pathParent = pathParts.join('')
+        const targetForNestedProp = pathToProp(ref, pathParent)
+        this._vm.$set(targetForNestedProp, prop, newVal)
+      }
     },
     DELETE_DOC (state, id) {
       if (state._conf.firestoreRefType.toLowerCase() !== 'collection') return

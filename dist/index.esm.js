@@ -5,7 +5,8 @@ import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
 import { isAnyObject, isPlainObject, isArray, isFunction, isNumber, isString, isDate } from 'is-what';
 import copy from 'copy-anything';
 import { merge } from 'merge-anything';
-import flatten from 'flatten-anything';
+import flatten, { flattenObject } from 'flatten-anything';
+import pathToProp from 'path-to-prop';
 import { compareObjectProps } from 'compare-anything';
 import { findAndReplace, findAndReplaceIf } from 'find-and-replace-anything';
 import filter from 'filter-anything';
@@ -396,31 +397,40 @@ function pluginMutations (userState) {
             }
         },
         PATCH_DOC: function (state, patches) {
-            var _this = this;
             // Get the state prop ref
-            var ref = state._conf.statePropName
-                ? state[state._conf.statePropName]
-                : state;
+            var ref = state._conf.statePropName ? state[state._conf.statePropName] : state;
             if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
                 ref = ref[patches.id];
             }
             if (!ref)
                 return error('patch-no-ref');
-            return Object.keys(patches).forEach(function (key) {
-                var newVal = patches[key];
-                // Merge if exists
-                function helpers(originVal, newVal) {
-                    if (isArray(originVal) && isArrayHelper(newVal)) {
-                        newVal = newVal.executeOn(originVal);
-                    }
-                    if (isNumber(originVal) && isIncrementHelper(newVal)) {
-                        newVal = newVal.executeOn(originVal);
-                    }
-                    return newVal; // always return newVal as fallback!!
+            function convertHelpers(originVal, newVal) {
+                if (isArray(originVal) && isArrayHelper(newVal)) {
+                    newVal = newVal.executeOn(originVal);
                 }
-                newVal = merge({ extensions: [helpers] }, ref[key], patches[key]);
-                _this._vm.$set(ref, key, newVal);
-            });
+                if (isNumber(originVal) && isIncrementHelper(newVal)) {
+                    newVal = newVal.executeOn(originVal);
+                }
+                return newVal; // always return newVal as fallback!!
+            }
+            // const refPropsPicked = filter(ref, Object.keys(patches))
+            // const patchesSanitised = merge({ extensions: [convertHelpers] }, refPropsPicked, patches)
+            var patchesFlat = flattenObject(patches);
+            for (var _i = 0, _a = Object.entries(patchesFlat); _i < _a.length; _i++) {
+                var _b = _a[_i], path = _b[0], value = _b[1];
+                var targetVal = pathToProp(ref, path);
+                var newVal = convertHelpers(targetVal, value);
+                // do not update anything if the values are the same
+                // this is technically not required, because vue takes care of this as well:
+                if (targetVal === newVal)
+                    return;
+                // update just the nested value
+                var pathParts = path.split('.');
+                var prop = pathParts.pop();
+                var pathParent = pathParts.join('');
+                var targetForNestedProp = pathToProp(ref, pathParent);
+                this._vm.$set(targetForNestedProp, prop, newVal);
+            }
         },
         DELETE_DOC: function (state, id) {
             if (state._conf.firestoreRefType.toLowerCase() !== 'collection')
@@ -433,9 +443,7 @@ function pluginMutations (userState) {
             }
         },
         DELETE_PROP: function (state, path) {
-            var searchTarget = state._conf.statePropName
-                ? state[state._conf.statePropName]
-                : state;
+            var searchTarget = state._conf.statePropName ? state[state._conf.statePropName] : state;
             var propArr = path.split('.');
             var target = propArr.pop();
             if (!propArr.length) {
@@ -443,7 +451,7 @@ function pluginMutations (userState) {
             }
             var ref = getDeepRef(searchTarget, propArr.join('.'));
             return this._vm.$delete(ref, target);
-        }
+        },
     };
 }
 
