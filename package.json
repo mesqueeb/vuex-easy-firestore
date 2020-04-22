@@ -45,6 +45,7 @@
     "flatten-anything": "^1.4.1",
     "is-what": "^3.8.0",
     "merge-anything": "^2.4.4",
+    "path-to-prop": "0.0.3",
     "vuex-easy-access": "^3.1.8"
   },
   "devDependencies": {
@@ -71,8 +72,14 @@
   },
   "ava": {
     "compileEnhancements": false,
-    "extensions": ["ts"],
-    "require": ["ts-node/register"],
-    "helpers": ["**/helpers/**/*"]
+    "extensions": [
+      "ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "helpers": [
+      "**/helpers/**/*"
+    ]
   }
 }
