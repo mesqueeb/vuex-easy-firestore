@@ -851,6 +851,28 @@ function isIncrementHelper(payload) {
 }
 
 /**
+ * Creates the params needed to $set a target based on a nested.path
+ *
+ * @param {object} target
+ * @param {string} path
+ * @param {*} value
+ * @returns {[object, string, any]}
+ */
+function getSetParams(target, path, value) {
+    var _a;
+    var pathParts = path.split('.');
+    var prop = pathParts.pop();
+    var pathParent = pathParts.join('.');
+    var targetForNestedProp = pathToProp(target, pathParent);
+    if (targetForNestedProp === undefined) {
+        // the target doesn't have an object ready at this level to set the value to
+        // so we need to step down a level and try again
+        return getSetParams(target, pathParent, (_a = {}, _a[prop] = value, _a));
+    }
+    var valueToSet = value;
+    return [targetForNestedProp, prop, valueToSet];
+}
+/**
  * a function returning the mutations object
  *
  * @export
@@ -923,6 +945,7 @@ function pluginMutations (userState) {
             }
         },
         PATCH_DOC: function (state, patches) {
+            var _a;
             // Get the state prop ref
             var ref = state._conf.statePropName ? state[state._conf.statePropName] : state;
             if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
@@ -942,20 +965,17 @@ function pluginMutations (userState) {
             // const refPropsPicked = filter(ref, Object.keys(patches))
             // const patchesSanitised = merge({ extensions: [convertHelpers] }, refPropsPicked, patches)
             var patchesFlat = flatten.flattenObject(patches);
-            for (var _i = 0, _a = Object.entries(patchesFlat); _i < _a.length; _i++) {
-                var _b = _a[_i], path = _b[0], value = _b[1];
+            for (var _i = 0, _b = Object.entries(patchesFlat); _i < _b.length; _i++) {
+                var _c = _b[_i], path = _c[0], value = _c[1];
                 var targetVal = pathToProp(ref, path);
                 var newVal = convertHelpers(targetVal, value);
                 // do not update anything if the values are the same
                 // this is technically not required, because vue takes care of this as well:
                 if (targetVal === newVal)
-                    return;
+                    continue;
                 // update just the nested value
-                var pathParts = path.split('.');
-                var prop = pathParts.pop();
-                var pathParent = pathParts.join('');
-                var targetForNestedProp = pathToProp(ref, pathParent);
-                this._vm.$set(targetForNestedProp, prop, newVal);
+                var setParams = getSetParams(ref, path, newVal);
+                (_a = this._vm).$set.apply(_a, setParams);
             }
         },
         DELETE_DOC: function (state, id) {

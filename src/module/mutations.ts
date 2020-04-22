@@ -10,6 +10,38 @@ import { isArrayHelper } from '../utils/arrayHelpers'
 import { isIncrementHelper } from '../utils/incrementHelper'
 import getStateWithSync from './state'
 
+function convertHelpers (originVal, newVal) {
+  if (isArray(originVal) && isArrayHelper(newVal)) {
+    newVal = newVal.executeOn(originVal)
+  }
+  if (isNumber(originVal) && isIncrementHelper(newVal)) {
+    newVal = newVal.executeOn(originVal)
+  }
+  return newVal // always return newVal as fallback!!
+}
+
+/**
+ * Creates the params needed to $set a target based on a nested.path
+ *
+ * @param {object} target
+ * @param {string} path
+ * @param {*} value
+ * @returns {[object, string, any]}
+ */
+function getSetParams (target: object, path: string, value: any): [object, string, any] {
+  const pathParts = path.split('.')
+  const prop = pathParts.pop()
+  const pathParent = pathParts.join('.')
+  const targetForNestedProp = pathToProp(target, pathParent)
+  if (targetForNestedProp === undefined) {
+    // the target doesn't have an object ready at this level to set the value to
+    // so we need to step down a level and try again
+    return getSetParams(target, pathParent, { [prop]: value })
+  }
+  const valueToSet = value
+  return [targetForNestedProp, prop, valueToSet]
+}
+
 /**
  * a function returning the mutations object
  *
@@ -82,33 +114,16 @@ export default function (userState: object): AnyObject {
       }
       if (!ref) return logError('patch-no-ref')
 
-      function convertHelpers (originVal, newVal) {
-        if (isArray(originVal) && isArrayHelper(newVal)) {
-          newVal = newVal.executeOn(originVal)
-        }
-        if (isNumber(originVal) && isIncrementHelper(newVal)) {
-          newVal = newVal.executeOn(originVal)
-        }
-        return newVal // always return newVal as fallback!!
-      }
-
-      // const refPropsPicked = filter(ref, Object.keys(patches))
-      // const patchesSanitised = merge({ extensions: [convertHelpers] }, refPropsPicked, patches)
-
       const patchesFlat = flattenObject(patches)
-
       for (const [path, value] of Object.entries(patchesFlat)) {
         const targetVal = pathToProp(ref, path)
         const newVal = convertHelpers(targetVal, value)
         // do not update anything if the values are the same
         // this is technically not required, because vue takes care of this as well:
-        if (targetVal === newVal) return
+        if (targetVal === newVal) continue
         // update just the nested value
-        const pathParts = path.split('.')
-        const prop = pathParts.pop()
-        const pathParent = pathParts.join('')
-        const targetForNestedProp = pathToProp(ref, pathParent)
-        this._vm.$set(targetForNestedProp, prop, newVal)
+        const setParams = getSetParams(ref, path, newVal)
+        this._vm.$set(...setParams)
       }
     },
     DELETE_DOC (state, id) {
