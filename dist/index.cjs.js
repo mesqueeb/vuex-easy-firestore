@@ -331,6 +331,15 @@ function isIncrementHelper(payload) {
         payload.isIncrementHelper === true);
 }
 
+function convertHelpers(originVal, newVal) {
+    if (isWhat.isArray(originVal) && isArrayHelper(newVal)) {
+        newVal = newVal.executeOn(originVal);
+    }
+    if (isWhat.isNumber(originVal) && isIncrementHelper(newVal)) {
+        newVal = newVal.executeOn(originVal);
+    }
+    return newVal; // always return newVal as fallback!!
+}
 /**
  * Creates the params needed to $set a target based on a nested.path
  *
@@ -434,17 +443,6 @@ function pluginMutations (userState) {
             }
             if (!ref)
                 return error('patch-no-ref');
-            function convertHelpers(originVal, newVal) {
-                if (isWhat.isArray(originVal) && isArrayHelper(newVal)) {
-                    newVal = newVal.executeOn(originVal);
-                }
-                if (isWhat.isNumber(originVal) && isIncrementHelper(newVal)) {
-                    newVal = newVal.executeOn(originVal);
-                }
-                return newVal; // always return newVal as fallback!!
-            }
-            // const refPropsPicked = filter(ref, Object.keys(patches))
-            // const patchesSanitised = merge({ extensions: [convertHelpers] }, refPropsPicked, patches)
             var patchesFlat = flatten.flattenObject(patches);
             for (var _i = 0, _b = Object.entries(patchesFlat); _i < _b.length; _i++) {
                 var _c = _b[_i], path = _c[0], value = _c[1];
