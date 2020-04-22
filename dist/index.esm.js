@@ -5,7 +5,8 @@ import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
 import { isAnyObject, isPlainObject, isArray, isFunction, isNumber, isString, isDate } from 'is-what';
 import copy from 'copy-anything';
 import { merge } from 'merge-anything';
-import flatten from 'flatten-anything';
+import flatten, { flattenObject } from 'flatten-anything';
+import pathToProp from 'path-to-prop';
 import { compareObjectProps } from 'compare-anything';
 import { findAndReplace, findAndReplaceIf } from 'find-and-replace-anything';
 import filter from 'filter-anything';
@@ -323,6 +324,37 @@ function isIncrementHelper(payload) {
         payload.isIncrementHelper === true);
 }
 
+function convertHelpers(originVal, newVal) {
+    if (isArray(originVal) && isArrayHelper(newVal)) {
+        newVal = newVal.executeOn(originVal);
+    }
+    if (isNumber(originVal) && isIncrementHelper(newVal)) {
+        newVal = newVal.executeOn(originVal);
+    }
+    return newVal; // always return newVal as fallback!!
+}
+/**
+ * Creates the params needed to $set a target based on a nested.path
+ *
+ * @param {object} target
+ * @param {string} path
+ * @param {*} value
+ * @returns {[object, string, any]}
+ */
+function getSetParams(target, path, value) {
+    var _a;
+    var pathParts = path.split('.');
+    var prop = pathParts.pop();
+    var pathParent = pathParts.join('.');
+    var targetForNestedProp = pathToProp(target, pathParent);
+    if (targetForNestedProp === undefined) {
+        // the target doesn't have an object ready at this level to set the value to
+        // so we need to step down a level and try again
+        return getSetParams(target, pathParent, (_a = {}, _a[prop] = value, _a));
+    }
+    var valueToSet = value;
+    return [targetForNestedProp, prop, valueToSet];
+}
 /**
  * a function returning the mutations object
  *
@@ -396,7 +428,7 @@ function pluginMutations (userState) {
             }
         },
         PATCH_DOC: function (state, patches) {
-            var _this = this;
+            var _a;
             // Get the state prop ref
             var ref = state._conf.statePropName ? state[state._conf.statePropName] : state;
             if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
@@ -404,21 +436,19 @@ function pluginMutations (userState) {
             }
             if (!ref)
                 return error('patch-no-ref');
-            return Object.keys(patches).forEach(function (key) {
-                var newVal = patches[key];
-                // Merge if exists
-                function helpers(originVal, newVal) {
-                    if (isArray(originVal) && isArrayHelper(newVal)) {
-                        newVal = newVal.executeOn(originVal);
-                    }
-                    if (isNumber(originVal) && isIncrementHelper(newVal)) {
-                        newVal = newVal.executeOn(originVal);
-                    }
-                    return newVal; // always return newVal as fallback!!
-                }
-                newVal = merge({ extensions: [helpers] }, ref[key], patches[key]);
-                _this._vm.$set(ref, key, newVal);
-            });
+            var patchesFlat = flattenObject(patches);
+            for (var _i = 0, _b = Object.entries(patchesFlat); _i < _b.length; _i++) {
+                var _c = _b[_i], path = _c[0], value = _c[1];
+                var targetVal = pathToProp(ref, path);
+                var newVal = convertHelpers(targetVal, value);
+                // do not update anything if the values are the same
+                // this is technically not required, because vue takes care of this as well:
+                if (targetVal === newVal)
+                    continue;
+                // update just the nested value
+                var setParams = getSetParams(ref, path, newVal);
+                (_a = this._vm).$set.apply(_a, setParams);
+            }
         },
         DELETE_DOC: function (state, id) {
             if (state._conf.firestoreRefType.toLowerCase() !== 'collection')
