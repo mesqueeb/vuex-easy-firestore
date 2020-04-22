@@ -698,6 +698,25 @@ export default function (Firebase: any): AnyObject {
                 streamingStart()
               }
               gotFirstLocalResponse = true
+            } else if (gotFirstLocalResponse) {
+              // it's not the first call and it's a change from cache
+              // normally we only need to listen to the server changes, but there's an edge case here:
+              // case: "a permission is removed server side, and instead of this being notified
+              // by firestore from the _server side_, it only notifies this from the cache...
+              if (getters.collectionMode) {
+                const docChanges = querySnapshot.docChanges()
+                docChanges.forEach(function (change) {
+                  // only do stuff on "removed" !!
+                  if (change.type === 'removed') {
+                    const doc = getters.cleanUpRetrievedDoc(change.doc.data(), change.doc.id)
+                    dispatch('applyHooksAndUpdateState', {
+                      change: change.type,
+                      id: change.doc.id,
+                      doc: doc,
+                    })
+                  }
+                })
+              }
             }
           }
           // if data comes from server... BUT REALLY NOT: the data comes from local change
