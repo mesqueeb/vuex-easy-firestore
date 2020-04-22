@@ -404,9 +404,7 @@ function pluginMutations (userState) {
         PATCH_DOC: function (state, patches) {
             var _this = this;
             // Get the state prop ref
-            var ref = state._conf.statePropName
-                ? state[state._conf.statePropName]
-                : state;
+            var ref = state._conf.statePropName ? state[state._conf.statePropName] : state;
             if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
                 ref = ref[patches.id];
             }
@@ -439,9 +437,7 @@ function pluginMutations (userState) {
             }
         },
         DELETE_PROP: function (state, path) {
-            var searchTarget = state._conf.statePropName
-                ? state[state._conf.statePropName]
-                : state;
+            var searchTarget = state._conf.statePropName ? state[state._conf.statePropName] : state;
             var propArr = path.split('.');
             var target = propArr.pop();
             if (!propArr.length) {
@@ -449,7 +445,7 @@ function pluginMutations (userState) {
             }
             var ref = vuexEasyAccess.getDeepRef(searchTarget, propArr.join('.'));
             return this._vm.$delete(ref, target);
-        }
+        },
     };
 }
 
@@ -1462,7 +1458,7 @@ function pluginActions (Firebase) {
                 });
             };
             var unsubscribe = dbRef.onSnapshot({ includeMetadataChanges: includeMetadataChanges }, function (querySnapshot) { return __awaiter(_this, void 0, void 0, function () {
-                var message, error_1;
+                var docChanges, message, error_1;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
@@ -1485,6 +1481,26 @@ function pluginActions (Firebase) {
                                     streamingStart();
                                 }
                                 gotFirstLocalResponse = true;
+                            }
+                            else if (gotFirstLocalResponse) {
+                                // it's not the first call and it's a change from cache
+                                // normally we only need to listen to the server changes, but there's an edge case here:
+                                // case: "a permission is removed server side, and instead of this being notified
+                                // by firestore from the _server side_, it only notifies this from the cache...
+                                if (getters.collectionMode) {
+                                    docChanges = querySnapshot.docChanges();
+                                    docChanges.forEach(function (change) {
+                                        // only do stuff on "removed" !!
+                                        if (change.type === 'removed') {
+                                            var doc = getters.cleanUpRetrievedDoc(change.doc.data(), change.doc.id);
+                                            dispatch('applyHooksAndUpdateState', {
+                                                change: change.type,
+                                                id: change.doc.id,
+                                                doc: doc,
+                                            });
+                                        }
+                                    });
+                                }
                             }
                             return [3 /*break*/, 13];
                         case 1:

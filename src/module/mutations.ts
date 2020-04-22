@@ -74,9 +74,7 @@ export default function (userState: object): AnyObject {
     },
     PATCH_DOC (state, patches) {
       // Get the state prop ref
-      let ref = state._conf.statePropName
-        ? state[state._conf.statePropName]
-        : state
+      let ref = state._conf.statePropName ? state[state._conf.statePropName] : state
       if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
         ref = ref[patches.id]
       }
@@ -106,9 +104,7 @@ export default function (userState: object): AnyObject {
       }
     },
     DELETE_PROP (state, path) {
-      const searchTarget = state._conf.statePropName
-        ? state[state._conf.statePropName]
-        : state
+      const searchTarget = state._conf.statePropName ? state[state._conf.statePropName] : state
       const propArr = path.split('.')
       const target = propArr.pop()
       if (!propArr.length) {
@@ -116,6 +112,6 @@ export default function (userState: object): AnyObject {
       }
       const ref = getDeepRef(searchTarget, propArr.join('.'))
       return this._vm.$delete(ref, target)
-    }
+    },
   }
 }
