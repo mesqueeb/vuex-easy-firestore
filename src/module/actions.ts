@@ -232,7 +232,17 @@ export default function (Firebase: any): AnyObject {
             return resolve()
           })
           .catch(error => {
-            state._sync.patching = 'error'
+            // FirestoreError class is not publicly exposed
+            if (error && error.code && error.code === 'invalid') {
+              if (state._sync.patching === 'error') {
+                logError('firestore-idb-unrecoverable', error)
+              } else {
+                state._sync.patching = 'error'
+                logError('firestore-idb-error', error)
+                return dispatch('batchSync')
+              }
+            }
+
             state._sync.syncStack.debounceTimer = null
             logError('sync-error', error)
             return reject(error)
