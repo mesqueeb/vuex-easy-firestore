@@ -25,9 +25,10 @@ If you want to get _realtime updates_, you need to dispatch the `openDBChannel` 
 dispatch('moduleName/openDBChannel')
 ```
 
-`openDBChannel` relies on the Firestore [onSnapshot](https://firebase.google.com/docs/firestore/query-data/listen) function to get notified of remote changes.  The doc(s) are automatically added to/updated in your Vuex module under `moduleName/statePropName`.
+`openDBChannel` relies on the Firestore [onSnapshot](https://firebase.google.com/docs/firestore/query-data/listen) function to get notified of remote changes. The doc(s) are automatically added to/updated in your Vuex module under `moduleName/statePropName`.
 
 Mind that:
+
 - if the channel is opened on a document which does not exist yet at Firebase, the document gets automatically (re)created, unless you set `preventInitialDocInsertion` to `true`
 - the action returns a promise which resolves when the state of the module has been populated with data (served either from cache or server), so you know you can start working with it
 - when this promise is resolved, you get another one which lets you know when an error occurs
@@ -36,21 +37,20 @@ Just like the Firebase SDK, you can also use a [`where` clause](#where-orderby-c
 
 ```js
 dispatch('moduleName/openDBChannel')
-  .then(({streaming}) => {
+  .then(({ streaming }) => {
     // the state has been populated with data, you may start working with it
     startDoingThings()
-    
+
     // you must check that the channel keeps streaming and catch errors. Mind that
     // even while offline, the channel is considered as "streaming" and will remain
     // so until you close it or until an error occurs.
-    streaming()
+    streaming
       .then(() => {
         // this gets resolved when you close the channel yourself
       })
       .catch(error => {
         // an error occured and the channel has been closed, you should figure
         // out what happened and open a new channel.
-        
         // Perhaps the user lost his `read` rights on the resource, or maybe the
         // document got deleted and it wasn't possible to recreate it (possibly
         // because `preventInitialDocInsertion` is `false`). Or some other error
@@ -67,14 +67,14 @@ Sometimes the promise returned by the action might not be enough for you, becaus
 ```js
 dispatch('moduleName/openDBChannel', {includeMetadataChanges: true})
   .then(({refreshed, streaming}) => {
-  
+
     refreshed
      .then(() => {
        // the state has been populated with fresh data
      })
      .catch(error => {...})
 
-    streaming()
+    streaming
       .then(() => {...})
       .catch(error => {...})
   })
@@ -86,14 +86,13 @@ Finally, if you open multiple channels on a same module with different clauses, 
 ```js
 dispatch('moduleName/openDBChannel')
   .then(({streaming, stop}) => {
-  
+
     stop().then(() => {
       // the channel has been closed
     })
   })
   .catch(error => {...})
 ```
-
 
 ### Close DB channel
 
@@ -110,7 +109,7 @@ Please note that `closeDBChannel` does not mean it will not listen for "local" c
 `closeDBChannel` will not clear out the data in your current vuex module. You can also close the connection and completely clear out the module; removing all docs from your vuex module. (without deleting anything on the server, don't worry) In this case do:
 
 ```js
-dispatch('moduleName/closeDBChannel', {clearModule: true})
+dispatch('moduleName/closeDBChannel', { clearModule: true })
 ```
 
 ## Fetching docs
@@ -131,12 +130,14 @@ dispatch('myDocModule/fetchAndAdd')
 ### Fetching in 'collection' mode
 
 In 'collection' mode you can use these actions to fetch docs:
+
 - `fetchById` retrieves a single doc and adds it to your module
 - `fetchAndAdd` retrieves multiple docs and adds them to your module
 
 Both these actions will (1) retrieve the doc(s) from Firestore and (2) add it to your Vuex module.
 
 Let's see an example:
+
 ```js
 const pokemonModule = {
   firestorePath: 'pokemon',
@@ -162,12 +163,12 @@ dispatch('pokemon/fetchAndAdd')
 Of course, just like the Firebase SDK, you can also use a `where` clause to retrieve eg. all water Pokémon. (Read more on [where clauses](#where-orderby-clauses) down below)
 
 ```js
-dispatch('pokemon/fetchAndAdd', {where: [['type', '==', 'water']]})
+dispatch('pokemon/fetchAndAdd', { where: [['type', '==', 'water']] })
 ```
 
 ### a note on fetch limit
 
-When doing `fetchAndAdd` there will be a limit that defaults to 50 docs. If you want to fetch *the next 50 docs* you just need to call the `fetchAndAdd` action again, and it will automatically retrieve the next docs! See the example below:
+When doing `fetchAndAdd` there will be a limit that defaults to 50 docs. If you want to fetch _the next 50 docs_ you just need to call the `fetchAndAdd` action again, and it will automatically retrieve the next docs! See the example below:
 
 ```js
 // call once to fetch the first 50:
@@ -181,9 +182,9 @@ You can pass a custom fetch limit or disable the fetch limit by passing 0:
 
 ```js
 // custom fetch limit:
-dispatch('myModule/fetchAndAdd', {clauses: {limit: 1000}})
+dispatch('myModule/fetchAndAdd', { clauses: { limit: 1000 } })
 // no fetch limit:
-dispatch('myModule/fetchAndAdd', {clauses: {limit: 0}})
+dispatch('myModule/fetchAndAdd', { clauses: { limit: 0 } })
 ```
 
 The `fetchAndAdd` action will return a promise resolving in `{done: true}` if there are no more docs to be fetched. You can use this to check when to stop fetching like so:
@@ -219,8 +220,7 @@ Of course, you will need to wait for the user to sign in and only then dispatch 
 Firebase.auth().onAuthStateChanged(user => {
   if (user) {
     // user is logged in so openDBChannel
-    store.dispatch('userData/openDBChannel')
-      .catch(console.error)
+    store.dispatch('userData/openDBChannel').catch(console.error)
     // or fetchAndAdd
     // store.dispatch('userData/fetchAndAdd')
   }
@@ -248,8 +248,8 @@ When required you can also manually pass a user id like so: `dispatch('userData/
 
 Just like Firestore, you can use `where` and `orderBy` to clauses which docs are retrieved and synced.
 
-- *where:* arrays of "parameters" that get passed on to firestore's `.where(...parameters)`
-- *orderBy:* a single "array" that gets passed on to firestore's `.orderBy(...array)`
+- _where:_ arrays of "parameters" that get passed on to firestore's `.where(...parameters)`
+- _orderBy:_ a single "array" that gets passed on to firestore's `.orderBy(...array)`
 
 There are three ways to use where and orderBy. As per example we will define `where` and `orderBy` variables first, then show how you can use them:
 
@@ -266,13 +266,13 @@ const orderBy = ['created_at']
 1. Pass together with openDBChannel:
 
 ```js
-dispatch('myModule/openDBChannel', {clauses: {where, orderBy}})
+dispatch('myModule/openDBChannel', { clauses: { where, orderBy } })
 ```
 
 2. Pass together with fetchAndAdd:
 
 ```js
-dispatch('myModule/fetchAndAdd', {clauses: {where, orderBy}})
+dispatch('myModule/fetchAndAdd', { clauses: { where, orderBy } })
 ```
 
 3. Define inside your vuex module, to set as default when for `openDBChannel`:
@@ -286,8 +286,8 @@ const myModule = {
   namespaced: true, // automatically added
   sync: {
     where,
-    orderBy
-  }
+    orderBy,
+  },
 }
 // Now you can do:
 dispatch('myModule/openDBChannel')
@@ -330,12 +330,18 @@ Say you have an "notes" application that shows a user's notes when the app is op
 ```js
 // when the app is opened after user authentication:
 store.dispatch('userNotes/openDBChannel', {
-  where: [['archived', '==', false], ['created_by', '==', '{userId}']],
+  where: [
+    ['archived', '==', false],
+    ['created_by', '==', '{userId}'],
+  ],
 })
 
 // then when the archive-page is opened:
 store.dispatch('userNotes/fetchAndAdd', {
-  where: [['archived', '==', true], ['created_by', '==', '{userId}']],
+  where: [
+    ['archived', '==', true],
+    ['created_by', '==', '{userId}'],
+  ],
 })
 ```
 
@@ -375,7 +381,7 @@ export default {
   name: 'openPage',
   mounted () {
     const pageId = this.$router.params.id
-    this.$store.dispatch('openPage/fetchAndAdd', {pageId})
+    this.$store.dispatch('openPage/fetchAndAdd', { pageId })
   },
 }
 ```
@@ -390,8 +396,8 @@ const myModule = {
   moduleName: 'openPage',
   statePropName: 'data',
   sync: {
-    preventInitialDocInsertion: true
-  }
+    preventInitialDocInsertion: true,
+  },
 }
 
 // Vue component
@@ -399,12 +405,11 @@ export default {
   name: 'openPage',
   mounted () {
     const pageId = this.$router.params.id
-    this.$store.dispatch('openPage/fetchAndAdd', {pageId})
-      .catch(error => {
-        if (error === 'preventInitialDocInsertion') {
-          // an initial doc insertion was prevented
-        }
-      })
+    this.$store.dispatch('openPage/fetchAndAdd', { pageId }).catch(error => {
+      if (error === 'preventInitialDocInsertion') {
+        // an initial doc insertion was prevented
+      }
+    })
   },
 }
 ```
@@ -412,15 +417,12 @@ export default {
 You can also disable initial doc insertion on the top level for all modules:
 
 ```js
-const easyFirestore = createEasyFirestore(
-  [module1, module2],
-  {preventInitialDocInsertion: true}
-)
+const easyFirestore = createEasyFirestore([module1, module2], { preventInitialDocInsertion: true })
 
 // include as PLUGIN in your vuex store:
 const store = {
   // ... your store
-  plugins: [easyFirestore]
+  plugins: [easyFirestore],
 }
 ```
 
@@ -429,11 +431,19 @@ const store = {
 Of course you can have multiple vuex modules, all in sync with different firestore paths.
 
 ```js
-const userDataModule = {/* config */}
-const anotherModule = {/* config */}
-const aThirdModule = {/* config */}
+const userDataModule = {
+  /* config */
+}
+const anotherModule = {
+  /* config */
+}
+const aThirdModule = {
+  /* config */
+}
 // make sure you choose a different moduleName and firestorePath each time!
-const easyFirestores = createEasyFirestore([userDataModule, anotherModule, aThirdModule], {logging: true})
+const easyFirestores = createEasyFirestore([userDataModule, anotherModule, aThirdModule], {
+  logging: true,
+})
 // and include as PLUGIN in your vuex store:
 store: {
   // ... your store
@@ -467,10 +477,10 @@ It is usually much better to use the same `statePropName` (eg. `'data'`) for all
 
 > Only for 'collection' mode.
 
-Besides `fetchAndAdd` there is also the `fetch` action. The difference is that with just `fetch`  it will not add the documents to your vuex module, so you can handle the result yourself. `fetch` is useful because it will automatically use the Firestore path from your module.
+Besides `fetchAndAdd` there is also the `fetch` action. The difference is that with just `fetch` it will not add the documents to your vuex module, so you can handle the result yourself. `fetch` is useful because it will automatically use the Firestore path from your module.
 
 ```js
-dispatch('myModule/fetch', {where: [['archived', '==', true]]})
+dispatch('myModule/fetch', { where: [['archived', '==', true]] })
   .then(querySnapshot => {
     if (querySnapshot.done === true) {
       // `{done: true}` is returned when everything is already fetched and there are 0 docs:
@@ -488,7 +498,7 @@ Please note, just like [fetchAndAdd](#fetching-docs) explained above, `fetch` al
 
 ```js
 // custom fetch limit:
-dispatch('myModule/fetch', {clauses: {limit: 1000}})
+dispatch('myModule/fetch', { clauses: { limit: 1000 } })
 // no fetch limit:
-dispatch('myModule/fetch', {clauses: {limit: 0}})
+dispatch('myModule/fetch', { clauses: { limit: 0 } })
 ```
