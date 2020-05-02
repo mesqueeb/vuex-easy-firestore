@@ -61,6 +61,10 @@ const errorMessages = {
     Something went wrong while trying to synchronise data to Cloud Firestore.
     The data is kept in queue, so that it will try to sync again upon the next 'set' or 'patch' action.
   `,
+  'firestore-idb-unrecoverable': `
+    Firestore threw an IndexedDB Error when attempting to sync.
+    The retry operation was unsuccessful.
+  `,
 }
 
 /**
