@@ -39,11 +39,42 @@ export default function (userConfig: IEasyFirestoreModule, FirebaseDependency: a
     const defaultValsInState = conf.statePropName ? restOfState[conf.statePropName] : restOfState
     conf.sync.defaultValues = copy(merge(defaultValsInState, conf.sync.defaultValues))
   }
+
+  // Warn overloaded mutations / actions / getters 
+  let uKeys, pKeys
+  const pMutations = pluginMutations(merge(userState, { _conf: conf }))
+  const pActions = pluginActions(FirebaseDependency)
+  const pGetters = pluginGetters(FirebaseDependency)
+
+  uKeys = Object.keys(userMutations)
+  pKeys = Object.keys(pMutations)
+  for (const key of uKeys) {
+    if (pKeys.includes(key)) {
+      console.warn(`[vuex-easy-firestore] Overloaded mutation: ${conf.moduleName}/${key}`)
+    }
+  }
+
+  uKeys = Object.keys(userActions)
+  pKeys = Object.keys(pActions)
+  for (const key of uKeys) {
+    if (pKeys.includes(key)) {
+      console.warn(`[vuex-easy-firestore] Overloaded action: ${conf.moduleName}/${key}`)
+    }
+  }
+
+  uKeys = Object.keys(userGetters)
+  pKeys = Object.keys(pGetters)
+  for (const key of uKeys) {
+    if (pKeys.includes(key)) {
+      console.warn(`[vuex-easy-firestore] Overloaded getter: ${conf.moduleName}/${key}`)
+    }
+  }
+
   return {
     namespaced: true,
     state: merge(pluginState(), restOfState, { _conf: conf }),
-    mutations: { ...userMutations, ...pluginMutations(merge(userState, { _conf: conf })) },
-    actions: { ...userActions, ...pluginActions(FirebaseDependency) },
-    getters: { ...userGetters, ...pluginGetters(FirebaseDependency) },
+    mutations: { ...userMutations, ...pMutations },
+    actions: { ...userActions, ...pActions },
+    getters: { ...userGetters, ...pGetters },
   }
 }
