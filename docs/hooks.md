@@ -16,13 +16,13 @@ Hooks must be defined inside your vuex module under `sync`. Below are the exampl
 {
   // your other vuex-easy-fire config...
   sync: {
-    insertHook: function (updateStore, doc, store) { updateStore(doc) },
-    patchHook: function (updateStore, doc, store) { updateStore(doc) },
-    deleteHook: function (updateStore, id, store) { updateStore(id) },
+    insertHook: function (updateStore, doc, store) { return updateStore(doc) },
+    patchHook: function (updateStore, doc, store) { return updateStore(doc) },
+    deleteHook: function (updateStore, id, store) { return updateStore(id) },
     // Batches have separate hooks!
-    insertBatchHook: function (updateStore, docs, store) { updateStore(doc) },
-    patchBatchHook: function (updateStore, doc, ids, store) { updateStore(doc, ids) },
-    deleteBatchHook: function (updateStore, ids, store) { updateStore(ids) },
+    insertBatchHook: function (updateStore, docs, store) { return updateStore(doc) },
+    patchBatchHook: function (updateStore, doc, ids, store) { return updateStore(doc, ids) },
+    deleteBatchHook: function (updateStore, ids, store) { return updateStore(ids) },
   }
 }
 ```
@@ -43,9 +43,9 @@ Basically when you make a local change you can intercept the change just _before
 {
   // place also in the `sync` prop
   sync: {
-    insertHookBeforeSync: function (updateFirestore, doc, store) { updateFirestore(doc) },
-    patchHookBeforeSync: function (updateFirestore, doc, store) { updateFirestore(doc) },
-    deleteHookBeforeSync: function (updateFirestore, id, store) { updateFirestore(id) },
+    insertHookBeforeSync: function (updateFirestore, doc, store) { return updateFirestore(doc) },
+    patchHookBeforeSync: function (updateFirestore, doc, store) { return updateFirestore(doc) },
+    deleteHookBeforeSync: function (updateFirestore, id, store) { return updateFirestore(id) },
   }
 }
 ```
@@ -75,9 +75,9 @@ You also have some extra parameters to work with:
 {
   // your other vuex-easy-fire config...
   serverChange: {
-    addedHook: function (updateStore, doc, id, store) { updateStore(doc) },
-    modifiedHook: function (updateStore, doc, id, store) { updateStore(doc) },
-    removedHook: function (updateStore, doc, id, store) { updateStore(doc) },
+    addedHook: function (updateStore, doc, id, store) { return updateStore(doc) },
+    modifiedHook: function (updateStore, doc, id, store) { return updateStore(doc) },
+    removedHook: function (updateStore, doc, id, store) { return updateStore(doc) },
   }
 }
 ```
