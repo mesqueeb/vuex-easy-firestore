@@ -1,3 +1,4 @@
+import { firestore } from 'firebase/app'
 import { isArray, isPlainObject, isFunction, isNumber } from 'is-what'
 import copy from 'copy-anything'
 import { merge } from 'merge-anything'
@@ -11,6 +12,11 @@ import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
 import { isArrayHelper } from '../utils/arrayHelpers'
 import { isIncrementHelper } from '../utils/incrementHelper'
 import logError from './errors'
+
+type DocumentSnapshot = firestore.DocumentSnapshot
+type QuerySnapshot = firestore.QuerySnapshot
+type DocumentChange = firestore.DocumentChange
+type QueryDocumentSnapshot = firestore.QueryDocumentSnapshot
 
 /**
  * A function returning the actions object
@@ -627,8 +633,6 @@ export default function (Firebase: any): AnyObject {
       const initialPromise = nicePromise()
       const refreshedPromise = nicePromise()
       const streamingPromise = nicePromise()
-      let gotFirstLocalResponse = false
-      let gotFirstServerResponse = false
       const includeMetadataChanges = parameters.includeMetadataChanges
       const streamingStart = () => {
         // create a promise for the life of the snapshot that can be resolved from
@@ -666,132 +670,87 @@ export default function (Firebase: any): AnyObject {
         })
       }
       const processCollection = docChanges => {
-        docChanges.forEach(change => {
-          const doc = getters.cleanUpRetrievedDoc(change.doc.data(), change.doc.id)
+        docChanges.forEach((docChange: DocumentChange) => {
+          const docSnapshot: QueryDocumentSnapshot = docChange.doc
+          const doc = getters.cleanUpRetrievedDoc(docSnapshot.data(), docSnapshot.id)
           dispatch('applyHooksAndUpdateState', {
-            change: change.type,
-            id: change.doc.id,
+            change: docChange.type,
+            id: docSnapshot.id,
             doc,
           })
         })
       }
-      const unsubscribe = dbRef.onSnapshot(
-        { includeMetadataChanges },
-        async querySnapshot => {
-          // if the data comes from cache
-          if (querySnapshot.metadata.fromCache) {
-            // if it's the very first call, we are at the initial app load. If so, we'll use
-            // the data in cache (if available) to populate the state.
-            if (!gotFirstLocalResponse) {
-              // 'doc' mode:
-              if (!getters.collectionMode) {
-                // note: we don't want to insert a document ever when the data comes from cache,
-                // and we don't want to start the app if the data doesn't exist (no persistence)
-                if (querySnapshot.data()) {
-                  processDocument(querySnapshot.data())
-                  streamingStart()
+      const onSnapshotListener = !getters.collectionMode
+        ? // 'doc' mode
+          async (docSnapshot: DocumentSnapshot) => {
+            // do nothing on local changes
+            const isLocalUpdate = docSnapshot.metadata.hasPendingWrites
+            if (isLocalUpdate) return
+
+            // if the document doesn't exist yet
+            if (!docSnapshot.exists) {
+              // if it's ok to insert an initial document
+              if (!state._conf.sync.preventInitialDocInsertion) {
+                if (state._conf.logging) {
+                  const message = 'inserting initial doc'
+                  console.log(
+                    `%c [vuex-easy-firestore] ${message}; for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`,
+                    'color: MediumSeaGreen'
+                  )
+                }
+                try {
+                  await dispatch('insertInitialDoc')
+                  // if the initial document was successfully inserted
+                  if (initialPromise.isPending) {
+                    streamingStart()
+                  }
+                  if (refreshedPromise.isPending) {
+                    refreshedPromise.resolve()
+                  }
+                } catch (error) {
+                  // we close the channel ourselves. Firestore does not, as it leaves the
+                  // channel open as long as the user has read rights on the document, even
+                  // if it does not exist. But since the dev enabled `insertInitialDoc`,
+                  // it makes some sense to close as we can assume the user should have had
+                  // write rights
+                  streamingStop(error)
                 }
               }
-              // 'collection' mode
+              // we are not allowed to (re)create the doc: close the channel and reject
               else {
-                processCollection(querySnapshot.docChanges())
-                streamingStart()
-              }
-              gotFirstLocalResponse = true
-            } else if (gotFirstLocalResponse) {
-              // it's not the first call and it's a change from cache
-              // normally we only need to listen to the server changes, but there's an edge case here:
-              // case: "a permission is removed server side, and instead of this being notified
-              // by firestore from the _server side_, it only notifies this from the cache...
-              if (getters.collectionMode) {
-                const docChanges = querySnapshot.docChanges()
-                docChanges.forEach(function (change) {
-                  // only do stuff on "removed" !!
-                  if (change.type === 'removed') {
-                    const doc = getters.cleanUpRetrievedDoc(change.doc.data(), change.doc.id)
-                    dispatch('applyHooksAndUpdateState', {
-                      change: change.type,
-                      id: change.doc.id,
-                      doc: doc,
-                    })
-                  }
-                })
+                streamingStop('preventInitialDocInsertion')
               }
             }
-          }
-          // if data comes from server... BUT REALLY NOT: the data comes from local change
-          else if (querySnapshot.metadata.hasPendingWrites) {
-            // this is only the result of a local modification which does not
-            // require to do anything else.
-            // https://firebase.google.com/docs/reference/js/firebase.firestore.SnapshotMetadata
-            // True if the snapshot contains the result of local writes (e.g. set() or update() calls) that have not yet been committed to the backend. If your listener has opted into metadata updates (via SnapshotListenOptions) you will receive another snapshot with hasPendingWrites equal to false once the writes have been committed to the backend.
-          }
-          // the data really comes from a change on the server
-          else {
-            // 'doc' mode:
-            if (!getters.collectionMode) {
-              // if the document doesn't exist yet
-              if (!querySnapshot.exists) {
-                // if it's ok to insert an initial document
-                if (!state._conf.sync.preventInitialDocInsertion) {
-                  if (state._conf.logging) {
-                    const message = gotFirstServerResponse
-                      ? 'recreating doc after remote deletion'
-                      : 'inserting initial doc'
-                    console.log(
-                      `%c [vuex-easy-firestore] ${message}; for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`,
-                      'color: MediumSeaGreen'
-                    )
-                  }
-                  try {
-                    await dispatch('insertInitialDoc')
-                    // if the initial document was successfully inserted
-                    if (initialPromise.isPending) {
-                      streamingStart()
-                    }
-                    if (refreshedPromise.isPending) {
-                      refreshedPromise.resolve()
-                    }
-                  } catch (error) {
-                    // we close the channel ourselves. Firestore does not, as it leaves the
-                    // channel open as long as the user has read rights on the document, even
-                    // if it does not exist. But since the dev enabled `insertInitialDoc`,
-                    // it makes some sense to close as we can assume the user should have had
-                    // write rights
-                    streamingStop(error)
-                  }
-                }
-                // we are not allowed to (re)create the doc: close the channel and reject
-                else {
-                  streamingStop('preventInitialDocInsertion')
-                }
-              }
-              // the remote document exists: apply to the local store
-              else {
-                processDocument(querySnapshot.data())
-                if (initialPromise.isPending) {
-                  streamingStart()
-                }
-                // the promise should still be pending at this point only if there is no persistence,
-                // as only then the first call to our listener will have `fromCache` === `false`
-                if (refreshedPromise.isPending) {
-                  refreshedPromise.resolve()
-                }
-              }
-            }
-            // 'collection' mode:
+            // the remote document exists: apply to the local store
             else {
-              processCollection(querySnapshot.docChanges())
+              processDocument(docSnapshot.data())
               if (initialPromise.isPending) {
                 streamingStart()
               }
+              // the promise should still be pending at this point only if there is no persistence,
+              // as only then the first call to our listener will have `fromCache` === `false`
               if (refreshedPromise.isPending) {
                 refreshedPromise.resolve()
               }
             }
-            gotFirstServerResponse = true
           }
-        },
+        : // 'collection' mode
+          async (querySnapshot: QuerySnapshot) => {
+            // do nothing on local changes
+            const isLocalUpdate = querySnapshot.metadata.hasPendingWrites
+            if (isLocalUpdate) return
+            processCollection(querySnapshot.docChanges())
+            if (initialPromise.isPending) {
+              streamingStart()
+            }
+            if (refreshedPromise.isPending) {
+              refreshedPromise.resolve()
+            }
+          }
+
+      const unsubscribe = dbRef.onSnapshot(
+        { includeMetadataChanges },
+        onSnapshotListener,
         streamingStop
       )
       state._sync.unsubscribe[identifier] = unsubscribe

@@ -346,14 +346,14 @@ function getSetParams(target, path, value) {
     var pathParts = path.split('.');
     var prop = pathParts.pop();
     var pathParent = pathParts.join('.');
-    var targetForNestedProp = pathToProp(target, pathParent);
-    if (targetForNestedProp === undefined) {
+    var objectToSetPropTo = pathToProp(target, pathParent);
+    if (!isPlainObject(objectToSetPropTo)) {
         // the target doesn't have an object ready at this level to set the value to
         // so we need to step down a level and try again
         return getSetParams(target, pathParent, (_a = {}, _a[prop] = value, _a));
     }
     var valueToSet = value;
-    return [targetForNestedProp, prop, valueToSet];
+    return [objectToSetPropTo, prop, valueToSet];
 }
 /**
  * a function returning the mutations object
@@ -1433,8 +1433,6 @@ function pluginActions (Firebase) {
             var initialPromise = nicePromise();
             var refreshedPromise = nicePromise();
             var streamingPromise = nicePromise();
-            var gotFirstLocalResponse = false;
-            var gotFirstServerResponse = false;
             var includeMetadataChanges = parameters.includeMetadataChanges;
             var streamingStart = function () {
                 // create a promise for the life of the snapshot that can be resolved from
@@ -1472,117 +1470,84 @@ function pluginActions (Firebase) {
                 });
             };
             var processCollection = function (docChanges) {
-                docChanges.forEach(function (change) {
-                    var doc = getters.cleanUpRetrievedDoc(change.doc.data(), change.doc.id);
+                docChanges.forEach(function (docChange) {
+                    var docSnapshot = docChange.doc;
+                    var doc = getters.cleanUpRetrievedDoc(docSnapshot.data(), docSnapshot.id);
                     dispatch('applyHooksAndUpdateState', {
-                        change: change.type,
-                        id: change.doc.id,
+                        change: docChange.type,
+                        id: docSnapshot.id,
                         doc: doc,
                     });
                 });
             };
-            var unsubscribe = dbRef.onSnapshot({ includeMetadataChanges: includeMetadataChanges }, function (querySnapshot) { return __awaiter(_this, void 0, void 0, function () {
-                var docChanges, message, error_1;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            if (!querySnapshot.metadata.fromCache) return [3 /*break*/, 1];
-                            // if it's the very first call, we are at the initial app load. If so, we'll use
-                            // the data in cache (if available) to populate the state.
-                            if (!gotFirstLocalResponse) {
-                                // 'doc' mode:
-                                if (!getters.collectionMode) {
-                                    // note: we don't want to insert a document ever when the data comes from cache,
-                                    // and we don't want to start the app if the data doesn't exist (no persistence)
-                                    if (querySnapshot.data()) {
-                                        processDocument(querySnapshot.data());
+            var onSnapshotListener = !getters.collectionMode
+                ? // 'doc' mode
+                    function (docSnapshot) { return __awaiter(_this, void 0, void 0, function () {
+                        var isLocalUpdate, message, error_1;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    isLocalUpdate = docSnapshot.metadata.hasPendingWrites;
+                                    if (isLocalUpdate)
+                                        return [2 /*return*/];
+                                    if (!!docSnapshot.exists) return [3 /*break*/, 7];
+                                    if (!!state._conf.sync.preventInitialDocInsertion) return [3 /*break*/, 5];
+                                    if (state._conf.logging) {
+                                        message = 'inserting initial doc';
+                                        console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: MediumSeaGreen');
+                                    }
+                                    _a.label = 1;
+                                case 1:
+                                    _a.trys.push([1, 3, , 4]);
+                                    return [4 /*yield*/, dispatch('insertInitialDoc')
+                                        // if the initial document was successfully inserted
+                                    ];
+                                case 2:
+                                    _a.sent();
+                                    // if the initial document was successfully inserted
+                                    if (initialPromise.isPending) {
                                         streamingStart();
                                     }
-                                }
-                                // 'collection' mode
-                                else {
-                                    processCollection(querySnapshot.docChanges());
-                                    streamingStart();
-                                }
-                                gotFirstLocalResponse = true;
+                                    if (refreshedPromise.isPending) {
+                                        refreshedPromise.resolve();
+                                    }
+                                    return [3 /*break*/, 4];
+                                case 3:
+                                    error_1 = _a.sent();
+                                    // we close the channel ourselves. Firestore does not, as it leaves the
+                                    // channel open as long as the user has read rights on the document, even
+                                    // if it does not exist. But since the dev enabled `insertInitialDoc`,
+                                    // it makes some sense to close as we can assume the user should have had
+                                    // write rights
+                                    streamingStop(error_1);
+                                    return [3 /*break*/, 4];
+                                case 4: return [3 /*break*/, 6];
+                                case 5:
+                                    streamingStop('preventInitialDocInsertion');
+                                    _a.label = 6;
+                                case 6: return [3 /*break*/, 8];
+                                case 7:
+                                    processDocument(docSnapshot.data());
+                                    if (initialPromise.isPending) {
+                                        streamingStart();
+                                    }
+                                    // the promise should still be pending at this point only if there is no persistence,
+                                    // as only then the first call to our listener will have `fromCache` === `false`
+                                    if (refreshedPromise.isPending) {
+                                        refreshedPromise.resolve();
+                                    }
+                                    _a.label = 8;
+                                case 8: return [2 /*return*/];
                             }
-                            else if (gotFirstLocalResponse) {
-                                // it's not the first call and it's a change from cache
-                                // normally we only need to listen to the server changes, but there's an edge case here:
-                                // case: "a permission is removed server side, and instead of this being notified
-                                // by firestore from the _server side_, it only notifies this from the cache...
-                                if (getters.collectionMode) {
-                                    docChanges = querySnapshot.docChanges();
-                                    docChanges.forEach(function (change) {
-                                        // only do stuff on "removed" !!
-                                        if (change.type === 'removed') {
-                                            var doc = getters.cleanUpRetrievedDoc(change.doc.data(), change.doc.id);
-                                            dispatch('applyHooksAndUpdateState', {
-                                                change: change.type,
-                                                id: change.doc.id,
-                                                doc: doc,
-                                            });
-                                        }
-                                    });
-                                }
-                            }
-                            return [3 /*break*/, 13];
-                        case 1:
-                            if (!querySnapshot.metadata.hasPendingWrites) return [3 /*break*/, 2];
-                            return [3 /*break*/, 13];
-                        case 2:
-                            if (!!getters.collectionMode) return [3 /*break*/, 11];
-                            if (!!querySnapshot.exists) return [3 /*break*/, 9];
-                            if (!!state._conf.sync.preventInitialDocInsertion) return [3 /*break*/, 7];
-                            if (state._conf.logging) {
-                                message = gotFirstServerResponse
-                                    ? 'recreating doc after remote deletion'
-                                    : 'inserting initial doc';
-                                console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: MediumSeaGreen');
-                            }
-                            _a.label = 3;
-                        case 3:
-                            _a.trys.push([3, 5, , 6]);
-                            return [4 /*yield*/, dispatch('insertInitialDoc')
-                                // if the initial document was successfully inserted
-                            ];
-                        case 4:
-                            _a.sent();
-                            // if the initial document was successfully inserted
-                            if (initialPromise.isPending) {
-                                streamingStart();
-                            }
-                            if (refreshedPromise.isPending) {
-                                refreshedPromise.resolve();
-                            }
-                            return [3 /*break*/, 6];
-                        case 5:
-                            error_1 = _a.sent();
-                            // we close the channel ourselves. Firestore does not, as it leaves the
-                            // channel open as long as the user has read rights on the document, even
-                            // if it does not exist. But since the dev enabled `insertInitialDoc`,
-                            // it makes some sense to close as we can assume the user should have had
-                            // write rights
-                            streamingStop(error_1);
-                            return [3 /*break*/, 6];
-                        case 6: return [3 /*break*/, 8];
-                        case 7:
-                            streamingStop('preventInitialDocInsertion');
-                            _a.label = 8;
-                        case 8: return [3 /*break*/, 10];
-                        case 9:
-                            processDocument(querySnapshot.data());
-                            if (initialPromise.isPending) {
-                                streamingStart();
-                            }
-                            // the promise should still be pending at this point only if there is no persistence,
-                            // as only then the first call to our listener will have `fromCache` === `false`
-                            if (refreshedPromise.isPending) {
-                                refreshedPromise.resolve();
-                            }
-                            _a.label = 10;
-                        case 10: return [3 /*break*/, 12];
-                        case 11:
+                        });
+                    }); }
+                : // 'collection' mode
+                    function (querySnapshot) { return __awaiter(_this, void 0, void 0, function () {
+                        var isLocalUpdate;
+                        return __generator(this, function (_a) {
+                            isLocalUpdate = querySnapshot.metadata.hasPendingWrites;
+                            if (isLocalUpdate)
+                                return [2 /*return*/];
                             processCollection(querySnapshot.docChanges());
                             if (initialPromise.isPending) {
                                 streamingStart();
@@ -1590,14 +1555,10 @@ function pluginActions (Firebase) {
                             if (refreshedPromise.isPending) {
                                 refreshedPromise.resolve();
                             }
-                            _a.label = 12;
-                        case 12:
-                            gotFirstServerResponse = true;
-                            _a.label = 13;
-                        case 13: return [2 /*return*/];
-                    }
-                });
-            }); }, streamingStop);
+                            return [2 /*return*/];
+                        });
+                    }); };
+            var unsubscribe = dbRef.onSnapshot({ includeMetadataChanges: includeMetadataChanges }, onSnapshotListener, streamingStop);
             state._sync.unsubscribe[identifier] = unsubscribe;
             return initialPromise;
         },
