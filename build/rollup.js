@@ -34,7 +34,7 @@ const plugins = [
   //   'merge-anything',
   //   'vuex-easy-access',
   // ]}),
-  typescript({ useTsconfigDeclarationDir: true })
+  typescript({ useTsconfigDeclarationDir: true, tsconfigOverride: { exclude: ['test/**/*'] } }),
 ]
 
 // ------------------------------------------------------------------------------------------
@@ -44,14 +44,14 @@ function defaults (config) {
   // defaults
   const defaults = {
     plugins,
-    external
+    external,
   }
   // defaults.output
   config.output = config.output.map(output => {
     return Object.assign(
       {
         sourcemap: false,
-        name: className
+        name: className,
       },
       output
     )
@@ -64,15 +64,15 @@ export default [
     input: 'src/index.ts',
     output: [
       { file: 'dist/index.cjs.js', format: 'cjs' },
-      { file: 'dist/index.esm.js', format: 'esm' }
-    ]
+      { file: 'dist/index.esm.js', format: 'esm' },
+    ],
   }),
   defaults({
     input: 'test/helpers/index.ts',
-    output: [{ file: 'test/helpers/index.cjs.js', format: 'cjs' }]
+    output: [{ file: 'test/helpers/index.cjs.js', format: 'cjs' }],
   }),
   defaults({
     input: 'src/utils/setDefaultValues.ts',
-    output: [{ file: 'test/helpers/utils/setDefaultValues.js', format: 'cjs' }]
-  })
+    output: [{ file: 'test/helpers/utils/setDefaultValues.js', format: 'cjs' }],
+  }),
 ]

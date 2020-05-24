@@ -1,4 +1,4 @@
-import { isArray, isFunction, isNumber } from 'is-what'
+import { isArray, isFunction, isNumber, isPlainObject } from 'is-what'
 import { getDeepRef } from 'vuex-easy-access'
 import { flattenObject } from 'flatten-anything'
 import pathToProp from 'path-to-prop'
@@ -32,14 +32,14 @@ function getSetParams (target: object, path: string, value: any): [object, strin
   const pathParts = path.split('.')
   const prop = pathParts.pop()
   const pathParent = pathParts.join('.')
-  const targetForNestedProp = pathToProp(target, pathParent)
-  if (targetForNestedProp === undefined) {
+  const objectToSetPropTo = pathToProp(target, pathParent)
+  if (!isPlainObject(objectToSetPropTo)) {
     // the target doesn't have an object ready at this level to set the value to
     // so we need to step down a level and try again
     return getSetParams(target, pathParent, { [prop]: value })
   }
   const valueToSet = value
-  return [targetForNestedProp, prop, valueToSet]
+  return [objectToSetPropTo, prop, valueToSet]
 }
 
 /**
