@@ -1,6 +1,7 @@
 import { isAnyObject, isPlainObject, isArray } from 'is-what'
 import * as firebase from 'firebase/app'
 import 'firebase/firestore'
+import isEqual from 'lodash-es/isEqual'
 
 let Firebase = firebase
 
@@ -17,10 +18,9 @@ export class ArrayUnion {
   }
   executeOn (array: any[]) {
     this.payload.forEach(item => {
-      // if array of object, find it by "id" (ex.: works with doc reference)
       const index =
-        isAnyObject(item) && item.id !== undefined
-          ? array.findIndex(_item => _item.id === item.id)
+        isAnyObject(item)
+          ? array.findIndex(_item => isEqual(_item, item))
           : array.indexOf(item)
       if (index === -1) {
         array.push(item)
@@ -42,10 +42,9 @@ export class ArrayRemove {
   }
   executeOn (array: any[]) {
     this.payload.forEach(item => {
-      // if array of object, remove it by "id" (ex.: works with doc reference)
       const index =
-        isAnyObject(item) && item.id !== undefined
-          ? array.findIndex(_item => _item.id === item.id)
+        isAnyObject(item)
+          ? array.findIndex(_item => isEqual(_item, item))
           : array.indexOf(item)
       if (index > -1) {
         array.splice(index, 1)
