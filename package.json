@@ -57,7 +57,7 @@
     "eslint": "^5.16.0",
     "eslint-loader": "^2.2.1",
     "eslint-plugin-vue": "^5.2.3",
-    "firebase": "^7.14.0",
+    "firebase": "^7.14.2",
     "mock-cloud-firestore": "^0.9.3",
     "rollup": "^1.32.1",
     "rollup-plugin-node-resolve": "^4.2.4",
