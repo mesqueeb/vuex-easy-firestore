@@ -3429,13 +3429,6 @@ function pluginActions (Firebase) {
                 orderBy: state._conf.sync.orderBy,
                 pathVariables: state._sync.pathVariables,
             });
-            if (isWhat.isFunction(state._sync.unsubscribe[identifier])) {
-                var channelAlreadyOpenError = "openDBChannel was already called for these clauses and pathvariables. Identifier: " + identifier;
-                if (state._conf.logging) {
-                    console.log(channelAlreadyOpenError);
-                }
-                return Promise.reject(channelAlreadyOpenError);
-            }
             // getters.dbRef should already have pathVariables swapped out
             var dbRef = getters.dbRef;
             // apply where and orderBy clauses
@@ -3482,6 +3475,14 @@ function pluginActions (Firebase) {
                 state._sync.unsubscribe[identifier] = null;
                 state._sync.streaming[identifier] = null;
             };
+            // if the channel was already open, just resolve:
+            if (isWhat.isFunction(state._sync.unsubscribe[identifier])) {
+                if (state._conf.logging) {
+                    var channelAlreadyOpenError = "openDBChannel was already called for these clauses and pathvariables. Identifier: " + identifier;
+                    console.log(channelAlreadyOpenError);
+                }
+                streamingStart();
+            }
             var processDocument = function (data) {
                 var doc = getters.cleanUpRetrievedDoc(data, getters.docModeId);
                 dispatch('applyHooksAndUpdateState', {
