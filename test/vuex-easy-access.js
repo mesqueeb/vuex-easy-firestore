@@ -145,7 +145,7 @@ test('[COLLECTION] set & delete: deep', async t => {
 // })
 
 test('[DOC] set & delete: top lvl', async t => {
-  store.dispatch('mainCharacterVEA/openDBChannel').catch(console.error)
+  await store.dispatch('mainCharacterVEA/openDBChannel').catch(console.error)
   await wait(3)
   // EXISTING prop set
   await store.set('mainCharacterVEA/items', ['Pokeball'])
@@ -153,9 +153,10 @@ test('[DOC] set & delete: top lvl', async t => {
   t.deepEqual(char.items, ['Pokeball'])
   // NEW prop set
   await store.set('mainCharacterVEA/newProp', 'Klappie')
+  await wait(1)
   t.truthy(char.newProp)
   t.is(char.newProp, 'Klappie')
-  await wait(2)
+  await wait(1)
   let docR, doc
   docR = await charRef.get()
   doc = docR.data()
