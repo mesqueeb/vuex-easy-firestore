@@ -3882,7 +3882,7 @@ function pluginActions (Firebase) {
             if (parameters === void 0) { parameters = {
                 clauses: {},
                 pathVariables: {},
-                includeMetadataChanges: false,
+                includeMetadataChanges: true,
             }; }
             if (!isWhat.isPlainObject(parameters))
                 parameters = {};
@@ -3905,13 +3905,13 @@ function pluginActions (Firebase) {
                     }
                 });
                 parameters = Object.assign({
-                    includeMetadataChanges: parameters.includeMetadataChanges || false,
+                    includeMetadataChanges: parameters.includeMetadataChanges || true,
                 }, { clauses: parameters, pathVariables: pathVariables_3 });
             }
             var defaultParameters = {
                 clauses: {},
                 pathVariables: {},
-                includeMetadataChanges: false,
+                includeMetadataChanges: true,
             };
             parameters = Object.assign(defaultParameters, parameters);
             /* COMPATIBILITY END */
@@ -4049,7 +4049,7 @@ function pluginActions (Firebase) {
                                     if (initialPromise.isPending) {
                                         streamingStart();
                                     }
-                                    if (refreshedPromise.isPending) {
+                                    if (refreshedPromise.isPending && docSnapshot.metadata.fromCache === false) {
                                         refreshedPromise.resolve();
                                     }
                                     return [3 /*break*/, 4];
@@ -4074,7 +4074,7 @@ function pluginActions (Firebase) {
                                     }
                                     // the promise should still be pending at this point only if there is no persistence,
                                     // as only then the first call to our listener will have `fromCache` === `false`
-                                    if (refreshedPromise.isPending) {
+                                    if (refreshedPromise.isPending && docSnapshot.metadata.fromCache === false) {
                                         refreshedPromise.resolve();
                                     }
                                     _a.label = 8;
@@ -4093,7 +4093,7 @@ function pluginActions (Firebase) {
                             if (initialPromise.isPending) {
                                 streamingStart();
                             }
-                            if (refreshedPromise.isPending) {
+                            if (refreshedPromise.isPending && querySnapshot.metadata.fromCache === false) {
                                 refreshedPromise.resolve();
                             }
                             return [2 /*return*/];

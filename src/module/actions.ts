@@ -534,7 +534,7 @@ export default function (Firebase: any): AnyObject {
       parameters: any = {
         clauses: {},
         pathVariables: {},
-        includeMetadataChanges: false,
+        includeMetadataChanges: true,
       }
     ) {
       if (!isPlainObject(parameters)) parameters = {}
@@ -560,7 +560,7 @@ export default function (Firebase: any): AnyObject {
         })
         parameters = Object.assign(
           {
-            includeMetadataChanges: parameters.includeMetadataChanges || false,
+            includeMetadataChanges: parameters.includeMetadataChanges || true,
           },
           { clauses: parameters, pathVariables }
         )
@@ -568,7 +568,7 @@ export default function (Firebase: any): AnyObject {
       const defaultParameters = {
         clauses: {},
         pathVariables: {},
-        includeMetadataChanges: false,
+        includeMetadataChanges: true,
       }
       parameters = Object.assign(defaultParameters, parameters)
       /* COMPATIBILITY END */
@@ -705,7 +705,7 @@ export default function (Firebase: any): AnyObject {
                   if (initialPromise.isPending) {
                     streamingStart()
                   }
-                  if (refreshedPromise.isPending) {
+                  if (refreshedPromise.isPending && docSnapshot.metadata.fromCache === false) {
                     refreshedPromise.resolve()
                   }
                 } catch (error) {
@@ -730,7 +730,7 @@ export default function (Firebase: any): AnyObject {
               }
               // the promise should still be pending at this point only if there is no persistence,
               // as only then the first call to our listener will have `fromCache` === `false`
-              if (refreshedPromise.isPending) {
+              if (refreshedPromise.isPending && docSnapshot.metadata.fromCache === false) {
                 refreshedPromise.resolve()
               }
             }
@@ -744,7 +744,7 @@ export default function (Firebase: any): AnyObject {
             if (initialPromise.isPending) {
               streamingStart()
             }
-            if (refreshedPromise.isPending) {
+            if (refreshedPromise.isPending && querySnapshot.metadata.fromCache === false) {
               refreshedPromise.resolve()
             }
           }
