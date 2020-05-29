@@ -605,6 +605,13 @@ export default function (Firebase: any): AnyObject {
         orderBy: state._conf.sync.orderBy,
         pathVariables: state._sync.pathVariables,
       })
+      if (isFunction(state._sync.unsubscribe[identifier])) {
+        const channelAlreadyOpenError = `openDBChannel was already called for these clauses and pathvariables. Identifier: ${identifier}`
+        if (state._conf.logging) {
+          console.log(channelAlreadyOpenError)
+        }
+        return Promise.reject(channelAlreadyOpenError)
+      }
       // getters.dbRef should already have pathVariables swapped out
       let dbRef = getters.dbRef
       // apply where and orderBy clauses
@@ -653,14 +660,6 @@ export default function (Firebase: any): AnyObject {
         state._sync.patching = 'error'
         state._sync.unsubscribe[identifier] = null
         state._sync.streaming[identifier] = null
-      }
-      // if the channel was already open, just resolve:
-      if (isFunction(state._sync.unsubscribe[identifier])) {
-        if (state._conf.logging) {
-          const channelAlreadyOpenError = `openDBChannel was already called for these clauses and pathvariables. Identifier: ${identifier}`
-          console.log(channelAlreadyOpenError)
-        }
-        streamingStart()
       }
       const processDocument = data => {
         const doc = getters.cleanUpRetrievedDoc(data, getters.docModeId)
