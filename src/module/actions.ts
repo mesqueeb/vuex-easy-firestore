@@ -578,6 +578,7 @@ export default function (Firebase: any): AnyObject {
        * clauses directly at the root of the `parameters` object. Can be removed in
        * a later version
        */
+      if (!isPlainObject(!parameters)) parameters = {}
       if (!parameters.clauses && !parameters.pathVariables) {
         const pathVariables = Object.assign({}, parameters || {})
         // @ts-ignore
