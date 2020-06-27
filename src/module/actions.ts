@@ -570,7 +570,7 @@ export default function (Firebase: any): AnyObject {
       parameters: any = {
         clauses: {},
         pathVariables: {},
-        debug: false
+        debug: false,
       }
     ) {
       /* COMPATIBILITY START
@@ -592,7 +592,7 @@ export default function (Firebase: any): AnyObject {
         parameters = {
           clauses: parameters,
           pathVariables,
-          debug: parameters.debug
+          debug: parameters.debug,
         }
       }
       /* COMPATIBILITY END */
@@ -600,7 +600,7 @@ export default function (Firebase: any): AnyObject {
       const defaultParameters = {
         clauses: {},
         pathVariables: {},
-        debug: false
+        debug: false,
       }
       parameters = Object.assign(defaultParameters, parameters || {})
 
@@ -612,7 +612,7 @@ export default function (Firebase: any): AnyObject {
       const identifier = createFetchIdentifier({
         where: state._conf.sync.where,
         orderBy: state._conf.sync.orderBy,
-        pathVariables: state._sync.pathVariables
+        pathVariables: state._sync.pathVariables,
       })
 
       if (isFunction(state._sync.unsubscribe[identifier])) {
@@ -638,13 +638,12 @@ export default function (Firebase: any): AnyObject {
       // creates promises that can be resolved from outside their scope and that
       // can give their status
       const nicePromise = (): any => {
-
         const m = {
           resolve: null,
           reject: null,
           isFulfilled: false,
           isRejected: false,
-          isPending: true
+          isPending: true,
         }
 
         const p = new Promise((resolve, reject) => {
@@ -655,11 +654,11 @@ export default function (Firebase: any): AnyObject {
         Object.assign(p, m)
 
         // @ts-ignore
-        p.then(() => p.isFulfilled = true)
+        p.then(() => (p.isFulfilled = true))
           // @ts-ignore
-          .catch(() => p.isRejected = true)
+          .catch(() => (p.isRejected = true))
           // @ts-ignore
-          .finally(() => p.isPending = false)
+          .finally(() => (p.isPending = false))
 
         return p
       }
@@ -677,7 +676,7 @@ export default function (Firebase: any): AnyObject {
         initialPromise.resolve({
           refreshed: refreshedPromise,
           streaming: streamingPromise,
-          stop: () => dispatch('closeDBChannel', { _identifier: identifier })
+          stop: () => dispatch('closeDBChannel', { _identifier: identifier }),
         })
       }
 
@@ -705,28 +704,32 @@ export default function (Firebase: any): AnyObject {
        * has the same API as a `documentSnapshot`.
        */
       const processDocument = (documentSnapshot, changeType?) => {
-
         // debug message
         if (parameters.debug) {
-          console.log(`%c Document ${documentSnapshot.id}: fromCache == ${documentSnapshot.metadata.fromCache ? 'true' : 'false'} && hasPendingWrites == ${documentSnapshot.metadata.hasPendingWrites ? 'true' : 'false'}`, 'padding-left: 40px')
+          console.log(
+            `%c Document ${documentSnapshot.id}: fromCache == ${
+              documentSnapshot.metadata.fromCache ? 'true' : 'false'
+            } && hasPendingWrites == ${
+              documentSnapshot.metadata.hasPendingWrites ? 'true' : 'false'
+            }`,
+            'padding-left: 40px'
+          )
         }
 
         // the promise that this function returns always resolves with this object
         const promisePayload = {
           initialize: false,
           refresh: false,
-          stop: null
+          stop: null,
         }
         let promise = Promise.resolve(promisePayload)
 
         // If the data is not up-to-date with the server yet.
         // This should happen only when we are loading from cache at initial load.
         if (documentSnapshot.metadata.fromCache) {
-
           // If it's the very first snapshot, we are at the initial app load. If so, we'll
           // use the data from cache to populate the state. Otherwise we can ignore it.
           if (initialPromise.isPending) {
-
             // pass the signal that the doc is ready to initialize
             promisePayload.initialize = true
 
@@ -734,16 +737,14 @@ export default function (Firebase: any): AnyObject {
             // a problem if they leave their promise pending. To be changed
             // TODO: this is actually not useful when the store is persisted with Vuex-persist
             promise = dispatch('applyHooksAndUpdateState', {
-                // TODO: for backward compatibility, we keep this as "modified" in doc mode
-                // but it would make sense in a future version to change to "added", as this is
-                // the initial load and the user may want to act on it differently
-                change: changeType || 'modified',
-                id: documentSnapshot.id,
-                doc: getters.cleanUpRetrievedDoc(documentSnapshot.data(), documentSnapshot.id)
-              })
-              .then(() => promisePayload)
-          }
-          else {
+              // TODO: for backward compatibility, we keep this as "modified" in doc mode
+              // but it would make sense in a future version to change to "added", as this is
+              // the initial load and the user may want to act on it differently
+              change: changeType || 'modified',
+              id: documentSnapshot.id,
+              doc: getters.cleanUpRetrievedDoc(documentSnapshot.data(), documentSnapshot.id),
+            }).then(() => promisePayload)
+          } else {
             // This is actually not supposed to happen. If it happens AND that Firestore
             // doesn't send us another snapshot right after with updated data, then we have
             // a bug in the library and we need to stop trying to differentiate local from
@@ -752,11 +753,9 @@ export default function (Firebase: any): AnyObject {
         }
         // if the data is up-to-date with the server
         else {
-
           // if the remote document exists (this is always `true` when we are in
           // collection mode)
           if (documentSnapshot.exists) {
-
             // the doc will actually already be initialized at this point unless it couldn't
             // be loaded from cache (no persistence, or never previously loaded)
             promisePayload.initialize = true
@@ -765,21 +764,19 @@ export default function (Firebase: any): AnyObject {
 
             const doc = getters.cleanUpRetrievedDoc(documentSnapshot.data(), documentSnapshot.id)
             promise = dispatch('applyHooksAndUpdateState', {
-                // TODO: same as above, this remains for backward compatibilty but should be
-                // changed later by the commented line below
-                change: changeType || 'modified',
-                // if the document has not been loaded from cache before, this is an addition
-                //change: changeType || (initialPromise.isPending ? 'added' : 'modified'),
-                id: documentSnapshot.id,
-                doc
-              })
-              .then(() => promisePayload)
+              // TODO: same as above, this remains for backward compatibilty but should be
+              // changed later by the commented line below
+              change: changeType || 'modified',
+              // if the document has not been loaded from cache before, this is an addition
+              //change: changeType || (initialPromise.isPending ? 'added' : 'modified'),
+              id: documentSnapshot.id,
+              doc,
+            }).then(() => promisePayload)
           }
           // the document doesn't exist yet (necessarily means we are in doc mode)
           else {
             // if the config allows to insert an initial document
             if (!state._conf.sync.preventInitialDocInsertion) {
-
               // a notification message in the console
               if (state._conf.logging) {
                 const message = refreshedPromise.isPending
@@ -822,7 +819,10 @@ export default function (Firebase: any): AnyObject {
 
       // log the fact that we'll now try to open the stream
       if (state._conf.logging) {
-        console.log(`%c openDBChannel for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`, 'color: goldenrod')
+        console.log(
+          `%c openDBChannel for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`,
+          'color: goldenrod'
+        )
       }
 
       // open the stream
@@ -832,22 +832,27 @@ export default function (Firebase: any): AnyObject {
         // the parameter is either a querySnapshot (collection mode) or a
         // documentSnapshot (doc mode)
         async snapshot => {
-
           // collection mode
           if (getters.collectionMode) {
-
             const docChanges = snapshot.docChanges({ includeMetadataChanges: true }),
               promises = new Array(docChanges.length)
 
             // debug messages
             if (parameters.debug) {
-              console.log(`%c QUERY SNAPSHOT received for \`${state._conf.moduleName}\``, 'font-weight: bold')
-              console.log(`%c fromCache == ${snapshot.metadata.fromCache ? 'true' : 'false'} && hasPendingWrites == ${snapshot.metadata.hasPendingWrites ? 'true' : 'false'}`, 'padding-left: 20px; font-style: italic')
+              console.log(
+                `%c QUERY SNAPSHOT received for \`${state._conf.moduleName}\``,
+                'font-weight: bold'
+              )
+              console.log(
+                `%c fromCache == ${
+                  snapshot.metadata.fromCache ? 'true' : 'false'
+                } && hasPendingWrites == ${snapshot.metadata.hasPendingWrites ? 'true' : 'false'}`,
+                'padding-left: 20px; font-style: italic'
+              )
               console.log(
                 docChanges.length
                   ? `%c ${docChanges.length} changed document snapshots included:`
-                  : `%c No changed document snapshots included.`
-                ,
+                  : `%c No changed document snapshots included.`,
                 'padding-left: 20px; '
               )
             }
@@ -869,8 +874,7 @@ export default function (Firebase: any): AnyObject {
               if (refreshedPromise.isPending) {
                 refreshedPromise.resolve()
               }
-            }
-            else {
+            } else {
               // TODO: if the querySnapshot has `fromCache == true` and that we're not at
               // the initial load from cache, it means there is more data coming up, so we'd
               // want to keep the data in a queue and to insert it into Vuex when everything
@@ -880,10 +884,12 @@ export default function (Firebase: any): AnyObject {
           }
           // doc mode
           else {
-
             // debug messages
             if (parameters.debug) {
-              console.log(`%c DOCUMENT SNAPSHOT received for \`${state._conf.moduleName}\``, 'font-weight: bold')
+              console.log(
+                `%c DOCUMENT SNAPSHOT received for \`${state._conf.moduleName}\``,
+                'font-weight: bold'
+              )
             }
 
             const resp = await processDocument(snapshot)
@@ -907,15 +913,14 @@ export default function (Firebase: any): AnyObject {
     },
     closeDBChannel (
       { getters, state, commit, dispatch },
-      { clearModule = false, _identifier = null }
-        = { clearModule: false, _identifier: null }
+      { clearModule = false, _identifier = null } = { clearModule: false, _identifier: null }
     ) {
-
-      const identifier = _identifier
-        || createFetchIdentifier({
+      const identifier =
+        _identifier ||
+        createFetchIdentifier({
           where: state._conf.sync.where,
           orderBy: state._conf.sync.orderBy,
-          pathVariables: state._sync.pathVariables
+          pathVariables: state._sync.pathVariables,
         })
 
       const unsubscribeStream = state._sync.unsubscribe[identifier]
