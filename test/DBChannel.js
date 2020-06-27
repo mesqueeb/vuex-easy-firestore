@@ -34,15 +34,17 @@ test('[openDBChannel] check closing & opening a DB channel with a new path varia
   // 1. open once
   store.dispatch('testPathVar2/openDBChannel', { name: 'Luca' }).catch(console.error)
   await wait(2)
+  // this number comes from the server
   t.is(tpv2.number, 29)
   // 2. close once
   store.dispatch('testPathVar2/closeDBChannel', { clearModule: true }).catch(console.error)
   await wait(2)
-  console.log('tpv2.number → ', tpv2.number)
-  // t.is(tpv2.number, '')
+  // this should be undefined, because it wasn't there on the initial state & we don't want it to stick around
+  t.is(tpv2.number, undefined)
   // 3. open again
   store.dispatch('testPathVar2/openDBChannel', { name: 'Mesqueeb' }).catch(console.error)
   await wait(2)
+  // this number comes from the server
   t.is(tpv2.number, 42)
   t.is(store.getters['testPathVar2/firestorePathComplete'], 'testPathVar2/Mesqueeb')
 })
