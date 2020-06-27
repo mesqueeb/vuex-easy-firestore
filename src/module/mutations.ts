@@ -50,6 +50,7 @@ function getSetParams (target: object, path: string, value: any): [object, strin
  * @returns {AnyObject} the mutations object
  */
 export default function (userState: object): AnyObject {
+  const initialUserState = copy(userState)
   return {
     SET_PATHVARS (state, pathVars) {
       const self = this
@@ -82,7 +83,7 @@ export default function (userState: object): AnyObject {
       })
       const self = this
       const { _sync } = getStateWithSync()
-      const newState = merge(copy(userState), { _sync })
+      const newState = merge(initialUserState, { _sync })
       const { statePropName } = state._conf
       const docContainer = statePropName ? state[statePropName] : state
       Object.keys(newState).forEach(key => {

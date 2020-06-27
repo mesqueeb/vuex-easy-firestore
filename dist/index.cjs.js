@@ -2384,6 +2384,7 @@ function getSetParams(target, path, value) {
  * @returns {AnyObject} the mutations object
  */
 function pluginMutations (userState) {
+    var initialUserState = copy(userState);
     return {
         SET_PATHVARS: function (state, pathVars) {
             var self = this;
@@ -2421,7 +2422,7 @@ function pluginMutations (userState) {
             });
             var self = this;
             var _sync = pluginState()._sync;
-            var newState = mergeAnything.merge(copy(userState), { _sync: _sync });
+            var newState = mergeAnything.merge(initialUserState, { _sync: _sync });
             var statePropName = state._conf.statePropName;
             var docContainer = statePropName ? state[statePropName] : state;
             Object.keys(newState).forEach(function (key) {
