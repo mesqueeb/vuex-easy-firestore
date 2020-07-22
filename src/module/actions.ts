@@ -247,7 +247,7 @@ export default function (Firebase: any): AnyObject {
     },
     fetch (
       { state, getters, commit, dispatch },
-      parameters: any = { clauses: {}, pathVariables: {} }
+      parameters: any = { clauses: {}, pathVariables: {}, options: {} }
     ) {
       if (!isPlainObject(parameters)) parameters = {}
       /* COMPATIBILITY START
@@ -336,7 +336,7 @@ export default function (Firebase: any): AnyObject {
         }
         // make fetch request
         fRef
-          .get()
+          .get(options)
           .then(querySnapshot => {
             const docs = querySnapshot.docs
             if (docs.length === 0) {
@@ -364,7 +364,7 @@ export default function (Firebase: any): AnyObject {
     // orderBy: ['done_date', 'desc']
     fetchAndAdd (
       { state, getters, commit, dispatch },
-      parameters: any = { clauses: {}, pathVariables: {} }
+      parameters: any = { clauses: {}, pathVariables: {}, options: {} }
     ) {
       if (!isPlainObject(parameters)) parameters = {}
       /* COMPATIBILITY START
@@ -403,7 +403,7 @@ export default function (Firebase: any): AnyObject {
           )
         }
         return getters.dbRef
-          .get()
+          .get(options)
           .then(async _doc => {
             if (!_doc.exists) {
               // No initial doc found in docMode
@@ -446,12 +446,12 @@ export default function (Firebase: any): AnyObject {
         return querySnapshot
       })
     },
-    async fetchById ({ dispatch, getters, state }, id) {
+    async fetchById ({ dispatch, getters, state }, id, options = {} ) {
       try {
         if (!id) throw 'missing-id'
         if (!getters.collectionMode) throw 'only-in-collection-mode'
         const ref = getters.dbRef
-        const _doc = await ref.doc(id).get()
+        const _doc = await ref.doc(id).get(options)
         if (!_doc.exists) {
           if (state._conf.logging) {
             throw `Doc with id "${id}" not found!`
