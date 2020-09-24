@@ -3476,6 +3476,7 @@ function pluginActions (Firebase) {
                     console.log(channelAlreadyOpenError);
                 }
                 streamingStart();
+                return initialPromise;
             }
             var processDocument = function (data) {
                 var doc = getters.cleanUpRetrievedDoc(data, getters.docModeId);
