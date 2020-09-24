@@ -661,6 +661,7 @@ export default function (Firebase: any): AnyObject {
           console.log(channelAlreadyOpenError)
         }
         streamingStart()
+        return initialPromise
       }
       const processDocument = data => {
         const doc = getters.cleanUpRetrievedDoc(data, getters.docModeId)
