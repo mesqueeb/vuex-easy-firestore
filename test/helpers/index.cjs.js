@@ -2903,6 +2903,7 @@ function getSetParams(target, path, value) {
  * @returns {AnyObject} the mutations object
  */
 function pluginMutations (userState) {
+    var initialUserState = copy(userState);
     return {
         SET_PATHVARS: function (state, pathVars) {
             var self = this;
@@ -2940,7 +2941,7 @@ function pluginMutations (userState) {
             });
             var self = this;
             var _sync = pluginState()._sync;
-            var newState = mergeAnything.merge(copy(userState), { _sync: _sync });
+            var newState = mergeAnything.merge(initialUserState, { _sync: _sync });
             var statePropName = state._conf.statePropName;
             var docContainer = statePropName ? state[statePropName] : state;
             Object.keys(newState).forEach(function (key) {
@@ -3320,8 +3321,9 @@ function getValueFromPayloadPiece(payloadPiece) {
  * @param {*} Firebase The Firebase dependency
  * @returns {AnyObject} the actions object
  */
-function pluginActions (Firebase) {
+function pluginActions (firestoreConfig) {
     var _this = this;
+    var Firebase = firestoreConfig.FirebaseDependency, enablePersistence = firestoreConfig.enablePersistence, synchronizeTabs = firestoreConfig.synchronizeTabs;
     return {
         setUserId: function (_a, userId) {
             var commit = _a.commit, getters = _a.getters;
@@ -4001,6 +4003,7 @@ function pluginActions (Firebase) {
                     console.log(channelAlreadyOpenError);
                 }
                 streamingStart();
+                return initialPromise;
             }
             var processDocument = function (data) {
                 var doc = getters.cleanUpRetrievedDoc(data, getters.docModeId);
@@ -4021,6 +4024,7 @@ function pluginActions (Firebase) {
                     });
                 });
             };
+            var updateAllOpenTabsWithLocalPersistence = enablePersistence && synchronizeTabs;
             var onSnapshotListener = !getters.collectionMode
                 ? // 'doc' mode
                     function (docSnapshot) { return __awaiter(_this, void 0, void 0, function () {
@@ -4029,7 +4033,7 @@ function pluginActions (Firebase) {
                             switch (_a.label) {
                                 case 0:
                                     isLocalUpdate = docSnapshot.metadata.hasPendingWrites;
-                                    if (isLocalUpdate)
+                                    if (isLocalUpdate && !updateAllOpenTabsWithLocalPersistence)
                                         return [2 /*return*/];
                                     if (!!docSnapshot.exists) return [3 /*break*/, 7];
                                     if (!!state._conf.sync.preventInitialDocInsertion) return [3 /*break*/, 5];
@@ -4087,7 +4091,7 @@ function pluginActions (Firebase) {
                         var isLocalUpdate;
                         return __generator(this, function (_a) {
                             isLocalUpdate = querySnapshot.metadata.hasPendingWrites;
-                            if (isLocalUpdate)
+                            if (isLocalUpdate && !updateAllOpenTabsWithLocalPersistence)
                                 return [2 /*return*/];
                             processCollection(querySnapshot.docChanges());
                             if (initialPromise.isPending) {
@@ -4643,7 +4647,8 @@ function errorCheck (config) {
  * @param {*} FirebaseDependency The Firebase dependency (non-instanciated), defaults to the Firebase peer dependency if left blank.
  * @returns {IStore} the module ready to be included in your vuex store
  */
-function iniModule (userConfig, FirebaseDependency) {
+function iniModule (userConfig, firestoreConfig) {
+    var FirebaseDependency = firestoreConfig.FirebaseDependency;
     // prepare state._conf
     var conf = copy(mergeAnything.merge({ state: {}, mutations: {}, actions: {}, getters: {} }, defaultConfig, userConfig));
     if (!errorCheck(conf))
@@ -4669,7 +4674,7 @@ function iniModule (userConfig, FirebaseDependency) {
     // Warn overloaded mutations / actions / getters 
     var uKeys, pKeys;
     var pMutations = pluginMutations(mergeAnything.merge(userState, { _conf: conf }));
-    var pActions = pluginActions(FirebaseDependency);
+    var pActions = pluginActions(firestoreConfig);
     var pGetters = pluginGetters(FirebaseDependency);
     uKeys = Object.keys(userMutations);
     pKeys = Object.keys(pMutations);
@@ -4718,7 +4723,9 @@ function vuexEasyFirestore(easyFirestoreModule, _a) {
         logging: false,
         preventInitialDocInsertion: false,
         FirebaseDependency: Firebase$1,
-    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.preventInitialDocInsertion, preventInitialDocInsertion = _d === void 0 ? false : _d, _e = _b.FirebaseDependency, FirebaseDependency = _e === void 0 ? Firebase$1 : _e;
+        enablePersistence: false,
+        synchronizeTabs: false,
+    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.preventInitialDocInsertion, preventInitialDocInsertion = _d === void 0 ? false : _d, _e = _b.FirebaseDependency, FirebaseDependency = _e === void 0 ? Firebase$1 : _e, _f = _b.enablePersistence, enablePersistence = _f === void 0 ? false : _f, _g = _b.synchronizeTabs, synchronizeTabs = _g === void 0 ? false : _g;
     if (FirebaseDependency) {
         setFirebaseDependency(FirebaseDependency);
     }
@@ -4733,7 +4740,8 @@ function vuexEasyFirestore(easyFirestoreModule, _a) {
                 config.sync.preventInitialDocInsertion = preventInitialDocInsertion;
             }
             var moduleName = createEasyAccess.getKeysFromPath(config.moduleName);
-            store.registerModule(moduleName, iniModule(config, FirebaseDependency));
+            var firestoreConfig = { FirebaseDependency: FirebaseDependency, enablePersistence: enablePersistence, synchronizeTabs: synchronizeTabs };
+            store.registerModule(moduleName, iniModule(config, firestoreConfig));
         });
     };
 }

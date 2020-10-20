@@ -1,6 +1,6 @@
 {
   "name": "vuex-easy-firestore",
-  "version": "1.35.13",
+  "version": "1.35.16",
   "description": "Easy coupling of firestore and a vuex module. 2-way sync with 0 boilerplate!",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
@@ -74,14 +74,8 @@
     "firebase": "^7.14.5"
   },
   "ava": {
-    "extensions": [
-      "ts",
-      "js"
-    ],
-    "require": [
-      "esm",
-      "ts-node/register"
-    ],
+    "extensions": ["ts", "js"],
+    "require": ["esm", "ts-node/register"],
     "timeout": "30s"
   }
 }
