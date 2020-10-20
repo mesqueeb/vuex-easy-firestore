@@ -691,6 +691,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
             // do nothing on local changes
             const isLocalUpdate = docSnapshot.metadata.hasPendingWrites
             if (isLocalUpdate && !updateAllOpenTabsWithLocalPersistence) return
+            if (isLocalUpdate && updateAllOpenTabsWithLocalPersistence && document.hasFocus()) return
 
             // if the document doesn't exist yet
             if (!docSnapshot.exists) {
@@ -744,6 +745,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
             // do nothing on local changes
             const isLocalUpdate = querySnapshot.metadata.hasPendingWrites
             if (isLocalUpdate && !updateAllOpenTabsWithLocalPersistence) return
+            if (isLocalUpdate && updateAllOpenTabsWithLocalPersistence && document.hasFocus()) return
             
             processCollection(querySnapshot.docChanges())
             if (initialPromise.isPending) {

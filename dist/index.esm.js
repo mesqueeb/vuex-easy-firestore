@@ -3509,6 +3509,8 @@ function pluginActions (firestoreConfig) {
                                     isLocalUpdate = docSnapshot.metadata.hasPendingWrites;
                                     if (isLocalUpdate && !updateAllOpenTabsWithLocalPersistence)
                                         return [2 /*return*/];
+                                    if (isLocalUpdate && updateAllOpenTabsWithLocalPersistence && document.hasFocus())
+                                        return [2 /*return*/];
                                     if (!!docSnapshot.exists) return [3 /*break*/, 7];
                                     if (!!state._conf.sync.preventInitialDocInsertion) return [3 /*break*/, 5];
                                     if (state._conf.logging) {
@@ -3566,6 +3568,8 @@ function pluginActions (firestoreConfig) {
                         return __generator(this, function (_a) {
                             isLocalUpdate = querySnapshot.metadata.hasPendingWrites;
                             if (isLocalUpdate && !updateAllOpenTabsWithLocalPersistence)
+                                return [2 /*return*/];
+                            if (isLocalUpdate && updateAllOpenTabsWithLocalPersistence && document.hasFocus())
                                 return [2 /*return*/];
                             processCollection(querySnapshot.docChanges());
                             if (initialPromise.isPending) {
