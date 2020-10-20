@@ -12,6 +12,7 @@ import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
 import { isArrayHelper } from '../utils/arrayHelpers'
 import { isIncrementHelper } from '../utils/incrementHelper'
 import logError from './errors'
+import { FirestoreConfig } from './index'
 
 type DocumentSnapshot = firestore.DocumentSnapshot
 type QuerySnapshot = firestore.QuerySnapshot
@@ -25,7 +26,8 @@ type QueryDocumentSnapshot = firestore.QueryDocumentSnapshot
  * @param {*} Firebase The Firebase dependency
  * @returns {AnyObject} the actions object
  */
-export default function (Firebase: any): AnyObject {
+export default function (firestoreConfig: FirestoreConfig): AnyObject {
+  const { FirebaseDependency: Firebase, enablePersistence, synchronizeTabs } = firestoreConfig
   return {
     setUserId: ({ commit, getters }, userId) => {
       if (userId === undefined) userId = null
@@ -682,12 +684,13 @@ export default function (Firebase: any): AnyObject {
           })
         })
       }
+      const updateAllOpenTabsWithLocalPersistence = enablePersistence && synchronizeTabs
       const onSnapshotListener = !getters.collectionMode
         ? // 'doc' mode
           async (docSnapshot: DocumentSnapshot) => {
             // do nothing on local changes
             const isLocalUpdate = docSnapshot.metadata.hasPendingWrites
-            if (isLocalUpdate) return
+            if (isLocalUpdate && !updateAllOpenTabsWithLocalPersistence) return
 
             // if the document doesn't exist yet
             if (!docSnapshot.exists) {
@@ -740,7 +743,8 @@ export default function (Firebase: any): AnyObject {
           async (querySnapshot: QuerySnapshot) => {
             // do nothing on local changes
             const isLocalUpdate = querySnapshot.metadata.hasPendingWrites
-            if (isLocalUpdate) return
+            if (isLocalUpdate && !updateAllOpenTabsWithLocalPersistence) return
+            
             processCollection(querySnapshot.docChanges())
             if (initialPromise.isPending) {
               streamingStart()

@@ -4,7 +4,7 @@ import 'firebase/firestore'
 import 'firebase/auth'
 import { getKeysFromPath } from 'vuex-easy-access'
 import { isArray } from 'is-what'
-import iniModule from './module'
+import iniModule, { FirestoreConfig } from './module'
 import { IEasyFirestoreModule } from './declarations'
 import {
   arrayUnion,
@@ -27,14 +27,20 @@ function vuexEasyFirestore (
     logging = false,
     preventInitialDocInsertion = false,
     FirebaseDependency = Firebase,
+    enablePersistence = false,
+    synchronizeTabs = false,
   }: {
     logging?: boolean
     preventInitialDocInsertion?: boolean
     FirebaseDependency?: any
+    enablePersistence?: boolean
+    synchronizeTabs?: boolean
   } = {
     logging: false,
     preventInitialDocInsertion: false,
     FirebaseDependency: Firebase,
+    enablePersistence: false,
+    synchronizeTabs: false,
   }
 ): any {
   if (FirebaseDependency) {
@@ -51,7 +57,8 @@ function vuexEasyFirestore (
         config.sync.preventInitialDocInsertion = preventInitialDocInsertion
       }
       const moduleName = getKeysFromPath(config.moduleName)
-      store.registerModule(moduleName, iniModule(config, FirebaseDependency))
+      const firestoreConfig: FirestoreConfig = { FirebaseDependency, enablePersistence, synchronizeTabs }
+      store.registerModule(moduleName, iniModule(config, firestoreConfig))
     })
   }
 }
