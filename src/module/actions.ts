@@ -449,22 +449,19 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
       })
     },
     async fetchById ({ dispatch, getters, state }, id) {
-      try {
-        if (!id) throw 'missing-id'
-        if (!getters.collectionMode) throw 'only-in-collection-mode'
-        const ref = getters.dbRef
-        const _doc = await ref.doc(id).get()
-        if (!_doc.exists) {
-          if (state._conf.logging) {
-            throw `Doc with id "${id}" not found!`
-          }
+      if (!id) throw 'missing-id'
+      if (!getters.collectionMode) throw 'only-in-collection-mode'
+      const ref = getters.dbRef
+      const _doc = await ref.doc(id).get()
+      if (!_doc.exists) {
+        if (state._conf.logging) {
+          return logError(`Doc with id "${id}" not found!`)
         }
-        const doc = getters.cleanUpRetrievedDoc(_doc.data(), id)
-        dispatch('applyHooksAndUpdateState', { change: 'added', id, doc })
-        return doc
-      } catch (e) {
-        return logError(e)
+        throw `Doc with id "${id}" not found!`
       }
+      const doc = getters.cleanUpRetrievedDoc(_doc.data(), id)
+      dispatch('applyHooksAndUpdateState', { change: 'added', id, doc })
+      return doc
     },
     applyHooksAndUpdateState (
       // this is only on server retrievals
