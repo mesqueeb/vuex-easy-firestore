@@ -3293,7 +3293,8 @@ function pluginActions (firestoreConfig) {
                             return [2 /*return*/, doc];
                         case 2:
                             e_1 = _b.sent();
-                            return [2 /*return*/, error(e_1)];
+                            error(e_1);
+                            throw e_1;
                         case 3: return [2 /*return*/];
                     }
                 });

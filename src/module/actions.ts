@@ -463,7 +463,8 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         dispatch('applyHooksAndUpdateState', { change: 'added', id, doc })
         return doc
       } catch (e) {
-        return logError(e)
+        logError(e)
+        throw e
       }
     },
     applyHooksAndUpdateState (
