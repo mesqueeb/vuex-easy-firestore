@@ -1,4 +1,5 @@
 import { AnyObject } from '../declarations';
+import { FirestoreConfig } from './index';
 /**
  * A function returning the actions object
  *
@@ -6,4 +7,4 @@ import { AnyObject } from '../declarations';
  * @param {*} Firebase The Firebase dependency
  * @returns {AnyObject} the actions object
  */
-export default function (Firebase: any): AnyObject;
+export default function (firestoreConfig: FirestoreConfig): AnyObject;

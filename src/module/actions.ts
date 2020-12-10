@@ -12,6 +12,7 @@ import { getId, getValueFromPayloadPiece } from '../utils/payloadHelpers'
 import { isArrayHelper } from '../utils/arrayHelpers'
 import { isIncrementHelper } from '../utils/incrementHelper'
 import logError from './errors'
+import { FirestoreConfig } from './index'
 
 type DocumentSnapshot = firestore.DocumentSnapshot
 type QuerySnapshot = firestore.QuerySnapshot
@@ -25,7 +26,8 @@ type QueryDocumentSnapshot = firestore.QueryDocumentSnapshot
  * @param {*} Firebase The Firebase dependency
  * @returns {AnyObject} the actions object
  */
-export default function (Firebase: any): AnyObject {
+export default function (firestoreConfig: FirestoreConfig): AnyObject {
+  const { FirebaseDependency: Firebase, enablePersistence, synchronizeTabs } = firestoreConfig
   return {
     setUserId: ({ commit, getters }, userId) => {
       if (userId === undefined) userId = null
@@ -461,7 +463,8 @@ export default function (Firebase: any): AnyObject {
         dispatch('applyHooksAndUpdateState', { change: 'added', id, doc })
         return doc
       } catch (e) {
-        return logError(e)
+        logError(e)
+        throw e
       }
     },
     applyHooksAndUpdateState (
@@ -697,7 +700,8 @@ export default function (Firebase: any): AnyObject {
         state._sync.streaming[identifier] = null
       }
 
-      /* This function does not interact directly with the stream or the promises of
+      /**
+       * This function does not interact directly with the stream or the promises of
        * openDBChannel: instead, it returns an object which may be used (or not) by
        * the caller. Basically we'll use the response in doc mode only.
        *

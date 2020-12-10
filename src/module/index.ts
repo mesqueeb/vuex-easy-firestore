@@ -9,6 +9,12 @@ import pluginActions from './actions'
 import pluginGetters from './getters'
 import errorCheck from './errorCheckConfig'
 
+export type FirestoreConfig = {
+  FirebaseDependency?: any
+  enablePersistence?: boolean
+  synchronizeTabs?: boolean
+}
+
 /**
  * A function that returns a vuex module object with seamless 2-way sync for firestore.
  *
@@ -16,7 +22,8 @@ import errorCheck from './errorCheckConfig'
  * @param {*} FirebaseDependency The Firebase dependency (non-instanciated), defaults to the Firebase peer dependency if left blank.
  * @returns {IStore} the module ready to be included in your vuex store
  */
-export default function (userConfig: IEasyFirestoreModule, FirebaseDependency: any): IStore {
+export default function (userConfig: IEasyFirestoreModule, firestoreConfig: FirestoreConfig): IStore {
+  const { FirebaseDependency } = firestoreConfig
   // prepare state._conf
   const conf: IEasyFirestoreModule = copy(
     merge({ state: {}, mutations: {}, actions: {}, getters: {} }, defaultConfig, userConfig)
@@ -43,7 +50,7 @@ export default function (userConfig: IEasyFirestoreModule, FirebaseDependency: a
   // Warn overloaded mutations / actions / getters 
   let uKeys, pKeys
   const pMutations = pluginMutations(merge(userState, { _conf: conf }))
-  const pActions = pluginActions(FirebaseDependency)
+  const pActions = pluginActions(firestoreConfig)
   const pGetters = pluginGetters(FirebaseDependency)
 
   uKeys = Object.keys(userMutations)
