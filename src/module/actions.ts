@@ -702,7 +702,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         return initialPromise
       }
       
-      const updateAllOpenTabsWithLocalPersistence = enablePersistence && synchronizeTabs
+      // const updateAllOpenTabsWithLocalPersistence = enablePersistence && synchronizeTabs
 
       /**
        * This function does not interact directly with the stream or the promises of
@@ -762,10 +762,10 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         }
         // if the data is up-to-date with the server
         else {
-          // do nothing on local changes
-          const isLocalUpdate = documentSnapshot.metadata.hasPendingWrites
-          if (isLocalUpdate && !updateAllOpenTabsWithLocalPersistence) return promise
-          if (isLocalUpdate && updateAllOpenTabsWithLocalPersistence && document.hasFocus()) return promise
+          // // do nothing on local changes
+          // const isLocalUpdate = documentSnapshot.metadata.hasPendingWrites
+          // if (isLocalUpdate && !updateAllOpenTabsWithLocalPersistence) return promise
+          // if (isLocalUpdate && updateAllOpenTabsWithLocalPersistence && document.hasFocus()) return promise
 
           // if the remote document exists (this is always `true` when we are in
           // collection mode)
