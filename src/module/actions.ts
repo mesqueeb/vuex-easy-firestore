@@ -878,7 +878,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
             // if all the data is up-to-date with the server
             if (!snapshot.metadata.fromCache) {
               // if it's the first time it's refreshed
-              if (refreshedPromise.isPending) {
+              if (refreshedPromise.isPending && snapshot.metadata.fromCache === false) {
                 refreshedPromise.resolve()
               }
             } else {
@@ -904,7 +904,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
             if (resp.initialize && initialPromise.isPending) {
               streamingStart()
             }
-            if (resp.refresh && refreshedPromise.isPending) {
+            if (resp.refresh && refreshedPromise.isPending && snapshot.metadata.fromCache === false) {
               refreshedPromise.resolve()
             }
             if (resp.stop) {
