@@ -99,10 +99,8 @@ test('[openDBChannel] open multiple times', async t => {
   try {
     await store.dispatch('multipleOpenDBChannels/openDBChannel')
   } catch (e) {
-    t.is(
-      e,
-      `openDBChannel was already called for these clauses and pathvariables. Identifier: [where][orderBy][pathVariables]{}`
-    )
+    // should always succeed
+    t.fail()
   }
   try {
     await store.dispatch('multipleOpenDBChannels/openDBChannel', { name: 'Lucaz' })
@@ -117,11 +115,10 @@ test('[openDBChannel] open multiple times', async t => {
   try {
     await store.dispatch('multipleOpenDBChannels/openDBChannel', { name: 'Lucas' })
   } catch (e) {
-    t.is(
-      e,
-      `openDBChannel was already called for these clauses and pathvariables. Identifier: [where][orderBy][pathVariables]{"name":"Lucas"}`
-    )
+    // should always succeed
+    t.fail()
   }
+  t.pass()
 })
 
 // test('sync: where', async t => {
