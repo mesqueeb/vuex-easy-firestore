@@ -701,6 +701,8 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         streamingStart()
         return initialPromise
       }
+      
+      const updateAllOpenTabsWithLocalPersistence = enablePersistence && synchronizeTabs
 
       /**
        * This function does not interact directly with the stream or the promises of
@@ -710,7 +712,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
        * In collection mode, the parameter is actually a `queryDocumentSnapshot`, which
        * has the same API as a `documentSnapshot`.
        */
-      const processDocument = (documentSnapshot, changeType?) => {
+      const processDocument = (documentSnapshot: DocumentSnapshot | QueryDocumentSnapshot, changeType?) => {
         // debug message
         if (parameters.debug) {
           console.log(
@@ -760,6 +762,11 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         }
         // if the data is up-to-date with the server
         else {
+          // do nothing on local changes
+          const isLocalUpdate = documentSnapshot.metadata.hasPendingWrites
+          if (isLocalUpdate && !updateAllOpenTabsWithLocalPersistence) return promise
+          if (isLocalUpdate && updateAllOpenTabsWithLocalPersistence && document.hasFocus()) return promise
+
           // if the remote document exists (this is always `true` when we are in
           // collection mode)
           if (documentSnapshot.exists) {
@@ -838,10 +845,14 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         { includeMetadataChanges: true },
         // the parameter is either a querySnapshot (collection mode) or a
         // documentSnapshot (doc mode)
-        async snapshot => {
+        /**
+         * @param {QuerySnapshot | DocumentSnapshot} snapshot
+         */
+        async (snapshot: QuerySnapshot | DocumentSnapshot) => {
           // collection mode
           if (getters.collectionMode) {
-            const docChanges = snapshot.docChanges({ includeMetadataChanges: true }),
+            const querySnapshot = snapshot as QuerySnapshot
+            const docChanges = querySnapshot.docChanges({ includeMetadataChanges: true }),
               promises = new Array(docChanges.length)
 
             // debug messages
@@ -852,8 +863,8 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
               )
               console.log(
                 `%c fromCache == ${
-                  snapshot.metadata.fromCache ? 'true' : 'false'
-                } && hasPendingWrites == ${snapshot.metadata.hasPendingWrites ? 'true' : 'false'}`,
+                  querySnapshot.metadata.fromCache ? 'true' : 'false'
+                } && hasPendingWrites == ${querySnapshot.metadata.hasPendingWrites ? 'true' : 'false'}`,
                 'padding-left: 20px; font-style: italic'
               )
               console.log(
@@ -865,7 +876,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
             }
 
             // process doc changes
-            docChanges.forEach((change, i) => {
+            docChanges.forEach((change: DocumentChange, i: number) => {
               promises[i] = processDocument(change.doc, change.type)
             })
             await Promise.all(promises)
@@ -876,9 +887,9 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
             }
 
             // if all the data is up-to-date with the server
-            if (!snapshot.metadata.fromCache) {
+            if (!querySnapshot.metadata.fromCache) {
               // if it's the first time it's refreshed
-              if (refreshedPromise.isPending && snapshot.metadata.fromCache === false) {
+              if (refreshedPromise.isPending && querySnapshot.metadata.fromCache === false) {
                 refreshedPromise.resolve()
               }
             } else {
@@ -891,6 +902,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
           }
           // doc mode
           else {
+            const documentSnapshot = snapshot as DocumentSnapshot
             // debug messages
             if (parameters.debug) {
               console.log(
@@ -899,12 +911,12 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
               )
             }
 
-            const resp = await processDocument(snapshot)
+            const resp = await processDocument(documentSnapshot)
 
             if (resp.initialize && initialPromise.isPending) {
               streamingStart()
             }
-            if (resp.refresh && refreshedPromise.isPending && snapshot.metadata.fromCache === false) {
+            if (resp.refresh && refreshedPromise.isPending && documentSnapshot.metadata.fromCache === false) {
               refreshedPromise.resolve()
             }
             if (resp.stop) {
