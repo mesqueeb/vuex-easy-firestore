@@ -13,7 +13,7 @@ export declare type IPluginGetters = {
  * A function returning the getters object
  *
  * @export
- * @param {*} Firebase The Firebase dependency
+ * @param {*} firebase The firebase dependency
  * @returns {AnyObject} the getters object
  */
-export default function (Firebase: any): AnyObject;
+export default function (firebase: any): AnyObject;

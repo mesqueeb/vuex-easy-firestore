@@ -10,14 +10,14 @@ import { IPluginState, AnyObject } from '../declarations';
  */
 export declare function grabUntilApiLimit(syncStackProp: string, count: number, maxCount: number, state: IPluginState): any[];
 /**
- * Create a Firebase batch from a syncStack to be passed inside the state param.
+ * Create a firebase batch from a syncStack to be passed inside the state param.
  *
  * @export
  * @param {IPluginState} state The state will get modified!
  * @param {AnyObject} getters The getters which should have `dbRef`, `storeRef`, `collectionMode` and `firestorePathComplete`
  * @param {any} firebaseBatch a firestore.batch() instance
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
- * @returns {*} A Firebase firestore batch object.
+ * @returns {*} A firebase firestore batch object.
  */
 export declare function makeBatchFromSyncstack(state: IPluginState, getters: AnyObject, firebaseBatch: any, batchMaxCount?: number): any;
 /**

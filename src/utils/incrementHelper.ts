@@ -1,11 +1,11 @@
 import { isAnyObject, isPlainObject } from 'is-what'
-import * as firebase from 'firebase/app'
+import fb from 'firebase/app'
 import 'firebase/firestore'
 
-let Firebase = firebase
+let firebase = fb
 
 export function setFirebaseDependency (firebaseDependency) {
-  Firebase = firebaseDependency
+  firebase = firebaseDependency
 }
 
 export class Increment {
@@ -19,7 +19,7 @@ export class Increment {
     return counter + this.payload
   }
   getFirestoreFieldValue () {
-    return Firebase.firestore.FieldValue.increment(this.payload)
+    return firebase.firestore.FieldValue.increment(this.payload)
   }
 }
 

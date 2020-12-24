@@ -1,4 +1,4 @@
-import { firestore } from 'firebase/app'
+import Fb from 'firebase/app'
 import { isArray, isPlainObject, isFunction, isNumber } from 'is-what'
 import copy from 'copy-anything'
 import { merge } from 'merge-anything'
@@ -14,26 +14,26 @@ import { isIncrementHelper } from '../utils/incrementHelper'
 import logError from './errors'
 import { FirestoreConfig } from './index'
 
-type DocumentSnapshot = firestore.DocumentSnapshot
-type QuerySnapshot = firestore.QuerySnapshot
-type DocumentChange = firestore.DocumentChange
-type QueryDocumentSnapshot = firestore.QueryDocumentSnapshot
+type DocumentSnapshot = Fb.firestore.DocumentSnapshot
+type QuerySnapshot = Fb.firestore.QuerySnapshot
+type DocumentChange = Fb.firestore.DocumentChange
+type QueryDocumentSnapshot = Fb.firestore.QueryDocumentSnapshot
 
 /**
  * A function returning the actions object
  *
  * @export
- * @param {*} Firebase The Firebase dependency
+ * @param {*} firebase The firebase dependency
  * @returns {AnyObject} the actions object
  */
 export default function (firestoreConfig: FirestoreConfig): AnyObject {
-  const { FirebaseDependency: Firebase, enablePersistence, synchronizeTabs } = firestoreConfig
+  const { FirebaseDependency: firebase, enablePersistence, synchronizeTabs } = firestoreConfig
   return {
     setUserId: ({ commit, getters }, userId) => {
       if (userId === undefined) userId = null
       // undefined cannot be synced to firestore
-      if (!userId && Firebase.auth().currentUser) {
-        userId = Firebase.auth().currentUser.uid
+      if (!userId && firebase.auth().currentUser) {
+        userId = firebase.auth().currentUser.uid
       }
       commit('SET_USER_ID', userId)
       if (getters.firestorePathComplete.includes('{userId}')) return logError('user-auth')
@@ -221,7 +221,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
       state._sync.syncStack.rejects.forEach(r => r(error))
     },
     batchSync ({ getters, commit, dispatch, state }) {
-      const batch = makeBatchFromSyncstack(state, getters, Firebase.firestore().batch())
+      const batch = makeBatchFromSyncstack(state, getters, firebase.firestore().batch())
       dispatch('_startPatching')
       state._sync.syncStack.debounceTimer = null
       return new Promise((resolve, reject) => {

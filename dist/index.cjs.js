@@ -4,7 +4,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var firebase = require('firebase/app');
+var fb = _interopDefault(require('firebase/app'));
 require('firebase/firestore');
 require('firebase/auth');
 var vuexEasyAccess = require('vuex-easy-access');
@@ -193,7 +193,7 @@ function pluginState () {
 }
 
 var errorMessages = {
-    'user-auth': "\n    Error trying to set userId.\n    Please double check if you have correctly authenticated the user with Firebase Auth before calling `openDBChannel` or `fetchAndAdd`.\n\n    If you still get this error, try passing your firebase instance to the plugin as described in the documentation:\n    https://mesqueeb.github.io/vuex-easy-firestore/extra-features.html#pass-firebase-dependency\n  ",
+    'user-auth': "\n    Error trying to set userId.\n    Please double check if you have correctly authenticated the user with firebase Auth before calling `openDBChannel` or `fetchAndAdd`.\n\n    If you still get this error, try passing your firebase instance to the plugin as described in the documentation:\n    https://mesqueeb.github.io/vuex-easy-firestore/extra-features.html#pass-firebase-dependency\n  ",
     'delete-missing-id': "\n    Missing id of the doc you want to delete!\n    Correct usage:\n      dispatch('delete', id)\n  ",
     'delete-missing-path': "\n    Missing path to the prop you want to delete!\n    Correct usage:\n      dispatch('delete', 'path.to.prop')\n\n    Use `.` for sub props!\n  ",
     'missing-id': "\n    This action requires an id to be passed!\n  ",
@@ -201,7 +201,7 @@ var errorMessages = {
     'missing-path-variables': "\n    A path variable was passed without defining it!\n    In VuexEasyFirestore you can create paths with variables:\n    eg: `groups/{groupId}/user/{userId}`\n\n    `userId` is automatically replaced with the userId of the firebase user.\n    `groupId` or any other variable that needs to be set after authentication needs to be passed upon the `openDBChannel` action.\n\n    // (in module config) Example path:\n    firestorePath: 'groups/{groupId}/user/{userId}'\n\n    // Then before openDBChannel:\n    // retrieve the value\n    const groupId = someIdRetrievedAfterSignin\n    // pass as argument into openDBChannel:\n    dispatch('moduleName/openDBChannel', {groupId})\n  ",
     'patch-no-ref': "\n    Something went wrong during the PATCH mutation:\n    The document it's trying to patch does not exist.\n  ",
     'only-in-collection-mode': "\n    The action you dispatched can only be used in 'collection' mode.\n  ",
-    'initial-doc-failed': "\n    Initial doc insertion failed. Further `set` or `patch` actions will also fail. Requires an internet connection when the initial doc is inserted. Check the error returned by Firebase:\n  ",
+    'initial-doc-failed': "\n    Initial doc insertion failed. Further `set` or `patch` actions will also fail. Requires an internet connection when the initial doc is inserted. Check the error returned by firebase:\n  ",
     'sync-error': "\n    Something went wrong while trying to synchronise data to Cloud Firestore.\n    The data is kept in queue, so that it will try to sync again upon the next 'set' or 'patch' action.\n  ",
 };
 /**
@@ -2235,9 +2235,9 @@ function isEqual(value, other) {
   return baseIsEqual(value, other);
 }
 
-var Firebase = firebase;
+var firebase = fb;
 function setFirebaseDependency(firebaseDependency) {
-    Firebase = firebaseDependency;
+    firebase = firebaseDependency;
 }
 var ArrayUnion = /** @class */ (function () {
     function ArrayUnion() {
@@ -2261,7 +2261,7 @@ var ArrayUnion = /** @class */ (function () {
     };
     ArrayUnion.prototype.getFirestoreFieldValue = function () {
         var _a;
-        return (_a = Firebase.firestore.FieldValue).arrayUnion.apply(_a, this.payload);
+        return (_a = firebase.firestore.FieldValue).arrayUnion.apply(_a, this.payload);
     };
     return ArrayUnion;
 }());
@@ -2287,7 +2287,7 @@ var ArrayRemove = /** @class */ (function () {
     };
     ArrayRemove.prototype.getFirestoreFieldValue = function () {
         var _a;
-        return (_a = Firebase.firestore.FieldValue).arrayRemove.apply(_a, this.payload);
+        return (_a = firebase.firestore.FieldValue).arrayRemove.apply(_a, this.payload);
     };
     return ArrayRemove;
 }());
@@ -2317,9 +2317,9 @@ function isArrayHelper(value) {
         value.isArrayHelper === true);
 }
 
-var Firebase$1 = firebase;
+var firebase$1 = fb;
 function setFirebaseDependency$1(firebaseDependency) {
-    Firebase$1 = firebaseDependency;
+    firebase$1 = firebaseDependency;
 }
 var Increment = /** @class */ (function () {
     function Increment(payload) {
@@ -2330,7 +2330,7 @@ var Increment = /** @class */ (function () {
         return counter + this.payload;
     };
     Increment.prototype.getFirestoreFieldValue = function () {
-        return Firebase$1.firestore.FieldValue.increment(this.payload);
+        return firebase$1.firestore.FieldValue.increment(this.payload);
     };
     return Increment;
 }());
@@ -2609,14 +2609,14 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
     return targets;
 }
 /**
- * Create a Firebase batch from a syncStack to be passed inside the state param.
+ * Create a firebase batch from a syncStack to be passed inside the state param.
  *
  * @export
  * @param {IPluginState} state The state will get modified!
  * @param {AnyObject} getters The getters which should have `dbRef`, `storeRef`, `collectionMode` and `firestorePathComplete`
  * @param {any} firebaseBatch a firestore.batch() instance
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
- * @returns {*} A Firebase firestore batch object.
+ * @returns {*} A firebase firestore batch object.
  */
 function makeBatchFromSyncstack(state, getters, firebaseBatch, batchMaxCount) {
     if (batchMaxCount === void 0) { batchMaxCount = 500; }
@@ -2799,20 +2799,20 @@ function getValueFromPayloadPiece(payloadPiece) {
  * A function returning the actions object
  *
  * @export
- * @param {*} Firebase The Firebase dependency
+ * @param {*} firebase The firebase dependency
  * @returns {AnyObject} the actions object
  */
 function pluginActions (firestoreConfig) {
     var _this = this;
-    var Firebase = firestoreConfig.FirebaseDependency, enablePersistence = firestoreConfig.enablePersistence, synchronizeTabs = firestoreConfig.synchronizeTabs;
+    var firebase = firestoreConfig.FirebaseDependency, enablePersistence = firestoreConfig.enablePersistence, synchronizeTabs = firestoreConfig.synchronizeTabs;
     return {
         setUserId: function (_a, userId) {
             var commit = _a.commit, getters = _a.getters;
             if (userId === undefined)
                 userId = null;
             // undefined cannot be synced to firestore
-            if (!userId && Firebase.auth().currentUser) {
-                userId = Firebase.auth().currentUser.uid;
+            if (!userId && firebase.auth().currentUser) {
+                userId = firebase.auth().currentUser.uid;
             }
             commit('SET_USER_ID', userId);
             if (getters.firestorePathComplete.includes('{userId}'))
@@ -3029,7 +3029,7 @@ function pluginActions (firestoreConfig) {
         },
         batchSync: function (_a) {
             var getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch, state = _a.state;
-            var batch = makeBatchFromSyncstack(state, getters, Firebase.firestore().batch());
+            var batch = makeBatchFromSyncstack(state, getters, firebase.firestore().batch());
             dispatch('_startPatching');
             state._sync.syncStack.debounceTimer = null;
             return new Promise(function (resolve, reject) {
@@ -3947,10 +3947,10 @@ function pluginActions (firestoreConfig) {
  * A function returning the getters object
  *
  * @export
- * @param {*} Firebase The Firebase dependency
+ * @param {*} firebase The firebase dependency
  * @returns {AnyObject} the getters object
  */
-function pluginGetters (Firebase) {
+function pluginGetters (firebase) {
     return {
         firestorePathComplete: function (state, getters) {
             var path = state._conf.firestorePath;
@@ -3976,8 +3976,8 @@ function pluginGetters (Firebase) {
         dbRef: function (state, getters, rootState, rootGetters) {
             var path = getters.firestorePathComplete;
             return getters.collectionMode
-                ? Firebase.firestore().collection(path)
-                : Firebase.firestore().doc(path);
+                ? firebase.firestore().collection(path)
+                : firebase.firestore().doc(path);
         },
         storeRef: function (state, getters, rootState) {
             var path = state._conf.statePropName
@@ -4061,7 +4061,7 @@ function pluginGetters (Firebase) {
                 id = getters.docModeId;
                 cleanedPath = path;
             }
-            cleanedPatchData[cleanedPath] = Firebase.firestore.FieldValue.delete();
+            cleanedPatchData[cleanedPath] = firebase.firestore.FieldValue.delete();
             cleanedPatchData.id = id;
             return _a = {}, _a[id] = cleanedPatchData, _a;
         }; },
@@ -4228,7 +4228,7 @@ function errorCheck (config) {
  * A function that returns a vuex module object with seamless 2-way sync for firestore.
  *
  * @param {IEasyFirestoreModule} userConfig Takes a config object per module
- * @param {*} FirebaseDependency The Firebase dependency (non-instanciated), defaults to the Firebase peer dependency if left blank.
+ * @param {*} FirebaseDependency The firebase dependency (non-instanciated), defaults to the firebase peer dependency if left blank.
  * @returns {IStore} the module ready to be included in your vuex store
  */
 function iniModule (userConfig, firestoreConfig) {
@@ -4293,23 +4293,23 @@ function iniModule (userConfig, firestoreConfig) {
     };
 }
 
-// Firebase
+// firebase
 /**
  * Create vuex-easy-firestore modules. Add as single plugin to Vuex Store.
  *
  * @export
  * @param {(IEasyFirestoreModule | IEasyFirestoreModule[])} easyFirestoreModule A vuex-easy-firestore module (or array of modules) with proper configuration as per the documentation.
- * @param {{logging?: boolean, FirebaseDependency?: any}} extraConfig An object with `logging` and `FirebaseDependency` props. `logging` enables console logs for debugging. `FirebaseDependency` is the non-instanciated Firebase class you can pass. (defaults to the Firebase peer dependency)
+ * @param {{logging?: boolean, FirebaseDependency?: any}} extraConfig An object with `logging` and `FirebaseDependency` props. `logging` enables console logs for debugging. `FirebaseDependency` is the non-instanciated firebase class you can pass. (defaults to the firebase peer dependency)
  * @returns {*}
  */
 function vuexEasyFirestore(easyFirestoreModule, _a) {
     var _b = _a === void 0 ? {
         logging: false,
         preventInitialDocInsertion: false,
-        FirebaseDependency: firebase,
+        FirebaseDependency: fb,
         enablePersistence: false,
         synchronizeTabs: false,
-    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.preventInitialDocInsertion, preventInitialDocInsertion = _d === void 0 ? false : _d, _e = _b.FirebaseDependency, FirebaseDependency = _e === void 0 ? firebase : _e, _f = _b.enablePersistence, enablePersistence = _f === void 0 ? false : _f, _g = _b.synchronizeTabs, synchronizeTabs = _g === void 0 ? false : _g;
+    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.preventInitialDocInsertion, preventInitialDocInsertion = _d === void 0 ? false : _d, _e = _b.FirebaseDependency, FirebaseDependency = _e === void 0 ? fb : _e, _f = _b.enablePersistence, enablePersistence = _f === void 0 ? false : _f, _g = _b.synchronizeTabs, synchronizeTabs = _g === void 0 ? false : _g;
     if (FirebaseDependency) {
         setFirebaseDependency(FirebaseDependency);
         setFirebaseDependency$1(FirebaseDependency);

@@ -20,8 +20,8 @@ import multipleOpenDBChannels from './multipleOpenDBChannels'
 import docModeWithPathVar from './docModeWithPathVar'
 import createFirestores from '../../../src/index'
 import createEasyAccess from 'vuex-easy-access'
-// import Firebase from '../firestoreMock'
-import Firebase from '../firestore'
+// import firebase from '../firestoreMock'
+import firebase from '../firestore'
 
 const easyAccess = createEasyAccess({ vuexEasyFirestore: true })
 const easyFirestores = createFirestores(
@@ -47,7 +47,7 @@ const easyFirestores = createFirestores(
     multipleOpenDBChannels,
     docModeWithPathVar,
   ],
-  { logging: false, FirebaseDependency: Firebase }
+  { logging: false, FirebaseDependency: firebase }
 )
 
 export default {

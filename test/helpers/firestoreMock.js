@@ -48,17 +48,17 @@ const fixtureData = {
 
 const MockFirestore = require('mock-cloud-firestore')
 
-const Firebase = new MockFirestore(fixtureData)
+const firebase = new MockFirestore(fixtureData)
 
-Firebase.auth = function () {
+firebase.auth = function () {
   return { currentUser: { uid: 'Satoshi' } }
 }
 
-// const a = Firebase.firestore().collection('pokemonBoxes/Satoshi/pokemon')
+// const a = firebase.firestore().collection('pokemonBoxes/Satoshi/pokemon')
 
 // a.get().then(querySnapshot => {
 //   querySnapshot.forEach(doc => {
 //     console.log('doc → ', doc)
 //   })
 // })
-export default Firebase
+export default firebase

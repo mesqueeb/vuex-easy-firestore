@@ -2,7 +2,7 @@ import test from 'ava'
 import wait from './helpers/wait'
 import { store } from './helpers/index.cjs.js'
 
-import * as Firebase from 'firebase/app'
+import firebase from 'firebase/app'
 import 'firebase/firestore'
 
 test('initialDoc through openDBRef & fetchAndAdd', async t => {
@@ -11,7 +11,7 @@ test('initialDoc through openDBRef & fetchAndAdd', async t => {
   const randomId = store.getters['pokemonBox/dbRef'].doc().id
   path = `docs/${randomId}`
   await wait(2)
-  docR = await Firebase.firestore()
+  docR = await firebase.firestore()
     .doc(path)
     .get()
   // doc doesn't exist yet
@@ -26,7 +26,7 @@ test('initialDoc through openDBRef & fetchAndAdd', async t => {
   t.is(testFullPath.split('/').pop(), randomId)
   const fullPath = store.getters['initialDoc/firestorePathComplete']
   await wait(3)
-  docR = await Firebase.firestore()
+  docR = await firebase.firestore()
     .doc(fullPath)
     .get()
   t.is(docR.exists, true)
@@ -41,7 +41,7 @@ test('initialDoc through openDBRef & fetchAndAdd', async t => {
   const randomId2 = store.getters['pokemonBox/dbRef'].doc().id
   path = `docs/${randomId2}`
   await wait(2)
-  docR = await Firebase.firestore()
+  docR = await firebase.firestore()
     .doc(path)
     .get()
   t.is(docR.exists, false)
@@ -53,7 +53,7 @@ test('initialDoc through openDBRef & fetchAndAdd', async t => {
   const fullPath2 = store.getters['initialDoc/firestorePathComplete']
   t.is(fullPath2.split('/').pop(), randomId2)
   await wait(4)
-  docR = await Firebase.firestore()
+  docR = await firebase.firestore()
     .doc(path)
     .get()
   t.is(docR.exists, true)
@@ -68,7 +68,7 @@ test('preventInitialDoc through openDBRef & fetchAndAdd', async t => {
   const randomId = store.getters['pokemonBox/dbRef'].doc().id
   path = `docs/${randomId}`
   await wait(2)
-  docR = await Firebase.firestore()
+  docR = await firebase.firestore()
     .doc(path)
     .get()
   // doc doesn't exist yet
@@ -83,7 +83,7 @@ test('preventInitialDoc through openDBRef & fetchAndAdd', async t => {
   t.is(testFullPath.split('/').pop(), randomId)
   const fullPath = store.getters['preventInitialDoc/firestorePathComplete']
   await wait(3)
-  docR = await Firebase.firestore()
+  docR = await firebase.firestore()
     .doc(fullPath)
     .get()
   t.is(docR.exists, false)
@@ -95,7 +95,7 @@ test('preventInitialDoc through openDBRef & fetchAndAdd', async t => {
   const randomId2 = store.getters['pokemonBox/dbRef'].doc().id
   path = `docs/${randomId2}`
   await wait(2)
-  docR = await Firebase.firestore()
+  docR = await firebase.firestore()
     .doc(path)
     .get()
   t.is(docR.exists, false)
@@ -108,7 +108,7 @@ test('preventInitialDoc through openDBRef & fetchAndAdd', async t => {
   const fullPath2 = store.getters['preventInitialDoc/firestorePathComplete']
   t.is(fullPath2.split('/').pop(), randomId2)
   await wait(4)
-  docR = await Firebase.firestore()
+  docR = await firebase.firestore()
     .doc(path)
     .get()
   t.is(docR.exists, false)

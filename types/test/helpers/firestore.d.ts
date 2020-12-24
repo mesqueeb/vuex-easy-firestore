@@ -1,3 +1,3 @@
-import * as Firebase from 'firebase/app';
+import firebase from 'firebase/app';
 import 'firebase/firestore';
-export default Firebase;
+export default firebase;

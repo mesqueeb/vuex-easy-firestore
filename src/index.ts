@@ -1,5 +1,5 @@
-// Firebase
-import * as Firebase from 'firebase/app'
+// firebase
+import firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
 import { getKeysFromPath } from 'vuex-easy-access'
@@ -18,7 +18,7 @@ import { increment, setFirebaseDependency as setFirebase2 } from './utils/increm
  *
  * @export
  * @param {(IEasyFirestoreModule | IEasyFirestoreModule[])} easyFirestoreModule A vuex-easy-firestore module (or array of modules) with proper configuration as per the documentation.
- * @param {{logging?: boolean, FirebaseDependency?: any}} extraConfig An object with `logging` and `FirebaseDependency` props. `logging` enables console logs for debugging. `FirebaseDependency` is the non-instanciated Firebase class you can pass. (defaults to the Firebase peer dependency)
+ * @param {{logging?: boolean, FirebaseDependency?: any}} extraConfig An object with `logging` and `FirebaseDependency` props. `logging` enables console logs for debugging. `FirebaseDependency` is the non-instanciated firebase class you can pass. (defaults to the firebase peer dependency)
  * @returns {*}
  */
 function vuexEasyFirestore (
@@ -26,7 +26,7 @@ function vuexEasyFirestore (
   {
     logging = false,
     preventInitialDocInsertion = false,
-    FirebaseDependency = Firebase,
+    FirebaseDependency = firebase,
     enablePersistence = false,
     synchronizeTabs = false,
   }: {
@@ -38,7 +38,7 @@ function vuexEasyFirestore (
   } = {
     logging: false,
     preventInitialDocInsertion: false,
-    FirebaseDependency: Firebase,
+    FirebaseDependency: firebase,
     enablePersistence: false,
     synchronizeTabs: false,
   }
