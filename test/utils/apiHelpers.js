@@ -84,7 +84,7 @@ test('createFetchIdentifier', t => {
   res = createFetchIdentifier({
     where: [['thatRef', '==', store.getters['mainCharacter/dbRef']]],
   })
-  t.is(res, `[where]thatRef,==,DocumentReferenceSatoshi`)
+  t.is(res, `[where]thatRef,==,DocumentReference$1Satoshi`)
 })
 
 test('makeBatchFromSyncstack', t => {

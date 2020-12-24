@@ -1,6 +1,6 @@
 import test from 'ava'
 import wait from './helpers/wait'
-import * as Firebase from 'firebase/app'
+import firebase from 'firebase/app'
 import 'firebase/firestore'
 import { store } from './helpers/index.cjs.js'
 
@@ -27,7 +27,7 @@ test('[MANUAL TEST] server prop deletion - no defaults', async t => {
     'https://console.firebase.google.com/u/0/project/tests-firestore/database/firestore/data~2FconfigTests~2FserverHooks'
   )
   // await docRef.update({
-  //   defaultPropsNotToBeDeleted: Firebase.firestore.FieldValue.delete()
+  //   defaultPropsNotToBeDeleted: firebase.firestore.FieldValue.delete()
   // })
   await wait(15)
   docR = await docRef.get()
@@ -55,7 +55,7 @@ test('[MANUAL TEST] server prop deletion - top lvl', async t => {
     'https://console.firebase.google.com/u/0/project/tests-firestore/database/firestore/data~2FconfigTests~2FserverHooks'
   )
   // await docRef.update({
-  //   addedPropToBeDeleted: Firebase.firestore.FieldValue.delete()
+  //   addedPropToBeDeleted: firebase.firestore.FieldValue.delete()
   // })
   await wait(15)
   console.log('waited for delete')
@@ -84,7 +84,7 @@ test('[MANUAL TEST] server prop deletion - nested', async t => {
     'https://console.firebase.google.com/u/0/project/tests-firestore/database/firestore/data~2FconfigTests~2FserverHooks'
   )
   // await docRef.update({
-  //   'nestedD.tobe.deleted': Firebase.firestore.FieldValue.delete()
+  //   'nestedD.tobe.deleted': firebase.firestore.FieldValue.delete()
   // })
   await wait(15)
   docR = await docRef.get()

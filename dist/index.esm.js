@@ -1,4 +1,4 @@
-import * as firebase from 'firebase/app';
+import fb from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
 import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
@@ -186,7 +186,7 @@ function pluginState () {
 }
 
 var errorMessages = {
-    'user-auth': "\n    Error trying to set userId.\n    Please double check if you have correctly authenticated the user with Firebase Auth before calling `openDBChannel` or `fetchAndAdd`.\n\n    If you still get this error, try passing your firebase instance to the plugin as described in the documentation:\n    https://mesqueeb.github.io/vuex-easy-firestore/extra-features.html#pass-firebase-dependency\n  ",
+    'user-auth': "\n    Error trying to set userId.\n    Please double check if you have correctly authenticated the user with firebase Auth before calling `openDBChannel` or `fetchAndAdd`.\n\n    If you still get this error, try passing your firebase instance to the plugin as described in the documentation:\n    https://mesqueeb.github.io/vuex-easy-firestore/extra-features.html#pass-firebase-dependency\n  ",
     'delete-missing-id': "\n    Missing id of the doc you want to delete!\n    Correct usage:\n      dispatch('delete', id)\n  ",
     'delete-missing-path': "\n    Missing path to the prop you want to delete!\n    Correct usage:\n      dispatch('delete', 'path.to.prop')\n\n    Use `.` for sub props!\n  ",
     'missing-id': "\n    This action requires an id to be passed!\n  ",
@@ -194,7 +194,7 @@ var errorMessages = {
     'missing-path-variables': "\n    A path variable was passed without defining it!\n    In VuexEasyFirestore you can create paths with variables:\n    eg: `groups/{groupId}/user/{userId}`\n\n    `userId` is automatically replaced with the userId of the firebase user.\n    `groupId` or any other variable that needs to be set after authentication needs to be passed upon the `openDBChannel` action.\n\n    // (in module config) Example path:\n    firestorePath: 'groups/{groupId}/user/{userId}'\n\n    // Then before openDBChannel:\n    // retrieve the value\n    const groupId = someIdRetrievedAfterSignin\n    // pass as argument into openDBChannel:\n    dispatch('moduleName/openDBChannel', {groupId})\n  ",
     'patch-no-ref': "\n    Something went wrong during the PATCH mutation:\n    The document it's trying to patch does not exist.\n  ",
     'only-in-collection-mode': "\n    The action you dispatched can only be used in 'collection' mode.\n  ",
-    'initial-doc-failed': "\n    Initial doc insertion failed. Further `set` or `patch` actions will also fail. Requires an internet connection when the initial doc is inserted. Check the error returned by Firebase:\n  ",
+    'initial-doc-failed': "\n    Initial doc insertion failed. Further `set` or `patch` actions will also fail. Requires an internet connection when the initial doc is inserted. Check the error returned by firebase:\n  ",
     'sync-error': "\n    Something went wrong while trying to synchronise data to Cloud Firestore.\n    The data is kept in queue, so that it will try to sync again upon the next 'set' or 'patch' action.\n  ",
 };
 /**
@@ -2228,9 +2228,9 @@ function isEqual(value, other) {
   return baseIsEqual(value, other);
 }
 
-var Firebase = firebase;
+var firebase = fb;
 function setFirebaseDependency(firebaseDependency) {
-    Firebase = firebaseDependency;
+    firebase = firebaseDependency;
 }
 var ArrayUnion = /** @class */ (function () {
     function ArrayUnion() {
@@ -2254,7 +2254,7 @@ var ArrayUnion = /** @class */ (function () {
     };
     ArrayUnion.prototype.getFirestoreFieldValue = function () {
         var _a;
-        return (_a = Firebase.firestore.FieldValue).arrayUnion.apply(_a, this.payload);
+        return (_a = firebase.firestore.FieldValue).arrayUnion.apply(_a, this.payload);
     };
     return ArrayUnion;
 }());
@@ -2280,7 +2280,7 @@ var ArrayRemove = /** @class */ (function () {
     };
     ArrayRemove.prototype.getFirestoreFieldValue = function () {
         var _a;
-        return (_a = Firebase.firestore.FieldValue).arrayRemove.apply(_a, this.payload);
+        return (_a = firebase.firestore.FieldValue).arrayRemove.apply(_a, this.payload);
     };
     return ArrayRemove;
 }());
@@ -2310,9 +2310,9 @@ function isArrayHelper(value) {
         value.isArrayHelper === true);
 }
 
-var Firebase$1 = firebase;
+var firebase$1 = fb;
 function setFirebaseDependency$1(firebaseDependency) {
-    Firebase$1 = firebaseDependency;
+    firebase$1 = firebaseDependency;
 }
 var Increment = /** @class */ (function () {
     function Increment(payload) {
@@ -2323,7 +2323,7 @@ var Increment = /** @class */ (function () {
         return counter + this.payload;
     };
     Increment.prototype.getFirestoreFieldValue = function () {
-        return Firebase$1.firestore.FieldValue.increment(this.payload);
+        return firebase$1.firestore.FieldValue.increment(this.payload);
     };
     return Increment;
 }());
@@ -2602,14 +2602,14 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
     return targets;
 }
 /**
- * Create a Firebase batch from a syncStack to be passed inside the state param.
+ * Create a firebase batch from a syncStack to be passed inside the state param.
  *
  * @export
  * @param {IPluginState} state The state will get modified!
  * @param {AnyObject} getters The getters which should have `dbRef`, `storeRef`, `collectionMode` and `firestorePathComplete`
  * @param {any} firebaseBatch a firestore.batch() instance
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
- * @returns {*} A Firebase firestore batch object.
+ * @returns {*} A firebase firestore batch object.
  */
 function makeBatchFromSyncstack(state, getters, firebaseBatch, batchMaxCount) {
     if (batchMaxCount === void 0) { batchMaxCount = 500; }
@@ -2792,20 +2792,20 @@ function getValueFromPayloadPiece(payloadPiece) {
  * A function returning the actions object
  *
  * @export
- * @param {*} Firebase The Firebase dependency
+ * @param {*} firebase The firebase dependency
  * @returns {AnyObject} the actions object
  */
 function pluginActions (firestoreConfig) {
     var _this = this;
-    var Firebase = firestoreConfig.FirebaseDependency, enablePersistence = firestoreConfig.enablePersistence, synchronizeTabs = firestoreConfig.synchronizeTabs;
+    var firebase = firestoreConfig.FirebaseDependency, enablePersistence = firestoreConfig.enablePersistence, synchronizeTabs = firestoreConfig.synchronizeTabs;
     return {
         setUserId: function (_a, userId) {
             var commit = _a.commit, getters = _a.getters;
             if (userId === undefined)
                 userId = null;
             // undefined cannot be synced to firestore
-            if (!userId && Firebase.auth().currentUser) {
-                userId = Firebase.auth().currentUser.uid;
+            if (!userId && firebase.auth().currentUser) {
+                userId = firebase.auth().currentUser.uid;
             }
             commit('SET_USER_ID', userId);
             if (getters.firestorePathComplete.includes('{userId}'))
@@ -3022,7 +3022,7 @@ function pluginActions (firestoreConfig) {
         },
         batchSync: function (_a) {
             var getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch, state = _a.state;
-            var batch = makeBatchFromSyncstack(state, getters, Firebase.firestore().batch());
+            var batch = makeBatchFromSyncstack(state, getters, firebase.firestore().batch());
             dispatch('_startPatching');
             state._sync.syncStack.debounceTimer = null;
             return new Promise(function (resolve, reject) {
@@ -3286,7 +3286,8 @@ function pluginActions (firestoreConfig) {
                             return [2 /*return*/, doc];
                         case 2:
                             e_1 = _b.sent();
-                            return [2 /*return*/, error(e_1)];
+                            error(e_1);
+                            throw e_1;
                         case 3: return [2 /*return*/];
                     }
                 });
@@ -3352,25 +3353,59 @@ function pluginActions (firestoreConfig) {
                 }
             });
         },
+        /* IMPORTANT NOTE: a `documentSnapshot`'s `fromCache` metadata is not what it
+         * seems at all. Firestore can set it to `true` even if the data comes from the
+         * server, and to `false` even if it comes from cache: it's actually a way to say
+         * "Firestore is planning on making a fetch request as soon as possible as it's
+         * likely (sometimes certain) that there is data to load". An honest name for
+         * `fromCache` would be `hasPendingReads`.
+         *
+         * Our assumptions are the following:
+         * 1) A local action triggers an immediate documentSnapshot with this metadata:
+         * `fromCache == true | false && hasPendingWrites == true`
+         * (`fromCache` being `true` only at initial load of we load from cache) and
+         * another snapshot after Firestore saved the data with:
+         * `fromCache == false && hasPendingWrites == false`
+         * 2) A remote change triggers a documentSnapshot with this metadata:
+         * `fromCache == false && hasPendingWrites == true | false`
+         * (`hasPendingWrites` being true only if the are local changes still pending)
+         * 3) In collection mode, the querySnapshot has its own `fromCache` metadata
+         * which will be `true` if the data comes from cache at initial load or if
+         * the snapshot is remote but is to be followed by other queued snapshots
+         * 4) We don't expect the initial load from cache to be done in several
+         * querySnapshots (TODO: check)
+         *
+         * Example 1: if our data is up-to-date and that a write request is made, the
+         * first document snapshot will have:
+         * `fromCache === false && hasPendingWrites === true`,
+         * the 2nd snapshot will have:
+         * `fromCache === false && hasPendingWrites === false`
+         *
+         * Example 2: if there are 150 documents to load at the same time, Firestore may
+         * split them them in 3 (or whatever) batches, so we'll get three snapshots:
+         * `fromCache === true && hasPendingWrites === false`
+         * `fromCache === true && hasPendingWrites === false`
+         * `fromCache === false && hasPendingWrites === false`
+         * (`hasPendingWrites` maybe be `true` is we have a remotely-unsaved local
+         * change while we receive the data)
+         */
         openDBChannel: function (_a, parameters) {
             var _this = this;
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             if (parameters === void 0) { parameters = {
                 clauses: {},
                 pathVariables: {},
-                includeMetadataChanges: true,
+                debug: false,
             }; }
-            if (!isPlainObject(parameters))
-                parameters = {};
             /* COMPATIBILITY START
              * this ensures backward compatibility for people who passed pathVariables and
              * clauses directly at the root of the `parameters` object. Can be removed in
              * a later version
              */
-            if (!parameters.clauses &&
-                !parameters.pathVariables &&
-                parameters.includeMetadataChanges === undefined) {
-                var pathVariables_3 = Object.assign({}, parameters);
+            if (!isPlainObject(parameters))
+                parameters = {};
+            if (!parameters.clauses && !parameters.pathVariables) {
+                var pathVariables_3 = Object.assign({}, parameters || {});
                 // @ts-ignore
                 delete pathVariables_3.where;
                 // @ts-ignore
@@ -3380,43 +3415,21 @@ function pluginActions (firestoreConfig) {
                         delete pathVariables_3[entry[0]];
                     }
                 });
-                parameters = Object.assign({
-                    includeMetadataChanges: parameters.includeMetadataChanges || true,
-                }, { clauses: parameters, pathVariables: pathVariables_3 });
+                parameters = {
+                    clauses: parameters,
+                    pathVariables: pathVariables_3,
+                    debug: parameters.debug,
+                };
             }
+            /* COMPATIBILITY END */
             var defaultParameters = {
                 clauses: {},
                 pathVariables: {},
-                includeMetadataChanges: true,
+                debug: false,
             };
-            parameters = Object.assign(defaultParameters, parameters);
-            /* COMPATIBILITY END */
+            parameters = Object.assign(defaultParameters, parameters || {});
+            // set data that will be used
             dispatch('setUserId');
-            // creates promises that can be resolved from outside their scope and that
-            // can give their status
-            var nicePromise = function () {
-                var m = {
-                    resolve: null,
-                    reject: null,
-                    isFulfilled: false,
-                    isRejected: false,
-                    isPending: true,
-                };
-                var p = new Promise(function (resolve, reject) {
-                    m.resolve = resolve;
-                    m.reject = reject;
-                });
-                Object.assign(p, m);
-                p
-                    // @ts-ignore
-                    .then(function () { return (p.isFulfilled = true); })
-                    // @ts-ignore
-                    .catch(function () { return (p.isRejected = true); })
-                    // @ts-ignore
-                    .finally(function () { return (p.isPending = false); });
-                return p;
-            };
-            // set state for clauses and pathVariables
             commit('SET_SYNCCLAUSES', parameters.clauses);
             commit('SET_PATHVARS', parameters.pathVariables);
             var identifier = createFetchIdentifier({
@@ -3435,14 +3448,30 @@ function pluginActions (firestoreConfig) {
                     dbRef = dbRef.orderBy.apply(dbRef, state._conf.sync.orderBy);
                 }
             }
-            // log
-            if (state._conf.logging) {
-                console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
-            }
-            var initialPromise = nicePromise();
-            var refreshedPromise = nicePromise();
-            var streamingPromise = nicePromise();
-            var includeMetadataChanges = parameters.includeMetadataChanges;
+            // creates promises that can be resolved from outside their scope and that
+            // can give their status
+            var nicePromise = function () {
+                var m = {
+                    resolve: null,
+                    reject: null,
+                    isFulfilled: false,
+                    isRejected: false,
+                    isPending: true,
+                };
+                var p = new Promise(function (resolve, reject) {
+                    m.resolve = resolve;
+                    m.reject = reject;
+                });
+                Object.assign(p, m);
+                // @ts-ignore
+                p.then(function () { return (p.isFulfilled = true); })
+                    // @ts-ignore
+                    .catch(function () { return (p.isRejected = true); })
+                    // @ts-ignore
+                    .finally(function () { return (p.isPending = false); });
+                return p;
+            };
+            var initialPromise = nicePromise(), refreshedPromise = nicePromise(), streamingPromise = nicePromise();
             var streamingStart = function () {
                 // create a promise for the life of the snapshot that can be resolved from
                 // outside its scope. This promise will be resolved when the user calls
@@ -3450,7 +3479,7 @@ function pluginActions (firestoreConfig) {
                 // error() callback
                 state._sync.streaming[identifier] = streamingPromise;
                 initialPromise.resolve({
-                    refreshed: includeMetadataChanges ? refreshedPromise : null,
+                    refreshed: refreshedPromise,
                     streaming: streamingPromise,
                     stop: function () { return dispatch('closeDBChannel', { _identifier: identifier }); },
                 });
@@ -3479,123 +3508,197 @@ function pluginActions (firestoreConfig) {
                 streamingStart();
                 return initialPromise;
             }
-            var processDocument = function (data) {
-                var doc = getters.cleanUpRetrievedDoc(data, getters.docModeId);
-                dispatch('applyHooksAndUpdateState', {
-                    change: 'modified',
-                    id: getters.docModeId,
-                    doc: doc,
-                });
-            };
-            var processCollection = function (docChanges) {
-                docChanges.forEach(function (docChange) {
-                    var docSnapshot = docChange.doc;
-                    var doc = getters.cleanUpRetrievedDoc(docSnapshot.data(), docSnapshot.id);
-                    dispatch('applyHooksAndUpdateState', {
-                        change: docChange.type,
-                        id: docSnapshot.id,
-                        doc: doc,
-                    });
-                });
-            };
-            var updateAllOpenTabsWithLocalPersistence = enablePersistence && synchronizeTabs;
-            var onSnapshotListener = !getters.collectionMode
-                ? // 'doc' mode
-                    function (docSnapshot) { return __awaiter(_this, void 0, void 0, function () {
-                        var isLocalUpdate, message, error_1;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    isLocalUpdate = docSnapshot.metadata.hasPendingWrites;
-                                    if (isLocalUpdate && !updateAllOpenTabsWithLocalPersistence)
-                                        return [2 /*return*/];
-                                    if (!!docSnapshot.exists) return [3 /*break*/, 7];
-                                    if (!!state._conf.sync.preventInitialDocInsertion) return [3 /*break*/, 5];
-                                    if (state._conf.logging) {
-                                        message = 'inserting initial doc';
-                                        console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: MediumSeaGreen');
-                                    }
-                                    _a.label = 1;
-                                case 1:
-                                    _a.trys.push([1, 3, , 4]);
-                                    return [4 /*yield*/, dispatch('insertInitialDoc')
-                                        // if the initial document was successfully inserted
-                                    ];
-                                case 2:
-                                    _a.sent();
-                                    // if the initial document was successfully inserted
-                                    if (initialPromise.isPending) {
-                                        streamingStart();
-                                    }
-                                    if (refreshedPromise.isPending && docSnapshot.metadata.fromCache === false) {
-                                        refreshedPromise.resolve();
-                                    }
-                                    return [3 /*break*/, 4];
-                                case 3:
-                                    error_1 = _a.sent();
-                                    // we close the channel ourselves. Firestore does not, as it leaves the
-                                    // channel open as long as the user has read rights on the document, even
-                                    // if it does not exist. But since the dev enabled `insertInitialDoc`,
-                                    // it makes some sense to close as we can assume the user should have had
-                                    // write rights
-                                    streamingStop(error_1);
-                                    return [3 /*break*/, 4];
-                                case 4: return [3 /*break*/, 6];
-                                case 5:
-                                    streamingStop('preventInitialDocInsertion');
-                                    _a.label = 6;
-                                case 6: return [3 /*break*/, 8];
-                                case 7:
-                                    processDocument(docSnapshot.data());
-                                    if (initialPromise.isPending) {
-                                        streamingStart();
-                                    }
-                                    // the promise should still be pending at this point only if there is no persistence,
-                                    // as only then the first call to our listener will have `fromCache` === `false`
-                                    if (refreshedPromise.isPending && docSnapshot.metadata.fromCache === false) {
-                                        refreshedPromise.resolve();
-                                    }
-                                    _a.label = 8;
-                                case 8: return [2 /*return*/];
+            // const updateAllOpenTabsWithLocalPersistence = enablePersistence && synchronizeTabs
+            /**
+             * This function does not interact directly with the stream or the promises of
+             * openDBChannel: instead, it returns an object which may be used (or not) by
+             * the caller. Basically we'll use the response in doc mode only.
+             *
+             * In collection mode, the parameter is actually a `queryDocumentSnapshot`, which
+             * has the same API as a `documentSnapshot`.
+             */
+            var processDocument = function (documentSnapshot, changeType) {
+                // debug message
+                if (parameters.debug) {
+                    console.log("%c Document " + documentSnapshot.id + ": fromCache == " + (documentSnapshot.metadata.fromCache ? 'true' : 'false') + " && hasPendingWrites == " + (documentSnapshot.metadata.hasPendingWrites ? 'true' : 'false'), 'padding-left: 40px');
+                }
+                // the promise that this function returns always resolves with this object
+                var promisePayload = {
+                    initialize: false,
+                    refresh: false,
+                    stop: null,
+                };
+                var promise = Promise.resolve(promisePayload);
+                // If the data is not up-to-date with the server yet.
+                // This should happen only when we are loading from cache at initial load.
+                if (documentSnapshot.metadata.fromCache) {
+                    // If it's the very first snapshot, we are at the initial app load. If so, we'll
+                    // use the data from cache to populate the state. Otherwise we can ignore it.
+                    if (initialPromise.isPending) {
+                        // pass the signal that the doc is ready to initialize
+                        promisePayload.initialize = true;
+                        // TODO: the capacity of hooks to "abort" the insertion makes little sense. It's
+                        // a problem if they leave their promise pending. To be changed
+                        // TODO: this is actually not useful when the store is persisted with Vuex-persist
+                        promise = dispatch('applyHooksAndUpdateState', {
+                            // TODO: for backward compatibility, we keep this as "modified" in doc mode
+                            // but it would make sense in a future version to change to "added", as this is
+                            // the initial load and the user may want to act on it differently
+                            change: changeType || 'modified',
+                            id: documentSnapshot.id,
+                            doc: getters.cleanUpRetrievedDoc(documentSnapshot.data(), documentSnapshot.id),
+                        }).then(function () { return promisePayload; });
+                    }
+                }
+                // if the data is up-to-date with the server
+                else {
+                    // // do nothing on local changes
+                    // const isLocalUpdate = documentSnapshot.metadata.hasPendingWrites
+                    // if (isLocalUpdate && !updateAllOpenTabsWithLocalPersistence) return promise
+                    // if (isLocalUpdate && updateAllOpenTabsWithLocalPersistence && document.hasFocus()) return promise
+                    // if the remote document exists (this is always `true` when we are in
+                    // collection mode)
+                    if (documentSnapshot.exists) {
+                        // the doc will actually already be initialized at this point unless it couldn't
+                        // be loaded from cache (no persistence, or never previously loaded)
+                        promisePayload.initialize = true;
+                        // also pass the signal that the doc has been refreshed
+                        promisePayload.refresh = true;
+                        var doc = getters.cleanUpRetrievedDoc(documentSnapshot.data(), documentSnapshot.id);
+                        promise = dispatch('applyHooksAndUpdateState', {
+                            // TODO: same as above, this remains for backward compatibilty but should be
+                            // changed later by the commented line below
+                            change: changeType || 'modified',
+                            // if the document has not been loaded from cache before, this is an addition
+                            //change: changeType || (initialPromise.isPending ? 'added' : 'modified'),
+                            id: documentSnapshot.id,
+                            doc: doc,
+                        }).then(function () { return promisePayload; });
+                    }
+                    // the document doesn't exist yet (necessarily means we are in doc mode)
+                    else {
+                        // if the config allows to insert an initial document
+                        if (!state._conf.sync.preventInitialDocInsertion) {
+                            // a notification message in the console
+                            if (state._conf.logging) {
+                                var message = refreshedPromise.isPending
+                                    ? 'inserting initial doc'
+                                    : 'recreating doc after remote deletion';
+                                console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: MediumSeaGreen');
                             }
-                        });
-                    }); }
-                : // 'collection' mode
-                    function (querySnapshot) { return __awaiter(_this, void 0, void 0, function () {
-                        var isLocalUpdate;
-                        return __generator(this, function (_a) {
-                            isLocalUpdate = querySnapshot.metadata.hasPendingWrites;
-                            if (isLocalUpdate && !updateAllOpenTabsWithLocalPersistence)
-                                return [2 /*return*/];
-                            processCollection(querySnapshot.docChanges());
+                            // try to insert the doc
+                            promise = dispatch('insertInitialDoc')
+                                .then(function () {
+                                promisePayload.initialize = true;
+                                promisePayload.refresh = true;
+                                return promisePayload;
+                            })
+                                .catch(function (error) {
+                                // we close the stream ourselves. Firestore does not, as it leaves the
+                                // stream open as long as the user has read rights on the document, even
+                                // if it does not exist. But since the dev enabled `insertInitialDoc`,
+                                // it makes some sense to close as we can assume the user should have had
+                                // write rights
+                                promisePayload.stop = error;
+                                return promisePayload;
+                            });
+                        }
+                        // we are not allowed to (re)create the doc: close the stream and reject
+                        else {
+                            promisePayload.stop = 'preventInitialDocInsertion';
+                        }
+                    }
+                }
+                return promise;
+            };
+            // log the fact that we'll now try to open the stream
+            if (state._conf.logging) {
+                console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
+            }
+            // open the stream
+            var unsubscribe = dbRef.onSnapshot(
+            // this lets us know when our data is up-to-date with the server
+            { includeMetadataChanges: true }, 
+            // the parameter is either a querySnapshot (collection mode) or a
+            // documentSnapshot (doc mode)
+            /**
+             * @param {QuerySnapshot | DocumentSnapshot} snapshot
+             */
+            function (snapshot) { return __awaiter(_this, void 0, void 0, function () {
+                var querySnapshot, docChanges, promises_1, documentSnapshot, resp;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            if (!getters.collectionMode) return [3 /*break*/, 2];
+                            querySnapshot = snapshot;
+                            docChanges = querySnapshot.docChanges({ includeMetadataChanges: true }), promises_1 = new Array(docChanges.length);
+                            // debug messages
+                            if (parameters.debug) {
+                                console.log("%c QUERY SNAPSHOT received for `" + state._conf.moduleName + "`", 'font-weight: bold');
+                                console.log("%c fromCache == " + (querySnapshot.metadata.fromCache ? 'true' : 'false') + " && hasPendingWrites == " + (querySnapshot.metadata.hasPendingWrites ? 'true' : 'false'), 'padding-left: 20px; font-style: italic');
+                                console.log(docChanges.length
+                                    ? "%c " + docChanges.length + " changed document snapshots included:"
+                                    : "%c No changed document snapshots included.", 'padding-left: 20px; ');
+                            }
+                            // process doc changes
+                            docChanges.forEach(function (change, i) {
+                                promises_1[i] = processDocument(change.doc, change.type);
+                            });
+                            return [4 /*yield*/, Promise.all(promises_1)
+                                // no matter where the data came from, we can resolve the initial promise
+                            ];
+                        case 1:
+                            _a.sent();
+                            // no matter where the data came from, we can resolve the initial promise
                             if (initialPromise.isPending) {
                                 streamingStart();
                             }
-                            if (refreshedPromise.isPending && querySnapshot.metadata.fromCache === false) {
+                            // if all the data is up-to-date with the server
+                            if (!querySnapshot.metadata.fromCache) {
+                                // if it's the first time it's refreshed
+                                if (refreshedPromise.isPending && querySnapshot.metadata.fromCache === false) {
+                                    refreshedPromise.resolve();
+                                }
+                            }
+                            return [3 /*break*/, 4];
+                        case 2:
+                            documentSnapshot = snapshot;
+                            // debug messages
+                            if (parameters.debug) {
+                                console.log("%c DOCUMENT SNAPSHOT received for `" + state._conf.moduleName + "`", 'font-weight: bold');
+                            }
+                            return [4 /*yield*/, processDocument(documentSnapshot)];
+                        case 3:
+                            resp = _a.sent();
+                            if (resp.initialize && initialPromise.isPending) {
+                                streamingStart();
+                            }
+                            if (resp.refresh && refreshedPromise.isPending && documentSnapshot.metadata.fromCache === false) {
                                 refreshedPromise.resolve();
                             }
-                            return [2 /*return*/];
-                        });
-                    }); };
-            var unsubscribe = dbRef.onSnapshot({ includeMetadataChanges: includeMetadataChanges }, onSnapshotListener, streamingStop);
+                            if (resp.stop) {
+                                streamingStop(resp.stop);
+                            }
+                            _a.label = 4;
+                        case 4: return [2 /*return*/];
+                    }
+                });
+            }); }, streamingStop);
             state._sync.unsubscribe[identifier] = unsubscribe;
             return initialPromise;
         },
         closeDBChannel: function (_a, _b) {
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
-            var _c = _b === void 0 ? {
-                clearModule: false,
-                _identifier: null,
-            } : _b, _d = _c.clearModule, clearModule = _d === void 0 ? false : _d, _e = _c._identifier, _identifier = _e === void 0 ? null : _e;
+            var _c = _b === void 0 ? { clearModule: false, _identifier: null } : _b, _d = _c.clearModule, clearModule = _d === void 0 ? false : _d, _e = _c._identifier, _identifier = _e === void 0 ? null : _e;
             var identifier = _identifier ||
                 createFetchIdentifier({
                     where: state._conf.sync.where,
                     orderBy: state._conf.sync.orderBy,
                     pathVariables: state._sync.pathVariables,
                 });
-            var unsubscribeDBChannel = state._sync.unsubscribe[identifier];
-            if (isFunction$1(unsubscribeDBChannel)) {
-                unsubscribeDBChannel();
+            var unsubscribeStream = state._sync.unsubscribe[identifier];
+            if (isFunction$1(unsubscribeStream)) {
+                unsubscribeStream();
                 state._sync.streaming[identifier].resolve();
                 state._sync.streaming[identifier] = null;
                 state._sync.unsubscribe[identifier] = null;
@@ -3837,10 +3940,10 @@ function pluginActions (firestoreConfig) {
  * A function returning the getters object
  *
  * @export
- * @param {*} Firebase The Firebase dependency
+ * @param {*} firebase The firebase dependency
  * @returns {AnyObject} the getters object
  */
-function pluginGetters (Firebase) {
+function pluginGetters (firebase) {
     return {
         firestorePathComplete: function (state, getters) {
             var path = state._conf.firestorePath;
@@ -3866,8 +3969,8 @@ function pluginGetters (Firebase) {
         dbRef: function (state, getters, rootState, rootGetters) {
             var path = getters.firestorePathComplete;
             return getters.collectionMode
-                ? Firebase.firestore().collection(path)
-                : Firebase.firestore().doc(path);
+                ? firebase.firestore().collection(path)
+                : firebase.firestore().doc(path);
         },
         storeRef: function (state, getters, rootState) {
             var path = state._conf.statePropName
@@ -3951,7 +4054,7 @@ function pluginGetters (Firebase) {
                 id = getters.docModeId;
                 cleanedPath = path;
             }
-            cleanedPatchData[cleanedPath] = Firebase.firestore.FieldValue.delete();
+            cleanedPatchData[cleanedPath] = firebase.firestore.FieldValue.delete();
             cleanedPatchData.id = id;
             return _a = {}, _a[id] = cleanedPatchData, _a;
         }; },
@@ -4118,7 +4221,7 @@ function errorCheck (config) {
  * A function that returns a vuex module object with seamless 2-way sync for firestore.
  *
  * @param {IEasyFirestoreModule} userConfig Takes a config object per module
- * @param {*} FirebaseDependency The Firebase dependency (non-instanciated), defaults to the Firebase peer dependency if left blank.
+ * @param {*} FirebaseDependency The firebase dependency (non-instanciated), defaults to the firebase peer dependency if left blank.
  * @returns {IStore} the module ready to be included in your vuex store
  */
 function iniModule (userConfig, firestoreConfig) {
@@ -4183,23 +4286,23 @@ function iniModule (userConfig, firestoreConfig) {
     };
 }
 
-// Firebase
+// firebase
 /**
  * Create vuex-easy-firestore modules. Add as single plugin to Vuex Store.
  *
  * @export
  * @param {(IEasyFirestoreModule | IEasyFirestoreModule[])} easyFirestoreModule A vuex-easy-firestore module (or array of modules) with proper configuration as per the documentation.
- * @param {{logging?: boolean, FirebaseDependency?: any}} extraConfig An object with `logging` and `FirebaseDependency` props. `logging` enables console logs for debugging. `FirebaseDependency` is the non-instanciated Firebase class you can pass. (defaults to the Firebase peer dependency)
+ * @param {{logging?: boolean, FirebaseDependency?: any}} extraConfig An object with `logging` and `FirebaseDependency` props. `logging` enables console logs for debugging. `FirebaseDependency` is the non-instanciated firebase class you can pass. (defaults to the firebase peer dependency)
  * @returns {*}
  */
 function vuexEasyFirestore(easyFirestoreModule, _a) {
     var _b = _a === void 0 ? {
         logging: false,
         preventInitialDocInsertion: false,
-        FirebaseDependency: firebase,
+        FirebaseDependency: fb,
         enablePersistence: false,
         synchronizeTabs: false,
-    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.preventInitialDocInsertion, preventInitialDocInsertion = _d === void 0 ? false : _d, _e = _b.FirebaseDependency, FirebaseDependency = _e === void 0 ? firebase : _e, _f = _b.enablePersistence, enablePersistence = _f === void 0 ? false : _f, _g = _b.synchronizeTabs, synchronizeTabs = _g === void 0 ? false : _g;
+    } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.preventInitialDocInsertion, preventInitialDocInsertion = _d === void 0 ? false : _d, _e = _b.FirebaseDependency, FirebaseDependency = _e === void 0 ? fb : _e, _f = _b.enablePersistence, enablePersistence = _f === void 0 ? false : _f, _g = _b.synchronizeTabs, synchronizeTabs = _g === void 0 ? false : _g;
     if (FirebaseDependency) {
         setFirebaseDependency(FirebaseDependency);
         setFirebaseDependency$1(FirebaseDependency);

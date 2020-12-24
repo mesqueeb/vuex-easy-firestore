@@ -9,7 +9,7 @@ Luckily, Vuex Easy Firestore has an easy solution for this as well. As you can r
 Below I will show a code sample of how you can successfully do so and prevent the Firebase error:
 ```js
 // initialise Firebase
-import * as Firebase from 'firebase/app'
+import firebase from 'firebase/app'
 
 Firebase.initializeApp(/* your firebase config */)
 const FirebaseDependency = Firebase

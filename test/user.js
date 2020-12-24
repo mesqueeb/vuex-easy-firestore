@@ -1,7 +1,7 @@
 import test from 'ava'
 import wait from './helpers/wait'
 import { store } from './helpers/index.cjs.js'
-import * as firebase from 'firebase/app'
+import firebase from 'firebase/app'
 import 'firebase/auth'
 
 const state = store.state.user

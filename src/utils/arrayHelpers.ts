@@ -1,12 +1,12 @@
 import { isAnyObject, isPlainObject, isArray } from 'is-what'
-import * as firebase from 'firebase/app'
+import fb from 'firebase/app'
 import 'firebase/firestore'
 import isEqual from 'lodash-es/isEqual'
 
-let Firebase = firebase
+let firebase = fb
 
 export function setFirebaseDependency (firebaseDependency) {
-  Firebase = firebaseDependency
+  firebase = firebaseDependency
 }
 
 export class ArrayUnion {
@@ -29,7 +29,7 @@ export class ArrayUnion {
     return array
   }
   getFirestoreFieldValue () {
-    return Firebase.firestore.FieldValue.arrayUnion(...this.payload)
+    return firebase.firestore.FieldValue.arrayUnion(...this.payload)
   }
 }
 
@@ -53,7 +53,7 @@ export class ArrayRemove {
     return array
   }
   getFirestoreFieldValue () {
-    return Firebase.firestore.FieldValue.arrayRemove(...this.payload)
+    return firebase.firestore.FieldValue.arrayRemove(...this.payload)
   }
 }
 

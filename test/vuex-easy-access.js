@@ -1,7 +1,7 @@
 import test from 'ava'
 import { isPlainObject, isArray, isDate } from 'is-what'
 import wait from './helpers/wait'
-import Firebase from './helpers/firestoreMock'
+import firebase from './helpers/firestoreMock'
 import { store } from './helpers/index.cjs.js'
 
 const box = store.state.pokemonBoxVEA
@@ -18,7 +18,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
     id,
     name: 'Squirtle',
     type: ['water'],
-    meta: { date, firebaseServerTS: Firebase.firestore.FieldValue.serverTimestamp() },
+    meta: { date, firebaseServerTS: firebase.firestore.FieldValue.serverTimestamp() },
   }
   await store.set('pokemonBoxVEA/pokemon.*', pokemonValues)
   await wait(2)

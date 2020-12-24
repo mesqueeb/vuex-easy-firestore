@@ -1,7 +1,7 @@
 const errorMessages = {
   'user-auth': `
     Error trying to set userId.
-    Please double check if you have correctly authenticated the user with Firebase Auth before calling \`openDBChannel\` or \`fetchAndAdd\`.
+    Please double check if you have correctly authenticated the user with firebase Auth before calling \`openDBChannel\` or \`fetchAndAdd\`.
 
     If you still get this error, try passing your firebase instance to the plugin as described in the documentation:
     https://mesqueeb.github.io/vuex-easy-firestore/extra-features.html#pass-firebase-dependency
@@ -55,7 +55,7 @@ const errorMessages = {
     The action you dispatched can only be used in 'collection' mode.
   `,
   'initial-doc-failed': `
-    Initial doc insertion failed. Further \`set\` or \`patch\` actions will also fail. Requires an internet connection when the initial doc is inserted. Check the error returned by Firebase:
+    Initial doc insertion failed. Further \`set\` or \`patch\` actions will also fail. Requires an internet connection when the initial doc is inserted. Check the error returned by firebase:
   `,
   'sync-error': `
     Something went wrong while trying to synchronise data to Cloud Firestore.

@@ -1,6 +1,6 @@
 {
   "name": "vuex-easy-firestore",
-  "version": "1.35.16",
+  "version": "1.36.0",
   "description": "Easy coupling of firestore and a vuex module. 2-way sync with 0 boilerplate!",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
@@ -44,7 +44,7 @@
     "filter-anything": "^1.1.5",
     "find-and-replace-anything": "^2.0.5",
     "flatten-anything": "^1.4.1",
-    "is-what": "^3.8.0",
+    "is-what": "^3.12.0",
     "lodash-es": "^4.17.15",
     "merge-anything": "^2.4.4",
     "path-to-prop": "0.0.3",
@@ -59,7 +59,7 @@
     "eslint-loader": "^2.2.1",
     "eslint-plugin-vue": "^5.2.3",
     "esm": "^3.2.25",
-    "firebase": "^7.14.5",
+    "firebase": "^8.0.0",
     "mock-cloud-firestore": "^0.12.0",
     "rollup": "^1.32.1",
     "rollup-plugin-node-resolve": "^4.2.4",
@@ -71,11 +71,17 @@
     "vuex": "^3.4.0"
   },
   "peerDependencies": {
-    "firebase": "^7.14.5"
+    "firebase": "^8.0.0"
   },
   "ava": {
-    "extensions": ["ts", "js"],
-    "require": ["esm", "ts-node/register"],
+    "extensions": [
+      "ts",
+      "js"
+    ],
+    "require": [
+      "esm",
+      "ts-node/register"
+    ],
     "timeout": "30s"
   }
 }

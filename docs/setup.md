@@ -22,7 +22,7 @@ First we'll create a function that enables Firebase and Firestore and will attem
 
 ```js
 // ~config/firebase.js
-import * as Firebase from 'firebase/app'
+import firebase from 'firebase/app'
 import 'firebase/firestore'
 
 function initFirebase () {

@@ -38,10 +38,10 @@ export type IPluginGetters = {
  * A function returning the getters object
  *
  * @export
- * @param {*} Firebase The Firebase dependency
+ * @param {*} firebase The firebase dependency
  * @returns {AnyObject} the getters object
  */
-export default function (Firebase: any): AnyObject {
+export default function (firebase: any): AnyObject {
   return {
     firestorePathComplete (state, getters) {
       let path = state._conf.firestorePath
@@ -66,8 +66,8 @@ export default function (Firebase: any): AnyObject {
     dbRef: (state, getters, rootState, rootGetters) => {
       const path = getters.firestorePathComplete
       return getters.collectionMode
-        ? Firebase.firestore().collection(path)
-        : Firebase.firestore().doc(path)
+        ? firebase.firestore().collection(path)
+        : firebase.firestore().doc(path)
     },
     storeRef: (state, getters, rootState) => {
       const path = state._conf.statePropName
@@ -145,7 +145,7 @@ export default function (Firebase: any): AnyObject {
         id = getters.docModeId
         cleanedPath = path
       }
-      cleanedPatchData[cleanedPath] = Firebase.firestore.FieldValue.delete()
+      cleanedPatchData[cleanedPath] = firebase.firestore.FieldValue.delete()
       cleanedPatchData.id = id
       return { [id]: cleanedPatchData }
     },

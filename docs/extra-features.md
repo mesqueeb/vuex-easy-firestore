@@ -261,7 +261,7 @@ Vuex Easy Firestore will automatically use Firebase as a peer dependency to acce
 
 ```js
 // make sure you import at least auth and firestore as well:
-import * as Firebase from 'firebase/app'
+import firebase from 'firebase/app'
 import 'firebase/auth'
 import 'firebase/firestore'
 
