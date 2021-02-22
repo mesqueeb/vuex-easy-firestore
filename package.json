@@ -14,7 +14,8 @@
     "build": "npm run rollup && npm run test",
     "docs:dev": "vuepress dev docs",
     "docs:build": "vuepress build docs",
-    "docs:deploy": "./docs/.vuepress/deploy.sh"
+    "docs:deploy": "./docs/.vuepress/deploy.sh",
+    "release": "npm run build && np"
   },
   "repository": {
     "type": "git",
@@ -61,6 +62,8 @@
     "esm": "^3.2.25",
     "firebase": "^8.0.0",
     "mock-cloud-firestore": "^0.12.0",
+    "np": "^7.4.0",
+    "prettier": "^2.2.1",
     "rollup": "^1.32.1",
     "rollup-plugin-node-resolve": "^4.2.4",
     "rollup-plugin-typescript2": "^0.27.1",
@@ -83,5 +86,9 @@
       "ts-node/register"
     ],
     "timeout": "30s"
+  },
+  "np": {
+    "yarn": false,
+    "branch": "production"
   }
 }
