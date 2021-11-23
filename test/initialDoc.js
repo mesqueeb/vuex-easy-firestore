@@ -2,8 +2,8 @@ import test from 'ava'
 import wait from './helpers/wait'
 import { store } from './helpers/index.cjs.js'
 
-import firebase from 'firebase/app'
-import 'firebase/firestore'
+import firebase from 'firebase/compat/app'
+import 'firebase/compat/firestore'
 
 test('initialDoc through openDBRef & fetchAndAdd', async t => {
   t.is(store.state.initialDoc.iniProp, true)

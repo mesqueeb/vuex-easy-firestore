@@ -4,8 +4,8 @@ import wait from './helpers/wait'
 import { store } from './helpers/index.cjs.js'
 import { arrayUnion, arrayRemove } from '../src/index'
 
-import firebase from 'firebase/app'
-import 'firebase/firestore'
+import firebase from 'firebase/compat/app'
+import 'firebase/compat/firestore'
 
 const box = store.state.pokemonBox
 const char = store.state.mainCharacter

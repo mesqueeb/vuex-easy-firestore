@@ -4,9 +4,9 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var fb = _interopDefault(require('firebase/app'));
-require('firebase/firestore');
-require('firebase/auth');
+var fb = _interopDefault(require('firebase/compat/app'));
+require('firebase/compat/firestore');
+require('firebase/compat/auth');
 var vuexEasyAccess = require('vuex-easy-access');
 var isWhat = require('is-what');
 var copy = _interopDefault(require('copy-anything'));

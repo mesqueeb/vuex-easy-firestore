@@ -1,4 +1,4 @@
-import 'firebase/auth';
+import 'firebase/compat/auth';
 declare const _default: {
     firestorePath: string;
     firestoreRefType: string;

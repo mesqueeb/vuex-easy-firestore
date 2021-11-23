@@ -1,6 +1,6 @@
-import fb from 'firebase/app';
-import 'firebase/firestore';
-import 'firebase/auth';
+import fb from 'firebase/compat/app';
+import 'firebase/compat/firestore';
+import 'firebase/compat/auth';
 import { getDeepRef, getKeysFromPath } from 'vuex-easy-access';
 import { isAnyObject, isPlainObject, isArray as isArray$1, isFunction as isFunction$1, isNumber, isString, isDate } from 'is-what';
 import copy from 'copy-anything';

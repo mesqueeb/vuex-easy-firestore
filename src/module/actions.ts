@@ -1,4 +1,4 @@
-import Fb from 'firebase/app'
+import Fb from 'firebase/compat/app'
 import { isArray, isPlainObject, isFunction, isNumber } from 'is-what'
 import copy from 'copy-anything'
 import { merge } from 'merge-anything'
@@ -186,7 +186,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
                 'color: SeaGreen'
               )
             }
-            resolve()
+            resolve(true)
           })
           .catch(error => {
             logError('initial-doc-failed', error)
@@ -237,7 +237,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
               dispatch('batchSync')
             }
             dispatch('_stopPatching')
-            return resolve()
+            return resolve(true)
           })
           .catch(error => {
             state._sync.patching = 'error'
@@ -292,7 +292,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
             'color: goldenrod'
           )
         }
-        if (!getters.signedIn) return resolve()
+        if (!getters.signedIn) return resolve(true)
         const identifier = createFetchIdentifier({
           where,
           orderBy,
@@ -334,7 +334,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         // Stop if all records already fetched
         if (fRequest.retrievedFetchRefs.includes(fRef)) {
           console.log('[vuex-easy-firestore] Already retrieved this part.')
-          return resolve()
+          return resolve(true)
         }
         // make fetch request
         fRef

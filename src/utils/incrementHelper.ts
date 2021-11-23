@@ -1,6 +1,6 @@
 import { isAnyObject, isPlainObject } from 'is-what'
-import fb from 'firebase/app'
-import 'firebase/firestore'
+import fb from 'firebase/compat/app'
+import 'firebase/compat/firestore'
 
 let firebase = fb
 
