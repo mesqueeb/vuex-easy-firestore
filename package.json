@@ -6,7 +6,6 @@
   "module": "dist/index.esm.js",
   "typings": "types/index.d.ts",
   "scripts": {
-    "lint": "eslint --ext .js,.vue src",
     "test": "ava --verbose",
     "test--only": "ava --verbose --match='*only:*'",
     "rollup": "rollup -c build/rollup.js",
