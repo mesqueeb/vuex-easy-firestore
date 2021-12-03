@@ -1,6 +1,6 @@
 import { isAnyObject, isPlainObject, isArray } from 'is-what'
-import fb from 'firebase/app'
-import 'firebase/firestore'
+import fb from 'firebase/compat/app'
+import 'firebase/compat/firestore'
 import isEqual from 'lodash-es/isEqual'
 
 let firebase = fb

@@ -1,7 +1,7 @@
 import test from 'ava'
 import wait from './helpers/wait'
-import firebase from 'firebase/app'
-import 'firebase/firestore'
+import firebase from 'firebase/compat/app'
+import 'firebase/compat/firestore'
 import { store } from './helpers/index.cjs.js'
 
 const state = store.state.serverHooks

@@ -4,9 +4,9 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var fb = _interopDefault(require('firebase/app'));
-require('firebase/firestore');
-require('firebase/auth');
+var fb = _interopDefault(require('firebase/compat/app'));
+require('firebase/compat/firestore');
+require('firebase/compat/auth');
 var vuexEasyAccess = require('vuex-easy-access');
 var isWhat = require('is-what');
 var copy = _interopDefault(require('copy-anything'));
@@ -2989,7 +2989,7 @@ function pluginActions (firestoreConfig) {
                         var message = 'Initial doc succesfully inserted';
                         console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: SeaGreen');
                     }
-                    resolve();
+                    resolve(true);
                 })
                     .catch(function (error$1) {
                     error('initial-doc-failed', error$1);
@@ -3044,7 +3044,7 @@ function pluginActions (firestoreConfig) {
                         dispatch('batchSync');
                     }
                     dispatch('_stopPatching');
-                    return resolve();
+                    return resolve(true);
                 })
                     .catch(function (error$1) {
                     state._sync.patching = 'error';
@@ -3101,7 +3101,7 @@ function pluginActions (firestoreConfig) {
                     console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
                 }
                 if (!getters.signedIn)
-                    return resolve();
+                    return resolve(true);
                 var identifier = createFetchIdentifier({
                     where: where,
                     orderBy: orderBy,
@@ -3146,7 +3146,7 @@ function pluginActions (firestoreConfig) {
                 // Stop if all records already fetched
                 if (fRequest.retrievedFetchRefs.includes(fRef)) {
                     console.log('[vuex-easy-firestore] Already retrieved this part.');
-                    return resolve();
+                    return resolve(true);
                 }
                 // make fetch request
                 fRef

@@ -1,5 +1,5 @@
-import 'firebase/firestore';
-import 'firebase/auth';
+import 'firebase/compat/firestore';
+import 'firebase/compat/auth';
 import { IEasyFirestoreModule } from './declarations';
 import { arrayUnion, arrayRemove } from './utils/arrayHelpers';
 import { increment } from './utils/incrementHelper';

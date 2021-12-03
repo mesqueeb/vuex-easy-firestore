@@ -6,7 +6,6 @@
   "module": "dist/index.esm.js",
   "typings": "types/index.d.ts",
   "scripts": {
-    "lint": "eslint --ext .js,.vue src",
     "test": "ava --verbose",
     "test--only": "ava --verbose --match='*only:*'",
     "rollup": "rollup -c build/rollup.js",
@@ -59,7 +58,7 @@
     "eslint-loader": "^2.2.1",
     "eslint-plugin-vue": "^5.2.3",
     "esm": "^3.2.25",
-    "firebase": "^8.0.0",
+    "firebase": "^9.0.0",
     "mock-cloud-firestore": "^0.12.0",
     "rollup": "^1.32.1",
     "rollup-plugin-node-resolve": "^4.2.4",
@@ -71,7 +70,7 @@
     "vuex": "^3.4.0"
   },
   "peerDependencies": {
-    "firebase": "^8.0.0"
+    "firebase": "^9.0.0"
   },
   "ava": {
     "extensions": [

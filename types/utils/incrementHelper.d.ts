@@ -1,5 +1,5 @@
-import fb from 'firebase/app';
-import 'firebase/firestore';
+import fb from 'firebase/compat/app';
+import 'firebase/compat/firestore';
 export declare function setFirebaseDependency(firebaseDependency: any): void;
 export declare class Increment {
     isIncrementHelper: boolean;
