@@ -1,12 +1,5 @@
 import { isAnyObject, isPlainObject } from 'is-what'
-import fb from 'firebase/compat/app'
-import 'firebase/compat/firestore'
-
-let firebase = fb
-
-export function setFirebaseDependency (firebaseDependency) {
-  firebase = firebaseDependency
-}
+import { increment as _increment } from 'firebase/firestore'
 
 export class Increment {
   isIncrementHelper: boolean
@@ -19,7 +12,7 @@ export class Increment {
     return counter + this.payload
   }
   getFirestoreFieldValue () {
-    return firebase.firestore.FieldValue.increment(this.payload)
+    return _increment(this.payload)
   }
 }
 

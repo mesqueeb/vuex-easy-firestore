@@ -1,0 +1,50 @@
+diff --git a/node_modules/vuex-easy-access/dist/index.esm.js b/node_modules/vuex-easy-access/dist/index.esm.js
+index 94376dd..da8e172 100644
+--- a/node_modules/vuex-easy-access/dist/index.esm.js
++++ b/node_modules/vuex-easy-access/dist/index.esm.js
+@@ -1,5 +1,4 @@
+ import { isObject, isString, isArray } from 'is-what';
+-import Vue from 'vue';
+ import merge from 'merge-anything';
+ 
+ var defaultConfig = {
+@@ -341,7 +340,8 @@ function DELETE_PROP_SUBPROP(state, PROP_SUBPROP) {
+     var lastProp = propsArray.pop();
+     var propsWithoutLast = propsArray.join('.');
+     var ref = getDeepRef(state, propsWithoutLast);
+-    return Vue.delete(ref, lastProp);
++    delete ref[lastProp];
++    return ref;
+ }
+ // eslint-disable-next-line
+ function MUTATE_PROP_x_SUBPROP(state, payload, PROP_SUBPROP, conf) {
+@@ -366,7 +366,8 @@ function DELETE_PROP_x_SUBPROP(state, payload, PROP_SUBPROP, conf) {
+         return;
+     var pathWithIds = fillinPathWildcards(ids, propsWithoutLast, state, conf);
+     var ref = getDeepRef(state, pathWithIds);
+-    return Vue.delete(ref, lastProp);
++    delete ref[lastProp]
++    return ref;
+ }
+ // eslint-disable-next-line
+ function MUTATE_PROP_x(state, payload, PROP_SUBPROP, conf, propValue) {
+@@ -384,7 +385,8 @@ function MUTATE_PROP_x(state, payload, PROP_SUBPROP, conf, propValue) {
+         newValue.id = lastId;
+     if (isObject(propValue))
+         newValue = merge(propValue, newValue);
+-    return Vue.set(ref, lastId, newValue);
++    ref[lastId] = newValue;
++    return ref;
+ }
+ // eslint-disable-next-line
+ function DELETE_PROP_x(state, id, PROP_SUBPROP, conf) {
+@@ -399,7 +401,8 @@ function DELETE_PROP_x(state, id, PROP_SUBPROP, conf) {
+         : PROP_SUBPROP;
+     var pathWithIds = fillinPathWildcards(ids, pathWithoutWildcard, state, conf);
+     var ref = getDeepRef(state, pathWithIds);
+-    return Vue.delete(ref, lastId);
++    delete ref[lastId]
++    return ref;
+ }
+ // execute mutation
+ function executeArrayMutation(state, payload, action, PROP_SUBPROP, conf) {

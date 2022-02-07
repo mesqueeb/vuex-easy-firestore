@@ -1,4 +1,4 @@
-import Fb from 'firebase/compat/app'
+import * as Firestore from 'firebase/firestore'
 import { isArray, isPlainObject, isFunction, isNumber } from 'is-what'
 import copy from 'copy-anything'
 import { merge } from 'merge-anything'
@@ -13,11 +13,13 @@ import { isArrayHelper } from '../utils/arrayHelpers'
 import { isIncrementHelper } from '../utils/incrementHelper'
 import logError from './errors'
 import { FirestoreConfig } from './index'
+import { getAuth } from "firebase/auth";
+import { query, getFirestore, doc as fDoc } from 'firebase/firestore'
 
-type DocumentSnapshot = Fb.firestore.DocumentSnapshot
-type QuerySnapshot = Fb.firestore.QuerySnapshot
-type DocumentChange = Fb.firestore.DocumentChange
-type QueryDocumentSnapshot = Fb.firestore.QueryDocumentSnapshot
+type DocumentSnapshot = Firestore.DocumentSnapshot
+type QuerySnapshot = Firestore.QuerySnapshot
+type DocumentChange = Firestore.DocumentChange
+type QueryDocumentSnapshot = Firestore.QueryDocumentSnapshot
 
 /**
  * A function returning the actions object
@@ -27,13 +29,14 @@ type QueryDocumentSnapshot = Fb.firestore.QueryDocumentSnapshot
  * @returns {AnyObject} the actions object
  */
 export default function (firestoreConfig: FirestoreConfig): AnyObject {
-  const { FirebaseDependency: firebase, enablePersistence, synchronizeTabs } = firestoreConfig
+  const { FirebaseDependency: firebaseApp, enablePersistence, synchronizeTabs } = firestoreConfig
+  const auth = getAuth(firebaseApp);
   return {
     setUserId: ({ commit, getters }, userId) => {
       if (userId === undefined) userId = null
       // undefined cannot be synced to firestore
-      if (!userId && firebase.auth().currentUser) {
-        userId = firebase.auth().currentUser.uid
+      if (!userId && auth.currentUser) {
+        userId = auth.currentUser.uid
       }
       commit('SET_USER_ID', userId)
       if (getters.firestorePathComplete.includes('{userId}')) return logError('user-auth')
@@ -221,7 +224,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
       state._sync.syncStack.rejects.forEach(r => r(error))
     },
     batchSync ({ getters, commit, dispatch, state }) {
-      const batch = makeBatchFromSyncstack(state, getters, firebase.firestore().batch())
+      const batch = makeBatchFromSyncstack(state, getters, Firestore.writeBatch(getFirestore(firebaseApp)))
       dispatch('_startPatching')
       state._sync.syncStack.debounceTimer = null
       return new Promise((resolve, reject) => {
@@ -249,7 +252,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
     },
     fetch (
       { state, getters, commit, dispatch },
-      parameters: any = { clauses: {}, pathVariables: {}, options: {} }
+      parameters: any = { clauses: {}, pathVariables: {} }
     ) {
       if (!isPlainObject(parameters)) parameters = {}
       /* COMPATIBILITY START
@@ -302,13 +305,14 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         // We've never fetched this before:
         if (!fetched) {
           let ref = getters.dbRef
+          const query = [];
           // apply where clauses and orderBy
           getters.getWhereArrays(where).forEach(paramsArr => {
-            ref = ref.where(...paramsArr)
+            query.push(Firestore.where(paramsArr[0], paramsArr[1], paramsArr[2]))
           })
-          if (orderBy.length) ref = ref.orderBy(...orderBy)
+          if (orderBy.length) query.push(Firestore.orderBy(orderBy))
           state._sync.fetched[identifier] = {
-            ref,
+            ref: Firestore.query(ref, ...query),
             done: false,
             retrievedFetchRefs: [],
             nextFetchRef: null,
@@ -330,16 +334,14 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         let limit = isNumber(parameters.clauses.limit)
           ? parameters.clauses.limit
           : state._conf.fetch.docLimit
-        if (limit > 0) fRef = fRef.limit(limit)
+        if (limit > 0) fRef = query(fRef, Firestore.limit(limit))
         // Stop if all records already fetched
         if (fRequest.retrievedFetchRefs.includes(fRef)) {
           console.log('[vuex-easy-firestore] Already retrieved this part.')
           return resolve(true)
         }
         // make fetch request
-        fRef
-          .get(parameters.options)
-          .then(querySnapshot => {
+        fRef.then(querySnapshot => {
             const docs = querySnapshot.docs
             if (docs.length === 0) {
               state._sync.fetched[identifier].done = true
@@ -366,7 +368,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
     // orderBy: ['done_date', 'desc']
     fetchAndAdd (
       { state, getters, commit, dispatch },
-      parameters: any = { clauses: {}, pathVariables: {}, options: {} }
+      parameters: any = { clauses: {}, pathVariables: {} }
     ) {
       if (!isPlainObject(parameters)) parameters = {}
       /* COMPATIBILITY START
@@ -404,8 +406,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
             'color: goldenrod'
           )
         }
-        return getters.dbRef
-          .get(parameters.options)
+        return Firestore.getDoc(getters.dbRef)
           .then(async _doc => {
             if (!_doc.exists) {
               // No initial doc found in docMode
@@ -448,12 +449,12 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         return querySnapshot
       })
     },
-    async fetchById ({ dispatch, getters, state }, id, options = {} ) {
+    async fetchById ({ dispatch, getters, state }, id) {
       try {
         if (!id) throw 'missing-id'
         if (!getters.collectionMode) throw 'only-in-collection-mode'
         const ref = getters.dbRef
-        const _doc = await ref.doc(id).get(options)
+        const _doc = await Firestore.getDoc(ref)
         if (!_doc.exists) {
           if (state._conf.logging) {
             throw `Doc with id "${id}" not found!`
@@ -620,16 +621,17 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
       })
 
       // getters.dbRef should already have pathVariables swapped out
-      let dbRef = getters.dbRef
+      const query = [];
       // apply where and orderBy clauses
       if (getters.collectionMode) {
         getters.getWhereArrays().forEach(whereParams => {
-          dbRef = dbRef.where(...whereParams)
+          query.push(Firestore.where(whereParams[0], whereParams[1], whereParams[2]))
         })
         if (state._conf.sync.orderBy.length) {
-          dbRef = dbRef.orderBy(...state._conf.sync.orderBy)
+          query.push(Firestore.orderBy(state._conf.sync.orderBy))
         }
       }
+      const dbRef = Firestore.query(getters.dbRef, ...query)
 
       // creates promises that can be resolved from outside their scope and that
       // can give their status
@@ -840,7 +842,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
       }
 
       // open the stream
-      const unsubscribe = dbRef.onSnapshot(
+      const unsubscribe = Firestore.onSnapshot(dbRef,
         // this lets us know when our data is up-to-date with the server
         { includeMetadataChanges: true },
         // the parameter is either a querySnapshot (collection mode) or a
@@ -976,7 +978,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
       // check userId
       dispatch('setUserId')
       const newDoc = doc
-      if (!newDoc.id) newDoc.id = getters.dbRef.doc().id
+      if (!newDoc.id) newDoc.id = fDoc(getters.dbRef).id
       // apply default values
       const newDocWithDefaults = setDefaultValues(newDoc, state._conf.sync.defaultValues)
       // define the firestore update
@@ -1006,7 +1008,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
       dispatch('setUserId')
       const newDocs = docs.reduce((carry, _doc) => {
         const newDoc = getValueFromPayloadPiece(_doc)
-        if (!newDoc.id) newDoc.id = getters.dbRef.doc().id
+        if (!newDoc.id) newDoc.id = fDoc(getters.dbRef).id
         carry.push(newDoc)
         return carry
       }, [])

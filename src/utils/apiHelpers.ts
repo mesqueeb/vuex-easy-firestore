@@ -3,6 +3,7 @@ import { findAndReplaceIf } from 'find-and-replace-anything'
 import { isArrayHelper } from '../utils/arrayHelpers'
 import { isIncrementHelper } from '../utils/incrementHelper'
 import { IPluginState, AnyObject } from '../declarations'
+import { doc } from 'firebase/firestore'
 
 /**
  * Grab until the api limit (500), put the rest back in the syncStack. State will get modified!
@@ -81,7 +82,7 @@ export function makeBatchFromSyncstack (
   // Add to batch
   updates.forEach(item => {
     const id = item.id
-    const docRef = (collectionMode) ? dbRef.doc(id) : dbRef
+    const docRef = (collectionMode) ? doc(dbRef, id) : dbRef
     // replace arrayUnion and arrayRemove
     const patchData = Object.entries(item)
       .reduce((carry, [key, data]) => {
@@ -109,7 +110,7 @@ export function makeBatchFromSyncstack (
   // Add to batch
   propDeletions.forEach(item => {
     const id = item.id
-    const docRef = (collectionMode) ? dbRef.doc(id) : dbRef
+    const docRef = (collectionMode) ? doc(dbRef, id) : dbRef
     // delete id if it's guarded
     if (guard.includes('id')) delete item.id
     // @ts-ignore
@@ -121,7 +122,7 @@ export function makeBatchFromSyncstack (
   count = count + deletions.length
   // Add to batch
   deletions.forEach(id => {
-    const docRef = dbRef.doc(id)
+    const docRef = doc(dbRef, id)
     batch.delete(docRef)
   })
   // Add 'inserts' to batch
@@ -130,7 +131,7 @@ export function makeBatchFromSyncstack (
   count = count + inserts.length
   // Add to batch
   inserts.forEach(item => {
-    const newRef = dbRef.doc(item.id)
+    const newRef = doc(dbRef, item.id)
     batch.set(newRef, item)
   })
   // log the batch contents

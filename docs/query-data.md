@@ -116,7 +116,7 @@ dispatch('moduleName/closeDBChannel', { clearModule: true })
 
 If you want to fetch docs once (opposed to _realtime updates_) you can use the `fetchAndAdd` (or `fetchById`) action.
 
-These actions are a wrapper around the Firestore `db.collection(path).get()` and `db.doc(path).get()` functions.
+These actions are a wrapper around the Firestore `collection(db, path).get()` and `doc(db, path).get()` functions.
 (See 'Read data' in the [Firestore documentation](https://firebase.google.com/docs/firestore/query-data/get-data))
 
 ### Fetching in 'doc' mode

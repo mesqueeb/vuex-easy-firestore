@@ -1,11 +1,8 @@
 import test from 'ava'
-import { isPlainObject, isArray, isDate } from 'is-what'
+import { isPlainObject, isArray } from 'is-what'
 import wait from './helpers/wait'
 import { store } from './helpers/index.cjs.js'
 import { arrayUnion, arrayRemove } from '../src/index'
-
-import firebase from 'firebase/compat/app'
-import 'firebase/compat/firestore'
 
 const box = store.state.pokemonBox
 const char = store.state.mainCharacter

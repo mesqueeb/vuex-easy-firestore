@@ -1,11 +1,13 @@
 {
   "name": "vuex-easy-firestore",
-  "version": "1.37.1",
+  "version": "1.38.0",
   "description": "Easy coupling of firestore and a vuex module. 2-way sync with 0 boilerplate!",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "typings": "types/index.d.ts",
   "scripts": {
+    "prepare": "patch-package",
+    "postinstall": "patch-package",
     "test": "ava --verbose",
     "test--only": "ava --verbose --match='*only:*'",
     "rollup": "rollup -c build/rollup.js",
@@ -60,6 +62,7 @@
     "esm": "^3.2.25",
     "firebase": "^9.0.0",
     "mock-cloud-firestore": "^0.12.0",
+    "patch-package": "^6.4.7",
     "rollup": "^1.32.1",
     "rollup-plugin-node-resolve": "^4.2.4",
     "rollup-plugin-typescript2": "^0.27.1",

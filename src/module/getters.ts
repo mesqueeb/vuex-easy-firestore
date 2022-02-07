@@ -7,6 +7,7 @@ import { getPathVarMatches } from '../utils/apiHelpers'
 import setDefaultValues from '../utils/setDefaultValues'
 import { AnyObject } from '../declarations'
 import error from './errors'
+import { getFirestore, collection, doc, deleteField } from "firebase/firestore";
 
 export type IPluginGetters = {
   firestorePathComplete: (state: any, getters?: any, rootState?: any, rootGetters?: any) => string
@@ -41,7 +42,8 @@ export type IPluginGetters = {
  * @param {*} firebase The firebase dependency
  * @returns {AnyObject} the getters object
  */
-export default function (firebase: any): AnyObject {
+export default function (firebaseApp: any): AnyObject {
+  const firestore = getFirestore(firebaseApp);
   return {
     firestorePathComplete (state, getters) {
       let path = state._conf.firestorePath
@@ -66,8 +68,8 @@ export default function (firebase: any): AnyObject {
     dbRef: (state, getters, rootState, rootGetters) => {
       const path = getters.firestorePathComplete
       return getters.collectionMode
-        ? firebase.firestore().collection(path)
-        : firebase.firestore().doc(path)
+        ? collection(firestore, path)
+        : doc(firestore, path)
     },
     storeRef: (state, getters, rootState) => {
       const path = state._conf.statePropName
@@ -145,7 +147,7 @@ export default function (firebase: any): AnyObject {
         id = getters.docModeId
         cleanedPath = path
       }
-      cleanedPatchData[cleanedPath] = firebase.firestore.FieldValue.delete()
+      cleanedPatchData[cleanedPath] = deleteField()
       cleanedPatchData.id = id
       return { [id]: cleanedPatchData }
     },

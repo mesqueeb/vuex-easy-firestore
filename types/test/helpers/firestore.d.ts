@@ -1,3 +1,2 @@
-import firebase from 'firebase/compat/app';
-import 'firebase/compat/firestore';
-export default firebase;
+declare const firebaseApp: import("@firebase/app").FirebaseApp;
+export default firebaseApp;

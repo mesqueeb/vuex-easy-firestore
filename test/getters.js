@@ -1,8 +1,7 @@
 import test from 'ava'
 import { isDate } from 'is-what'
 // import wait from './helpers/wait'
-import firebase from 'firebase/compat/app'
-import 'firebase/compat/firestore'
+import { deleteField } from 'firebase/firestore'
 import { store } from './helpers/index.cjs.js'
 
 const box = store.state.pokemonBox
@@ -18,7 +17,7 @@ test('[prepareForPatch] collection', async t => {
   // prepareForPatch
   res = store.getters['pokemonBox/prepareForPatch'](['1', '2'], {
     body: 'new',
-    del: firebase.firestore.FieldValue.delete(),
+    del: deleteField(),
   })
   t.deepEqual(Object.keys(res), ['1', '2'])
   t.is(res['1'].body, 'new')
@@ -58,7 +57,7 @@ test('[prepareForPatch] doc', async t => {
   const docModeId = store.getters['mainCharacter/docModeId']
   res = store.getters['mainCharacter/prepareForPatch']([], {
     body: 'new',
-    del: firebase.firestore.FieldValue.delete(),
+    del: deleteField(),
   })
   t.deepEqual(Object.keys(res), [docModeId])
   t.is(res[docModeId].body, 'new')
