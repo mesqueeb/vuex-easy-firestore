@@ -48,7 +48,7 @@ dispatch('moduleName/openDBChannel')
       .then(() => {
         // this gets resolved when you close the channel yourself
       })
-      .catch(error => {
+      .catch((error) => {
         // an error occured and the channel has been closed, you should figure
         // out what happened and open a new channel.
         // Perhaps the user lost his `read` rights on the resource, or maybe the
@@ -57,7 +57,7 @@ dispatch('moduleName/openDBChannel')
         // from Firestore.
       })
   })
-  .catch(error => {
+  .catch((error) => {
     // Same as the other `catch` block above
   })
 ```
@@ -381,7 +381,7 @@ const myModule = {
 // Vue component
 export default {
   name: 'openPage',
-  mounted () {
+  mounted() {
     const pageId = this.$router.params.id
     this.$store.dispatch('openPage/fetchAndAdd', { pageId })
   },
@@ -405,9 +405,9 @@ const myModule = {
 // Vue component
 export default {
   name: 'openPage',
-  mounted () {
+  mounted() {
     const pageId = this.$router.params.id
-    this.$store.dispatch('openPage/fetchAndAdd', { pageId }).catch(error => {
+    this.$store.dispatch('openPage/fetchAndAdd', { pageId }).catch((error) => {
       if (error === 'preventInitialDocInsertion') {
         // an initial doc insertion was prevented
       }
@@ -484,7 +484,7 @@ Besides `fetchAndAdd` there is also the `fetch` action. The difference is that w
 
 ```js
 dispatch('myModule/fetch', { where: [['archived', '==', true]] })
-  .then(querySnapshot => {
+  .then((querySnapshot) => {
     if (querySnapshot.done === true) {
       // `{done: true}` is returned when everything is already fetched and there are 0 docs:
       console.log('finished fetching all docs')

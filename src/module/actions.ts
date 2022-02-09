@@ -871,7 +871,9 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
           // collection mode
           if (getters.collectionMode) {
             const querySnapshot = snapshot as QuerySnapshot
-            const docChanges = querySnapshot.docChanges({ includeMetadataChanges: true }),
+            const docChanges = querySnapshot.docChanges({
+                includeMetadataChanges: true,
+              }),
               promises = new Array(docChanges.length)
 
             // debug messages

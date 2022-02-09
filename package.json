@@ -15,7 +15,7 @@
     "docs:dev": "vuepress dev docs",
     "docs:build": "vuepress build docs",
     "docs:deploy": "./docs/.vuepress/deploy.sh",
-    "lint:prettier": "prettier --loglevel warn"
+    "lint:prettier": "prettier --write --loglevel warn \"**/*.{ts,md}\""
   },
   "repository": {
     "type": "git",
@@ -63,6 +63,7 @@
     "firebase": "^9.0.0",
     "mock-cloud-firestore": "^0.12.0",
     "patch-package": "^6.4.7",
+    "prettier": "^2.5.1",
     "rollup": "^1.32.1",
     "rollup-plugin-node-resolve": "^4.2.4",
     "rollup-plugin-typescript2": "^0.27.1",

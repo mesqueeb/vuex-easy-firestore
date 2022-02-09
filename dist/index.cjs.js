@@ -11,7 +11,7 @@ var mergeAnything = require('merge-anything');
 var flatten = require('flatten-anything');
 var flatten__default = _interopDefault(flatten);
 var pathToProp = _interopDefault(require('path-to-prop'));
-var Firestore = require('firebase/firestore');
+var firestore = require('firebase/firestore');
 var compareAnything = require('compare-anything');
 var findAndReplaceAnything = require('find-and-replace-anything');
 var auth = require('firebase/auth');
@@ -186,8 +186,8 @@ function pluginState () {
                 rejects: [],
             },
             fetched: {},
-            stopPatchingTimeout: null
-        }
+            stopPatchingTimeout: null,
+        },
     };
 }
 
@@ -2255,7 +2255,7 @@ var ArrayUnion = /** @class */ (function () {
         return array;
     };
     ArrayUnion.prototype.getFirestoreFieldValue = function () {
-        return Firestore.arrayUnion.apply(void 0, this.payload);
+        return firestore.arrayUnion.apply(void 0, this.payload);
     };
     return ArrayUnion;
 }());
@@ -2280,7 +2280,7 @@ var ArrayRemove = /** @class */ (function () {
         return array;
     };
     ArrayRemove.prototype.getFirestoreFieldValue = function () {
-        return Firestore.arrayRemove.apply(void 0, this.payload);
+        return firestore.arrayRemove.apply(void 0, this.payload);
     };
     return ArrayRemove;
 }());
@@ -2319,7 +2319,7 @@ var Increment = /** @class */ (function () {
         return counter + this.payload;
     };
     Increment.prototype.getFirestoreFieldValue = function () {
-        return Firestore.increment(this.payload);
+        return firestore.increment(this.payload);
     };
     return Increment;
 }());
@@ -2517,10 +2517,12 @@ function convertTimestamps(originVal, targetVal) {
  * @returns {AnyObject} the new object
  */
 function setDefaultValues (obj, defaultValues) {
-    if (!isWhat.isPlainObject(defaultValues))
+    if (!isWhat.isPlainObject(defaultValues)) {
         console.error('[vuex-easy-firestore] Trying to merge target:', obj, 'onto a non-object (defaultValues):', defaultValues);
-    if (!isWhat.isPlainObject(obj))
+    }
+    if (!isWhat.isPlainObject(obj)) {
         console.error('[vuex-easy-firestore] Trying to merge a non-object:', obj, 'onto the defaultValues:', defaultValues);
+    }
     var result = mergeAnything.merge({ extensions: [convertTimestamps] }, defaultValues, obj);
     return findAndReplaceAnything.findAndReplace(result, '%convertTimestamp%', null, {
         onlyPlainObjects: true,
@@ -2584,8 +2586,7 @@ function grabUntilApiLimit(syncStackProp, count, maxCount, state) {
         var targetsLeft = targets.slice(grabCount);
         // Put back the remaining items over maxCount
         if (targetIsObject) {
-            targetsLeft = Object.values(targetsLeft)
-                .reduce(function (carry, update) {
+            targetsLeft = Object.values(targetsLeft).reduce(function (carry, update) {
                 var id = update.id;
                 carry[id] = update;
                 return carry;
@@ -2624,10 +2625,9 @@ function makeBatchFromSyncstack(state, getters, firebaseBatch, batchMaxCount) {
     // Add to batch
     updates.forEach(function (item) {
         var id = item.id;
-        var docRef = (collectionMode) ? Firestore.doc(dbRef, id) : dbRef;
+        var docRef = collectionMode ? firestore.doc(dbRef, id) : dbRef;
         // replace arrayUnion and arrayRemove
-        var patchData = Object.entries(item)
-            .reduce(function (carry, _a) {
+        var patchData = Object.entries(item).reduce(function (carry, _a) {
             var key = _a[0], data = _a[1];
             // replace arrayUnion and arrayRemove
             carry[key] = findAndReplaceAnything.findAndReplaceIf(data, function (foundVal) {
@@ -2654,7 +2654,7 @@ function makeBatchFromSyncstack(state, getters, firebaseBatch, batchMaxCount) {
     // Add to batch
     propDeletions.forEach(function (item) {
         var id = item.id;
-        var docRef = (collectionMode) ? Firestore.doc(dbRef, id) : dbRef;
+        var docRef = collectionMode ? firestore.doc(dbRef, id) : dbRef;
         // delete id if it's guarded
         if (guard.includes('id'))
             delete item.id;
@@ -2667,7 +2667,7 @@ function makeBatchFromSyncstack(state, getters, firebaseBatch, batchMaxCount) {
     count = count + deletions.length;
     // Add to batch
     deletions.forEach(function (id) {
-        var docRef = Firestore.doc(dbRef, id);
+        var docRef = firestore.doc(dbRef, id);
         batch.delete(docRef);
     });
     // Add 'inserts' to batch
@@ -2676,7 +2676,7 @@ function makeBatchFromSyncstack(state, getters, firebaseBatch, batchMaxCount) {
     count = count + inserts.length;
     // Add to batch
     inserts.forEach(function (item) {
-        var newRef = Firestore.doc(dbRef, item.id);
+        var newRef = firestore.doc(dbRef, item.id);
         batch.set(newRef, item);
     });
     // log the batch contents
@@ -2714,13 +2714,15 @@ function trimAccolades(pathPiece) {
     return pathPiece.slice(1, -1);
 }
 function stringifyParams(params) {
-    return params.map(function (param) {
+    return params
+        .map(function (param) {
         if (isWhat.isAnyObject(param) && !isWhat.isPlainObject(param)) {
             // @ts-ignore
             return String(param.constructor.name) + String(param.id);
         }
         return String(param);
-    }).join();
+    })
+        .join();
 }
 /**
  * Gets an object with {where, orderBy} clauses and returns a unique identifier for that
@@ -2972,7 +2974,7 @@ function pluginActions (firestoreConfig) {
             var initialDocPrepared = getters.prepareInitialDocForInsert(initialDoc);
             // 2. Create a reference to the SF doc.
             return new Promise(function (resolve, reject) {
-                Firestore.setDoc(getters.dbRef, initialDocPrepared)
+                firestore.setDoc(getters.dbRef, initialDocPrepared)
                     .then(function () {
                     if (state._conf.logging) {
                         var message = 'Initial doc succesfully inserted';
@@ -3018,7 +3020,7 @@ function pluginActions (firestoreConfig) {
         },
         batchSync: function (_a) {
             var getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch, state = _a.state;
-            var batch = makeBatchFromSyncstack(state, getters, Firestore.writeBatch(Firestore.getFirestore(firebaseApp)));
+            var batch = makeBatchFromSyncstack(state, getters, firestore.writeBatch(firestore.getFirestore(firebaseApp)));
             dispatch('_startPatching');
             state._sync.syncStack.debounceTimer = null;
             return new Promise(function (resolve, reject) {
@@ -3103,12 +3105,12 @@ function pluginActions (firestoreConfig) {
                     var query_1 = [];
                     // apply where clauses and orderBy
                     getters.getWhereArrays(where).forEach(function (paramsArr) {
-                        query_1.push(Firestore.where(paramsArr[0], paramsArr[1], paramsArr[2]));
+                        query_1.push(firestore.where(paramsArr[0], paramsArr[1], paramsArr[2]));
                     });
                     if (orderBy.length)
-                        query_1.push(Firestore.orderBy(orderBy));
+                        query_1.push(firestore.orderBy(orderBy));
                     state._sync.fetched[identifier] = {
-                        ref: Firestore.query.apply(Firestore, __spreadArrays([ref], query_1)),
+                        ref: firestore.query.apply(void 0, __spreadArrays([ref], query_1)),
                         done: false,
                         retrievedFetchRefs: [],
                         nextFetchRef: null,
@@ -3132,14 +3134,15 @@ function pluginActions (firestoreConfig) {
                     ? parameters.clauses.limit
                     : state._conf.fetch.docLimit;
                 if (limit > 0)
-                    fRef = Firestore.query(fRef, Firestore.limit(limit));
+                    fRef = firestore.query(fRef, firestore.limit(limit));
                 // Stop if all records already fetched
                 if (fRequest.retrievedFetchRefs.includes(fRef)) {
                     console.log('[vuex-easy-firestore] Already retrieved this part.');
                     return resolve(true);
                 }
                 // make fetch request
-                fRef.then(function (querySnapshot) {
+                fRef
+                    .then(function (querySnapshot) {
                     var docs = querySnapshot.docs;
                     if (docs.length === 0) {
                         state._sync.fetched[identifier].done = true;
@@ -3202,7 +3205,7 @@ function pluginActions (firestoreConfig) {
                 if (state._conf.logging) {
                     console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
                 }
-                return Firestore.getDoc(getters.dbRef)
+                return firestore.getDoc(getters.dbRef)
                     .then(function (_doc) { return __awaiter(_this, void 0, void 0, function () {
                     var message, id, doc;
                     return __generator(this, function (_a) {
@@ -3267,7 +3270,7 @@ function pluginActions (firestoreConfig) {
                             if (!getters.collectionMode)
                                 throw 'only-in-collection-mode';
                             ref = getters.dbRef;
-                            return [4 /*yield*/, Firestore.getDoc(ref)];
+                            return [4 /*yield*/, firestore.getDoc(ref)];
                         case 1:
                             _doc = _b.sent();
                             if (!_doc.exists()) {
@@ -3436,13 +3439,13 @@ function pluginActions (firestoreConfig) {
             // apply where and orderBy clauses
             if (getters.collectionMode) {
                 getters.getWhereArrays().forEach(function (whereParams) {
-                    query.push(Firestore.where(whereParams[0], whereParams[1], whereParams[2]));
+                    query.push(firestore.where(whereParams[0], whereParams[1], whereParams[2]));
                 });
                 if (state._conf.sync.orderBy.length) {
-                    query.push(Firestore.orderBy(state._conf.sync.orderBy));
+                    query.push(firestore.orderBy(state._conf.sync.orderBy));
                 }
             }
-            var dbRef = Firestore.query.apply(Firestore, __spreadArrays([getters.dbRef], query));
+            var dbRef = firestore.query.apply(void 0, __spreadArrays([getters.dbRef], query));
             // creates promises that can be resolved from outside their scope and that
             // can give their status
             var nicePromise = function () {
@@ -3611,7 +3614,7 @@ function pluginActions (firestoreConfig) {
                 console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
             }
             // open the stream
-            var unsubscribe = Firestore.onSnapshot(dbRef, 
+            var unsubscribe = firestore.onSnapshot(dbRef, 
             // this lets us know when our data is up-to-date with the server
             { includeMetadataChanges: true }, 
             // the parameter is either a querySnapshot (collection mode) or a
@@ -3626,7 +3629,9 @@ function pluginActions (firestoreConfig) {
                         case 0:
                             if (!getters.collectionMode) return [3 /*break*/, 2];
                             querySnapshot = snapshot;
-                            docChanges = querySnapshot.docChanges({ includeMetadataChanges: true }), promises_1 = new Array(docChanges.length);
+                            docChanges = querySnapshot.docChanges({
+                                includeMetadataChanges: true,
+                            }), promises_1 = new Array(docChanges.length);
                             // debug messages
                             if (parameters.debug) {
                                 console.log("%c QUERY SNAPSHOT received for `" + state._conf.moduleName + "`", 'font-weight: bold');
@@ -3668,7 +3673,9 @@ function pluginActions (firestoreConfig) {
                             if (resp.initialize && initialPromise.isPending) {
                                 streamingStart();
                             }
-                            if (resp.refresh && refreshedPromise.isPending && documentSnapshot.metadata.fromCache === false) {
+                            if (resp.refresh &&
+                                refreshedPromise.isPending &&
+                                documentSnapshot.metadata.fromCache === false) {
                                 refreshedPromise.resolve();
                             }
                             if (resp.stop) {
@@ -3727,7 +3734,7 @@ function pluginActions (firestoreConfig) {
             dispatch('setUserId');
             var newDoc = doc;
             if (!newDoc.id)
-                newDoc.id = Firestore.doc(getters.dbRef).id;
+                newDoc.id = firestore.doc(getters.dbRef).id;
             // apply default values
             var newDocWithDefaults = setDefaultValues(newDoc, state._conf.sync.defaultValues);
             // define the firestore update
@@ -3760,7 +3767,7 @@ function pluginActions (firestoreConfig) {
             var newDocs = docs.reduce(function (carry, _doc) {
                 var newDoc = getValueFromPayloadPiece(_doc);
                 if (!newDoc.id)
-                    newDoc.id = Firestore.doc(getters.dbRef).id;
+                    newDoc.id = firestore.doc(getters.dbRef).id;
                 carry.push(newDoc);
                 return carry;
             }, []);
@@ -3939,7 +3946,7 @@ function pluginActions (firestoreConfig) {
  * @returns {AnyObject} the getters object
  */
 function pluginGetters (firebaseApp) {
-    var firestore = Firestore.getFirestore(firebaseApp);
+    var firestore$1 = firestore.getFirestore(firebaseApp);
     return {
         firestorePathComplete: function (state, getters) {
             var path = state._conf.firestorePath;
@@ -3965,8 +3972,8 @@ function pluginGetters (firebaseApp) {
         dbRef: function (state, getters, rootState, rootGetters) {
             var path = getters.firestorePathComplete;
             return getters.collectionMode
-                ? Firestore.collection(firestore, path)
-                : Firestore.doc(firestore, path);
+                ? firestore.collection(firestore$1, path)
+                : firestore.doc(firestore$1, path);
         },
         storeRef: function (state, getters, rootState) {
             var path = state._conf.statePropName
@@ -3999,74 +4006,80 @@ function pluginGetters (firebaseApp) {
             cleanDoc.id = id;
             return cleanDoc;
         }; },
-        prepareForPatch: function (state, getters, rootState, rootGetters) { return function (ids, doc) {
-            if (ids === void 0) { ids = []; }
-            if (doc === void 0) { doc = {}; }
-            // get relevant data from the storeRef
-            var collectionMode = getters.collectionMode;
-            if (!collectionMode)
-                ids.push(getters.docModeId);
-            // returns {object} -> {id: data}
-            return ids.reduce(function (carry, id) {
+        prepareForPatch: function (state, getters, rootState, rootGetters) {
+            return function (ids, doc) {
+                if (ids === void 0) { ids = []; }
+                if (doc === void 0) { doc = {}; }
+                // get relevant data from the storeRef
+                var collectionMode = getters.collectionMode;
+                if (!collectionMode)
+                    ids.push(getters.docModeId);
+                // returns {object} -> {id: data}
+                return ids.reduce(function (carry, id) {
+                    var patchData = {};
+                    // retrieve full object in case there's an empty doc passed
+                    if (!Object.keys(doc).length) {
+                        patchData = collectionMode ? getters.storeRef[id] : getters.storeRef;
+                    }
+                    else {
+                        patchData = doc;
+                    }
+                    // set default fields
+                    patchData.updated_at = new Date();
+                    patchData.updated_by = state._sync.userId;
+                    // clean up item
+                    var cleanedPatchData = filter(patchData, getters.fillables, getters.guard);
+                    var itemToUpdate = flatten__default(cleanedPatchData);
+                    // add id (required to get ref later at apiHelpers.ts)
+                    // @ts-ignore
+                    itemToUpdate.id = id;
+                    carry[id] = itemToUpdate;
+                    return carry;
+                }, {});
+            };
+        },
+        prepareForPropDeletion: function (state, getters, rootState, rootGetters) {
+            return function (path) {
+                var _a;
+                if (path === void 0) { path = ''; }
+                var collectionMode = getters.collectionMode;
                 var patchData = {};
-                // retrieve full object in case there's an empty doc passed
-                if (!Object.keys(doc).length) {
-                    patchData = collectionMode ? getters.storeRef[id] : getters.storeRef;
-                }
-                else {
-                    patchData = doc;
-                }
                 // set default fields
                 patchData.updated_at = new Date();
                 patchData.updated_by = state._sync.userId;
+                // add fillable and guard defaults
                 // clean up item
                 var cleanedPatchData = filter(patchData, getters.fillables, getters.guard);
-                var itemToUpdate = flatten__default(cleanedPatchData);
                 // add id (required to get ref later at apiHelpers.ts)
-                // @ts-ignore
-                itemToUpdate.id = id;
-                carry[id] = itemToUpdate;
-                return carry;
-            }, {});
-        }; },
-        prepareForPropDeletion: function (state, getters, rootState, rootGetters) { return function (path) {
-            var _a;
-            if (path === void 0) { path = ''; }
-            var collectionMode = getters.collectionMode;
-            var patchData = {};
-            // set default fields
-            patchData.updated_at = new Date();
-            patchData.updated_by = state._sync.userId;
-            // add fillable and guard defaults
-            // clean up item
-            var cleanedPatchData = filter(patchData, getters.fillables, getters.guard);
-            // add id (required to get ref later at apiHelpers.ts)
-            var id, cleanedPath;
-            if (collectionMode) {
-                id = path.substring(0, path.indexOf('.'));
-                cleanedPath = path.substring(path.indexOf('.') + 1);
-            }
-            else {
-                id = getters.docModeId;
-                cleanedPath = path;
-            }
-            cleanedPatchData[cleanedPath] = Firestore.deleteField();
-            cleanedPatchData.id = id;
-            return _a = {}, _a[id] = cleanedPatchData, _a;
-        }; },
-        prepareForInsert: function (state, getters, rootState, rootGetters) { return function (items) {
-            if (items === void 0) { items = []; }
-            // add fillable and guard defaults
-            return items.reduce(function (carry, item) {
-                // set default fields
-                item.created_at = new Date();
-                item.created_by = state._sync.userId;
-                // clean up item
-                item = filter(item, getters.fillables, getters.guard);
-                carry.push(item);
-                return carry;
-            }, []);
-        }; },
+                var id, cleanedPath;
+                if (collectionMode) {
+                    id = path.substring(0, path.indexOf('.'));
+                    cleanedPath = path.substring(path.indexOf('.') + 1);
+                }
+                else {
+                    id = getters.docModeId;
+                    cleanedPath = path;
+                }
+                cleanedPatchData[cleanedPath] = firestore.deleteField();
+                cleanedPatchData.id = id;
+                return _a = {}, _a[id] = cleanedPatchData, _a;
+            };
+        },
+        prepareForInsert: function (state, getters, rootState, rootGetters) {
+            return function (items) {
+                if (items === void 0) { items = []; }
+                // add fillable and guard defaults
+                return items.reduce(function (carry, item) {
+                    // set default fields
+                    item.created_at = new Date();
+                    item.created_by = state._sync.userId;
+                    // clean up item
+                    item = filter(item, getters.fillables, getters.guard);
+                    carry.push(item);
+                    return carry;
+                }, []);
+            };
+        },
         prepareInitialDocForInsert: function (state, getters, rootState, rootGetters) { return function (doc) {
             // add fillable and guard defaults
             // set default fields
@@ -4244,7 +4257,7 @@ function iniModule (userConfig, firestoreConfig) {
         var defaultValsInState = conf.statePropName ? restOfState[conf.statePropName] : restOfState;
         conf.sync.defaultValues = copy(mergeAnything.merge(defaultValsInState, conf.sync.defaultValues));
     }
-    // Warn overloaded mutations / actions / getters 
+    // Warn overloaded mutations / actions / getters
     var uKeys, pKeys;
     var pMutations = pluginMutations(mergeAnything.merge(userState, { _conf: conf }));
     var pActions = pluginActions(firestoreConfig);
@@ -4299,7 +4312,7 @@ function vuexEasyFirestore(easyFirestoreModule, _a) {
         synchronizeTabs: false,
     } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.preventInitialDocInsertion, preventInitialDocInsertion = _d === void 0 ? false : _d, _e = _b.FirebaseDependency, FirebaseDependency = _e === void 0 ? null : _e, _f = _b.enablePersistence, enablePersistence = _f === void 0 ? false : _f, _g = _b.synchronizeTabs, synchronizeTabs = _g === void 0 ? false : _g;
     if (FirebaseDependency === null) {
-        throw new Error("FirebaseDependency is required. Please pass in the value returned by initializeApp({...}) from firebase/auth.");
+        throw new Error('FirebaseDependency is required. Please pass in the value returned by initializeApp({...}) from firebase/auth.');
     }
     return function (store) {
         // Get an array of config files
@@ -4312,7 +4325,11 @@ function vuexEasyFirestore(easyFirestoreModule, _a) {
                 config.sync.preventInitialDocInsertion = preventInitialDocInsertion;
             }
             var moduleName = vuexEasyAccess.getKeysFromPath(config.moduleName);
-            var firestoreConfig = { FirebaseDependency: FirebaseDependency, enablePersistence: enablePersistence, synchronizeTabs: synchronizeTabs };
+            var firestoreConfig = {
+                FirebaseDependency: FirebaseDependency,
+                enablePersistence: enablePersistence,
+                synchronizeTabs: synchronizeTabs,
+            };
             store.registerModule(moduleName, iniModule(config, firestoreConfig));
         });
     };

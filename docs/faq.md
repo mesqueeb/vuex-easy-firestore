@@ -7,6 +7,7 @@ This means that **your Vuex store is instantiated before you are able to initial
 Luckily, Vuex Easy Firestore has an easy solution for this as well. As you can read in the documentation, you can [manually pass your Firebase instance](extra-features.html#pass-firebase-dependency) to the library.
 
 Below I will show a code sample of how you can successfully do so and prevent the Firebase error:
+
 ```js
 // initialise Firebase
 import { initializeApp } from 'firebase/app'

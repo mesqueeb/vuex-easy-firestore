@@ -1,13 +1,10 @@
 // firebase
-import { initializeApp } from "firebase/app";
+import { initializeApp } from 'firebase/app'
 import { getKeysFromPath } from 'vuex-easy-access'
 import { isArray } from 'is-what'
 import iniModule, { FirestoreConfig } from './module'
 import { IEasyFirestoreModule } from './declarations'
-import {
-  arrayUnion,
-  arrayRemove,
-} from './utils/arrayHelpers'
+import { arrayUnion, arrayRemove } from './utils/arrayHelpers'
 import { increment } from './utils/incrementHelper'
 
 /**
@@ -18,7 +15,7 @@ import { increment } from './utils/incrementHelper'
  * @param {{logging?: boolean, FirebaseDependency?: any}} extraConfig An object with `logging` and `FirebaseDependency` props. `logging` enables console logs for debugging. `FirebaseDependency` is the non-instanciated firebase class you can pass. (defaults to the firebase peer dependency)
  * @returns {*}
  */
-function vuexEasyFirestore (
+function vuexEasyFirestore(
   easyFirestoreModule: IEasyFirestoreModule | IEasyFirestoreModule[],
   {
     logging = false,
@@ -40,10 +37,12 @@ function vuexEasyFirestore (
     synchronizeTabs: false,
   }
 ): any {
-  if(FirebaseDependency === null) {
-    throw new Error("FirebaseDependency is required. Please pass in the value returned by initializeApp({...}) from firebase/auth.")
+  if (FirebaseDependency === null) {
+    throw new Error(
+      'FirebaseDependency is required. Please pass in the value returned by initializeApp({...}) from firebase/auth.'
+    )
   }
-  return store => {
+  return (store) => {
     // Get an array of config files
     if (!isArray(easyFirestoreModule)) easyFirestoreModule = [easyFirestoreModule]
     // Create a module for each config file
@@ -53,7 +52,11 @@ function vuexEasyFirestore (
         config.sync.preventInitialDocInsertion = preventInitialDocInsertion
       }
       const moduleName = getKeysFromPath(config.moduleName)
-      const firestoreConfig: FirestoreConfig = { FirebaseDependency, enablePersistence, synchronizeTabs }
+      const firestoreConfig: FirestoreConfig = {
+        FirebaseDependency,
+        enablePersistence,
+        synchronizeTabs,
+      }
       store.registerModule(moduleName, iniModule(config, firestoreConfig))
     })
   }

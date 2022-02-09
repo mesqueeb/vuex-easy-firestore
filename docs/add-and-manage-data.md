@@ -7,12 +7,14 @@ With just 4 actions (set, patch, insert, delete) you can make changes to your vu
 There are two ways to use vuex-easy-firestore, in 'collection' or 'doc' mode. You can only choose one because this points to the path you sync your vuex module to:
 
 **Collection mode**
+
 - `firestoreRefType: 'collection'`
 - `firestorePath` should be a firestore collection
 - Use when working with multiple documents, all docs will automatically be retrieved and sync when making changes.
   <br>eg. when a user has multiple "items" like a to-do list
 
 **Doc mode**
+
 - `firestoreRefType: 'doc'`
 - `firestorePath` should be a single firestore document
 - Use when working with a single doc.
@@ -56,9 +58,9 @@ dispatch('myModule/delete', id)
 ### Insert example
 
 ```js
-dispatch('myModule/set', {title: 'Hello Firestore 🔥'})
+dispatch('myModule/set', { title: 'Hello Firestore 🔥' })
 // or
-dispatch('myModule/insert', {title: 'Hello Firestore 🔥'})
+dispatch('myModule/insert', { title: 'Hello Firestore 🔥' })
 ```
 
 1. The object above has just one field: `title`
@@ -83,9 +85,9 @@ If you specify the `id` you can modify any data of existing documents.
 
 ```js
 const id = 'abc123'
-dispatch('myModule/set', {id, title: 'Hello Universe 💫 🛰', newField: 1})
+dispatch('myModule/set', { id, title: 'Hello Universe 💫 🛰', newField: 1 })
 // or
-dispatch('myModule/patch', {id, title: 'Hello Universe 💫 🛰', newField: 1})
+dispatch('myModule/patch', { id, title: 'Hello Universe 💫 🛰', newField: 1 })
 ```
 
 As you can see in the example above, with the `patch` action (or `set` with `id` field) you can modify and/or add new fields.
@@ -93,7 +95,7 @@ As you can see in the example above, with the `patch` action (or `set` with `id`
 You can also patch **nested fields** like so:
 
 ```js
-dispatch('myModule/patch', {id, tags: {water: true}})
+dispatch('myModule/patch', { id, tags: { water: true } })
 ```
 
 Any other fields inside `tags` will be left alone and only `water` will be updated (or added as new prop).
@@ -148,7 +150,7 @@ const id = await dispatch('moduleName/insert', newDoc) // returns id
 ```js
 // assign manually
 const id = doc(getters['moduleName/dbRef']).id
-const newDoc = {id, /* and other fields */}
+const newDoc = { id /* and other fields */ }
 dispatch('moduleName/insert', newDoc)
 ```
 
@@ -163,8 +165,8 @@ In 'doc' mode all changes will take effect on the single document you have passe
 You will be able to use these actions:
 
 ```js
-dispatch('moduleName/set', {name: 'my new name'}) // same as `patch`
-dispatch('moduleName/patch', {status: 'awesome'})
+dispatch('moduleName/set', { name: 'my new name' }) // same as `patch`
+dispatch('moduleName/patch', { status: 'awesome' })
 // Only the props you pass will be updated.
 dispatch('moduleName/delete', 'status') // pass a prop-name
 // Only the propName (string) you pass will be deleted
@@ -209,7 +211,7 @@ Yet there are separate "batch actions" and the difference between regular action
 dispatch('moduleName/insertBatch', docs)
 // pass an array of docs
 
-dispatch('moduleName/patchBatch', {doc: {}, ids: []})
+dispatch('moduleName/patchBatch', { doc: {}, ids: [] })
 // `doc` is an object with the fields to patch, `ids` is an array
 
 dispatch('moduleName/deleteBatch', ids)
@@ -228,7 +230,7 @@ You can duplicate a document really simply by dispatching 'duplicate' and passin
 In the example we will add a document and duplicate it afterwards, so we have 2 documents that look exactly like each other.
 
 ```js
-const newBulbasaur = {id: '001', name: Bulbasaur, types: {grass: true, poison: true}}
+const newBulbasaur = { id: '001', name: Bulbasaur, types: { grass: true, poison: true } }
 dispatch('pokemonBox/insert', newBulbasaur)
 
 // Bulbasaur is added with the id '001'.

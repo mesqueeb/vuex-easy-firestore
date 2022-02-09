@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp } from 'firebase/app';
 import { IEasyFirestoreModule } from './declarations';
 import { arrayUnion, arrayRemove } from './utils/arrayHelpers';
 import { increment } from './utils/incrementHelper';

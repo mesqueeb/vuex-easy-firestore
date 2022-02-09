@@ -16,19 +16,19 @@ You can replace a path variable with the actual string by:
 
 ```js
 // 1. Passing it as a parameter to openDBChannel
-dispatch('groupUserData/openDBChannel', {pathVariables: {groupId: 'group-A'}})
+dispatch('groupUserData/openDBChannel', { pathVariables: { groupId: 'group-A' } })
 
 // 2. Passing it as a parameter to fetchAndAdd
-dispatch('groupUserData/fetchAndAdd', {pathVariables: {groupId: 'group-A'}})
+dispatch('groupUserData/fetchAndAdd', { pathVariables: { groupId: 'group-A' } })
 
 // 3. Dispatching setPathVars
-dispatch('groupUserData/setPathVars', {groupId: 'group-A'})
+dispatch('groupUserData/setPathVars', { groupId: 'group-A' })
 ```
 
 Always clear out your Vuex module before you change a path variable. You can do so by:
 
 ```js
-dispatch('moduleName/closeDBChannel', {clearModule: true})
+dispatch('moduleName/closeDBChannel', { clearModule: true })
 // or just
 commit('moduleName/RESET_VUEX_EASY_FIRESTORE_STATE')
 ```
@@ -45,13 +45,12 @@ Custom variables are useful however, if you need to first retrieve eg. a `groupI
 
 ```js
 // in this example the `userData` module will retrieve {userName: '', groupId: ''}
-store.dispatch('userData/openDBChannel')
-  .then(_ => {
-    // Then we can get the groupId:
-    const userGroupId = store.state.userData.groupId
-    // Then we can pass it as variable to the next openDBChannel:
-    store.dispatch('groupUserData/openDBChannel', {pathVariables: {groupId: userGroupId}})
-  })
+store.dispatch('userData/openDBChannel').then((_) => {
+  // Then we can get the groupId:
+  const userGroupId = store.state.userData.groupId
+  // Then we can pass it as variable to the next openDBChannel:
+  store.dispatch('groupUserData/openDBChannel', { pathVariables: { groupId: userGroupId } })
+})
 ```
 
 ### Use case: Retrieve data based on the Vue Router path
@@ -119,10 +118,10 @@ export default {
 
 You can prevent props on your docs to be synced to the firestore server. For this you should use either `fillables` **or** `guard`:
 
-- *Fillables:* Array of keys - the props which **may be synced** to the server.
+- _Fillables:_ Array of keys - the props which **may be synced** to the server.
   - 0 fillables = all props are synced
   - 1 or more fillables = only those props are synced (any prop not in fillables is not synced)
-- *Guard:* Array of keys - the props which **should not be synced** to the server.
+- _Guard:_ Array of keys - the props which **should not be synced** to the server.
   - adding any prop here will prevent it from being synced
 
 ```js
@@ -166,7 +165,7 @@ guard: ['email']
 In the example below we will prevent the nested field called `notAllowed` from being synced:
 
 ```js
-const docToPatch = {nested: {allowed: true, notAllowed: true}}
+const docToPatch = { nested: { allowed: true, notAllowed: true } }
 
 // in your module config, either set the fillables like so:
 fillables: ['nested.allowed']
@@ -184,9 +183,9 @@ In this example you have a document with an object called `lists`. The lists eac
 ```js
 const docToPatch = {
   lists: {
-    'list-id1': {allowed: true, notAllowed: true},
-    'list-id2': {allowed: true, notAllowed: true}
-  }
+    'list-id1': { allowed: true, notAllowed: true },
+    'list-id2': { allowed: true, notAllowed: true },
+  },
 }
 
 // in your module config, either set the fillables like so:
@@ -211,11 +210,11 @@ const pokemonBoxModule = {
     defaultValues: {
       freed: false,
     },
-  }
+  },
 }
 
 // Now, when you add a new pokemon, it will automatically have `freed`
-dispatch('pokemonBox/insert', {name: 'Poliwag'})
+dispatch('pokemonBox/insert', { name: 'Poliwag' })
 // This will appear in your module like so:
 // {name: 'Poliwag', freed: false}
 ```
@@ -241,7 +240,7 @@ const vuexModule = {
       updated_at: '%convertTimestamp%', // default
       // define each field like so ↑ in an object here
     },
-  }
+  },
 }
 ```
 
@@ -250,7 +249,7 @@ The Timestamps of each of the fields defined like above will automatically trigg
 Eg.
 
 ```js
-dispatch('module/set', {timestampField: new Date()})
+dispatch('module/set', { timestampField: new Date() })
 ```
 
 The above will be added as `new Date()` in vuex but as a _timestamp_ in Firestore.
@@ -263,8 +262,8 @@ Vuex easy firestore only makes one api call per 1000ms, no matter how many patch
 const vuexModule = {
   // your other vuex-easy-firestore config...
   sync: {
-    debounceTimerMs: 2000
+    debounceTimerMs: 2000,
     // defaults to 1000
-  }
+  },
 }
 ```
