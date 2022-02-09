@@ -7,7 +7,12 @@ import { getPathVarMatches } from '../utils/apiHelpers'
 import setDefaultValues from '../utils/setDefaultValues'
 import { AnyObject } from '../declarations'
 import error from './errors'
-import { getFirestore, collection, doc, deleteField } from 'firebase/firestore';
+import {
+  getFirestore,
+  collection as firestoreCollection,
+  doc as firestoreDoc,
+  deleteField as firestoreDeleteField,
+} from 'firebase/firestore'
 
 export type IPluginGetters = {
   firestorePathComplete: (state: any, getters?: any, rootState?: any, rootGetters?: any) => string
@@ -43,11 +48,11 @@ export type IPluginGetters = {
  * @returns {AnyObject} the getters object
  */
 export default function (firebaseApp: any): AnyObject {
-  const firestore = getFirestore(firebaseApp);
+  const firestore = getFirestore(firebaseApp)
   return {
-    firestorePathComplete (state, getters) {
+    firestorePathComplete(state, getters) {
       let path = state._conf.firestorePath
-      Object.keys(state._sync.pathVariables).forEach(key => {
+      Object.keys(state._sync.pathVariables).forEach((key) => {
         const pathPiece = state._sync.pathVariables[key]
         path = path.replace(`{${key}}`, `${pathPiece}`)
       })
@@ -68,8 +73,8 @@ export default function (firebaseApp: any): AnyObject {
     dbRef: (state, getters, rootState, rootGetters) => {
       const path = getters.firestorePathComplete
       return getters.collectionMode
-        ? collection(firestore, path)
-        : doc(firestore, path)
+        ? firestoreCollection(firestore, path)
+        : firestoreDoc(firestore, path)
     },
     storeRef: (state, getters, rootState) => {
       const path = state._conf.statePropName
@@ -83,12 +88,12 @@ export default function (firebaseApp: any): AnyObject {
     docModeId: (state, getters) => {
       return getters.firestorePathComplete.split('/').pop()
     },
-    fillables: state => {
+    fillables: (state) => {
       let fillables = state._conf.sync.fillables
       if (!fillables.length) return fillables
       return fillables.concat(['updated_at', 'updated_by', 'id', 'created_at', 'created_by'])
     },
-    guard: state => {
+    guard: (state) => {
       return state._conf.sync.guard.concat(['_conf', '_sync'])
     },
     defaultValues: (state, getters) => {
@@ -103,67 +108,73 @@ export default function (firebaseApp: any): AnyObject {
       cleanDoc.id = id
       return cleanDoc
     },
-    prepareForPatch: (state, getters, rootState, rootGetters) => (ids = [], doc = {}) => {
-      // get relevant data from the storeRef
-      const collectionMode = getters.collectionMode
-      if (!collectionMode) ids.push(getters.docModeId)
-      // returns {object} -> {id: data}
-      return ids.reduce((carry, id) => {
-        let patchData: AnyObject = {}
-        // retrieve full object in case there's an empty doc passed
-        if (!Object.keys(doc).length) {
-          patchData = collectionMode ? getters.storeRef[id] : getters.storeRef
-        } else {
-          patchData = doc
-        }
+    prepareForPatch:
+      (state, getters, rootState, rootGetters) =>
+      (ids = [], doc = {}) => {
+        // get relevant data from the storeRef
+        const collectionMode = getters.collectionMode
+        if (!collectionMode) ids.push(getters.docModeId)
+        // returns {object} -> {id: data}
+        return ids.reduce((carry, id) => {
+          let patchData: AnyObject = {}
+          // retrieve full object in case there's an empty doc passed
+          if (!Object.keys(doc).length) {
+            patchData = collectionMode ? getters.storeRef[id] : getters.storeRef
+          } else {
+            patchData = doc
+          }
+          // set default fields
+          patchData.updated_at = new Date()
+          patchData.updated_by = state._sync.userId
+          // clean up item
+          const cleanedPatchData = filter(patchData, getters.fillables, getters.guard)
+          const itemToUpdate = flatten(cleanedPatchData)
+          // add id (required to get ref later at apiHelpers.ts)
+          // @ts-ignore
+          itemToUpdate.id = id
+          carry[id] = itemToUpdate
+          return carry
+        }, {})
+      },
+    prepareForPropDeletion:
+      (state, getters, rootState, rootGetters) =>
+      (path = '') => {
+        const collectionMode = getters.collectionMode
+        const patchData: AnyObject = {}
         // set default fields
         patchData.updated_at = new Date()
         patchData.updated_by = state._sync.userId
+        // add fillable and guard defaults
         // clean up item
         const cleanedPatchData = filter(patchData, getters.fillables, getters.guard)
-        const itemToUpdate = flatten(cleanedPatchData)
         // add id (required to get ref later at apiHelpers.ts)
-        // @ts-ignore
-        itemToUpdate.id = id
-        carry[id] = itemToUpdate
-        return carry
-      }, {})
-    },
-    prepareForPropDeletion: (state, getters, rootState, rootGetters) => (path = '') => {
-      const collectionMode = getters.collectionMode
-      const patchData: AnyObject = {}
-      // set default fields
-      patchData.updated_at = new Date()
-      patchData.updated_by = state._sync.userId
-      // add fillable and guard defaults
-      // clean up item
-      const cleanedPatchData = filter(patchData, getters.fillables, getters.guard)
-      // add id (required to get ref later at apiHelpers.ts)
-      let id, cleanedPath
-      if (collectionMode) {
-        id = path.substring(0, path.indexOf('.'))
-        cleanedPath = path.substring(path.indexOf('.') + 1)
-      } else {
-        id = getters.docModeId
-        cleanedPath = path
-      }
-      cleanedPatchData[cleanedPath] = deleteField()
-      cleanedPatchData.id = id
-      return { [id]: cleanedPatchData }
-    },
-    prepareForInsert: (state, getters, rootState, rootGetters) => (items = []) => {
-      // add fillable and guard defaults
-      return items.reduce((carry, item) => {
-        // set default fields
-        item.created_at = new Date()
-        item.created_by = state._sync.userId
-        // clean up item
-        item = filter(item, getters.fillables, getters.guard)
-        carry.push(item)
-        return carry
-      }, [])
-    },
-    prepareInitialDocForInsert: (state, getters, rootState, rootGetters) => doc => {
+        let id, cleanedPath
+        if (collectionMode) {
+          id = path.substring(0, path.indexOf('.'))
+          cleanedPath = path.substring(path.indexOf('.') + 1)
+        } else {
+          id = getters.docModeId
+          cleanedPath = path
+        }
+        cleanedPatchData[cleanedPath] = firestoreDeleteField()
+        cleanedPatchData.id = id
+        return { [id]: cleanedPatchData }
+      },
+    prepareForInsert:
+      (state, getters, rootState, rootGetters) =>
+      (items = []) => {
+        // add fillable and guard defaults
+        return items.reduce((carry, item) => {
+          // set default fields
+          item.created_at = new Date()
+          item.created_by = state._sync.userId
+          // clean up item
+          item = filter(item, getters.fillables, getters.guard)
+          carry.push(item)
+          return carry
+        }, [])
+      },
+    prepareInitialDocForInsert: (state, getters, rootState, rootGetters) => (doc) => {
       // add fillable and guard defaults
       // set default fields
       doc.created_at = new Date()
@@ -173,13 +184,13 @@ export default function (firebaseApp: any): AnyObject {
       doc = filter(doc, getters.fillables, getters.guard)
       return doc
     },
-    getWhereArrays: (state, getters) => whereArrays => {
+    getWhereArrays: (state, getters) => (whereArrays) => {
       if (!isArray(whereArrays)) whereArrays = state._conf.sync.where
-      return whereArrays.map(whereClause => {
-        return whereClause.map(param => {
+      return whereArrays.map((whereClause) => {
+        return whereClause.map((param) => {
           if (!isString(param)) return param
           let cleanedParam = param
-          getPathVarMatches(param).forEach(key => {
+          getPathVarMatches(param).forEach((key) => {
             const keyRegEx = new RegExp(`\{${key}\}`, 'g')
             if (key === 'userId') {
               cleanedParam = cleanedParam.replace(keyRegEx, state._sync.userId)

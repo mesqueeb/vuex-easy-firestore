@@ -14,7 +14,8 @@
     "build": "npm run rollup && npm run test",
     "docs:dev": "vuepress dev docs",
     "docs:build": "vuepress build docs",
-    "docs:deploy": "./docs/.vuepress/deploy.sh"
+    "docs:deploy": "./docs/.vuepress/deploy.sh",
+    "lint:prettier": "prettier --loglevel warn"
   },
   "repository": {
     "type": "git",

@@ -10,10 +10,11 @@ Firebase is a peer dependency; It will use your existing version.
 
 ::: warning Dependency Compatibility
 This package is developed and only tested with:
+
 - Firebase SDK >=9 (not in comp mode)
 - Vuex 4
 - Vue 3
-:::
+  :::
 
 ## Setup
 
@@ -67,19 +68,19 @@ const app = createApp({})
 
 // import from step 1
 import { initFirebase } from './config/firebase.js'
-const firebaseApp = initFirebase().catch(error => {
-    // take user to a page stating an error occurred
-    // (might be a connection error, or the app is open in another tab)
-  })
+const firebaseApp = initFirebase().catch((error) => {
+  // take user to a page stating an error occurred
+  // (might be a connection error, or the app is open in another tab)
+})
 
 // import from step 3 (below)
 import myModule from './modules/myModule.js'
 
 // do the magic 🧙🏻‍♂️
-const easyFirestore = VuexEasyFirestore(
-  [myModule],
-  {logging: true, FirebaseDependency: firebaseApp}
-)
+const easyFirestore = VuexEasyFirestore([myModule], {
+  logging: true,
+  FirebaseDependency: firebaseApp,
+})
 
 // include as PLUGIN in your vuex store
 // please note that "myModule" should ONLY be passed via the plugin

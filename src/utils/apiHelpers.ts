@@ -3,7 +3,7 @@ import { findAndReplaceIf } from 'find-and-replace-anything'
 import { isArrayHelper } from '../utils/arrayHelpers'
 import { isIncrementHelper } from '../utils/incrementHelper'
 import { IPluginState, AnyObject } from '../declarations'
-import { doc } from 'firebase/firestore'
+import { doc as firestoreDoc } from 'firebase/firestore'
 
 /**
  * Grab until the api limit (500), put the rest back in the syncStack. State will get modified!
@@ -14,7 +14,7 @@ import { doc } from 'firebase/firestore'
  * @param {object} state the store's state, will get modified!
  * @returns {any[]} the targets for the batch. Add this array length to the count
  */
-export function grabUntilApiLimit (
+export function grabUntilApiLimit(
   syncStackProp: string,
   count: number,
   maxCount: number,
@@ -37,12 +37,11 @@ export function grabUntilApiLimit (
     let targetsLeft = targets.slice(grabCount)
     // Put back the remaining items over maxCount
     if (targetIsObject) {
-      targetsLeft = Object.values(targetsLeft)
-        .reduce((carry, update: AnyObject) => {
-          const id = update.id
-          carry[id] = update
-          return carry
-        }, {})
+      targetsLeft = Object.values(targetsLeft).reduce((carry, update: AnyObject) => {
+        const id = update.id
+        carry[id] = update
+        return carry
+      }, {})
     }
     state._sync.syncStack[syncStackProp] = targetsLeft
     // Define the items we'll add below
@@ -61,11 +60,11 @@ export function grabUntilApiLimit (
  * @param {number} [batchMaxCount=500] The max count of the batch. Defaults to 500 as per Firestore documentation.
  * @returns {*} A firebase firestore batch object.
  */
-export function makeBatchFromSyncstack (
+export function makeBatchFromSyncstack(
   state: IPluginState,
   getters: AnyObject,
   firebaseBatch: any,
-  batchMaxCount: number = 500,
+  batchMaxCount: number = 500
 ): any {
   // get state & getter variables
   const { firestorePath, logging } = state._conf
@@ -80,24 +79,23 @@ export function makeBatchFromSyncstack (
   log['updates: '] = updates
   count = count + updates.length
   // Add to batch
-  updates.forEach(item => {
+  updates.forEach((item) => {
     const id = item.id
-    const docRef = (collectionMode) ? doc(dbRef, id) : dbRef
+    const docRef = collectionMode ? firestoreDoc(dbRef, id) : dbRef
     // replace arrayUnion and arrayRemove
-    const patchData = Object.entries(item)
-      .reduce((carry, [key, data]) => {
-        // replace arrayUnion and arrayRemove
-        carry[key] = findAndReplaceIf(data, foundVal => {
-          if (isArrayHelper(foundVal)) {
-            return foundVal.getFirestoreFieldValue()
-          }
-          if (isIncrementHelper(foundVal)) {
-            return foundVal.getFirestoreFieldValue()
-          }
-          return foundVal
-        })
-        return carry
-      }, {})
+    const patchData = Object.entries(item).reduce((carry, [key, data]) => {
+      // replace arrayUnion and arrayRemove
+      carry[key] = findAndReplaceIf(data, (foundVal) => {
+        if (isArrayHelper(foundVal)) {
+          return foundVal.getFirestoreFieldValue()
+        }
+        if (isIncrementHelper(foundVal)) {
+          return foundVal.getFirestoreFieldValue()
+        }
+        return foundVal
+      })
+      return carry
+    }, {})
     // delete id if it's guarded
     if (guard.includes('id')) delete item.id
     // @ts-ignore
@@ -108,9 +106,9 @@ export function makeBatchFromSyncstack (
   log['prop deletions: '] = propDeletions
   count = count + propDeletions.length
   // Add to batch
-  propDeletions.forEach(item => {
+  propDeletions.forEach((item) => {
     const id = item.id
-    const docRef = (collectionMode) ? doc(dbRef, id) : dbRef
+    const docRef = collectionMode ? firestoreDoc(dbRef, id) : dbRef
     // delete id if it's guarded
     if (guard.includes('id')) delete item.id
     // @ts-ignore
@@ -121,8 +119,8 @@ export function makeBatchFromSyncstack (
   log['deletions: '] = deletions
   count = count + deletions.length
   // Add to batch
-  deletions.forEach(id => {
-    const docRef = doc(dbRef, id)
+  deletions.forEach((id) => {
+    const docRef = firestoreDoc(dbRef, id)
     batch.delete(docRef)
   })
   // Add 'inserts' to batch
@@ -130,15 +128,15 @@ export function makeBatchFromSyncstack (
   log['inserts: '] = inserts
   count = count + inserts.length
   // Add to batch
-  inserts.forEach(item => {
-    const newRef = doc(dbRef, item.id)
+  inserts.forEach((item) => {
+    const newRef = firestoreDoc(dbRef, item.id)
     batch.set(newRef, item)
   })
   // log the batch contents
   if (logging) {
     console.group('[vuex-easy-firestore] api call batch:')
     console.log(`%cFirestore PATH: ${firestorePathComplete} [${firestorePath}]`, 'color: grey')
-    Object.keys(log).forEach(key => {
+    Object.keys(log).forEach((key) => {
       console.log(key, log[key])
     })
     console.groupEnd()
@@ -153,10 +151,10 @@ export function makeBatchFromSyncstack (
  * @param {string} pathPiece eg. 'groups' or '{groupId}'
  * @returns {string[]} returns ['groupId'] in case of '{groupId}'
  */
-export function getPathVarMatches (pathPiece: string): string[] {
+export function getPathVarMatches(pathPiece: string): string[] {
   const matches = pathPiece.match(/\{([a-z]+)\}/gi)
   if (!matches) return []
-  return matches.map(key => trimAccolades(key))
+  return matches.map((key) => trimAccolades(key))
 }
 
 /**
@@ -166,18 +164,20 @@ export function getPathVarMatches (pathPiece: string): string[] {
  * @param {string} pathPiece eg. '{groupId}'
  * @returns {string} returns 'groupId' in case of '{groupId}'
  */
-export function trimAccolades (pathPiece: string): string {
+export function trimAccolades(pathPiece: string): string {
   return pathPiece.slice(1, -1)
 }
 
-function stringifyParams (params: any[]): string {
-  return params.map(param => {
-    if (isAnyObject(param) && !isPlainObject(param)) {
-      // @ts-ignore
-      return String(param.constructor.name) + String(param.id)
-    }
-    return String(param)
-  }).join()
+function stringifyParams(params: any[]): string {
+  return params
+    .map((param) => {
+      if (isAnyObject(param) && !isPlainObject(param)) {
+        // @ts-ignore
+        return String(param.constructor.name) + String(param.id)
+      }
+      return String(param)
+    })
+    .join()
 }
 
 /**
@@ -187,10 +187,10 @@ function stringifyParams (params: any[]): string {
  * @param {AnyObject} [whereOrderBy={}] whereOrderBy {where, orderBy, pathVariables}
  * @returns {string}
  */
-export function createFetchIdentifier (whereOrderBy: AnyObject = {}): string {
+export function createFetchIdentifier(whereOrderBy: AnyObject = {}): string {
   let identifier = ''
   if ('where' in whereOrderBy) {
-    identifier += '[where]' + whereOrderBy.where.map(where => stringifyParams(where)).join()
+    identifier += '[where]' + whereOrderBy.where.map((where) => stringifyParams(where)).join()
   }
   if ('orderBy' in whereOrderBy) {
     identifier += '[orderBy]' + stringifyParams(whereOrderBy.orderBy)
