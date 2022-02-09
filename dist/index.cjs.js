@@ -4298,6 +4298,9 @@ function vuexEasyFirestore(easyFirestoreModule, _a) {
         enablePersistence: false,
         synchronizeTabs: false,
     } : _a, _c = _b.logging, logging = _c === void 0 ? false : _c, _d = _b.preventInitialDocInsertion, preventInitialDocInsertion = _d === void 0 ? false : _d, _e = _b.FirebaseDependency, FirebaseDependency = _e === void 0 ? null : _e, _f = _b.enablePersistence, enablePersistence = _f === void 0 ? false : _f, _g = _b.synchronizeTabs, synchronizeTabs = _g === void 0 ? false : _g;
+    if (FirebaseDependency === null) {
+        throw new Error("FirebaseDependency is required. Please pass in the value returned by initializeApp({...}) from firebase/auth.");
+    }
     return function (store) {
         // Get an array of config files
         if (!isWhat.isArray(easyFirestoreModule))

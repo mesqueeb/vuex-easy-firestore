@@ -40,6 +40,9 @@ function vuexEasyFirestore (
     synchronizeTabs: false,
   }
 ): any {
+  if(FirebaseDependency === null) {
+    throw new Error("FirebaseDependency is required. Please pass in the value returned by initializeApp({...}) from firebase/auth.")
+  }
   return store => {
     // Get an array of config files
     if (!isArray(easyFirestoreModule)) easyFirestoreModule = [easyFirestoreModule]

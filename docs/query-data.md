@@ -116,7 +116,7 @@ dispatch('moduleName/closeDBChannel', { clearModule: true })
 
 If you want to fetch docs once (opposed to _realtime updates_) you can use the `fetchAndAdd` (or `fetchById`) action.
 
-These actions are a wrapper around the Firestore `collection(db, path).get()` and `doc(db, path).get()` functions.
+These actions are a wrapper around the Firestore `getDoc(collection(db, path))` and `getDoc(db, path)` functions.
 (See 'Read data' in the [Firestore documentation](https://firebase.google.com/docs/firestore/query-data/get-data))
 
 ### Fetching in 'doc' mode
@@ -217,7 +217,8 @@ Of course, you will need to wait for the user to sign in and only then dispatch 
 
 ```js
 // Be sure to initialise Firebase first!
-Firebase.auth().onAuthStateChanged(user => {
+import { onAuthStateChanged } from 'firebase/firestore'
+onAuthStateChanged((user) => {
   if (user) {
     // user is logged in so openDBChannel
     store.dispatch('userData/openDBChannel').catch(console.error)
@@ -232,7 +233,8 @@ If you want to use the library without fetching documents, so without using `ope
 In this case you can manually dispatch `setUserId` like so:
 
 ```js
-Firebase.auth().onAuthStateChanged(user => {
+import { onAuthStateChanged } from 'firebase/firestore'
+onAuthStateChanged((user) => {
   if (user) {
     // in case you do not use `openDBChannel` or `fetchAndAdd`
     store.dispatch('userData/setUserId')
@@ -454,7 +456,8 @@ store: {
 Do not forget you will have to dispatch openDBChannel or fetchAndAdd for each module you want to retrieve the doc(s) of:
 
 ```js
-Firebase.auth().onAuthStateChanged(user => {
+import { onAuthStateChanged } from 'firebase/firestore'
+onAuthStateChanged((user) => {
   if (user) {
     store.dispatch('userDataModule/openDBChannel').catch(console.error)
     store.dispatch('anotherModule/openDBChannel').catch(console.error)

@@ -8,6 +8,13 @@ yarn add vuex-easy-firestore firebase
 
 Firebase is a peer dependency; It will use your existing version.
 
+::: warning Dependency Compatibility
+This package is developed and only tested with:
+- Firebase SDK >=9 (not in comp mode)
+- Vuex 4
+- Vue 3
+:::
+
 ## Setup
 
 Vuex Easy Firestore is all about adding just a few lines to each Vuex module to automatically have it sync with your Firestore. We'll take you through the next three steps:
@@ -22,14 +29,16 @@ First we'll create a function that enables Firebase and Firestore and will attem
 
 ```js
 // ~config/firebase.js
-import firebase from 'firebase/app'
-import 'firebase/firestore'
+import { initializeApp } from 'firebase/app'
+import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore'
+
 
 function initFirebase () {
-  Firebase.initializeApp({ /* your Firebase config */})
   return new Promise((resolve, reject) => {
-    Firebase.firestore().enablePersistence()
-      .then(resolve)
+    const firebaseApp = initializeApp(config);
+    const firestoreDB = getFirestore(firebaseApp);
+    enableIndexedDbPersistence(firestoreDB);
+      .then(() => resolve(firebaseApp))
       .catch(err => {
         if (err.code === 'failed-precondition') {
           reject(err)
@@ -44,27 +53,32 @@ function initFirebase () {
   })
 }
 
-export { Firebase, initFirebase }
+export { initFirebase }
 ```
 
 ### 2. Create a Vuex store init file
 
 ```js
 // ~store/index.js
-import Vue from 'vue'
-import Vuex from 'vuex'
+import { createApp } from 'vue'
+import { createStore } from 'vuex'
 import VuexEasyFirestore from 'vuex-easy-firestore'
-Vue.use(Vuex)
+const app = createApp({})
 
 // import from step 1
-import { Firebase, initFirebase } from './config/firebase.js'
+import { initFirebase } from './config/firebase.js'
+const firebaseApp = initFirebase().catch(error => {
+    // take user to a page stating an error occurred
+    // (might be a connection error, or the app is open in another tab)
+  })
+
 // import from step 3 (below)
 import myModule from './modules/myModule.js'
 
 // do the magic 🧙🏻‍♂️
 const easyFirestore = VuexEasyFirestore(
   [myModule],
-  {logging: true, FirebaseDependency: Firebase}
+  {logging: true, FirebaseDependency: firebaseApp}
 )
 
 // include as PLUGIN in your vuex store
@@ -75,19 +89,14 @@ const storeData = {
 }
 
 // initialise Vuex
-const store = new Vuex.Store(storeData)
-
-// initFirebase
-initFirebase()
-  .catch(error => {
-    // take user to a page stating an error occurred
-    // (might be a connection error, or the app is open in another tab)
-  })
+const store = new createStore(storeData)
+// tell vue to use vuex
+app.use(store)
 
 export default store
 ```
 
-It's very important that we take the user to an error page when something went wrong with the Firestore initialisation.
+It's very important that we take the user to an error page when something went wrong with the Firestore initialization.
 
 When something went wrong and there was no data retrieved from cache or from the server, the user might still be able to see your app but without any data. **In this case it's important that we prevent the user from being able to use the app and start writing data**, because this could potentially overwrite data on the server.
 
