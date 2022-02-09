@@ -1,6 +1,7 @@
 import test from 'ava'
 import wait from './helpers/wait'
 import { store } from './helpers/index.cjs.js'
+import * as firestore from 'firebase/firestore'
 
 const box = store.state.pokemonBox
 const boxRef = store.getters['pokemonBox/dbRef']
@@ -9,14 +10,14 @@ const boxRef = store.getters['pokemonBox/dbRef']
 
 test('[COLLECTION] sync: insertHook & patchHook', async t => {
   let doc, docR
-  const id = boxRef.doc().id
+  const id = firestore.doc(boxRef).id
   await store.dispatch('pokemonBox/set', { name: 'Horsea', id, type: ['water'] })
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Horsea')
   t.is(box.pokemon[id].addedBeforeInsert, true)
   t.is(box.pokemon[id].addedBeforePatch, undefined)
   await wait(3)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.truthy(doc)
   t.is(doc.name, 'Horsea')
@@ -27,7 +28,7 @@ test('[COLLECTION] sync: insertHook & patchHook', async t => {
   t.is(box.pokemon[id].addedBeforeInsert, true)
   t.is(box.pokemon[id].addedBeforePatch, true)
   await wait(2)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.is(doc.addedBeforeInsert, true)
   t.is(doc.addedBeforePatch, true)
@@ -35,8 +36,8 @@ test('[COLLECTION] sync: insertHook & patchHook', async t => {
   await store.dispatch('pokemonBox/delete', id)
   t.falsy(box.pokemon[id])
   await wait(2)
-  docR = await boxRef.doc(id).get()
-  t.falsy(docR.exists)
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
+  t.falsy(docR.exists())
 })
 
 test('[COLLECTION] sync: deleteHook', async t => {

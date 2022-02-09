@@ -147,7 +147,7 @@ const id = await dispatch('moduleName/insert', newDoc) // returns id
 
 ```js
 // assign manually
-const id = getters['moduleName/dbRef'].doc().id
+const id = doc(getters['moduleName/dbRef']).id
 const newDoc = {id, /* and other fields */}
 dispatch('moduleName/insert', newDoc)
 ```

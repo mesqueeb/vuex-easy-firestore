@@ -14,7 +14,7 @@ import { isIncrementHelper } from '../utils/incrementHelper'
 import logError from './errors'
 import { FirestoreConfig } from './index'
 import { getAuth } from "firebase/auth";
-import { query, getFirestore, doc as fDoc } from 'firebase/firestore'
+import { query, getFirestore, doc as fDoc, setDoc } from 'firebase/firestore'
 
 type DocumentSnapshot = Firestore.DocumentSnapshot
 type QuerySnapshot = Firestore.QuerySnapshot
@@ -179,8 +179,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
 
       // 2. Create a reference to the SF doc.
       return new Promise((resolve, reject) => {
-        getters.dbRef
-          .set(initialDocPrepared)
+        setDoc(getters.dbRef, initialDocPrepared)
           .then(() => {
             if (state._conf.logging) {
               const message = 'Initial doc succesfully inserted'
@@ -408,7 +407,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         }
         return Firestore.getDoc(getters.dbRef)
           .then(async _doc => {
-            if (!_doc.exists) {
+            if (!_doc.exists()) {
               // No initial doc found in docMode
               if (state._conf.sync.preventInitialDocInsertion) throw 'preventInitialDocInsertion'
               if (state._conf.logging) {
@@ -455,7 +454,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         if (!getters.collectionMode) throw 'only-in-collection-mode'
         const ref = getters.dbRef
         const _doc = await Firestore.getDoc(ref)
-        if (!_doc.exists) {
+        if (!_doc.exists()) {
           if (state._conf.logging) {
             throw `Doc with id "${id}" not found!`
           }
@@ -771,7 +770,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
 
           // if the remote document exists (this is always `true` when we are in
           // collection mode)
-          if (documentSnapshot.exists) {
+          if (documentSnapshot.exists()) {
             // the doc will actually already be initialized at this point unless it couldn't
             // be loaded from cache (no persistence, or never previously loaded)
             promisePayload.initialize = true
@@ -910,9 +909,8 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
               console.log(
                 `%c DOCUMENT SNAPSHOT received for \`${state._conf.moduleName}\``,
                 'font-weight: bold'
-              )
-            }
-
+                )
+              }
             const resp = await processDocument(documentSnapshot)
 
             if (resp.initialize && initialPromise.isPending) {

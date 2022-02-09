@@ -1,5 +1,5 @@
-import firebase from 'firebase/compat/app'
-import 'firebase/compat/auth'
+import { firebaseApp } from '../firestore'
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
 
 export default {
   firestorePath: 'user/{userId}',
@@ -11,10 +11,10 @@ export default {
       let userEmail
       if (userNr === 1) userEmail = 'test@test.com'
       if (userNr === 2) userEmail = 'test2@test.com'
-      await firebase.auth().signInWithEmailAndPassword(userEmail, 'test1234')
+      await signInWithEmailAndPassword(getAuth(firebaseApp), userEmail, 'test1234')
     },
     async logout ({ dispatch, state }) {
-      await firebase.auth().signOut()
+      await getAuth(firebaseApp).signOut()
     },
   },
   // module

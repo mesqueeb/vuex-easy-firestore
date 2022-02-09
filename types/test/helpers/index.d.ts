@@ -1,2 +1,2 @@
-import * as stores from './store';
-export default stores;
+export * from './firestore';
+export * from './store';

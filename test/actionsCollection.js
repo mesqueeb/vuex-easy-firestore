@@ -2,6 +2,7 @@ import test from 'ava'
 import { isPlainObject } from 'is-what'
 import wait from './helpers/wait'
 import { store } from './helpers/index.cjs.js'
+import * as firestore from 'firebase/firestore'
 
 const box = store.state.pokemonBox
 const boxRef = store.getters['pokemonBox/dbRef']
@@ -20,7 +21,7 @@ test('[COLLECTION] set with no id', async t => {
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Unown')
   await wait(3)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.is(doc.name, 'Unown')
   // set set
@@ -28,7 +29,7 @@ test('[COLLECTION] set with no id', async t => {
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Unown1')
   await wait(3)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.is(doc.name, 'Unown1')
   // insert set
@@ -36,7 +37,7 @@ test('[COLLECTION] set with no id', async t => {
   t.truthy(box.pokemon[id])
   t.deepEqual(box.pokemon[id].name, { is: 'nested' })
   await wait(3)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.deepEqual(doc.name, { is: 'nested' })
   // set set
@@ -44,7 +45,7 @@ test('[COLLECTION] set with no id', async t => {
   t.truthy(box.pokemon[id])
   t.deepEqual(box.pokemon[id].name, { is: 'nested1' })
   await wait(3)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.deepEqual(doc.name, { is: 'nested1' })
 })
@@ -52,7 +53,7 @@ test('[COLLECTION] set with no id', async t => {
 test('[COLLECTION] insert and patch right after each other', async t => {
   await wait(3)
   // insert
-  const id = boxRef.doc().id
+  const id = firestore.doc(boxRef).id
   store.dispatch('pokemonBox/insert', {
     id,
     name: 'Mew',
@@ -67,7 +68,7 @@ test('[COLLECTION] insert and patch right after each other', async t => {
   t.deepEqual(box.pokemon[id].type, { normal: true, psychic: true })
   // await server
   await wait(3)
-  const docR = await boxRef.doc(id).get()
+  const docR = await firestore.getDoc(firestore.doc(boxRef, id))
   const doc = docR.data()
   t.is(doc.name, 'Mew')
   t.deepEqual(doc.type, { normal: true, psychic: true })
@@ -76,7 +77,7 @@ test('[COLLECTION] insert and patch right after each other', async t => {
 test('[COLLECTION] edit twice right after each other', async t => {
   await wait(3)
   // insert
-  const id = boxRef.doc().id
+  const id = firestore.doc(boxRef).id
   store.dispatch('pokemonBox/insert', {
     id,
     name: 'Mew',
@@ -121,8 +122,8 @@ test('[COLLECTION] edit twice right after each other', async t => {
 })
 
 test('[COLLECTION] set & delete: top lvl', async t => {
-  const id = boxRef.doc().id
-  const id2 = boxRef.doc().id
+  const id = firestore.doc(boxRef).id
+  const id2 = firestore.doc(boxRef).id
   const date = new Date()
   // ini set
   const pokemonValues = {
@@ -137,7 +138,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.is(box.pokemon[id].meta.date, date)
   await wait(3)
   let docR, doc
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   console.log('doc → ', doc)
   t.is(doc.name, 'Squirtle')
@@ -156,8 +157,8 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.deepEqual(box.pokemon[id].type, ['water'])
   t.is(box.pokemon[id].meta.date, date2)
   await wait(3)
-  docR = await boxRef.doc(id).get()
-  t.is(docR.exists, true)
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
+  t.is(docR.exists(), true)
   doc = docR.data()
   t.is(doc.name, 'COOL Squirtle!')
   t.deepEqual(doc.type, ['water'])
@@ -168,7 +169,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   })
   t.is(box.pokemon[id].name, 'very berry COOL Squirtle!')
   await wait(3)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.is(doc.name, 'very berry COOL Squirtle!')
 
@@ -179,7 +180,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   })
   t.deepEqual(box.pokemon[id].nested, { new: { deep: { prop: true } } })
   await wait(3)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.deepEqual(doc.nested, { new: { deep: { prop: true } } })
 
@@ -187,7 +188,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   store.dispatch('pokemonBox/set', { type: ['water', 'normal'], id })
   t.deepEqual(box.pokemon[id].type, ['water', 'normal'])
   await wait(3)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.deepEqual(doc.type, ['water', 'normal'])
 
@@ -196,8 +197,8 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.truthy(box.pokemon[id2])
   t.is(box.pokemon[id2].name, 'Charmander')
   await wait(3)
-  docR = await boxRef.doc(id2).get()
-  t.is(docR.exists, true)
+  docR = await firestore.getDoc(firestore.doc(boxRef, id2))
+  t.is(docR.exists(), true)
   doc = docR.data()
   t.is(doc.name, 'Charmander')
 
@@ -205,8 +206,8 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   store.dispatch('pokemonBox/delete', id)
   t.falsy(box.pokemon[id])
   await wait(3)
-  docR = await boxRef.doc(id).get()
-  t.is(docR.exists, false)
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
+  t.is(docR.exists(), false)
 
   // DELETE
   t.truthy(box.pokemon[id2])
@@ -217,7 +218,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
 test('[COLLECTION] set & delete: deep', async t => {
   let docR, doc
 
-  const id = boxRef.doc().id
+  const id = firestore.doc(boxRef).id
   await store.dispatch('pokemonBox/insert', {
     id,
     nested: { a: { met: { de: 'aba' } } },
@@ -225,7 +226,7 @@ test('[COLLECTION] set & delete: deep', async t => {
   t.truthy(box.pokemon[id])
   t.deepEqual(box.pokemon[id].nested, { a: { met: { de: 'aba' } } })
   await wait(3)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.deepEqual(doc.nested, { a: { met: { de: 'aba' } } })
 
@@ -236,7 +237,7 @@ test('[COLLECTION] set & delete: deep', async t => {
   })
   t.deepEqual(box.pokemon[id].nested, { a: { met: { de: 'ebe' } } })
   await wait(3)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.deepEqual(doc.nested.a.met, { de: 'ebe' })
   t.deepEqual(doc.nested, { a: { met: { de: 'ebe' } } })
@@ -247,7 +248,7 @@ test('[COLLECTION] set & delete: deep', async t => {
   })
   t.deepEqual(box.pokemon[id].nested, { a: { met: { de: 'ibi' } } })
   await wait(3)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.deepEqual(doc.nested.a.met, { de: 'ibi' })
   t.deepEqual(doc.nested, { a: { met: { de: 'ibi' } } })
@@ -256,18 +257,18 @@ test('[COLLECTION] set & delete: deep', async t => {
   await store.dispatch('pokemonBox/delete', `${id}.nested.a.met.de`)
   t.deepEqual(box.pokemon[id].nested, { a: { met: {} } })
   await wait(3)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.deepEqual(doc.nested, { a: { met: {} } })
 })
 
 test('[COLLECTION] set & delete: batches', async t => {
   // ini set
-  const id1 = boxRef.doc().id
+  const id1 = firestore.doc(boxRef).id
   const a = { id: id1, name: 'Bulbasaur', type: { grass: true } }
-  const id2 = boxRef.doc().id
+  const id2 = firestore.doc(boxRef).id
   const b = { id: id2, name: 'Charmander', type: { fire: true } }
-  const id3 = boxRef.doc().id
+  const id3 = firestore.doc(boxRef).id
   const c = { id: id3, name: 'Squirtle', type: { water: true } }
   const pokemonValues = [a, b, c]
   await store.dispatch('pokemonBox/insertBatch', pokemonValues).catch(console.error)
@@ -275,11 +276,11 @@ test('[COLLECTION] set & delete: batches', async t => {
   t.deepEqual(box.pokemon[id2], b)
   t.deepEqual(box.pokemon[id3], c)
   await wait(3)
-  const docR1 = await boxRef.doc(id1).get()
+  const docR1 = await firestore.getDoc(firestore.doc(boxRef, id1))
   const doc1 = docR1.data()
-  const docR2 = await boxRef.doc(id2).get()
+  const docR2 = await firestore.getDoc(firestore.doc(boxRef, id2))
   const doc2 = docR2.data()
-  const docR3 = await boxRef.doc(id3).get()
+  const docR3 = await firestore.getDoc(firestore.doc(boxRef, id3))
   const doc3 = docR3.data()
   t.is(doc1.name, a.name)
   t.deepEqual(doc1.type, a.type)
@@ -291,7 +292,7 @@ test('[COLLECTION] set & delete: batches', async t => {
 
 test('[COLLECTION] duplicate', async t => {
   let res
-  const id = boxRef.doc().id
+  const id = firestore.doc(boxRef).id
   await store.dispatch('pokemonBox/insert', { id, name: 'Jamie Lannister' })
   t.is(box.pokemon[id].name, 'Jamie Lannister')
   // dupe 1
@@ -307,16 +308,16 @@ test('[COLLECTION] duplicate', async t => {
   // check Firestore
   await wait(3)
   let docR, doc
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.is(doc.name, 'Jamie Lannister')
-  docR = await boxRef.doc(dId).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, dId))
   doc = docR.data()
   t.is(doc.name, 'Jamie Lannister')
-  docR = await boxRef.doc(res[id]).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, res[id]))
   doc = docR.data()
   t.is(doc.name, 'Jamie Lannister')
-  docR = await boxRef.doc(res[dId]).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, res[dId]))
   doc = docR.data()
   t.is(doc.name, 'Jamie Lannister')
 })

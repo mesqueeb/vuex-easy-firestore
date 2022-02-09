@@ -7,7 +7,7 @@ import { getPathVarMatches } from '../utils/apiHelpers'
 import setDefaultValues from '../utils/setDefaultValues'
 import { AnyObject } from '../declarations'
 import error from './errors'
-import { getFirestore, collection, doc, deleteField } from "firebase/firestore";
+import { getFirestore, collection, doc, deleteField } from 'firebase/firestore';
 
 export type IPluginGetters = {
   firestorePathComplete: (state: any, getters?: any, rootState?: any, rootGetters?: any) => string

@@ -7,7 +7,6 @@
   "typings": "types/index.d.ts",
   "scripts": {
     "prepare": "patch-package",
-    "postinstall": "patch-package",
     "test": "ava --verbose",
     "test--only": "ava --verbose --match='*only:*'",
     "rollup": "rollup -c build/rollup.js",
@@ -49,11 +48,11 @@
     "lodash-es": "^4.17.15",
     "merge-anything": "^2.4.4",
     "path-to-prop": "0.0.3",
-    "vuex-easy-access": "^3.1.8"
+    "vuex-easy-access": "github:adrianjost/vuex-easy-access#master"
   },
   "devDependencies": {
     "@vue/eslint-config-standard": "^4.0.0",
-    "@vuepress/plugin-google-analytics": "^1.5.0",
+    "@vuepress/plugin-google-analytics": "^2.0.0-beta.35",
     "ava": "^3.8.2",
     "babel-eslint": "^10.1.0",
     "eslint": "^5.16.0",
@@ -68,9 +67,9 @@
     "rollup-plugin-typescript2": "^0.27.1",
     "ts-node": "^8.10.1",
     "typescript": "^3.9.3",
-    "vue": "^2.6.11",
-    "vuepress": "^1.5.0",
-    "vuex": "^3.4.0"
+    "vue": "^3.2.30",
+    "vuepress": "^2.0.0-beta.35",
+    "vuex": "^4.0.2"
   },
   "peerDependencies": {
     "firebase": "^9.0.0"

@@ -1,6 +1,7 @@
 import test from 'ava'
 import wait from './helpers/wait'
 import { store } from './helpers/index.cjs.js'
+import * as firestore from 'firebase/firestore'
 
 const box = store.state.pokemonBox
 const boxRef = store.getters['pokemonBox/dbRef']
@@ -44,7 +45,7 @@ test('defaultValues are set properly', async t => {
 })
 
 test('[COLLECTION] sync: defaultValues are added', async t => {
-  const id = boxRef.doc().id
+  const id = firestore.doc(boxRef).id
   store.dispatch('pokemonBox/insert', { id, name: 'Squirtle' }).catch(console.error)
   t.truthy(box.pokemon[id])
   t.is(box.pokemon[id].name, 'Squirtle')
@@ -52,7 +53,7 @@ test('[COLLECTION] sync: defaultValues are added', async t => {
   t.deepEqual(box.pokemon[id].nestedDefaultVal, { types: 'moon' })
   // fetch from server to check
   await wait(2)
-  const docR = await boxRef.doc(id).get()
+  const docR = await firestore.getDoc(firestore.doc(boxRef, id))
   const doc = docR.data()
   t.truthy(doc)
   t.is(doc.name, 'Squirtle')

@@ -1,8 +1,8 @@
 import test from 'ava'
-import { isPlainObject, isArray, isDate } from 'is-what'
 import wait from './helpers/wait'
 import firebase from './helpers/firestoreMock'
 import { store } from './helpers/index.cjs.js'
+import * as firestore from 'firebase/firestore'
 
 const box = store.state.pokemonBoxVEA
 const char = store.state.mainCharacterVEA
@@ -10,8 +10,8 @@ const boxRef = store.getters['pokemonBoxVEA/dbRef']
 const charRef = store.getters['mainCharacterVEA/dbRef']
 
 test('[COLLECTION] set & delete: top lvl', async t => {
-  const id = boxRef.doc().id
-  const id2 = boxRef.doc().id
+  const id = firestore.doc(boxRef).id
+  const id2 = firestore.doc(boxRef).id
   const date = new Date()
   // ini set
   const pokemonValues = {
@@ -28,7 +28,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   // t.true(isDate(box.pokemon[id].meta.firebaseServerTS.toDate())) // this is probably a feature of the firestore mock, but in reality will be different
   await wait(2)
   let docR, doc
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.is(doc.name, 'Squirtle')
   t.falsy(doc.meta) // not a fillable
@@ -45,8 +45,8 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.deepEqual(box.pokemon[id].type, ['water'])
   t.is(box.pokemon[id].meta.date, date2)
   await wait(2)
-  docR = await boxRef.doc(id).get()
-  t.is(docR.exists, true)
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
+  t.is(docR.exists(), true)
   doc = docR.data()
   t.is(doc.name, 'COOL Squirtle!')
   t.deepEqual(doc.type, ['water'])
@@ -55,7 +55,7 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   store.set('pokemonBoxVEA/pokemon.*', { type: ['water', 'normal'], id })
   t.deepEqual(box.pokemon[id].type, ['water', 'normal'])
   await wait(2)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.deepEqual(doc.type, ['water', 'normal'])
 
@@ -64,8 +64,8 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   t.truthy(box.pokemon[id2])
   t.is(box.pokemon[id2].name, 'Charmander')
   await wait(2)
-  docR = await boxRef.doc(id2).get()
-  t.is(docR.exists, true)
+  docR = await firestore.getDoc(firestore.doc(boxRef, id2))
+  t.is(docR.exists(), true)
   doc = docR.data()
   t.is(doc.name, 'Charmander')
 
@@ -73,8 +73,8 @@ test('[COLLECTION] set & delete: top lvl', async t => {
   store.delete('pokemonBoxVEA/pokemon.*', id)
   t.falsy(box.pokemon[id])
   await wait(2)
-  docR = await boxRef.doc(id).get()
-  t.is(docR.exists, false)
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
+  t.is(docR.exists(), false)
 
   // DELETE
   t.truthy(box.pokemon[id2])
@@ -85,12 +85,12 @@ test('[COLLECTION] set & delete: top lvl', async t => {
 test('[COLLECTION] set & delete: deep', async t => {
   let docR, doc
 
-  const id = boxRef.doc().id
+  const id = firestore.doc(boxRef).id
   await store.set('pokemonBoxVEA/pokemon.*', { id, nested: { a: { met: { de: 'aba' } } } })
   t.truthy(box.pokemon[id])
   t.deepEqual(box.pokemon[id].nested, { a: { met: { de: 'aba' } } })
   await wait(2)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.deepEqual(doc.nested, { a: { met: { de: 'aba' } } })
 
@@ -99,7 +99,7 @@ test('[COLLECTION] set & delete: deep', async t => {
   // await store.set('pokemonBoxVEA/pokemon.*.nested.a.met.*', [id, {de: 'ebe'}])
   t.deepEqual(box.pokemon[id].nested, { a: { met: { de: 'ebe' } } })
   await wait(2)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.deepEqual(doc.nested.a.met, { de: 'ebe' })
   t.deepEqual(doc.nested, { a: { met: { de: 'ebe' } } })
@@ -108,7 +108,7 @@ test('[COLLECTION] set & delete: deep', async t => {
   await store.delete('pokemonBoxVEA/pokemon.*.nested.a.met.de', [id])
   t.deepEqual(box.pokemon[id].nested, { a: { met: {} } })
   await wait(2)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.deepEqual(doc.nested, { a: { met: {} } })
 })
@@ -117,11 +117,11 @@ test('[COLLECTION] set & delete: deep', async t => {
 //   await wait(2)
 //   let docR1, doc1, docR2, doc2, docR3, doc3
 //   // ini set
-//   const id1 = boxRef.doc().id
+//   const id1 = firestore.doc(boxRef).id
 //   const a = {id: id1, name: 'Bulbasaur', type: {grass: true}}
-//   const id2 = boxRef.doc().id
+//   const id2 = firestore.doc(boxRef).id
 //   const b = {id: id2, name: 'Charmander', type: {fire: true}}
-//   const id3 = boxRef.doc().id
+//   const id3 = firestore.doc(boxRef).id
 //   const c = {id: id3, name: 'Squirtle', type: {water: true}}
 //   const pokemonValues = [a, b, c]
 //   await store.dispatch('pokemonBoxVEA/insertBatch', pokemonValues)
@@ -158,7 +158,7 @@ test('[DOC] set & delete: top lvl', async t => {
   t.is(char.newProp, 'Klappie')
   await wait(1)
   let docR, doc
-  docR = await charRef.get()
+  docR = await firestore.getDoc(charRef)
   doc = docR.data()
   t.truthy(doc.newProp)
   t.is(doc.newProp, 'Klappie')
@@ -167,7 +167,7 @@ test('[DOC] set & delete: top lvl', async t => {
   await store.delete('mainCharacterVEA/newProp')
   t.falsy(char.newProp)
   await wait(2)
-  docR = await charRef.get()
+  docR = await firestore.getDoc(charRef)
   doc = docR.data()
   t.truthy(doc)
   t.falsy(doc.newProp)
@@ -180,7 +180,7 @@ test('[DOC] set & delete: deep', async t => {
   t.is(char.a.met.de, 'aba')
   await wait(2)
   let docR, doc
-  docR = await charRef.get()
+  docR = await firestore.getDoc(charRef)
   doc = docR.data()
   t.truthy(doc.a)
   t.truthy(doc.a.met)
@@ -195,7 +195,7 @@ test('[DOC] set & delete: deep', async t => {
 // test('[COLLECTION] duplicate', async t => {
 //   await wait(2)
 //   let res
-//   const id = boxRef.doc().id
+//   const id = firestore.doc(boxRef).id
 //   await store.set('pokemonBoxVEA/pokemon.*', {id, name: 'Jamie Lannister'})
 //   t.is(box.pokemon[id].name, 'Jamie Lannister')
 //   // dupe 1
@@ -211,7 +211,7 @@ test('[DOC] set & delete: deep', async t => {
 //   // check Firestore
 //   await wait(2)
 //   let docR, doc
-//   docR = await boxRef.doc(id).get()
+//   docR = await firestore.getDoc(firestore.doc(boxRef, id))
 //   doc = docR.data()
 //   t.is(doc.name, 'Jamie Lannister')
 //   docR = await boxRef.doc(dId).get()

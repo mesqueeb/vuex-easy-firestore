@@ -1,6 +1,7 @@
 import test from 'ava'
 import wait from './helpers/wait'
 import { store } from './helpers/index.cjs.js'
+import * as firestore from 'firebase/firestore'
 
 const box = store.state.pokemonBox
 const boxRef = store.getters['pokemonBox/dbRef']
@@ -8,7 +9,7 @@ const boxRef = store.getters['pokemonBox/dbRef']
 // const charRef = store.getters['mainCharacter/dbRef']
 
 test('[COLLECTION] sync: fillables & guard', async t => {
-  const id = boxRef.doc().id
+  const id = firestore.doc(boxRef).id
   store
     .dispatch('pokemonBox/insert', {
       name: 'Squirtle',
@@ -26,7 +27,7 @@ test('[COLLECTION] sync: fillables & guard', async t => {
   t.is(box.pokemon[id].unmentionedProp, true) // no prop filtering on local changes
   // fetch from server to check if guarded is undefined or not
   await wait(2)
-  const docR = await boxRef.doc(id).get()
+  const docR = await firestore.getDoc(firestore.doc(boxRef, id))
   const doc = docR.data()
   t.truthy(doc)
   t.is(doc.name, 'Squirtle')
@@ -56,7 +57,7 @@ test('[DOC] sync: nested fillables', async t => {
   t.is(fil.newProp, 3)
   // fetch from server to check if guarded is undefined or not
   await wait(2)
-  const docR = await filRef.get()
+  const docR = await firestore.getDoc(filRef)
   const doc = docR.data()
   t.truthy(doc)
   t.is(doc.nested.fillables.yes, 1)
@@ -79,7 +80,7 @@ test('[DOC] sync: nested guard', async t => {
   t.is(gar.unguarded, 3)
   // fetch from server to check if guarded is undefined or not
   await wait(2)
-  const docR = await garRef.get()
+  const docR = await firestore.getDoc(garRef)
   const doc = docR.data()
   t.truthy(doc)
   t.is(doc.nested.guard, undefined)

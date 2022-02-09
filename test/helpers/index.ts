@@ -1,5 +1,5 @@
-// import './firestore'
-import * as stores from './store'
+export * from './firestore'
+export *  from './store'
 
 // store.dispatch('mainCharacter/openDBChannel')
 //   .then(_ => {
@@ -14,5 +14,3 @@ import * as stores from './store'
         // console.log('storestate → ', a)
 //     })
 // })
-
-export default stores

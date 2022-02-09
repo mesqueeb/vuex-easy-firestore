@@ -1,13 +1,15 @@
 'use strict';
 
+Object.defineProperty(exports, '__esModule', { value: true });
+
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var Vue = _interopDefault(require('vue'));
-var Vuex = _interopDefault(require('vuex'));
+var app$1 = require('firebase/app');
+var vue = require('vue');
+var vuex = require('vuex');
 var createEasyAccess = require('vuex-easy-access');
 var createEasyAccess__default = _interopDefault(createEasyAccess);
-var firebase = _interopDefault(require('firebase/compat/app'));
-require('firebase/compat/auth');
+var auth = require('firebase/auth');
 var isWhat = require('is-what');
 var copy = _interopDefault(require('copy-anything'));
 var mergeAnything = require('merge-anything');
@@ -17,9 +19,15 @@ var pathToProp = _interopDefault(require('path-to-prop'));
 var Firestore = require('firebase/firestore');
 var compareAnything = require('compare-anything');
 var findAndReplaceAnything = require('find-and-replace-anything');
-var auth$1 = require('firebase/auth');
 var filter = _interopDefault(require('filter-anything'));
-var app = require('firebase/app');
+
+var config = {
+    apiKey: 'AIzaSyDivMlXIuHqDFsTCCqBDTVL0h29xbltcL8',
+    authDomain: 'tests-firestore.firebaseapp.com',
+    databaseURL: 'https://tests-firestore.firebaseio.com',
+    projectId: 'tests-firestore',
+};
+var firebaseApp = app$1.initializeApp(config);
 
 function initialState() {
     return {
@@ -471,7 +479,7 @@ var user = {
                                 userEmail = 'test@test.com';
                             if (userNr === 2)
                                 userEmail = 'test2@test.com';
-                            return [4 /*yield*/, firebase.auth().signInWithEmailAndPassword(userEmail, 'test1234')];
+                            return [4 /*yield*/, auth.signInWithEmailAndPassword(auth.getAuth(firebaseApp), userEmail, 'test1234')];
                         case 1:
                             _b.sent();
                             return [2 /*return*/];
@@ -484,7 +492,7 @@ var user = {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_b) {
                     switch (_b.label) {
-                        case 0: return [4 /*yield*/, firebase.auth().signOut()];
+                        case 0: return [4 /*yield*/, auth.getAuth(firebaseApp).signOut()];
                         case 1:
                             _b.sent();
                             return [2 /*return*/];
@@ -3328,15 +3336,15 @@ function getValueFromPayloadPiece(payloadPiece) {
 function pluginActions (firestoreConfig) {
     var _this = this;
     var firebaseApp = firestoreConfig.FirebaseDependency, enablePersistence = firestoreConfig.enablePersistence, synchronizeTabs = firestoreConfig.synchronizeTabs;
-    var auth = auth$1.getAuth(firebaseApp);
+    var auth$1 = auth.getAuth(firebaseApp);
     return {
         setUserId: function (_a, userId) {
             var commit = _a.commit, getters = _a.getters;
             if (userId === undefined)
                 userId = null;
             // undefined cannot be synced to firestore
-            if (!userId && auth.currentUser) {
-                userId = auth.currentUser.uid;
+            if (!userId && auth$1.currentUser) {
+                userId = auth$1.currentUser.uid;
             }
             commit('SET_USER_ID', userId);
             if (getters.firestorePathComplete.includes('{userId}'))
@@ -3506,8 +3514,7 @@ function pluginActions (firestoreConfig) {
             var initialDocPrepared = getters.prepareInitialDocForInsert(initialDoc);
             // 2. Create a reference to the SF doc.
             return new Promise(function (resolve, reject) {
-                getters.dbRef
-                    .set(initialDocPrepared)
+                Firestore.setDoc(getters.dbRef, initialDocPrepared)
                     .then(function () {
                     if (state._conf.logging) {
                         var message = 'Initial doc succesfully inserted';
@@ -3743,7 +3750,7 @@ function pluginActions (firestoreConfig) {
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
-                                if (!!_doc.exists) return [3 /*break*/, 2];
+                                if (!!_doc.exists()) return [3 /*break*/, 2];
                                 // No initial doc found in docMode
                                 if (state._conf.sync.preventInitialDocInsertion)
                                     throw 'preventInitialDocInsertion';
@@ -3805,7 +3812,7 @@ function pluginActions (firestoreConfig) {
                             return [4 /*yield*/, Firestore.getDoc(ref)];
                         case 1:
                             _doc = _b.sent();
-                            if (!_doc.exists) {
+                            if (!_doc.exists()) {
                                 if (state._conf.logging) {
                                     throw "Doc with id \"" + id + "\" not found!";
                                 }
@@ -4088,7 +4095,7 @@ function pluginActions (firestoreConfig) {
                     // if (isLocalUpdate && updateAllOpenTabsWithLocalPersistence && document.hasFocus()) return promise
                     // if the remote document exists (this is always `true` when we are in
                     // collection mode)
-                    if (documentSnapshot.exists) {
+                    if (documentSnapshot.exists()) {
                         // the doc will actually already be initialized at this point unless it couldn't
                         // be loaded from cache (no persistence, or never previously loaded)
                         promisePayload.initialize = true;
@@ -4850,14 +4857,6 @@ function vuexEasyFirestore(easyFirestoreModule, _a) {
     };
 }
 
-var config = {
-    apiKey: 'AIzaSyDivMlXIuHqDFsTCCqBDTVL0h29xbltcL8',
-    authDomain: 'tests-firestore.firebaseapp.com',
-    databaseURL: 'https://tests-firestore.firebaseio.com',
-    projectId: 'tests-firestore',
-};
-var firebaseApp = app.initializeApp(config);
-
 var easyAccess = createEasyAccess__default({ vuexEasyFirestore: true });
 var easyFirestores = vuexEasyFirestore([
     pokemonBox,
@@ -4885,14 +4884,9 @@ var storeObj = {
     plugins: [easyFirestores, easyAccess],
 };
 
-Vue.use(Vuex);
-var store = new Vuex.Store(storeObj);
+var app = vue.createApp({});
+var store = vuex.createStore(storeObj);
+app.use(store);
 
-var stores = /*#__PURE__*/Object.freeze({
-  __proto__: null,
-  store: store
-});
-
-// import './firestore'
-
-module.exports = stores;
+exports.firebaseApp = firebaseApp;
+exports.store = store;

@@ -2972,8 +2972,7 @@ function pluginActions (firestoreConfig) {
             var initialDocPrepared = getters.prepareInitialDocForInsert(initialDoc);
             // 2. Create a reference to the SF doc.
             return new Promise(function (resolve, reject) {
-                getters.dbRef
-                    .set(initialDocPrepared)
+                Firestore.setDoc(getters.dbRef, initialDocPrepared)
                     .then(function () {
                     if (state._conf.logging) {
                         var message = 'Initial doc succesfully inserted';
@@ -3209,7 +3208,7 @@ function pluginActions (firestoreConfig) {
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
-                                if (!!_doc.exists) return [3 /*break*/, 2];
+                                if (!!_doc.exists()) return [3 /*break*/, 2];
                                 // No initial doc found in docMode
                                 if (state._conf.sync.preventInitialDocInsertion)
                                     throw 'preventInitialDocInsertion';
@@ -3271,7 +3270,7 @@ function pluginActions (firestoreConfig) {
                             return [4 /*yield*/, Firestore.getDoc(ref)];
                         case 1:
                             _doc = _b.sent();
-                            if (!_doc.exists) {
+                            if (!_doc.exists()) {
                                 if (state._conf.logging) {
                                     throw "Doc with id \"" + id + "\" not found!";
                                 }
@@ -3554,7 +3553,7 @@ function pluginActions (firestoreConfig) {
                     // if (isLocalUpdate && updateAllOpenTabsWithLocalPersistence && document.hasFocus()) return promise
                     // if the remote document exists (this is always `true` when we are in
                     // collection mode)
-                    if (documentSnapshot.exists) {
+                    if (documentSnapshot.exists()) {
                         // the doc will actually already be initialized at this point unless it couldn't
                         // be loaded from cache (no persistence, or never previously loaded)
                         promisePayload.initialize = true;

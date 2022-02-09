@@ -2,6 +2,7 @@ import test from 'ava'
 import { isArray } from 'is-what'
 import wait from './helpers/wait'
 import { store } from './helpers/index.cjs.js'
+import * as firestore from 'firebase/firestore'
 
 const char = store.state.mainCharacter
 const charRef = store.getters['mainCharacter/dbRef']
@@ -58,7 +59,7 @@ test('[DOC] set & delete: top lvl', async t => {
   await store.dispatch('mainCharacter/set', { items: ['Pokeball'] })
   t.deepEqual(char.items, ['Pokeball'])
   await wait(2)
-  docR = await charRef.get()
+  docR = await firestore.getDoc(charRef)
   doc = docR.data()
   t.deepEqual(doc.items, ['Pokeball'])
 
@@ -66,7 +67,7 @@ test('[DOC] set & delete: top lvl', async t => {
   await store.dispatch('mainCharacter/set', { newProp: 'Klappie' })
   t.is(char.newProp, 'Klappie')
   await wait(2)
-  docR = await charRef.get()
+  docR = await firestore.getDoc(charRef)
   doc = docR.data()
   t.is(doc.newProp, 'Klappie')
 
@@ -74,7 +75,7 @@ test('[DOC] set & delete: top lvl', async t => {
   await store.dispatch('mainCharacter/delete', 'newProp')
   t.falsy(char.newProp)
   await wait(2)
-  docR = await charRef.get()
+  docR = await firestore.getDoc(charRef)
   doc = docR.data()
   t.falsy(doc.newProp)
 
@@ -82,7 +83,7 @@ test('[DOC] set & delete: top lvl', async t => {
   await store.dispatch('mainCharacter/set', { newObjectProp: { deep: { object: true } } })
   t.deepEqual(char.newObjectProp, { deep: { object: true } })
   await wait(2)
-  docR = await charRef.get()
+  docR = await firestore.getDoc(charRef)
   doc = docR.data()
   t.deepEqual(doc.newObjectProp, { deep: { object: true } })
 
@@ -90,7 +91,7 @@ test('[DOC] set & delete: top lvl', async t => {
   await store.dispatch('mainCharacter/delete', 'newObjectProp')
   t.falsy(char.newObjectProp)
   await wait(3)
-  docR = await charRef.get()
+  docR = await firestore.getDoc(charRef)
   doc = docR.data()
   t.falsy(doc.newObjectProp)
 })
@@ -102,7 +103,7 @@ test('[DOC] set & delete: deep', async t => {
   store.dispatch('mainCharacter/set', { nestedInDoc: { a: { met: { de: 'aba' } } } })
   t.deepEqual(char.nestedInDoc, { a: { met: { de: 'aba' } } })
   await wait(2)
-  docR = await charRef.get()
+  docR = await firestore.getDoc(charRef)
   doc = docR.data()
   t.deepEqual(doc.nestedInDoc, { a: { met: { de: 'aba' } } })
 
@@ -110,7 +111,7 @@ test('[DOC] set & delete: deep', async t => {
   await store.dispatch('mainCharacter/set', { nestedInDoc: { a: { met: { de: 'ebe' } } } })
   t.deepEqual(char.nestedInDoc, { a: { met: { de: 'ebe' } } })
   await wait(2)
-  docR = await charRef.get()
+  docR = await firestore.getDoc(charRef)
   doc = docR.data()
   t.deepEqual(doc.nestedInDoc, { a: { met: { de: 'ebe' } } })
 
@@ -118,7 +119,7 @@ test('[DOC] set & delete: deep', async t => {
   await store.dispatch('mainCharacter/delete', 'nestedInDoc.a.met.de')
   t.deepEqual(char.nestedInDoc, { a: { met: {} } })
   await wait(2)
-  docR = await charRef.get()
+  docR = await firestore.getDoc(charRef)
   doc = docR.data()
   t.deepEqual(doc.nestedInDoc, { a: { met: {} } })
 
@@ -126,7 +127,7 @@ test('[DOC] set & delete: deep', async t => {
   store.dispatch('mainCharacter/delete', 'nestedInDoc')
   t.falsy(char.nestedInDoc)
   await wait(2)
-  docR = await charRef.get()
+  docR = await firestore.getDoc(charRef)
   doc = docR.data()
   t.falsy(doc.nestedInDoc)
 })
