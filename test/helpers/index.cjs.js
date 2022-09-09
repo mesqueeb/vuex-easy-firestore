@@ -3575,7 +3575,7 @@ function pluginActions (firestoreConfig) {
         },
         fetch: function (_a, parameters) {
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
-            if (parameters === void 0) { parameters = { clauses: {}, pathVariables: {} }; }
+            if (parameters === void 0) { parameters = { clauses: {}, pathVariables: {}, options: {} }; }
             if (!isWhat.isPlainObject(parameters))
                 parameters = {};
             /* COMPATIBILITY START
@@ -3669,7 +3669,7 @@ function pluginActions (firestoreConfig) {
                 }
                 // make fetch request
                 fRef
-                    .get()
+                    .get(parameters.options)
                     .then(function (querySnapshot) {
                     var docs = querySnapshot.docs;
                     if (docs.length === 0) {
@@ -3698,7 +3698,7 @@ function pluginActions (firestoreConfig) {
         fetchAndAdd: function (_a, parameters) {
             var _this = this;
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
-            if (parameters === void 0) { parameters = { clauses: {}, pathVariables: {} }; }
+            if (parameters === void 0) { parameters = { clauses: {}, pathVariables: {}, options: {} }; }
             if (!isWhat.isPlainObject(parameters))
                 parameters = {};
             /* COMPATIBILITY START
@@ -3734,7 +3734,7 @@ function pluginActions (firestoreConfig) {
                     console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
                 }
                 return getters.dbRef
-                    .get()
+                    .get(parameters.options)
                     .then(function (_doc) { return __awaiter(_this, void 0, void 0, function () {
                     var message, id, doc;
                     return __generator(this, function (_a) {
@@ -3786,8 +3786,9 @@ function pluginActions (firestoreConfig) {
                 return querySnapshot;
             });
         },
-        fetchById: function (_a, id) {
+        fetchById: function (_a, id, options) {
             var dispatch = _a.dispatch, getters = _a.getters, state = _a.state;
+            if (options === void 0) { options = {}; }
             return __awaiter(this, void 0, void 0, function () {
                 var ref, _doc, doc, e_1;
                 return __generator(this, function (_b) {
@@ -3799,7 +3800,7 @@ function pluginActions (firestoreConfig) {
                             if (!getters.collectionMode)
                                 throw 'only-in-collection-mode';
                             ref = getters.dbRef;
-                            return [4 /*yield*/, ref.doc(id).get()];
+                            return [4 /*yield*/, ref.doc(id).get(options)];
                         case 1:
                             _doc = _b.sent();
                             if (!_doc.exists) {
