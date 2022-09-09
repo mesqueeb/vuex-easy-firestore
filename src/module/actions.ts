@@ -338,7 +338,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         }
         // make fetch request
         fRef
-          .get(options)
+          .get(parameters.options)
           .then(querySnapshot => {
             const docs = querySnapshot.docs
             if (docs.length === 0) {
@@ -405,7 +405,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
           )
         }
         return getters.dbRef
-          .get(options)
+          .get(parameters.options)
           .then(async _doc => {
             if (!_doc.exists) {
               // No initial doc found in docMode
@@ -475,9 +475,9 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         id,
         doc = {},
       }: {
-        change: 'added' | 'removed' | 'modified'
-        id: string
-        doc: AnyObject
+        change: 'added' | 'removed' | 'modified';
+        id: string;
+        doc: AnyObject;
       }
     ) {
       const store = this
@@ -701,7 +701,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         streamingStart()
         return initialPromise
       }
-      
+
       // const updateAllOpenTabsWithLocalPersistence = enablePersistence && synchronizeTabs
 
       /**
