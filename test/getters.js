@@ -1,8 +1,7 @@
 import test from 'ava'
 import { isDate } from 'is-what'
 // import wait from './helpers/wait'
-import firebase from 'firebase/compat/app'
-import 'firebase/compat/firestore'
+import { deleteField as firestoreDeleteField } from 'firebase/firestore'
 import { store } from './helpers/index.cjs.js'
 
 const box = store.state.pokemonBox
@@ -18,13 +17,13 @@ test('[prepareForPatch] collection', async t => {
   // prepareForPatch
   res = store.getters['pokemonBox/prepareForPatch'](['1', '2'], {
     body: 'new',
-    del: firebase.firestore.FieldValue.delete(),
+    del: firestoreDeleteField(),
   })
   t.deepEqual(Object.keys(res), ['1', '2'])
   t.is(res['1'].body, 'new')
   t.is(res['2'].body, 'new')
-  t.is(res['1'].del._delegate._methodName, 'FieldValue.delete')
-  t.is(res['2'].del._delegate._methodName, 'FieldValue.delete')
+  t.is(res['1'].del._methodName, 'deleteField')
+  t.is(res['2'].del._methodName, 'deleteField')
   t.is(res['1'].id, '1')
   t.is(res['2'].id, '2')
   t.is(res['1'].updated_by, 'charlie')
@@ -34,17 +33,17 @@ test('[prepareForPatch] collection', async t => {
   // prepareForPropDeletion
   res = store.getters['pokemonBox/prepareForPropDeletion']('1.pathdel.a')
   t.is(res['1'].id, '1')
-  t.is(res['1']['pathdel.a']._delegate._methodName, 'FieldValue.delete')
+  t.is(res['1']['pathdel.a']._methodName, 'deleteField')
   t.is(res['1'].updated_by, 'charlie')
   t.is(isDate(res['1'].updated_at), true)
   // deeper delete
   res = store.getters['pokemonBox/prepareForPropDeletion']('1.a.met.de.aba')
-  t.is(res['1']['a.met.de.aba']._delegate._methodName, 'FieldValue.delete')
+  t.is(res['1']['a.met.de.aba']._methodName, 'deleteField')
   // different fillables & guard
   box._conf.sync.guard = ['updated_at', 'updated_by', 'id']
   res = store.getters['pokemonBox/prepareForPropDeletion']('1.pathdel.a')
   t.is(res['1'].id, '1') // id stays even if it's added to guard
-  t.is(res['1']['pathdel.a']._delegate._methodName, 'FieldValue.delete')
+  t.is(res['1']['pathdel.a']._methodName, 'deleteField')
   t.is(res['1'].updated_by, undefined)
   t.is(res['1'].updated_at, undefined)
 })
@@ -58,25 +57,25 @@ test('[prepareForPatch] doc', async t => {
   const docModeId = store.getters['mainCharacter/docModeId']
   res = store.getters['mainCharacter/prepareForPatch']([], {
     body: 'new',
-    del: firebase.firestore.FieldValue.delete(),
+    del: firestoreDeleteField(),
   })
   t.deepEqual(Object.keys(res), [docModeId])
   t.is(res[docModeId].body, 'new')
-  t.is(res[docModeId].del._delegate._methodName, 'FieldValue.delete')
+  t.is(res[docModeId].del._methodName, 'deleteField')
   t.is(res[docModeId].id, docModeId)
   t.is(res[docModeId].updated_by, 'charlie')
   t.is(isDate(res[docModeId].updated_at), true)
   // prepareForPropDeletion
   res = store.getters['mainCharacter/prepareForPropDeletion']('1.pathdel.a')
   t.is(res[docModeId].id, docModeId)
-  t.is(res[docModeId]['1.pathdel.a']._delegate._methodName, 'FieldValue.delete')
+  t.is(res[docModeId]['1.pathdel.a']._methodName, 'deleteField')
   t.is(res[docModeId].updated_by, 'charlie')
   t.is(isDate(res[docModeId].updated_at), true)
   // different fillables & guard
   char._conf.sync.guard = ['updated_at', 'updated_by', 'id']
   res = store.getters['mainCharacter/prepareForPropDeletion']('1.pathdel.a')
   t.is(res[docModeId].id, docModeId) // id stays even if it's added to guard
-  t.is(res[docModeId]['1.pathdel.a']._delegate._methodName, 'FieldValue.delete')
+  t.is(res[docModeId]['1.pathdel.a']._methodName, 'deleteField')
   t.is(res[docModeId].updated_by, undefined)
   t.is(res[docModeId].updated_at, undefined)
 })

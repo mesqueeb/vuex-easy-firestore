@@ -14,7 +14,7 @@
 export default function (ms: number): { done: any; refresh: () => {} } {
   let startTime = Date.now()
   const done = new Promise((resolve, reject) => {
-    const interval = setInterval(_ => {
+    const interval = setInterval((_) => {
       const now = Date.now()
       const deltaT = now - startTime
       if (deltaT >= ms) {

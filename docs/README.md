@@ -4,12 +4,12 @@ home: true
 actionText: Get Started →
 actionLink: /setup
 features:
-- title: Simplicity First
-  details: Minimal setup to get a vuex-module synced with Firestore automatically.
-- title: Powerful
-  details: Easy to use features include filtering, hooks, default values, automatic Firestore Timestamp conversion & much more.
-- title: Performant
-  details: Automatic 2-way sync is fully optimised through api call batches.
+  - title: Simplicity First
+    details: Minimal setup to get a vuex-module synced with Firestore automatically.
+  - title: Powerful
+    details: Easy to use features include filtering, hooks, default values, automatic Firestore Timestamp conversion & much more.
+  - title: Performant
+    details: Automatic 2-way sync is fully optimised through api call batches.
 footer: MIT Licensed | Copyright © 2018-present Luca Ban - Mesqueeb
 ---
 

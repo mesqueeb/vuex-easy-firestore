@@ -47,7 +47,7 @@ export default function (): IState {
         rejects: [],
       },
       fetched: {},
-      stopPatchingTimeout: null
-    }
+      stopPatchingTimeout: null,
+    },
   }
 }

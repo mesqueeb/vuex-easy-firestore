@@ -3,6 +3,7 @@ import { isNumber } from 'is-what'
 import wait from './helpers/wait'
 import { store } from './helpers/index.cjs.js'
 import { increment } from '../src/index'
+import * as firestore from 'firebase/firestore'
 
 const char = store.state.mainCharacter
 const charRef = store.getters['mainCharacter/dbRef']
@@ -21,7 +22,7 @@ test('[COLLECTION] increment', async t => {
   store.dispatch('mainCharacter/patch', { stepCounter: increment(10) })
   t.is(char.stepCounter, 10)
   await wait(2)
-  docR = await charRef.get()
+  docR = await firestore.getDoc(charRef)
   doc = docR.data()
   t.is(doc.stepCounter, 10)
   store.dispatch('mainCharacter/patch', { stepCounter: increment(2) })
@@ -29,7 +30,7 @@ test('[COLLECTION] increment', async t => {
   store.dispatch('mainCharacter/patch', { stepCounter: increment(2) })
   t.is(char.stepCounter, 16)
   await wait(2)
-  docR = await charRef.get()
+  docR = await firestore.getDoc(charRef)
   doc = docR.data()
   t.is(doc.stepCounter, 16)
 })

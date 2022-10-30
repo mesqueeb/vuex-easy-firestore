@@ -54,7 +54,8 @@ firebase.auth = function () {
   return { currentUser: { uid: 'Satoshi' } }
 }
 
-// const a = firebase.firestore().collection('pokemonBoxes/Satoshi/pokemon')
+// import * as firestore from 'firebase/firestore'
+// const a = firestore.collection(firestore.getFirestore(firebaseApp), 'pokemonBoxes/Satoshi/pokemon'))
 
 // a.get().then(querySnapshot => {
 //   querySnapshot.forEach(doc => {

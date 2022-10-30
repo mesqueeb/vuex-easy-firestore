@@ -1,8 +1,7 @@
 import test from 'ava'
 import wait from './helpers/wait'
-import { store } from './helpers/index.cjs.js'
-import firebase from 'firebase/compat/app'
-import 'firebase/compat/auth'
+import { store, firebaseApp } from './helpers/index.cjs.js'
+import { getAuth } from 'firebase/auth'
 
 const state = store.state.user
 const getters = store.getters
@@ -10,12 +9,12 @@ const getters = store.getters
 test('check {userId} on change users with logout', async t => {
   t.is(state._sync.userId, null)
   t.is(state._sync.signedIn, false)
-  t.is(firebase.auth().currentUser, null)
+  t.is(getAuth(firebaseApp).currentUser, null)
   await store.dispatch('user/loginWithEmail', 1)
   // await wait(3) don't wait
   t.is(state._sync.userId, null)
   t.is(state._sync.signedIn, false)
-  t.is(firebase.auth().currentUser.uid, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
+  t.is(getAuth(firebaseApp).currentUser.uid, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
   // opening db
   t.is(getters['user/firestorePathComplete'], 'user/{userId}')
   await store.dispatch('user/openDBChannel').catch(console.error)
@@ -23,18 +22,18 @@ test('check {userId} on change users with logout', async t => {
   await wait(3)
   t.is(state._sync.userId, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
   t.is(state._sync.signedIn, true)
-  t.is(firebase.auth().currentUser.uid, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
+  t.is(getAuth(firebaseApp).currentUser.uid, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
   // SUCCESS, let's try again
   await store.dispatch('user/logout')
   await store.dispatch('user/closeDBChannel', { clearModule: true })
   await wait(3)
   t.is(state._sync.userId, null)
   t.is(state._sync.signedIn, false)
-  t.is(firebase.auth().currentUser, null)
+  t.is(getAuth(firebaseApp).currentUser, null)
   await store.dispatch('user/loginWithEmail', 2)
   // await wait(3) don't wait
   // new ID set
-  t.is(firebase.auth().currentUser.uid, 'psqOfK5yLYVTT0LDTfuZUTxuYrE2')
+  t.is(getAuth(firebaseApp).currentUser.uid, 'psqOfK5yLYVTT0LDTfuZUTxuYrE2')
   // path not updated yet
   t.is(state._sync.signedIn, false)
   t.is(state._sync.userId, null)
@@ -46,13 +45,13 @@ test('check {userId} on change users with logout', async t => {
   await wait(3)
   t.is(state._sync.userId, 'psqOfK5yLYVTT0LDTfuZUTxuYrE2')
   t.is(state._sync.signedIn, true)
-  t.is(firebase.auth().currentUser.uid, 'psqOfK5yLYVTT0LDTfuZUTxuYrE2')
+  t.is(getAuth(firebaseApp).currentUser.uid, 'psqOfK5yLYVTT0LDTfuZUTxuYrE2')
   // })
   await wait(5)
   await store.dispatch('user/loginWithEmail', 1)
   // await wait(3) don't wait
   // new ID set
-  t.is(firebase.auth().currentUser.uid, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
+  t.is(getAuth(firebaseApp).currentUser.uid, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
   // path not updated yet
   t.is(state._sync.signedIn, true)
   t.is(state._sync.userId, 'psqOfK5yLYVTT0LDTfuZUTxuYrE2')
@@ -64,17 +63,17 @@ test('check {userId} on change users with logout', async t => {
   await wait(3)
   t.is(state._sync.userId, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
   t.is(state._sync.signedIn, true)
-  t.is(firebase.auth().currentUser.uid, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
+  t.is(getAuth(firebaseApp).currentUser.uid, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
 })
 // test('check {userId} on change users without logout', async t => {
 //   t.is(state._sync.userId, null)
 //   t.is(state._sync.signedIn, false)
-//   t.is(firebase.auth().currentUser, null)
+//   t.is(getAuth(firebaseApp).currentUser, null)
 //   await store.dispatch('user/loginWithEmail', 1)
 //   // await wait(3) don't wait
 //   t.is(state._sync.userId, null)
 //   t.is(state._sync.signedIn, false)
-//   t.is(firebase.auth().currentUser.uid, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
+//   t.is(getAuth(firebaseApp).currentUser.uid, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
 //   // opening db
 //   t.is(getters['user/firestorePathComplete'], 'user/{userId}')
 //   store.dispatch('user/openDBChannel')
@@ -82,20 +81,20 @@ test('check {userId} on change users with logout', async t => {
 //   await wait(3)
 //   t.is(state._sync.userId, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
 //   t.is(state._sync.signedIn, true)
-//   t.is(firebase.auth().currentUser.uid, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
+//   t.is(getAuth(firebaseApp).currentUser.uid, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
 //   // SUCCESS, let's try again
 //   await wait(3)
 //   await store.dispatch('user/loginWithEmail', 2)
 //   // await wait(3) don't wait
 //   t.is(state._sync.userId, 'LH3AIbCFMPMeeLclvRkmXghIaOx1')
 //   t.is(state._sync.signedIn, true)
-//   t.is(firebase.auth().currentUser.uid, 'psqOfK5yLYVTT0LDTfuZUTxuYrE2')
+//   t.is(getAuth(firebaseApp).currentUser.uid, 'psqOfK5yLYVTT0LDTfuZUTxuYrE2')
 //   t.is(getters['user/firestorePathComplete'], 'user/psqOfK5yLYVTT0LDTfuZUTxuYrE2')
-//   // ↳ already replaced because firestorePathComplete uses firebase.auth().currentUser.uid
+//   // ↳ already replaced because firestorePathComplete uses getAuth(firebaseApp).currentUser.uid
 //   store.dispatch('user/openDBChannel')
 //   t.is(getters['user/firestorePathComplete'], 'user/psqOfK5yLYVTT0LDTfuZUTxuYrE2')
 //   await wait(3)
 //   t.is(state._sync.userId, 'psqOfK5yLYVTT0LDTfuZUTxuYrE2')
 //   t.is(state._sync.signedIn, true)
-//   t.is(firebase.auth().currentUser.uid, 'psqOfK5yLYVTT0LDTfuZUTxuYrE2')
+//   t.is(getAuth(firebaseApp).currentUser.uid, 'psqOfK5yLYVTT0LDTfuZUTxuYrE2')
 // })

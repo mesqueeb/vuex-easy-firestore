@@ -1,6 +1,7 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+import { createApp } from 'vue'
+import { createStore } from 'vuex'
 import storeObj from './store'
 
-Vue.use(Vuex)
-export const store = new Vuex.Store(storeObj)
+const app = createApp({})
+export const store = createStore(storeObj)
+app.use(store)

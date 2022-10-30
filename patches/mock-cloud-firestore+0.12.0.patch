@@ -1,0 +1,92 @@
+diff --git a/node_modules/mock-cloud-firestore/lib/mock-cloud-firestore.js b/node_modules/mock-cloud-firestore/lib/mock-cloud-firestore.js
+index 253baea..6a5b7b1 100644
+--- a/node_modules/mock-cloud-firestore/lib/mock-cloud-firestore.js
++++ b/node_modules/mock-cloud-firestore/lib/mock-cloud-firestore.js
+@@ -3,34 +3,34 @@
+ class FieldValue {
+   arrayUnion(...args) {
+     return {
+-      _methodName: 'FieldValue.arrayUnion',
++      _methodName: 'arrayUnion',
+       _elements: [...args]
+     };
+   }
+ 
+   arrayRemove(...args) {
+     return {
+-      _methodName: 'FieldValue.arrayRemove',
++      _methodName: 'arrayRemove',
+       _elements: [...args]
+     };
+   }
+ 
+   delete() {
+     return {
+-      _methodName: 'FieldValue.delete'
++      _methodName: 'deleteField'
+     };
+   }
+ 
+   increment(operand) {
+     return {
+-      _methodName: 'FieldValue.increment',
++      _methodName: 'increment',
+       _operand: operand
+     };
+   }
+ 
+   serverTimestamp() {
+     return {
+-      _methodName: 'FieldValue.serverTimestamp'
++      _methodName: 'serverTimestamp'
+     };
+   }
+ 
+@@ -208,18 +208,18 @@ function validateValue(value, option) {
+       _methodName: methodName
+     } = value;
+ 
+-    if (methodName === 'FieldValue.delete') {
++    if (methodName === 'deleteField') {
+       if (option.type === 'add' || option.type === 'set:merge-false') {
+-        throw new Error(`Function DocumentReference.set() called with invalid data. FieldValue.delete() cannot be used with set() unless you pass {merge:true} (found in field ${option.field})`);
++        throw new Error(`Function DocumentReference.set() called with invalid data. deleteField() cannot be used with set() unless you pass {merge:true} (found in field ${option.field})`);
+       }
+ 
+       if (option.type === 'update' && option.isInObject) {
+-        throw new Error(`Function DocumentReference.update() called with invalid data. FieldValue.delete() can only appear at the top level of your update data (found in field ${option.field})`);
++        throw new Error(`Function DocumentReference.update() called with invalid data. deleteField() can only appear at the top level of your update data (found in field ${option.field})`);
+       }
+     }
+ 
+-    if (methodName === 'FieldValue.increment' && option.type === 'set:merge-false') {
+-      throw new Error(`Function DocumentReference.set() called with invalid data. FieldValue.increment() cannot be used with set() unless you pass {merge:true} (found in field ${option.field})`);
++    if (methodName === 'increment' && option.type === 'set:merge-false') {
++      throw new Error(`Function DocumentReference.set() called with invalid data. increment() cannot be used with set() unless you pass {merge:true} (found in field ${option.field})`);
+     }
+ 
+     if (option.isInArray) {
+@@ -267,19 +267,19 @@ function processFieldValue(newValue, oldValue) {
+     _methodName: methodName
+   } = newValue;
+ 
+-  if (methodName === 'FieldValue.serverTimestamp') {
++  if (methodName === 'serverTimestamp') {
+     return new Date();
+   }
+ 
+-  if (methodName === 'FieldValue.arrayUnion') {
++  if (methodName === 'arrayUnion') {
+     return processArrayUnion(newValue, oldValue);
+   }
+ 
+-  if (methodName === 'FieldValue.arrayRemove') {
++  if (methodName === 'arrayRemove') {
+     return processArrayRemove(newValue, oldValue);
+   }
+ 
+-  if (methodName === 'FieldValue.increment') {
++  if (methodName === 'increment') {
+     return processIncrement(newValue, oldValue);
+   }
+ 

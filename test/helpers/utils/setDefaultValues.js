@@ -37,10 +37,12 @@ function convertTimestamps(originVal, targetVal) {
  * @returns {AnyObject} the new object
  */
 function setDefaultValues (obj, defaultValues) {
-    if (!isWhat.isPlainObject(defaultValues))
+    if (!isWhat.isPlainObject(defaultValues)) {
         console.error('[vuex-easy-firestore] Trying to merge target:', obj, 'onto a non-object (defaultValues):', defaultValues);
-    if (!isWhat.isPlainObject(obj))
+    }
+    if (!isWhat.isPlainObject(obj)) {
         console.error('[vuex-easy-firestore] Trying to merge a non-object:', obj, 'onto the defaultValues:', defaultValues);
+    }
     var result = mergeAnything.merge({ extensions: [convertTimestamps] }, defaultValues, obj);
     return findAndReplaceAnything.findAndReplace(result, '%convertTimestamp%', null, {
         onlyPlainObjects: true,

@@ -1,7 +1,6 @@
 import test from 'ava'
 import { store } from './helpers/index.cjs.js'
-import firebase from 'firebase/compat/app'
-import 'firebase/compat/firestore'
+import * as firestore from 'firebase/firestore'
 
 const char = store.state.mainCharacter
 
@@ -42,7 +41,7 @@ test('RESET_VUEX_EASY_FIRESTORE_STATE', t => {
     syncStack: {
       inserts: [{ a: true }],
       updates: { a: true },
-      propDeletions: { '2': { a: firebase.firestore.FieldValue.delete() } },
+      propDeletions: { '2': { a: firestore.deleteField() } },
       deletions: ['2'],
       debounceTimer: true,
     },

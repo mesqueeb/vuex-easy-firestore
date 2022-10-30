@@ -11,7 +11,7 @@ import { isPlainObject, isString } from 'is-what'
  * @param {(object | any[] | string)} [fullPayload] (optional - for error handling) the full payload on which each was `getId()` called
  * @returns {string} the id
  */
-export function getId (
+export function getId(
   payloadPiece: object | string,
   conf?: object,
   path?: string,
@@ -32,7 +32,7 @@ export function getId (
  * @param {*} payloadPiece
  * @returns {*} the value
  */
-export function getValueFromPayloadPiece (payloadPiece: any): any {
+export function getValueFromPayloadPiece(payloadPiece: any): any {
   if (
     isPlainObject(payloadPiece) &&
     !payloadPiece.id &&
