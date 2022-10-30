@@ -3683,7 +3683,7 @@ function pluginActions (firestoreConfig) {
                     return resolve(true);
                 }
                 // make fetch request
-                fRef
+                firestore.getDocs(fRef)
                     .then(function (querySnapshot) {
                     var docs = querySnapshot.docs;
                     if (docs.length === 0) {

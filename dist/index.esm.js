@@ -4,7 +4,7 @@ import copy from 'copy-anything';
 import { merge } from 'merge-anything';
 import flatten, { flattenObject } from 'flatten-anything';
 import pathToProp from 'path-to-prop';
-import { arrayUnion as arrayUnion$1, arrayRemove as arrayRemove$1, increment as increment$1, doc, setDoc, writeBatch, getFirestore, where, orderBy, query, limit, getDoc, onSnapshot, collection, deleteField } from 'firebase/firestore';
+import { arrayUnion as arrayUnion$1, arrayRemove as arrayRemove$1, increment as increment$1, doc, setDoc, writeBatch, getFirestore, where, orderBy, query, limit, getDocs, getDoc, onSnapshot, collection, deleteField } from 'firebase/firestore';
 import { compareObjectProps } from 'compare-anything';
 import { findAndReplace, findAndReplaceIf } from 'find-and-replace-anything';
 import { getAuth } from 'firebase/auth';
@@ -3134,7 +3134,7 @@ function pluginActions (firestoreConfig) {
                     return resolve(true);
                 }
                 // make fetch request
-                fRef
+                getDocs(fRef)
                     .then(function (querySnapshot) {
                     var docs = querySnapshot.docs;
                     if (docs.length === 0) {
