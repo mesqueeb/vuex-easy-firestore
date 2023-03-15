@@ -2416,7 +2416,7 @@ function pluginMutations (userState) {
         },
         RESET_VUEX_EASY_FIRESTORE_STATE: function (state) {
             // unsubscribe all DBChannel listeners:
-            Object.keys(state._sync.unsubscribe).forEach(function (unsubscribe) {
+            Object.values(state._sync.unsubscribe).forEach(function (unsubscribe) {
                 if (isWhat.isFunction(unsubscribe))
                     unsubscribe();
             });
