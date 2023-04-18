@@ -180,7 +180,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
           .set(initialDocPrepared)
           .then(() => {
             if (state._conf.logging) {
-              const message = 'Initial doc succesfully inserted'
+              const message = 'Initial doc successfully inserted'
               console.log(
                 `%c [vuex-easy-firestore] ${message}; for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`,
                 'color: SeaGreen'
@@ -1150,7 +1150,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
       }
       return storeUpdateFn(ids)
     },
-    _stopPatching ({ state, commit }) {
+    _stopPatching ({ state }) {
       if (state._sync.stopPatchingTimeout) {
         clearTimeout(state._sync.stopPatchingTimeout)
       }
@@ -1158,7 +1158,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         state._sync.patching = false
       }, 300)
     },
-    _startPatching ({ state, commit }) {
+    _startPatching ({ state }) {
       if (state._sync.stopPatchingTimeout) {
         clearTimeout(state._sync.stopPatchingTimeout)
       }
