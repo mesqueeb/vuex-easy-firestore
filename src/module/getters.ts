@@ -7,6 +7,8 @@ import { getPathVarMatches } from '../utils/apiHelpers'
 import setDefaultValues from '../utils/setDefaultValues'
 import { AnyObject } from '../declarations'
 import error from './errors'
+import firebase from 'firebase/compat'
+import FieldValue = firebase.firestore.FieldValue;
 
 export type IPluginGetters = {
   firestorePathComplete: (state: any, getters?: any, rootState?: any, rootGetters?: any) => string
@@ -145,11 +147,13 @@ export default function (firebase: any): AnyObject {
         id = getters.docModeId
         cleanedPath = path
       }
-      cleanedPatchData[cleanedPath] = firebase.firestore.FieldValue.delete()
+
+      cleanedPatchData[cleanedPath] = FieldValue.delete()
       cleanedPatchData.id = id
+
       return { [id]: cleanedPatchData }
     },
-    prepareForInsert: (state, getters, rootState, rootGetters) => (items = []) => {
+    prepareForInsert: (state, getters) => (items = []) => {
       // add fillable and guard defaults
       return items.reduce((carry, item) => {
         // set default fields

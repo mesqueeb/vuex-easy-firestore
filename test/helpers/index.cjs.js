@@ -18,6 +18,7 @@ var pathToProp = _interopDefault(require('path-to-prop'));
 var compareAnything = require('compare-anything');
 var findAndReplaceAnything = require('find-and-replace-anything');
 var filter = _interopDefault(require('filter-anything'));
+var firebase$2 = _interopDefault(require('firebase/compat'));
 
 function initialState() {
     return {
@@ -3505,7 +3506,7 @@ function pluginActions (firestoreConfig) {
                     .set(initialDocPrepared)
                     .then(function () {
                     if (state._conf.logging) {
-                        var message = 'Initial doc succesfully inserted';
+                        var message = 'Initial doc successfully inserted';
                         console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: SeaGreen');
                     }
                     resolve(true);
@@ -4445,7 +4446,7 @@ function pluginActions (firestoreConfig) {
             return storeUpdateFn(ids);
         },
         _stopPatching: function (_a) {
-            var state = _a.state, commit = _a.commit;
+            var state = _a.state;
             if (state._sync.stopPatchingTimeout) {
                 clearTimeout(state._sync.stopPatchingTimeout);
             }
@@ -4454,7 +4455,7 @@ function pluginActions (firestoreConfig) {
             }, 300);
         },
         _startPatching: function (_a) {
-            var state = _a.state, commit = _a.commit;
+            var state = _a.state;
             if (state._sync.stopPatchingTimeout) {
                 clearTimeout(state._sync.stopPatchingTimeout);
             }
@@ -4463,6 +4464,7 @@ function pluginActions (firestoreConfig) {
     };
 }
 
+var FieldValue = firebase$2.firestore.FieldValue;
 /**
  * A function returning the getters object
  *
@@ -4581,11 +4583,11 @@ function pluginGetters (firebase) {
                 id = getters.docModeId;
                 cleanedPath = path;
             }
-            cleanedPatchData[cleanedPath] = firebase.firestore.FieldValue.delete();
+            cleanedPatchData[cleanedPath] = FieldValue.delete();
             cleanedPatchData.id = id;
             return _a = {}, _a[id] = cleanedPatchData, _a;
         }; },
-        prepareForInsert: function (state, getters, rootState, rootGetters) { return function (items) {
+        prepareForInsert: function (state, getters) { return function (items) {
             if (items === void 0) { items = []; }
             // add fillable and guard defaults
             return items.reduce(function (carry, item) {
