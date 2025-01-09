@@ -78,7 +78,7 @@ export default function (userState: object): AnyObject {
     },
     RESET_VUEX_EASY_FIRESTORE_STATE(state) {
       // unsubscribe all DBChannel listeners:
-      Object.values(state._sync.unsubscribe).forEach(unsubscribe => {
+      Object.values(state._sync.unsubscribe).forEach((unsubscribe) => {
         if (isFunction(unsubscribe)) unsubscribe()
       })
       const self = this

@@ -358,8 +358,8 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
           .then((querySnapshot) => {
             const docs = querySnapshot.docs
             if (docs.length === 0) {
-              state._sync.fetched[identifier].done = true;
-              (querySnapshot as any).done  = true
+              state._sync.fetched[identifier].done = true
+              ;(querySnapshot as any).done = true
               return resolve(querySnapshot)
             }
             if (docs.length < limit) {
@@ -490,9 +490,9 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         id,
         doc = {},
       }: {
-        change: 'added' | 'removed' | 'modified';
-        id: string;
-        doc: AnyObject;
+        change: 'added' | 'removed' | 'modified'
+        id: string
+        doc: AnyObject
       }
     ) {
       const store = this
