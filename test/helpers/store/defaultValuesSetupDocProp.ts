@@ -1,14 +1,14 @@
 import { defaultMutations } from 'vuex-easy-access'
 
-function initialState () {
+function initialState() {
   return {
     NOT: false,
     prop: {
       defaultVal1: true,
       nestedDefaultVal: {
-        type1: 'sun'
+        type1: 'sun',
       },
-    }
+    },
   }
 }
 
@@ -22,7 +22,7 @@ export default {
     defaultValues: {
       defaultVal2: true,
       nestedDefaultVal: {
-        type2: 'moon'
+        type2: 'moon',
       },
     },
   },

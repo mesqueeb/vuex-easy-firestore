@@ -1,8 +1,7 @@
 import { defaultMutations } from 'vuex-easy-access'
 
-function initialState () {
-  return {
-  }
+function initialState() {
+  return {}
 }
 
 export default {

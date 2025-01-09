@@ -1,11 +1,12 @@
 {
   "name": "vuex-easy-firestore",
-  "version": "1.37.2",
+  "version": "2.0.0",
   "description": "Easy coupling of firestore and a vuex module. 2-way sync with 0 boilerplate!",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "typings": "types/index.d.ts",
   "scripts": {
+    "prepare": "patch-package",
     "test": "ava --verbose",
     "test--only": "ava --verbose --match='*only:*'",
     "rollup": "rollup -c build/rollup.js",
@@ -13,7 +14,8 @@
     "build": "npm run rollup && npm run test",
     "docs:dev": "vuepress dev docs",
     "docs:build": "vuepress build docs",
-    "docs:deploy": "./docs/.vuepress/deploy.sh"
+    "docs:deploy": "./docs/.vuepress/deploy.sh",
+    "lint:prettier": "prettier --write --loglevel warn \"**/*.{ts,md}\""
   },
   "repository": {
     "type": "git",
@@ -47,11 +49,11 @@
     "lodash-es": "^4.17.15",
     "merge-anything": "^2.4.4",
     "path-to-prop": "0.0.3",
-    "vuex-easy-access": "^3.1.8"
+    "vuex-easy-access": "github:adrianjost/vuex-easy-access#master"
   },
   "devDependencies": {
     "@vue/eslint-config-standard": "^4.0.0",
-    "@vuepress/plugin-google-analytics": "^1.5.0",
+    "@vuepress/plugin-google-analytics": "^2.0.0-beta.35",
     "ava": "^3.8.2",
     "babel-eslint": "^10.1.0",
     "eslint": "^5.16.0",
@@ -60,14 +62,16 @@
     "esm": "^3.2.25",
     "firebase": "^9.0.0",
     "mock-cloud-firestore": "^0.12.0",
+    "patch-package": "^6.4.7",
+    "prettier": "^2.5.1",
     "rollup": "^1.32.1",
     "rollup-plugin-node-resolve": "^4.2.4",
     "rollup-plugin-typescript2": "^0.27.1",
     "ts-node": "^8.10.1",
     "typescript": "^3.9.3",
-    "vue": "^2.6.11",
-    "vuepress": "^1.5.0",
-    "vuex": "^3.4.0"
+    "vue": "^3.2.30",
+    "vuepress": "^2.0.0-beta.35",
+    "vuex": "^4.0.2"
   },
   "peerDependencies": {
     "firebase": "^9.0.0"

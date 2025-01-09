@@ -5,20 +5,20 @@ Here is a list with all possible config options. **Only the top 4 properties are
 ```js
 const firestoreModule = {
   firestorePath: '',
-    // The path to a "collection" or single "document" in firestore.
-    // You can use `{userId}` which will be replaced with the user Id.
+  // The path to a "collection" or single "document" in firestore.
+  // You can use `{userId}` which will be replaced with the user Id.
   firestoreRefType: '',
-    // `'collection'` or `'doc'`. Depending on your `firestorePath`.
+  // `'collection'` or `'doc'`. Depending on your `firestorePath`.
   moduleName: '',
-    // The module name. eg. `'userItems'`
-    // Can also be a nested module, eg. `'user/items'`
+  // The module name. eg. `'userItems'`
+  // Can also be a nested module, eg. `'user/items'`
   statePropName: '',
-    // The name of the property where the docs or doc will be synced to.
-    // always best to set to `'data'` imo!
-    // If left blank it will be synced on the state of the module.
+  // The name of the property where the docs or doc will be synced to.
+  // always best to set to `'data'` imo!
+  // If left blank it will be synced on the state of the module.
 
   namespaced: true,
-    // this is automatically added! See more info at: https://vuex.vuejs.org/guide/modules.html#namespacing
+  // this is automatically added! See more info at: https://vuex.vuejs.org/guide/modules.html#namespacing
 
   // EVERYTHING BELOW IS OPTIONAL (only include what you use)
   // Related to the 2-way sync:
@@ -30,22 +30,40 @@ const firestoreModule = {
     defaultValues: {},
     debounceTimerMs: 1000,
     // HOOKS for local changes:
-    insertHook: function (updateStore, doc, store) { return updateStore(doc) },
-    patchHook: function (updateStore, doc, store) { return updateStore(doc) },
-    deleteHook: function (updateStore, id, store) { return updateStore(id) },
+    insertHook: function (updateStore, doc, store) {
+      return updateStore(doc)
+    },
+    patchHook: function (updateStore, doc, store) {
+      return updateStore(doc)
+    },
+    deleteHook: function (updateStore, id, store) {
+      return updateStore(id)
+    },
     // for batches
-    insertBatchHook: function (updateStore, docs, store) { return updateStore(docs) },
-    patchBatchHook: function (updateStore, doc, ids, store) { return updateStore(doc, ids) },
-    deleteBatchHook: function (updateStore, ids, store) { return updateStore(ids) },
+    insertBatchHook: function (updateStore, docs, store) {
+      return updateStore(docs)
+    },
+    patchBatchHook: function (updateStore, doc, ids, store) {
+      return updateStore(doc, ids)
+    },
+    deleteBatchHook: function (updateStore, ids, store) {
+      return updateStore(ids)
+    },
   },
 
   // When docs on the server side are changed:
   serverChange: {
     convertTimestamps: {},
     // HOOKS for changes on SERVER:
-    addedHook: function (updateStore, doc, id, store) { return updateStore(doc) },
-    modifiedHook: function (updateStore, doc, id, store) { return updateStore(doc) },
-    removedHook: function (updateStore, doc, id, store) { return updateStore(doc) },
+    addedHook: function (updateStore, doc, id, store) {
+      return updateStore(doc)
+    },
+    modifiedHook: function (updateStore, doc, id, store) {
+      return updateStore(doc)
+    },
+    removedHook: function (updateStore, doc, id, store) {
+      return updateStore(doc)
+    },
   },
 
   // When docs are fetched through `dispatch('module/fetch', {clauses})`.

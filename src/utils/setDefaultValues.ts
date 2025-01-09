@@ -10,7 +10,7 @@ import { AnyObject } from '../declarations'
  * @param {*} targetVal
  * @returns {Date}
  */
-function convertTimestamps (originVal: any, targetVal: any): Date {
+function convertTimestamps(originVal: any, targetVal: any): Date {
   if (originVal === '%convertTimestamp%') {
     // firestore timestamps
     if (
@@ -39,20 +39,22 @@ function convertTimestamps (originVal: any, targetVal: any): Date {
  * @returns {AnyObject} the new object
  */
 export default function (obj: object, defaultValues: object): AnyObject {
-  if (!isPlainObject(defaultValues))
+  if (!isPlainObject(defaultValues)) {
     console.error(
       '[vuex-easy-firestore] Trying to merge target:',
       obj,
       'onto a non-object (defaultValues):',
       defaultValues
     )
-  if (!isPlainObject(obj))
+  }
+  if (!isPlainObject(obj)) {
     console.error(
       '[vuex-easy-firestore] Trying to merge a non-object:',
       obj,
       'onto the defaultValues:',
       defaultValues
     )
+  }
   const result = merge({ extensions: [convertTimestamps] }, defaultValues, obj)
   return findAndReplace(result, '%convertTimestamp%', null, {
     onlyPlainObjects: true,

@@ -11,7 +11,7 @@ import { IEasyFirestoreModule } from '../declarations'
 export default function (config: IEasyFirestoreModule): boolean {
   const errors = []
   const reqProps = ['firestorePath', 'moduleName']
-  reqProps.forEach(prop => {
+  reqProps.forEach((prop) => {
     if (!config[prop]) {
       errors.push(`Missing \`${prop}\` in your module!`)
     }
@@ -38,7 +38,7 @@ export default function (config: IEasyFirestoreModule): boolean {
     'patchBatchHook',
     'deleteBatchHook',
   ]
-  syncProps.forEach(prop => {
+  syncProps.forEach((prop) => {
     if (config[prop]) {
       errors.push(
         `We found \`${prop}\` on your module, are you sure this shouldn't be inside a prop called \`sync\`?`
@@ -46,7 +46,7 @@ export default function (config: IEasyFirestoreModule): boolean {
     }
   })
   const serverChangeProps = ['modifiedHook', 'defaultValues', 'addedHook', 'removedHook']
-  serverChangeProps.forEach(prop => {
+  serverChangeProps.forEach((prop) => {
     if (config[prop]) {
       errors.push(
         `We found \`${prop}\` on your module, are you sure this shouldn't be inside a prop called \`serverChange\`?`
@@ -54,7 +54,7 @@ export default function (config: IEasyFirestoreModule): boolean {
     }
   })
   const fetchProps = ['docLimit']
-  fetchProps.forEach(prop => {
+  fetchProps.forEach((prop) => {
     if (config[prop]) {
       errors.push(
         `We found \`${prop}\` on your module, are you sure this shouldn't be inside a prop called \`fetch\`?`
@@ -62,7 +62,7 @@ export default function (config: IEasyFirestoreModule): boolean {
     }
   })
   const numberProps = ['docLimit']
-  numberProps.forEach(prop => {
+  numberProps.forEach((prop) => {
     const _prop = config.fetch[prop]
     if (!isNumber(_prop)) errors.push(`\`${prop}\` should be a Number, but is not.`)
   })
@@ -77,29 +77,29 @@ export default function (config: IEasyFirestoreModule): boolean {
     'modifiedHook',
     'removedHook',
   ]
-  functionProps.forEach(prop => {
+  functionProps.forEach((prop) => {
     const _prop = syncProps.includes(prop) ? config.sync[prop] : config.serverChange[prop]
     if (!isFunction(_prop)) errors.push(`\`${prop}\` should be a Function, but is not.`)
   })
   const objectProps = ['sync', 'serverChange', 'defaultValues', 'fetch']
-  objectProps.forEach(prop => {
+  objectProps.forEach((prop) => {
     const _prop = prop === 'defaultValues' ? config.sync[prop] : config[prop]
     if (!isPlainObject(_prop)) errors.push(`\`${prop}\` should be an Object, but is not.`)
   })
   const stringProps = ['firestorePath', 'firestoreRefType', 'moduleName']
-  stringProps.forEach(prop => {
+  stringProps.forEach((prop) => {
     const _prop = config[prop]
     if (!isString(_prop)) errors.push(`\`${prop}\` should be a String, but is not.`)
   })
   const arrayProps = ['where', 'orderBy', 'fillables', 'guard']
-  arrayProps.forEach(prop => {
+  arrayProps.forEach((prop) => {
     const _prop = config.sync[prop]
     if (!isArray(_prop)) errors.push(`\`${prop}\` should be an Array, but is not.`)
   })
   if (errors.length) {
     console.group('[vuex-easy-firestore] ERRORS:')
     console.error(`Module: ${config.moduleName}`)
-    errors.forEach(e => console.error(' - ', e))
+    errors.forEach((e) => console.error(' - ', e))
     console.groupEnd()
     Error()
     return false

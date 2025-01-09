@@ -1,7 +1,6 @@
 import test from 'ava'
 import wait from './helpers/wait'
-import firebase from 'firebase/compat/app'
-import 'firebase/compat/firestore'
+import * as firestore from 'firebase/firestore'
 import { store } from './helpers/index.cjs.js'
 
 const state = store.state.serverHooks
@@ -18,7 +17,7 @@ test('[MANUAL TEST] server prop deletion - no defaults', async t => {
   store.dispatch('serverHooks/set', { defaultPropsNotToBeDeleted: 'DELETE ME' })
   t.is(state.defaultPropsNotToBeDeleted, 'DELETE ME')
   await wait(3)
-  docR = await docRef.get()
+  docR = await firestore.getDoc(docRef)
   doc = docR.data()
   t.is(doc.defaultPropsNotToBeDeleted, 'DELETE ME')
   // all is good, now let's delete it from just the server
@@ -26,11 +25,11 @@ test('[MANUAL TEST] server prop deletion - no defaults', async t => {
     'start manual delete of [defaultPropsNotToBeDeleted]',
     'https://console.firebase.google.com/u/0/project/tests-firestore/database/firestore/data~2FconfigTests~2FserverHooks'
   )
-  // await docRef.update({
-  //   defaultPropsNotToBeDeleted: firebase.firestore.FieldValue.delete()
-  // })
+  await firestore.updateDoc(docRef, {
+    defaultPropsNotToBeDeleted: firestore.deleteField()
+  })
   await wait(15)
-  docR = await docRef.get()
+  docR = await firestore.getDoc(docRef)
   doc = docR.data()
   t.is(doc.defaultPropsNotToBeDeleted, undefined)
   t.is(state.defaultPropsNotToBeDeleted, true)
@@ -46,7 +45,7 @@ test('[MANUAL TEST] server prop deletion - top lvl', async t => {
   store.dispatch('serverHooks/set', { addedPropToBeDeleted: 'DELETE ME' })
   t.is(state.addedPropToBeDeleted, 'DELETE ME')
   await wait(3)
-  docR = await docRef.get()
+  docR = await firestore.getDoc(docRef)
   doc = docR.data()
   t.is(doc.addedPropToBeDeleted, 'DELETE ME')
   // all is good, now let's delete it from just the server
@@ -54,12 +53,12 @@ test('[MANUAL TEST] server prop deletion - top lvl', async t => {
     'start manual delete of [addedPropToBeDeleted]',
     'https://console.firebase.google.com/u/0/project/tests-firestore/database/firestore/data~2FconfigTests~2FserverHooks'
   )
-  // await docRef.update({
-  //   addedPropToBeDeleted: firebase.firestore.FieldValue.delete()
-  // })
+  await firestore.updateDoc(docRef, {
+    addedPropToBeDeleted: firestore.deleteField()
+  })
   await wait(15)
   console.log('waited for delete')
-  docR = await docRef.get()
+  docR = await firestore.getDoc(docRef)
   doc = docR.data()
   t.is(doc.addedPropToBeDeleted, undefined)
   t.is(state.addedPropToBeDeleted, undefined)
@@ -75,7 +74,7 @@ test('[MANUAL TEST] server prop deletion - nested', async t => {
   store.dispatch('serverHooks/set', { nestedD: { tobe: { deleted: 'DELETE ME', stay: true } } })
   t.deepEqual(state.nestedD, { tobe: { deleted: 'DELETE ME', stay: true } })
   await wait(3)
-  docR = await docRef.get()
+  docR = await firestore.getDoc(docRef)
   doc = docR.data()
   t.deepEqual(doc.nestedD, { tobe: { deleted: 'DELETE ME', stay: true } })
   // all is good, now let's delete it from just the server
@@ -83,11 +82,11 @@ test('[MANUAL TEST] server prop deletion - nested', async t => {
     'start manual delete of [nestedD.tobe.deleted]',
     'https://console.firebase.google.com/u/0/project/tests-firestore/database/firestore/data~2FconfigTests~2FserverHooks'
   )
-  // await docRef.update({
-  //   'nestedD.tobe.deleted': firebase.firestore.FieldValue.delete()
-  // })
+  await firestore.updateDoc(docRef, {
+    'nestedD.tobe.deleted': firestore.deleteField()
+  })
   await wait(15)
-  docR = await docRef.get()
+  docR = await firestore.getDoc(docRef)
   doc = docR.data()
   t.deepEqual(doc.nestedD, { tobe: { stay: true } })
   t.deepEqual(state.nestedD, { tobe: { stay: true } })

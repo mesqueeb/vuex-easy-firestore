@@ -1,5 +1,4 @@
-import firebase from 'firebase/compat/app'
-import 'firebase/compat/firestore'
+import { initializeApp } from 'firebase/app'
 
 const config = {
   apiKey: 'AIzaSyDivMlXIuHqDFsTCCqBDTVL0h29xbltcL8',
@@ -9,7 +8,4 @@ const config = {
   // storageBucket: 'tests-firestore.appspot.com',
   // messagingSenderId: '743555674736'
 }
-firebase.initializeApp(config)
-const firestore = firebase.firestore()
-
-export default firebase
+export const firebaseApp = initializeApp(config)

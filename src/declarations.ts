@@ -1,7 +1,7 @@
 import { IState } from './module/state'
 import { IConfig } from './module/defaultConfig'
 
-export type AnyObject = {[key: string]: any}
+export type AnyObject = { [key: string]: any }
 // standard store
 export type IStore = {
   state: AnyObject
@@ -14,4 +14,4 @@ export type IStore = {
 // plugin CONFIG
 export type IEasyFirestoreModule = IConfig
 // plugin STATE
-export type IPluginState = IState & {_conf: IConfig}
+export type IPluginState = IState & { _conf: IConfig }

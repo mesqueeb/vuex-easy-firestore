@@ -1,16 +1,13 @@
 import test from 'ava'
-import { isPlainObject, isArray, isDate } from 'is-what'
+import { isPlainObject, isArray } from 'is-what'
 import wait from './helpers/wait'
 import { store } from './helpers/index.cjs.js'
 import { arrayUnion, arrayRemove } from '../src/index'
-
-import firebase from 'firebase/compat/app'
-import 'firebase/compat/firestore'
+import * as firestore from 'firebase/firestore'
 
 const box = store.state.pokemonBox
 const char = store.state.mainCharacter
 const boxRef = store.getters['pokemonBox/dbRef']
-const charRef = store.getters['mainCharacter/dbRef']
 
 // actions
 test('store set up', async t => {
@@ -20,7 +17,7 @@ test('store set up', async t => {
 
 test('[COLLECTION] set arrayUnion & arrayRemove', async t => {
   let docR, doc
-  const id = boxRef.doc().id
+  const id = firestore.doc(boxRef).id
   // ini set
   const pokemonValues = {
     id,
@@ -50,7 +47,7 @@ test('[COLLECTION] set arrayUnion & arrayRemove', async t => {
   t.deepEqual(box.pokemon[id].nested.arr1, [1, 2, 3, 0])
   t.deepEqual(box.pokemon[id].nested.arr2, [1, 3])
   await wait(2)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.deepEqual(doc.arr1, [1, 2, 3, 0])
   t.deepEqual(doc.arr2, [1, 3])
@@ -73,7 +70,7 @@ test('[COLLECTION] set arrayUnion & arrayRemove', async t => {
   t.deepEqual(box.pokemon[id].nested.arr1, [1, 2, 3, 0, 'a', 'b'])
   t.deepEqual(box.pokemon[id].nested.arr2, [])
   await wait(2)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.deepEqual(doc.arr1, [1, 2, 3, 0, 'a', 'b'])
   t.deepEqual(doc.arr2, [])
@@ -93,7 +90,7 @@ test('[COLLECTION] set arrayUnion & arrayRemove', async t => {
   t.deepEqual(box.pokemon[id].arr1, [2, 3, 0, 'b'])
   t.deepEqual(box.pokemon[id].arr2, [1, 'a'])
   await wait(2)
-  docR = await boxRef.doc(id).get()
+  docR = await firestore.getDoc(firestore.doc(boxRef, id))
   doc = docR.data()
   t.deepEqual(doc.arr1, [2, 3, 0, 'b'])
   t.deepEqual(doc.arr2, [1, 'a'])

@@ -1,5 +1,4 @@
-import 'firebase/compat/firestore';
-import 'firebase/compat/auth';
+import { initializeApp } from 'firebase/app';
 import { IEasyFirestoreModule } from './declarations';
 import { arrayUnion, arrayRemove } from './utils/arrayHelpers';
 import { increment } from './utils/incrementHelper';
@@ -14,7 +13,7 @@ import { increment } from './utils/incrementHelper';
 declare function vuexEasyFirestore(easyFirestoreModule: IEasyFirestoreModule | IEasyFirestoreModule[], { logging, preventInitialDocInsertion, FirebaseDependency, enablePersistence, synchronizeTabs, }?: {
     logging?: boolean;
     preventInitialDocInsertion?: boolean;
-    FirebaseDependency?: any;
+    FirebaseDependency?: ReturnType<typeof initializeApp> | null;
     enablePersistence?: boolean;
     synchronizeTabs?: boolean;
 }): any;

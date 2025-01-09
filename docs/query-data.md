@@ -48,7 +48,7 @@ dispatch('moduleName/openDBChannel')
       .then(() => {
         // this gets resolved when you close the channel yourself
       })
-      .catch(error => {
+      .catch((error) => {
         // an error occured and the channel has been closed, you should figure
         // out what happened and open a new channel.
         // Perhaps the user lost his `read` rights on the resource, or maybe the
@@ -57,7 +57,7 @@ dispatch('moduleName/openDBChannel')
         // from Firestore.
       })
   })
-  .catch(error => {
+  .catch((error) => {
     // Same as the other `catch` block above
   })
 ```
@@ -116,7 +116,7 @@ dispatch('moduleName/closeDBChannel', { clearModule: true })
 
 If you want to fetch docs once (opposed to _realtime updates_) you can use the `fetchAndAdd` (or `fetchById`) action.
 
-These actions are a wrapper around the Firestore `db.collection(path).get()` and `db.doc(path).get()` functions.
+These actions are a wrapper around the Firestore `getDoc(collection(db, path))` and `getDoc(db, path)` functions.
 (See 'Read data' in the [Firestore documentation](https://firebase.google.com/docs/firestore/query-data/get-data))
 
 ### Fetching in 'doc' mode
@@ -217,7 +217,8 @@ Of course, you will need to wait for the user to sign in and only then dispatch 
 
 ```js
 // Be sure to initialise Firebase first!
-Firebase.auth().onAuthStateChanged(user => {
+import { onAuthStateChanged } from 'firebase/firestore'
+onAuthStateChanged((user) => {
   if (user) {
     // user is logged in so openDBChannel
     store.dispatch('userData/openDBChannel').catch(console.error)
@@ -232,7 +233,8 @@ If you want to use the library without fetching documents, so without using `ope
 In this case you can manually dispatch `setUserId` like so:
 
 ```js
-Firebase.auth().onAuthStateChanged(user => {
+import { onAuthStateChanged } from 'firebase/firestore'
+onAuthStateChanged((user) => {
   if (user) {
     // in case you do not use `openDBChannel` or `fetchAndAdd`
     store.dispatch('userData/setUserId')
@@ -379,7 +381,7 @@ const myModule = {
 // Vue component
 export default {
   name: 'openPage',
-  mounted () {
+  mounted() {
     const pageId = this.$router.params.id
     this.$store.dispatch('openPage/fetchAndAdd', { pageId })
   },
@@ -403,9 +405,9 @@ const myModule = {
 // Vue component
 export default {
   name: 'openPage',
-  mounted () {
+  mounted() {
     const pageId = this.$router.params.id
-    this.$store.dispatch('openPage/fetchAndAdd', { pageId }).catch(error => {
+    this.$store.dispatch('openPage/fetchAndAdd', { pageId }).catch((error) => {
       if (error === 'preventInitialDocInsertion') {
         // an initial doc insertion was prevented
       }
@@ -454,7 +456,8 @@ store: {
 Do not forget you will have to dispatch openDBChannel or fetchAndAdd for each module you want to retrieve the doc(s) of:
 
 ```js
-Firebase.auth().onAuthStateChanged(user => {
+import { onAuthStateChanged } from 'firebase/firestore'
+onAuthStateChanged((user) => {
   if (user) {
     store.dispatch('userDataModule/openDBChannel').catch(console.error)
     store.dispatch('anotherModule/openDBChannel').catch(console.error)
@@ -481,7 +484,7 @@ Besides `fetchAndAdd` there is also the `fetch` action. The difference is that w
 
 ```js
 dispatch('myModule/fetch', { where: [['archived', '==', true]] })
-  .then(querySnapshot => {
+  .then((querySnapshot) => {
     if (querySnapshot.done === true) {
       // `{done: true}` is returned when everything is already fetched and there are 0 docs:
       console.log('finished fetching all docs')

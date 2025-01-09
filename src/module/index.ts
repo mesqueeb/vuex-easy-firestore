@@ -22,7 +22,10 @@ export type FirestoreConfig = {
  * @param {*} FirebaseDependency The firebase dependency (non-instanciated), defaults to the firebase peer dependency if left blank.
  * @returns {IStore} the module ready to be included in your vuex store
  */
-export default function (userConfig: IEasyFirestoreModule, firestoreConfig: FirestoreConfig): IStore {
+export default function (
+  userConfig: IEasyFirestoreModule,
+  firestoreConfig: FirestoreConfig
+): IStore {
   const { FirebaseDependency } = firestoreConfig
   // prepare state._conf
   const conf: IEasyFirestoreModule = copy(
@@ -47,7 +50,7 @@ export default function (userConfig: IEasyFirestoreModule, firestoreConfig: Fire
     conf.sync.defaultValues = copy(merge(defaultValsInState, conf.sync.defaultValues))
   }
 
-  // Warn overloaded mutations / actions / getters 
+  // Warn overloaded mutations / actions / getters
   let uKeys, pKeys
   const pMutations = pluginMutations(merge(userState, { _conf: conf }))
   const pActions = pluginActions(firestoreConfig)

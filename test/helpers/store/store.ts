@@ -21,7 +21,7 @@ import docModeWithPathVar from './docModeWithPathVar'
 import createFirestores from '../../../src/index'
 import createEasyAccess from 'vuex-easy-access'
 // import firebase from '../firestoreMock'
-import firebase from '../firestore'
+import { firebaseApp } from '../firestore'
 
 const easyAccess = createEasyAccess({ vuexEasyFirestore: true })
 const easyFirestores = createFirestores(
@@ -47,7 +47,7 @@ const easyFirestores = createFirestores(
     multipleOpenDBChannels,
     docModeWithPathVar,
   ],
-  { logging: false, FirebaseDependency: firebase }
+  { logging: false, FirebaseDependency: firebaseApp }
 )
 
 export default {

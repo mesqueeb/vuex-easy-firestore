@@ -10,7 +10,7 @@ import { isArrayHelper } from '../utils/arrayHelpers'
 import { isIncrementHelper } from '../utils/incrementHelper'
 import getStateWithSync from './state'
 
-function convertHelpers (originVal, newVal) {
+function convertHelpers(originVal, newVal) {
   if (isArray(originVal) && isArrayHelper(newVal)) {
     newVal = newVal.executeOn(originVal)
   }
@@ -28,7 +28,7 @@ function convertHelpers (originVal, newVal) {
  * @param {*} value
  * @returns {[object, string, any]}
  */
-function getSetParams (target: object, path: string, value: any): [object, string, any] {
+function getSetParams(target: object, path: string, value: any): [object, string, any] {
   const pathParts = path.split('.')
   const prop = pathParts.pop()
   const pathParent = pathParts.join('.')
@@ -52,18 +52,18 @@ function getSetParams (target: object, path: string, value: any): [object, strin
 export default function (userState: object): AnyObject {
   const initialUserState = copy(userState)
   return {
-    SET_PATHVARS (state, pathVars) {
+    SET_PATHVARS(state, pathVars) {
       const self = this
-      Object.keys(pathVars).forEach(key => {
+      Object.keys(pathVars).forEach((key) => {
         const pathPiece = pathVars[key]
-        self._vm.$set(state._sync.pathVariables, key, pathPiece)
+        state._sync.pathVariables[key] = pathPiece
       })
     },
-    SET_SYNCCLAUSES (state, { where, orderBy }) {
+    SET_SYNCCLAUSES(state, { where, orderBy }) {
       if (where && isArray(where)) state._conf.sync.where = where
       if (orderBy && isArray(orderBy)) state._conf.sync.orderBy = orderBy
     },
-    SET_USER_ID (state, userId) {
+    SET_USER_ID(state, userId) {
       if (!userId) {
         state._sync.signedIn = false
         state._sync.userId = null
@@ -72,13 +72,13 @@ export default function (userState: object): AnyObject {
         state._sync.userId = userId
       }
     },
-    CLEAR_USER (state) {
+    CLEAR_USER(state) {
       state._sync.signedIn = false
       state._sync.userId = null
     },
-    RESET_VUEX_EASY_FIRESTORE_STATE (state) {
+    RESET_VUEX_EASY_FIRESTORE_STATE(state) {
       // unsubscribe all DBChannel listeners:
-      Object.values(state._sync.unsubscribe).forEach(unsubscribe => {
+      Object.values(state._sync.unsubscribe).forEach((unsubscribe) => {
         if (isFunction(unsubscribe)) unsubscribe()
       })
       const self = this
@@ -86,28 +86,28 @@ export default function (userState: object): AnyObject {
       const newState = merge(initialUserState, { _sync })
       const { statePropName } = state._conf
       const docContainer = statePropName ? state[statePropName] : state
-      Object.keys(newState).forEach(key => {
-        self._vm.$set(state, key, newState[key])
+      Object.keys(newState).forEach((key) => {
+        state[key] = newState[key]
       })
-      Object.keys(docContainer).forEach(key => {
+      Object.keys(docContainer).forEach((key) => {
         if (Object.keys(newState).includes(key)) return
-        self._vm.$delete(docContainer, key)
+        delete docContainer[key]
       })
     },
-    resetSyncStack (state) {
+    resetSyncStack(state) {
       const { _sync } = getStateWithSync()
       const { syncStack } = _sync
       state._sync.syncStack = syncStack
     },
-    INSERT_DOC (state, doc) {
+    INSERT_DOC(state, doc) {
       if (state._conf.firestoreRefType.toLowerCase() !== 'collection') return
       if (state._conf.statePropName) {
-        this._vm.$set(state[state._conf.statePropName], doc.id, doc)
+        state[state._conf.statePropName][doc.id] = doc
       } else {
-        this._vm.$set(state, doc.id, doc)
+        state[doc.id] = doc
       }
     },
-    PATCH_DOC (state, patches) {
+    PATCH_DOC(state, patches) {
       // Get the state prop ref
       let ref = state._conf.statePropName ? state[state._conf.statePropName] : state
       if (state._conf.firestoreRefType.toLowerCase() === 'collection') {
@@ -124,26 +124,29 @@ export default function (userState: object): AnyObject {
         if (targetVal === newVal) continue
         // update just the nested value
         const setParams = getSetParams(ref, path, newVal)
-        this._vm.$set(...setParams)
+        setParams[0][setParams[1]] = setParams[2]
       }
     },
-    DELETE_DOC (state, id) {
+    DELETE_DOC(state, id) {
       if (state._conf.firestoreRefType.toLowerCase() !== 'collection') return
       if (state._conf.statePropName) {
-        this._vm.$delete(state[state._conf.statePropName], id)
+        delete state[state._conf.statePropName][id]
       } else {
-        this._vm.$delete(state, id)
+        delete state[id]
       }
+      return state
     },
-    DELETE_PROP (state, path) {
+    DELETE_PROP(state, path) {
       const searchTarget = state._conf.statePropName ? state[state._conf.statePropName] : state
       const propArr = path.split('.')
       const target = propArr.pop()
       if (!propArr.length) {
-        return this._vm.$delete(searchTarget, target)
+        delete searchTarget[target]
+        return searchTarget
       }
       const ref = getDeepRef(searchTarget, propArr.join('.'))
-      return this._vm.$delete(ref, target)
+      delete ref[target]
+      return ref
     },
   }
 }

@@ -1,6 +1,7 @@
 # Hooks
 
 A hook is a function that is triggered on `insert`, `patch` or `delete`. In this hook function you will receive the doc object _before_ the store mutation occurs. You can do all kind of things:
+
 - modify the docs before they get commited to Vuex
 - modify the docs before they get synced to Firestore
 - add or delete props (fields) based on conditional checks
@@ -68,8 +69,8 @@ These hooks will fire not only on modifications and inserts **but also when disp
 
 You also have some extra parameters to work with:
 
-- *id:* the doc id returned in `change.doc.id` (see firestore documentation for more info)
-- *doc:* the doc returned in `change.doc.data()` (see firestore documentation for more info)
+- _id:_ the doc id returned in `change.doc.id` (see firestore documentation for more info)
+- _doc:_ the doc returned in `change.doc.data()` (see firestore documentation for more info)
 
 ```js
 {

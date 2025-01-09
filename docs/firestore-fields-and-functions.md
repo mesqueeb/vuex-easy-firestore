@@ -2,7 +2,7 @@
 
 ## arrayUnion and arrayRemove
 
-Just like Firestore, Vuex Easy Firestore supports the usage of *arrayUnion* and *arrayRemove*. ([Firestore documentation](https://firebase.google.com/docs/firestore/manage-data/add-data#update_elements_in_an_array))
+Just like Firestore, Vuex Easy Firestore supports the usage of _arrayUnion_ and _arrayRemove_. ([Firestore documentation](https://firebase.google.com/docs/firestore/manage-data/add-data#update_elements_in_an_array))
 
 ```js
 import { arrayUnion, arrayRemove } from 'vuex-easy-firestore'
@@ -17,22 +17,22 @@ And as always, your vuex module & firestore will stay in sync!
 
 ## increment
 
-Just like Firestore, Vuex Easy Firestore also supports the usage of *increment*. ([Firestore documentation](https://firebase.google.com/docs/reference/node/firebase.firestore.FieldValue.html#increment))
+Just like Firestore, Vuex Easy Firestore also supports the usage of _increment_. ([Firestore documentation](https://firebase.google.com/docs/reference/node/firebase.firestore.FieldValue.html#increment))
 
 ```js
 import { increment } from 'vuex-easy-firestore'
 
 store.dispatch('myDocModule/patch', {
-  counter: increment(10)
+  counter: increment(10),
 })
 ```
 
 It also doesn't matter how many times you call this function. See the example below where a counter is incremented by 30 with three seperate calls.
 
 ```js
-function incrementBy10 () {
+function incrementBy10() {
   store.dispatch('myDocModule/patch', {
-    counter: increment(10)
+    counter: increment(10),
   })
 }
 incrementBy10()
@@ -52,13 +52,13 @@ In vuex-easy-firestore it will automatically delete fields when you use the `del
 // in 'doc' mode:
 store.dispatch('myDocModule/delete', 'field')
 // is the same as
-store.dispatch('myDocModule/patch', {field: firebase.firestore.FieldValue.delete()})
+store.dispatch('myDocModule/patch', { field: firebase.firestore.FieldValue.delete() })
 
 // in 'collection' mode:
 const id = '001'
 store.dispatch('myCollectionModule/delete', `${id}.field`)
 // is the same as
-store.dispatch('myCollectionModule/patch', {id, field: firebase.firestore.FieldValue.delete()})
+store.dispatch('myCollectionModule/patch', { id, field: firebase.firestore.FieldValue.delete() })
 ```
 
 Please note that you can also delete nested properties by using `.` in between the field names. Eg. `field.nestedField.veryDeepField`.
