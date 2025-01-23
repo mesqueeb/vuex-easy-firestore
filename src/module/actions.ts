@@ -14,6 +14,7 @@ import {
   setDoc as firestoreSetDoc,
   where as firestoreWhere,
   writeBatch as firestoreWriteBatch,
+  startAfter as firestoreStartAfter,
 } from 'firebase/firestore'
 import { isArray, isPlainObject, isFunction, isNumber } from 'is-what'
 import copy from 'copy-anything'
@@ -370,7 +371,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
             resolve(querySnapshot)
             const lastVisible = docs[docs.length - 1]
             // set the reference for the next records.
-            const next = fRef.startAfter(lastVisible)
+            const next = firestoreStartAfter(fRef, lastVisible)
             state._sync.fetched[identifier].nextFetchRef = next
           })
           .catch((error) => {
