@@ -3936,6 +3936,7 @@ function pluginActions (firestoreConfig) {
                 pathVariables: {},
                 debug: false,
             }; }
+            var _conf = state._conf;
             /* COMPATIBILITY START
              * this ensures backward compatibility for people who passed pathVariables and
              * clauses directly at the root of the `parameters` object. Can be removed in
@@ -3972,8 +3973,8 @@ function pluginActions (firestoreConfig) {
             commit('SET_SYNCCLAUSES', parameters.clauses);
             commit('SET_PATHVARS', parameters.pathVariables);
             var identifier = createFetchIdentifier({
-                where: state._conf.sync.where,
-                orderBy: state._conf.sync.orderBy,
+                where: _conf.sync.where,
+                orderBy: _conf.sync.orderBy,
                 pathVariables: state._sync.pathVariables,
             });
             // getters.dbRef should already have pathVariables swapped out
@@ -3983,8 +3984,8 @@ function pluginActions (firestoreConfig) {
                 getters.getWhereArrays().forEach(function (whereParams) {
                     query.push(firestore.where(whereParams[0], whereParams[1], whereParams[2]));
                 });
-                if (state._conf.sync.orderBy.length) {
-                    query.push(firestore.orderBy(state._conf.sync.orderBy));
+                if (_conf.sync.orderBy.length) {
+                    query.push(firestore.orderBy.apply(void 0, _conf.sync.orderBy));
                 }
             }
             var dbRef = firestore.query.apply(void 0, __spreadArrays([getters.dbRef], query));
@@ -4041,7 +4042,7 @@ function pluginActions (firestoreConfig) {
             };
             // if the channel was already open, just resolve:
             if (isWhat.isFunction(state._sync.unsubscribe[identifier])) {
-                if (state._conf.logging) {
+                if (_conf.logging) {
                     var channelAlreadyOpenError = "openDBChannel was already called for these clauses and pathvariables. Identifier: " + identifier;
                     console.log(channelAlreadyOpenError);
                 }
@@ -4118,13 +4119,13 @@ function pluginActions (firestoreConfig) {
                     // the document doesn't exist yet (necessarily means we are in doc mode)
                     else {
                         // if the config allows to insert an initial document
-                        if (!state._conf.sync.preventInitialDocInsertion) {
+                        if (!_conf.sync.preventInitialDocInsertion) {
                             // a notification message in the console
-                            if (state._conf.logging) {
+                            if (_conf.logging) {
                                 var message = refreshedPromise.isPending
                                     ? 'inserting initial doc'
                                     : 'recreating doc after remote deletion';
-                                console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: MediumSeaGreen');
+                                console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + _conf.firestorePath + "]", 'color: MediumSeaGreen');
                             }
                             // try to insert the doc
                             promise = dispatch('insertInitialDoc')
@@ -4152,8 +4153,8 @@ function pluginActions (firestoreConfig) {
                 return promise;
             };
             // log the fact that we'll now try to open the stream
-            if (state._conf.logging) {
-                console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
+            if (_conf.logging) {
+                console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + _conf.firestorePath + "]", 'color: goldenrod');
             }
             // open the stream
             var unsubscribe = firestore.onSnapshot(dbRef, 
@@ -4176,7 +4177,7 @@ function pluginActions (firestoreConfig) {
                             }), promises_1 = new Array(docChanges.length);
                             // debug messages
                             if (parameters.debug) {
-                                console.log("%c QUERY SNAPSHOT received for `" + state._conf.moduleName + "`", 'font-weight: bold');
+                                console.log("%c QUERY SNAPSHOT received for `" + _conf.moduleName + "`", 'font-weight: bold');
                                 console.log("%c fromCache == " + (querySnapshot.metadata.fromCache ? 'true' : 'false') + " && hasPendingWrites == " + (querySnapshot.metadata.hasPendingWrites ? 'true' : 'false'), 'padding-left: 20px; font-style: italic');
                                 console.log(docChanges.length
                                     ? "%c " + docChanges.length + " changed document snapshots included:"
@@ -4207,7 +4208,7 @@ function pluginActions (firestoreConfig) {
                             documentSnapshot = snapshot;
                             // debug messages
                             if (parameters.debug) {
-                                console.log("%c DOCUMENT SNAPSHOT received for `" + state._conf.moduleName + "`", 'font-weight: bold');
+                                console.log("%c DOCUMENT SNAPSHOT received for `" + _conf.moduleName + "`", 'font-weight: bold');
                             }
                             return [4 /*yield*/, processDocument(documentSnapshot)];
                         case 3:

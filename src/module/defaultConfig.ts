@@ -1,3 +1,4 @@
+import type { OrderByDirection } from 'firebase/firestore'
 import { AnyObject } from '../declarations'
 
 export type HandleDoc = (doc: any) => any
@@ -26,7 +27,7 @@ export type IConfig = {
   logging?: boolean
   sync?: {
     where?: any[][]
-    orderBy?: string[]
+    orderBy?: [string, OrderByDirection?]
     fillables?: string[]
     guard?: string[]
     preventInitialDocInsertion?: boolean
