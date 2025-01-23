@@ -3699,7 +3699,7 @@ function pluginActions (firestoreConfig) {
                     resolve(querySnapshot);
                     var lastVisible = docs[docs.length - 1];
                     // set the reference for the next records.
-                    var next = fRef.startAfter(lastVisible);
+                    var next = firestore.startAfter(fRef, lastVisible);
                     state._sync.fetched[identifier].nextFetchRef = next;
                 })
                     .catch(function (error$1) {

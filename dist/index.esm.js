@@ -4,7 +4,7 @@ import copy from 'copy-anything';
 import { merge } from 'merge-anything';
 import flatten, { flattenObject } from 'flatten-anything';
 import pathToProp from 'path-to-prop';
-import { arrayUnion as arrayUnion$1, arrayRemove as arrayRemove$1, increment as increment$1, doc, setDoc, writeBatch, getFirestore, where, orderBy, query, limit, getDocs, getDoc, onSnapshot, collection, deleteField } from 'firebase/firestore';
+import { arrayUnion as arrayUnion$1, arrayRemove as arrayRemove$1, increment as increment$1, doc, setDoc, writeBatch, getFirestore, where, orderBy, query, limit, getDocs, startAfter, getDoc, onSnapshot, collection, deleteField } from 'firebase/firestore';
 import { compareObjectProps } from 'compare-anything';
 import { findAndReplace, findAndReplaceIf } from 'find-and-replace-anything';
 import { getAuth } from 'firebase/auth';
@@ -3150,7 +3150,7 @@ function pluginActions (firestoreConfig) {
                     resolve(querySnapshot);
                     var lastVisible = docs[docs.length - 1];
                     // set the reference for the next records.
-                    var next = fRef.startAfter(lastVisible);
+                    var next = startAfter(fRef, lastVisible);
                     state._sync.fetched[identifier].nextFetchRef = next;
                 })
                     .catch(function (error$1) {
