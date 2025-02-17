@@ -3658,8 +3658,10 @@ function pluginActions (firestoreConfig) {
                     getters.getWhereArrays(where).forEach(function (paramsArr) {
                         query_1.push(firestore.where(paramsArr[0], paramsArr[1], vue.toRaw(paramsArr[2])));
                     });
-                    if (orderBy.length)
-                        query_1.push(firestore.orderBy(vue.toRaw(orderBy)));
+                    if (orderBy.length) {
+                        var _a = orderBy !== null && orderBy !== void 0 ? orderBy : [], f = _a[0], o = _a[1];
+                        query_1.push(firestore.orderBy(vue.toRaw(f), vue.toRaw(o)));
+                    }
                     state._sync.fetched[identifier] = {
                         ref: firestore.query.apply(void 0, __spreadArray([ref], query_1, false)),
                         done: false,
@@ -3685,7 +3687,7 @@ function pluginActions (firestoreConfig) {
                     ? parameters.clauses.limit
                     : state._conf.fetch.docLimit;
                 if (limit > 0)
-                    fRef = firestore.query(fRef, firestore.limit(limit));
+                    fRef = firestore.query(vue.toRaw(fRef), firestore.limit(vue.toRaw(limit)));
                 // Stop if all records already fetched
                 if (fRequest.retrievedFetchRefs.includes(fRef)) {
                     console.log('[vuex-easy-firestore] Already retrieved this part.');
@@ -3722,6 +3724,7 @@ function pluginActions (firestoreConfig) {
             var _this = this;
             var state = _a.state, getters = _a.getters, commit = _a.commit, dispatch = _a.dispatch;
             if (parameters === void 0) { parameters = { clauses: {}, pathVariables: {} }; }
+            var _conf = state._conf;
             if (!isWhat.isPlainObject(parameters))
                 parameters = {};
             /* COMPATIBILITY START
@@ -3753,8 +3756,8 @@ function pluginActions (firestoreConfig) {
             // 'doc' mode:
             if (!getters.collectionMode) {
                 dispatch('setUserId');
-                if (state._conf.logging) {
-                    console.log("%c fetch for Firestore PATH: ".concat(getters.firestorePathComplete, " [").concat(state._conf.firestorePath, "]"), 'color: goldenrod');
+                if (_conf.logging) {
+                    console.log("%c fetch for Firestore PATH: ".concat(getters.firestorePathComplete, " [").concat(_conf.firestorePath, "]"), 'color: goldenrod');
                 }
                 return firestore.getDoc(getters.dbRef)
                     .then(function (_doc) { return __awaiter(_this, void 0, void 0, function () {
@@ -3764,11 +3767,11 @@ function pluginActions (firestoreConfig) {
                             case 0:
                                 if (!!_doc.exists()) return [3 /*break*/, 2];
                                 // No initial doc found in docMode
-                                if (state._conf.sync.preventInitialDocInsertion)
+                                if (_conf.sync.preventInitialDocInsertion)
                                     throw 'preventInitialDocInsertion';
-                                if (state._conf.logging) {
+                                if (_conf.logging) {
                                     message = 'inserting initial doc';
-                                    console.log("%c [vuex-easy-firestore] ".concat(message, "; for Firestore PATH: ").concat(getters.firestorePathComplete, " [").concat(state._conf.firestorePath, "]"), 'color: MediumSeaGreen');
+                                    console.log("%c [vuex-easy-firestore] ".concat(message, "; for Firestore PATH: ").concat(getters.firestorePathComplete, " [").concat(_conf.firestorePath, "]"), 'color: MediumSeaGreen');
                                 }
                                 return [4 /*yield*/, dispatch('insertInitialDoc')
                                     // an error in await here is (somehow) caught in the catch down below
@@ -3811,32 +3814,35 @@ function pluginActions (firestoreConfig) {
         fetchById: function (_a, id) {
             var dispatch = _a.dispatch, getters = _a.getters, state = _a.state;
             return __awaiter(this, void 0, void 0, function () {
-                var ref, _doc, doc, e_1;
+                var _conf, ref, _doc, doc, e_1;
                 return __generator(this, function (_b) {
                     switch (_b.label) {
                         case 0:
-                            _b.trys.push([0, 2, , 3]);
+                            _conf = state._conf;
+                            _b.label = 1;
+                        case 1:
+                            _b.trys.push([1, 3, , 4]);
                             if (!id)
                                 throw 'missing-id';
                             if (!getters.collectionMode)
                                 throw 'only-in-collection-mode';
                             ref = getters.dbRef;
                             return [4 /*yield*/, firestore.getDoc(ref)];
-                        case 1:
+                        case 2:
                             _doc = _b.sent();
                             if (!_doc.exists()) {
-                                if (state._conf.logging) {
+                                if (_conf.logging) {
                                     throw "Doc with id \"".concat(id, "\" not found!");
                                 }
                             }
                             doc = getters.cleanUpRetrievedDoc(_doc.data(), id);
                             dispatch('applyHooksAndUpdateState', { change: 'added', id: id, doc: doc });
                             return [2 /*return*/, doc];
-                        case 2:
+                        case 3:
                             e_1 = _b.sent();
                             error(e_1);
                             throw e_1;
-                        case 3: return [2 /*return*/];
+                        case 4: return [2 /*return*/];
                     }
                 });
             });
@@ -3939,6 +3945,7 @@ function pluginActions (firestoreConfig) {
          */
         openDBChannel: function (_a, parameters) {
             var _this = this;
+            var _b;
             var getters = _a.getters, state = _a.state, commit = _a.commit, dispatch = _a.dispatch;
             if (parameters === void 0) { parameters = {
                 clauses: {},
@@ -3991,10 +3998,11 @@ function pluginActions (firestoreConfig) {
             // apply where and orderBy clauses
             if (getters.collectionMode) {
                 getters.getWhereArrays().forEach(function (whereParams) {
-                    query.push(firestore.where(whereParams[0], whereParams[1], whereParams[2]));
+                    query.push(firestore.where(whereParams[0], whereParams[1], vue.toRaw(whereParams[2])));
                 });
                 if (_conf.sync.orderBy.length) {
-                    query.push(firestore.orderBy.apply(void 0, _conf.sync.orderBy));
+                    var _c = (_b = _conf.sync.orderBy) !== null && _b !== void 0 ? _b : [], f = _c[0], o = _c[1];
+                    query.push(firestore.orderBy(vue.toRaw(f), vue.toRaw(o)));
                 }
             }
             var dbRef = firestore.query.apply(void 0, __spreadArray([getters.dbRef], query, false));
