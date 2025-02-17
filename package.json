@@ -1,6 +1,6 @@
 {
   "name": "vuex-easy-firestore",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Easy coupling of firestore and a vuex module. 2-way sync with 0 boilerplate!",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
