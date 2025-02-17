@@ -321,7 +321,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         const fetched = state._sync.fetched[identifier]
         // We've never fetched this before:
         if (!fetched) {
-          let ref = getters.dbRef
+          let ref = toRaw(getters.dbRef)
           const query = []
           // apply where clauses and orderBy
           getters.getWhereArrays(where).forEach((paramsArr) => {
@@ -345,16 +345,16 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
           return resolve({ done: true })
         }
         // attach fetch clauses
-        let fRef = state._sync.fetched[identifier].ref
+        let fRef = toRaw(state._sync.fetched[identifier].ref)
         if (fRequest.nextFetchRef) {
           // get next ref if saved in state
-          fRef = state._sync.fetched[identifier].nextFetchRef
+          fRef = toRaw(state._sync.fetched[identifier].nextFetchRef)
         }
         // add doc limit
         let limit = isNumber(parameters.clauses.limit)
           ? parameters.clauses.limit
           : state._conf.fetch.docLimit
-        if (limit > 0) fRef = firestoreQuery(toRaw(fRef), firestoreLimit(toRaw(limit)))
+        if (limit > 0) fRef = firestoreQuery(fRef, firestoreLimit(toRaw(limit)))
         // Stop if all records already fetched
         if (fRequest.retrievedFetchRefs.includes(fRef)) {
           console.log('[vuex-easy-firestore] Already retrieved this part.')
@@ -656,7 +656,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
           query.push(firestoreOrderBy(toRaw(f), toRaw(o)))
         }
       }
-      const dbRef = firestoreQuery(getters.dbRef, ...query)
+      const dbRef = firestoreQuery(toRaw(getters.dbRef), ...query)
 
       // creates promises that can be resolved from outside their scope and that
       // can give their status
