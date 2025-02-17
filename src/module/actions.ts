@@ -15,8 +15,9 @@ import {
   where as firestoreWhere,
   writeBatch as firestoreWriteBatch,
   startAfter as firestoreStartAfter,
+  OrderByDirection,
 } from 'firebase/firestore'
-import { isArray, isPlainObject, isFunction, isNumber } from 'is-what'
+import { isArray, isPlainObject, isFunction, isNumber, isAnyObject } from 'is-what'
 import copy from 'copy-anything'
 import { merge } from 'merge-anything'
 import flatten from 'flatten-anything'
@@ -268,7 +269,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
     },
     fetch(
       { state, getters, commit, dispatch },
-      parameters: any = { clauses: {}, pathVariables: {} }
+      parameters: {clauses?: { where?: any[], whereFilters?: any[], orderBy?: [string?, OrderByDirection?], limit?: number }, pathVariables?: Record<string, string>, includeMetadataChanges?: boolean} = { clauses: {}, pathVariables: {} }
     ) {
       if (!isPlainObject(parameters)) parameters = {}
       /* COMPATIBILITY START
@@ -287,7 +288,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
             delete pathVariables[entry[0]]
           }
         })
-        parameters = Object.assign({}, { clauses: parameters, pathVariables })
+        parameters = Object.assign({}, { clauses: parameters, pathVariables }) as any
       }
       const defaultParameters = {
         clauses: {},
@@ -326,7 +327,10 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
           getters.getWhereArrays(where).forEach((paramsArr) => {
             query.push(firestoreWhere(paramsArr[0], paramsArr[1], toRaw(paramsArr[2])))
           })
-          if (orderBy.length) query.push(firestoreOrderBy(toRaw(orderBy)))
+          if (orderBy.length) {
+            const [f, o] = orderBy ?? []
+            query.push(firestoreOrderBy(toRaw(f), toRaw(o)))
+          }
           state._sync.fetched[identifier] = {
             ref: firestoreQuery(ref, ...query),
             done: false,
@@ -350,7 +354,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         let limit = isNumber(parameters.clauses.limit)
           ? parameters.clauses.limit
           : state._conf.fetch.docLimit
-        if (limit > 0) fRef = firestoreQuery(fRef, firestoreLimit(limit))
+        if (limit > 0) fRef = firestoreQuery(toRaw(fRef), firestoreLimit(toRaw(limit)))
         // Stop if all records already fetched
         if (fRequest.retrievedFetchRefs.includes(fRef)) {
           console.log('[vuex-easy-firestore] Already retrieved this part.')
@@ -385,8 +389,9 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
     // orderBy: ['done_date', 'desc']
     fetchAndAdd(
       { state, getters, commit, dispatch },
-      parameters: any = { clauses: {}, pathVariables: {} }
+      parameters: {clauses?: { where?: any[], whereFilters?: any[], orderBy?: [string?, OrderByDirection?], limit?: number }, pathVariables?: Record<string, string>, includeMetadataChanges?: boolean} = { clauses: {}, pathVariables: {} }
     ) {
+      const _conf: IConfig = state._conf
       if (!isPlainObject(parameters)) parameters = {}
       /* COMPATIBILITY START
        * this ensures backward compatibility for people who passed pathVariables and
@@ -404,7 +409,7 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
             delete pathVariables[entry[0]]
           }
         })
-        parameters = Object.assign({}, { clauses: parameters, pathVariables })
+        parameters = Object.assign({}, { clauses: parameters, pathVariables }) as any
       }
       const defaultParameters = {
         clauses: {},
@@ -417,9 +422,9 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
       // 'doc' mode:
       if (!getters.collectionMode) {
         dispatch('setUserId')
-        if (state._conf.logging) {
+        if (_conf.logging) {
           console.log(
-            `%c fetch for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`,
+            `%c fetch for Firestore PATH: ${getters.firestorePathComplete} [${_conf.firestorePath}]`,
             'color: goldenrod'
           )
         }
@@ -427,11 +432,11 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
           .then(async (_doc) => {
             if (!_doc.exists()) {
               // No initial doc found in docMode
-              if (state._conf.sync.preventInitialDocInsertion) throw 'preventInitialDocInsertion'
-              if (state._conf.logging) {
+              if (_conf.sync.preventInitialDocInsertion) throw 'preventInitialDocInsertion'
+              if (_conf.logging) {
                 const message = 'inserting initial doc'
                 console.log(
-                  `%c [vuex-easy-firestore] ${message}; for Firestore PATH: ${getters.firestorePathComplete} [${state._conf.firestorePath}]`,
+                  `%c [vuex-easy-firestore] ${message}; for Firestore PATH: ${getters.firestorePathComplete} [${_conf.firestorePath}]`,
                   'color: MediumSeaGreen'
                 )
               }
@@ -466,14 +471,15 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
         return querySnapshot
       })
     },
-    async fetchById({ dispatch, getters, state }, id) {
+    async fetchById({ dispatch, getters, state }, id: string) {
+      const _conf: IConfig = state._conf
       try {
         if (!id) throw 'missing-id'
         if (!getters.collectionMode) throw 'only-in-collection-mode'
         const ref = getters.dbRef
         const _doc = await firestoreGetDoc(ref)
         if (!_doc.exists()) {
-          if (state._conf.logging) {
+          if (_conf.logging) {
             throw `Doc with id "${id}" not found!`
           }
         }
@@ -643,10 +649,11 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
       // apply where and orderBy clauses
       if (getters.collectionMode) {
         getters.getWhereArrays().forEach((whereParams) => {
-          query.push(firestoreWhere(whereParams[0], whereParams[1], whereParams[2]))
+          query.push(firestoreWhere(whereParams[0], whereParams[1], toRaw(whereParams[2])))
         })
         if (_conf.sync.orderBy.length) {
-          query.push(firestoreOrderBy(..._conf.sync.orderBy))
+          const [f, o] = _conf.sync.orderBy ?? []
+          query.push(firestoreOrderBy(toRaw(f), toRaw(o)))
         }
       }
       const dbRef = firestoreQuery(getters.dbRef, ...query)

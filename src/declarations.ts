@@ -4,10 +4,10 @@ import { IConfig } from './module/defaultConfig'
 export type AnyObject = { [key: string]: any }
 // standard store
 export type IStore = {
-  state: AnyObject
-  mutations: AnyObject
-  actions: AnyObject
-  getters: AnyObject
+  state: AnyObject;
+  mutations: AnyObject;
+  actions: AnyObject;
+  getters: AnyObject;
   [key: string]: any
 }
 
