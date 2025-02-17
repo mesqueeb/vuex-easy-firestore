@@ -60,7 +60,7 @@
     "eslint-loader": "^2.2.1",
     "eslint-plugin-vue": "^5.2.3",
     "esm": "^3.2.25",
-    "firebase": "^9.0.0",
+    "firebase": "^9.8.3",
     "mock-cloud-firestore": "^0.12.0",
     "patch-package": "^6.4.7",
     "prettier": "^2.5.1",
@@ -74,7 +74,7 @@
     "vuex": "^4.0.2"
   },
   "peerDependencies": {
-    "firebase": "^9.0.0"
+    "firebase": "^9.8.3"
   },
   "ava": {
     "extensions": [

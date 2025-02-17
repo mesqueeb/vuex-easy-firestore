@@ -32,6 +32,7 @@ import logError from './errors'
 import { FirestoreConfig } from './index'
 import { getAuth } from 'firebase/auth'
 import { IConfig } from './defaultConfig'
+import { toRaw } from 'vue'
 
 /**
  * A function returning the actions object
@@ -323,9 +324,9 @@ export default function (firestoreConfig: FirestoreConfig): AnyObject {
           const query = []
           // apply where clauses and orderBy
           getters.getWhereArrays(where).forEach((paramsArr) => {
-            query.push(firestoreWhere(paramsArr[0], paramsArr[1], paramsArr[2]))
+            query.push(firestoreWhere(paramsArr[0], paramsArr[1], toRaw(paramsArr[2])))
           })
-          if (orderBy.length) query.push(firestoreOrderBy(orderBy))
+          if (orderBy.length) query.push(firestoreOrderBy(toRaw(orderBy)))
           state._sync.fetched[identifier] = {
             ref: firestoreQuery(ref, ...query),
             done: false,
