@@ -1,5 +1,5 @@
 import { IStore, IEasyFirestoreModule } from '../declarations';
-export declare type FirestoreConfig = {
+export type FirestoreConfig = {
     FirebaseDependency?: any;
     enablePersistence?: boolean;
     synchronizeTabs?: boolean;

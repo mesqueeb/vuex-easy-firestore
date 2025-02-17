@@ -26,6 +26,8 @@ var config = {
     authDomain: 'tests-firestore.firebaseapp.com',
     databaseURL: 'https://tests-firestore.firebaseio.com',
     projectId: 'tests-firestore',
+    // storageBucket: 'tests-firestore.appspot.com',
+    // messagingSenderId: '743555674736'
 };
 var firebaseApp = app$1.initializeApp(config);
 
@@ -390,7 +392,7 @@ var serverHooks = {
     },
 };
 
-/*! *****************************************************************************
+/******************************************************************************
 Copyright (c) Microsoft Corporation.
 
 Permission to use, copy, modify, and/or distribute this software for any
@@ -427,12 +429,12 @@ function __awaiter(thisArg, _arguments, P, generator) {
 }
 
 function __generator(thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
             if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
             if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
@@ -454,13 +456,20 @@ function __generator(thisArg, body) {
     }
 }
 
-function __spreadArrays() {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
+function __spreadArray(to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
 }
+
+var _SuppressedError = typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+    var e = new Error(message);
+    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+};
 
 var user = {
     firestorePath: 'user/{userId}',
@@ -785,7 +794,7 @@ var errorMessages = {
  */
 function error (errorId, error) {
     var logData = errorMessages[errorId] || errorId;
-    console.error("[vuex-easy-firestore] Error! " + logData);
+    console.error("[vuex-easy-firestore] Error! ".concat(logData));
     if (error)
         console.error(error);
     return errorId;
@@ -3224,7 +3233,7 @@ function makeBatchFromSyncstack(state, getters, firebaseBatch, batchMaxCount) {
     // log the batch contents
     if (logging) {
         console.group('[vuex-easy-firestore] api call batch:');
-        console.log("%cFirestore PATH: " + firestorePathComplete + " [" + firestorePath + "]", 'color: grey');
+        console.log("%cFirestore PATH: ".concat(firestorePathComplete, " [").concat(firestorePath, "]"), 'color: grey');
         Object.keys(log).forEach(function (key) {
             console.log(key, log[key]);
         });
@@ -3520,7 +3529,7 @@ function pluginActions (firestoreConfig) {
                     .then(function () {
                     if (state._conf.logging) {
                         var message = 'Initial doc succesfully inserted';
-                        console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: SeaGreen');
+                        console.log("%c [vuex-easy-firestore] ".concat(message, "; for Firestore PATH: ").concat(getters.firestorePathComplete, " [").concat(state._conf.firestorePath, "]"), 'color: SeaGreen');
                     }
                     resolve(true);
                 })
@@ -3631,7 +3640,7 @@ function pluginActions (firestoreConfig) {
             return new Promise(function (resolve, reject) {
                 // log
                 if (state._conf.logging) {
-                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
+                    console.log("%c fetch for Firestore PATH: ".concat(getters.firestorePathComplete, " [").concat(state._conf.firestorePath, "]"), 'color: goldenrod');
                 }
                 if (!getters.signedIn)
                     return resolve(true);
@@ -3647,12 +3656,12 @@ function pluginActions (firestoreConfig) {
                     var query_1 = [];
                     // apply where clauses and orderBy
                     getters.getWhereArrays(where).forEach(function (paramsArr) {
-                        query_1.push(firestore.where(paramsArr[0], paramsArr[1], paramsArr[2]));
+                        query_1.push(firestore.where(paramsArr[0], paramsArr[1], vue.toRaw(paramsArr[2])));
                     });
                     if (orderBy.length)
-                        query_1.push(firestore.orderBy(orderBy));
+                        query_1.push(firestore.orderBy(vue.toRaw(orderBy)));
                     state._sync.fetched[identifier] = {
-                        ref: firestore.query.apply(void 0, __spreadArrays([ref], query_1)),
+                        ref: firestore.query.apply(void 0, __spreadArray([ref], query_1, false)),
                         done: false,
                         retrievedFetchRefs: [],
                         nextFetchRef: null,
@@ -3745,7 +3754,7 @@ function pluginActions (firestoreConfig) {
             if (!getters.collectionMode) {
                 dispatch('setUserId');
                 if (state._conf.logging) {
-                    console.log("%c fetch for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: goldenrod');
+                    console.log("%c fetch for Firestore PATH: ".concat(getters.firestorePathComplete, " [").concat(state._conf.firestorePath, "]"), 'color: goldenrod');
                 }
                 return firestore.getDoc(getters.dbRef)
                     .then(function (_doc) { return __awaiter(_this, void 0, void 0, function () {
@@ -3759,7 +3768,7 @@ function pluginActions (firestoreConfig) {
                                     throw 'preventInitialDocInsertion';
                                 if (state._conf.logging) {
                                     message = 'inserting initial doc';
-                                    console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + state._conf.firestorePath + "]", 'color: MediumSeaGreen');
+                                    console.log("%c [vuex-easy-firestore] ".concat(message, "; for Firestore PATH: ").concat(getters.firestorePathComplete, " [").concat(state._conf.firestorePath, "]"), 'color: MediumSeaGreen');
                                 }
                                 return [4 /*yield*/, dispatch('insertInitialDoc')
                                     // an error in await here is (somehow) caught in the catch down below
@@ -3817,7 +3826,7 @@ function pluginActions (firestoreConfig) {
                             _doc = _b.sent();
                             if (!_doc.exists()) {
                                 if (state._conf.logging) {
-                                    throw "Doc with id \"" + id + "\" not found!";
+                                    throw "Doc with id \"".concat(id, "\" not found!");
                                 }
                             }
                             doc = getters.cleanUpRetrievedDoc(_doc.data(), id);
@@ -3887,7 +3896,7 @@ function pluginActions (firestoreConfig) {
                 var propNotInDefaultValues = !presence.includes(1);
                 // delete props that are not present in the doc and default values
                 if (propNotInDoc && propNotInDefaultValues) {
-                    var path = getters.collectionMode ? doc.id + "." + prop : prop;
+                    var path = getters.collectionMode ? "".concat(doc.id, ".").concat(prop) : prop;
                     return commit('DELETE_PROP', path);
                 }
             });
@@ -3988,7 +3997,7 @@ function pluginActions (firestoreConfig) {
                     query.push(firestore.orderBy.apply(void 0, _conf.sync.orderBy));
                 }
             }
-            var dbRef = firestore.query.apply(void 0, __spreadArrays([getters.dbRef], query));
+            var dbRef = firestore.query.apply(void 0, __spreadArray([getters.dbRef], query, false));
             // creates promises that can be resolved from outside their scope and that
             // can give their status
             var nicePromise = function () {
@@ -4043,7 +4052,7 @@ function pluginActions (firestoreConfig) {
             // if the channel was already open, just resolve:
             if (isWhat.isFunction(state._sync.unsubscribe[identifier])) {
                 if (_conf.logging) {
-                    var channelAlreadyOpenError = "openDBChannel was already called for these clauses and pathvariables. Identifier: " + identifier;
+                    var channelAlreadyOpenError = "openDBChannel was already called for these clauses and pathvariables. Identifier: ".concat(identifier);
                     console.log(channelAlreadyOpenError);
                 }
                 streamingStart();
@@ -4061,7 +4070,7 @@ function pluginActions (firestoreConfig) {
             var processDocument = function (documentSnapshot, changeType) {
                 // debug message
                 if (parameters.debug) {
-                    console.log("%c Document " + documentSnapshot.id + ": fromCache == " + (documentSnapshot.metadata.fromCache ? 'true' : 'false') + " && hasPendingWrites == " + (documentSnapshot.metadata.hasPendingWrites ? 'true' : 'false'), 'padding-left: 40px');
+                    console.log("%c Document ".concat(documentSnapshot.id, ": fromCache == ").concat(documentSnapshot.metadata.fromCache ? 'true' : 'false', " && hasPendingWrites == ").concat(documentSnapshot.metadata.hasPendingWrites ? 'true' : 'false'), 'padding-left: 40px');
                 }
                 // the promise that this function returns always resolves with this object
                 var promisePayload = {
@@ -4125,7 +4134,7 @@ function pluginActions (firestoreConfig) {
                                 var message = refreshedPromise.isPending
                                     ? 'inserting initial doc'
                                     : 'recreating doc after remote deletion';
-                                console.log("%c [vuex-easy-firestore] " + message + "; for Firestore PATH: " + getters.firestorePathComplete + " [" + _conf.firestorePath + "]", 'color: MediumSeaGreen');
+                                console.log("%c [vuex-easy-firestore] ".concat(message, "; for Firestore PATH: ").concat(getters.firestorePathComplete, " [").concat(_conf.firestorePath, "]"), 'color: MediumSeaGreen');
                             }
                             // try to insert the doc
                             promise = dispatch('insertInitialDoc')
@@ -4154,7 +4163,7 @@ function pluginActions (firestoreConfig) {
             };
             // log the fact that we'll now try to open the stream
             if (_conf.logging) {
-                console.log("%c openDBChannel for Firestore PATH: " + getters.firestorePathComplete + " [" + _conf.firestorePath + "]", 'color: goldenrod');
+                console.log("%c openDBChannel for Firestore PATH: ".concat(getters.firestorePathComplete, " [").concat(_conf.firestorePath, "]"), 'color: goldenrod');
             }
             // open the stream
             var unsubscribe = firestore.onSnapshot(dbRef, 
@@ -4177,10 +4186,10 @@ function pluginActions (firestoreConfig) {
                             }), promises_1 = new Array(docChanges.length);
                             // debug messages
                             if (parameters.debug) {
-                                console.log("%c QUERY SNAPSHOT received for `" + _conf.moduleName + "`", 'font-weight: bold');
-                                console.log("%c fromCache == " + (querySnapshot.metadata.fromCache ? 'true' : 'false') + " && hasPendingWrites == " + (querySnapshot.metadata.hasPendingWrites ? 'true' : 'false'), 'padding-left: 20px; font-style: italic');
+                                console.log("%c QUERY SNAPSHOT received for `".concat(_conf.moduleName, "`"), 'font-weight: bold');
+                                console.log("%c fromCache == ".concat(querySnapshot.metadata.fromCache ? 'true' : 'false', " && hasPendingWrites == ").concat(querySnapshot.metadata.hasPendingWrites ? 'true' : 'false'), 'padding-left: 20px; font-style: italic');
                                 console.log(docChanges.length
-                                    ? "%c " + docChanges.length + " changed document snapshots included:"
+                                    ? "%c ".concat(docChanges.length, " changed document snapshots included:")
                                     : "%c No changed document snapshots included.", 'padding-left: 20px; ');
                             }
                             // process doc changes
@@ -4208,7 +4217,7 @@ function pluginActions (firestoreConfig) {
                             documentSnapshot = snapshot;
                             // debug messages
                             if (parameters.debug) {
-                                console.log("%c DOCUMENT SNAPSHOT received for `" + _conf.moduleName + "`", 'font-weight: bold');
+                                console.log("%c DOCUMENT SNAPSHOT received for `".concat(_conf.moduleName, "`"), 'font-weight: bold');
                             }
                             return [4 /*yield*/, processDocument(documentSnapshot)];
                         case 3:
@@ -4495,7 +4504,7 @@ function pluginGetters (firebaseApp) {
             var path = state._conf.firestorePath;
             Object.keys(state._sync.pathVariables).forEach(function (key) {
                 var pathPiece = state._sync.pathVariables[key];
-                path = path.replace("{" + key + "}", "" + pathPiece);
+                path = path.replace("{".concat(key, "}"), "".concat(pathPiece));
             });
             var requireUser = path.includes('{userId}');
             if (requireUser) {
@@ -4520,7 +4529,7 @@ function pluginGetters (firebaseApp) {
         },
         storeRef: function (state, getters, rootState) {
             var path = state._conf.statePropName
-                ? state._conf.moduleName + "/" + state._conf.statePropName
+                ? "".concat(state._conf.moduleName, "/").concat(state._conf.statePropName)
                 : state._conf.moduleName;
             return createEasyAccess.getDeepRef(rootState, path);
         },
@@ -4642,7 +4651,7 @@ function pluginGetters (firebaseApp) {
                         return param;
                     var cleanedParam = param;
                     getPathVarMatches(param).forEach(function (key) {
-                        var keyRegEx = new RegExp("{" + key + "}", 'g');
+                        var keyRegEx = new RegExp("{".concat(key, "}"), 'g');
                         if (key === 'userId') {
                             cleanedParam = cleanedParam.replace(keyRegEx, state._sync.userId);
                             return;
@@ -4652,7 +4661,7 @@ function pluginGetters (firebaseApp) {
                         }
                         var varVal = state._sync.pathVariables[key];
                         // if path is only a param we need to just assign to avoid stringification
-                        if (param === "{" + key + "}") {
+                        if (param === "{".concat(key, "}")) {
                             cleanedParam = varVal;
                             return;
                         }
@@ -4677,7 +4686,7 @@ function errorCheck (config) {
     var reqProps = ['firestorePath', 'moduleName'];
     reqProps.forEach(function (prop) {
         if (!config[prop]) {
-            errors.push("Missing `" + prop + "` in your module!");
+            errors.push("Missing `".concat(prop, "` in your module!"));
         }
     });
     if (config.statePropName !== null && !isWhat.isString(config.statePropName)) {
@@ -4704,26 +4713,26 @@ function errorCheck (config) {
     ];
     syncProps.forEach(function (prop) {
         if (config[prop]) {
-            errors.push("We found `" + prop + "` on your module, are you sure this shouldn't be inside a prop called `sync`?");
+            errors.push("We found `".concat(prop, "` on your module, are you sure this shouldn't be inside a prop called `sync`?"));
         }
     });
     var serverChangeProps = ['modifiedHook', 'defaultValues', 'addedHook', 'removedHook'];
     serverChangeProps.forEach(function (prop) {
         if (config[prop]) {
-            errors.push("We found `" + prop + "` on your module, are you sure this shouldn't be inside a prop called `serverChange`?");
+            errors.push("We found `".concat(prop, "` on your module, are you sure this shouldn't be inside a prop called `serverChange`?"));
         }
     });
     var fetchProps = ['docLimit'];
     fetchProps.forEach(function (prop) {
         if (config[prop]) {
-            errors.push("We found `" + prop + "` on your module, are you sure this shouldn't be inside a prop called `fetch`?");
+            errors.push("We found `".concat(prop, "` on your module, are you sure this shouldn't be inside a prop called `fetch`?"));
         }
     });
     var numberProps = ['docLimit'];
     numberProps.forEach(function (prop) {
         var _prop = config.fetch[prop];
         if (!isWhat.isNumber(_prop))
-            errors.push("`" + prop + "` should be a Number, but is not.");
+            errors.push("`".concat(prop, "` should be a Number, but is not."));
     });
     var functionProps = [
         'insertHook',
@@ -4739,29 +4748,29 @@ function errorCheck (config) {
     functionProps.forEach(function (prop) {
         var _prop = syncProps.includes(prop) ? config.sync[prop] : config.serverChange[prop];
         if (!isWhat.isFunction(_prop))
-            errors.push("`" + prop + "` should be a Function, but is not.");
+            errors.push("`".concat(prop, "` should be a Function, but is not."));
     });
     var objectProps = ['sync', 'serverChange', 'defaultValues', 'fetch'];
     objectProps.forEach(function (prop) {
         var _prop = prop === 'defaultValues' ? config.sync[prop] : config[prop];
         if (!isWhat.isPlainObject(_prop))
-            errors.push("`" + prop + "` should be an Object, but is not.");
+            errors.push("`".concat(prop, "` should be an Object, but is not."));
     });
     var stringProps = ['firestorePath', 'firestoreRefType', 'moduleName'];
     stringProps.forEach(function (prop) {
         var _prop = config[prop];
         if (!isWhat.isString(_prop))
-            errors.push("`" + prop + "` should be a String, but is not.");
+            errors.push("`".concat(prop, "` should be a String, but is not."));
     });
     var arrayProps = ['where', 'orderBy', 'fillables', 'guard'];
     arrayProps.forEach(function (prop) {
         var _prop = config.sync[prop];
         if (!isWhat.isArray(_prop))
-            errors.push("`" + prop + "` should be an Array, but is not.");
+            errors.push("`".concat(prop, "` should be an Array, but is not."));
     });
     if (errors.length) {
         console.group('[vuex-easy-firestore] ERRORS:');
-        console.error("Module: " + config.moduleName);
+        console.error("Module: ".concat(config.moduleName));
         errors.forEach(function (e) { return console.error(' - ', e); });
         console.groupEnd();
         return false;
@@ -4810,7 +4819,7 @@ function iniModule (userConfig, firestoreConfig) {
     for (var _i = 0, uKeys_1 = uKeys; _i < uKeys_1.length; _i++) {
         var key = uKeys_1[_i];
         if (pKeys.includes(key)) {
-            console.warn("[vuex-easy-firestore] Overloaded mutation: " + conf.moduleName + "/" + key);
+            console.warn("[vuex-easy-firestore] Overloaded mutation: ".concat(conf.moduleName, "/").concat(key));
         }
     }
     uKeys = Object.keys(userActions);
@@ -4818,7 +4827,7 @@ function iniModule (userConfig, firestoreConfig) {
     for (var _a = 0, uKeys_2 = uKeys; _a < uKeys_2.length; _a++) {
         var key = uKeys_2[_a];
         if (pKeys.includes(key)) {
-            console.warn("[vuex-easy-firestore] Overloaded action: " + conf.moduleName + "/" + key);
+            console.warn("[vuex-easy-firestore] Overloaded action: ".concat(conf.moduleName, "/").concat(key));
         }
     }
     uKeys = Object.keys(userGetters);
@@ -4826,7 +4835,7 @@ function iniModule (userConfig, firestoreConfig) {
     for (var _b = 0, uKeys_3 = uKeys; _b < uKeys_3.length; _b++) {
         var key = uKeys_3[_b];
         if (pKeys.includes(key)) {
-            console.warn("[vuex-easy-firestore] Overloaded getter: " + conf.moduleName + "/" + key);
+            console.warn("[vuex-easy-firestore] Overloaded getter: ".concat(conf.moduleName, "/").concat(key));
         }
     }
     return {

@@ -1,5 +1,5 @@
 import { AnyObject } from '../declarations';
-export declare type IState = {
+export type IState = {
     _sync: {
         signedIn: boolean;
         userId: any;

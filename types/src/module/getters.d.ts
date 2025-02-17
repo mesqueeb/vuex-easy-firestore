@@ -1,5 +1,5 @@
 import { AnyObject } from '../declarations';
-export declare type IPluginGetters = {
+export type IPluginGetters = {
     firestorePathComplete: (state: any, getters?: any, rootState?: any, rootGetters?: any) => string;
     signedIn: (state: any, getters?: any, rootState?: any, rootGetters?: any) => boolean;
     dbRef: (state: any, getters?: any, rootState?: any, rootGetters?: any) => any;

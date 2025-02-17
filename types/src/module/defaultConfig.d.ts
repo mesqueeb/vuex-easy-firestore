@@ -1,17 +1,17 @@
 import type { OrderByDirection } from 'firebase/firestore';
 import { AnyObject } from '../declarations';
-export declare type HandleDoc = (doc: any) => any;
-export declare type HandleId = (id: string) => any;
-export declare type HandleDocs = (docs: any[]) => any;
-export declare type HandleDocIds = (doc: any, ids: string[]) => any;
-export declare type HandleIds = (ids: string[]) => any;
-export declare type SyncHookDoc = (updateStore: HandleDoc, doc: any, store: any) => void | HandleDoc;
-export declare type SyncHookId = (updateStore: HandleId, id: string, store: any) => void | HandleId;
-export declare type InsertBatchHook = (updateStore: HandleDocs, docs: any[], store: any) => void | HandleDocs;
-export declare type PatchBatchHook = (updateStore: HandleDocIds, doc: any, ids: string[], store: any) => void | HandleDocIds;
-export declare type DeleteBatchHook = (updateStore: HandleIds, ids: string[], store: any) => void | HandleIds;
-export declare type ServerChangeHook = (updateStore: HandleDoc, doc: any, id: any, store: any) => void | HandleDoc;
-export declare type IConfig = {
+export type HandleDoc = (doc: any) => any;
+export type HandleId = (id: string) => any;
+export type HandleDocs = (docs: any[]) => any;
+export type HandleDocIds = (doc: any, ids: string[]) => any;
+export type HandleIds = (ids: string[]) => any;
+export type SyncHookDoc = (updateStore: HandleDoc, doc: any, store: any) => void | HandleDoc;
+export type SyncHookId = (updateStore: HandleId, id: string, store: any) => void | HandleId;
+export type InsertBatchHook = (updateStore: HandleDocs, docs: any[], store: any) => void | HandleDocs;
+export type PatchBatchHook = (updateStore: HandleDocIds, doc: any, ids: string[], store: any) => void | HandleDocIds;
+export type DeleteBatchHook = (updateStore: HandleIds, ids: string[], store: any) => void | HandleIds;
+export type ServerChangeHook = (updateStore: HandleDoc, doc: any, id: any, store: any) => void | HandleDoc;
+export type IConfig = {
     firestorePath: string;
     firestoreRefType: string;
     moduleName: string;
