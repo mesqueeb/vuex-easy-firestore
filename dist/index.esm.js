@@ -3102,7 +3102,7 @@ function pluginActions (firestoreConfig) {
                 var fetched = state._sync.fetched[identifier];
                 // We've never fetched this before:
                 if (!fetched) {
-                    var ref = getters.dbRef;
+                    var ref = toRaw(getters.dbRef);
                     var query_1 = [];
                     // apply where clauses and orderBy
                     getters.getWhereArrays(where$1).forEach(function (paramsArr) {
@@ -3127,17 +3127,17 @@ function pluginActions (firestoreConfig) {
                     return resolve({ done: true });
                 }
                 // attach fetch clauses
-                var fRef = state._sync.fetched[identifier].ref;
+                var fRef = toRaw(state._sync.fetched[identifier].ref);
                 if (fRequest.nextFetchRef) {
                     // get next ref if saved in state
-                    fRef = state._sync.fetched[identifier].nextFetchRef;
+                    fRef = toRaw(state._sync.fetched[identifier].nextFetchRef);
                 }
                 // add doc limit
                 var limit$1 = isNumber(parameters.clauses.limit)
                     ? parameters.clauses.limit
                     : state._conf.fetch.docLimit;
                 if (limit$1 > 0)
-                    fRef = query(toRaw(fRef), limit(toRaw(limit$1)));
+                    fRef = query(fRef, limit(toRaw(limit$1)));
                 // Stop if all records already fetched
                 if (fRequest.retrievedFetchRefs.includes(fRef)) {
                     console.log('[vuex-easy-firestore] Already retrieved this part.');
@@ -3455,7 +3455,7 @@ function pluginActions (firestoreConfig) {
                     query$1.push(orderBy(toRaw(f), toRaw(o)));
                 }
             }
-            var dbRef = query.apply(void 0, __spreadArray([getters.dbRef], query$1, false));
+            var dbRef = query.apply(void 0, __spreadArray([toRaw(getters.dbRef)], query$1, false));
             // creates promises that can be resolved from outside their scope and that
             // can give their status
             var nicePromise = function () {

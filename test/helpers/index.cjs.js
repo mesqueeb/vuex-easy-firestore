@@ -3652,7 +3652,7 @@ function pluginActions (firestoreConfig) {
                 var fetched = state._sync.fetched[identifier];
                 // We've never fetched this before:
                 if (!fetched) {
-                    var ref = getters.dbRef;
+                    var ref = vue.toRaw(getters.dbRef);
                     var query_1 = [];
                     // apply where clauses and orderBy
                     getters.getWhereArrays(where).forEach(function (paramsArr) {
@@ -3677,17 +3677,17 @@ function pluginActions (firestoreConfig) {
                     return resolve({ done: true });
                 }
                 // attach fetch clauses
-                var fRef = state._sync.fetched[identifier].ref;
+                var fRef = vue.toRaw(state._sync.fetched[identifier].ref);
                 if (fRequest.nextFetchRef) {
                     // get next ref if saved in state
-                    fRef = state._sync.fetched[identifier].nextFetchRef;
+                    fRef = vue.toRaw(state._sync.fetched[identifier].nextFetchRef);
                 }
                 // add doc limit
                 var limit = isWhat.isNumber(parameters.clauses.limit)
                     ? parameters.clauses.limit
                     : state._conf.fetch.docLimit;
                 if (limit > 0)
-                    fRef = firestore.query(vue.toRaw(fRef), firestore.limit(vue.toRaw(limit)));
+                    fRef = firestore.query(fRef, firestore.limit(vue.toRaw(limit)));
                 // Stop if all records already fetched
                 if (fRequest.retrievedFetchRefs.includes(fRef)) {
                     console.log('[vuex-easy-firestore] Already retrieved this part.');
@@ -4005,7 +4005,7 @@ function pluginActions (firestoreConfig) {
                     query.push(firestore.orderBy(vue.toRaw(f), vue.toRaw(o)));
                 }
             }
-            var dbRef = firestore.query.apply(void 0, __spreadArray([getters.dbRef], query, false));
+            var dbRef = firestore.query.apply(void 0, __spreadArray([vue.toRaw(getters.dbRef)], query, false));
             // creates promises that can be resolved from outside their scope and that
             // can give their status
             var nicePromise = function () {
