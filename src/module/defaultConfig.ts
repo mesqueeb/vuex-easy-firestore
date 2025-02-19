@@ -17,7 +17,7 @@ export type PatchBatchHook = (
   store
 ) => void | HandleDocIds
 export type DeleteBatchHook = (updateStore: HandleIds, ids: string[], store) => void | HandleIds
-export type ServerChangeHook = (updateStore: HandleDoc, doc: any, id, store) => void | HandleDoc
+export type ServerChangeHook = (updateStore: HandleDoc, doc: any, id, store) => Promise<void> | void | HandleDoc
 
 export type IConfig = {
   firestorePath: string

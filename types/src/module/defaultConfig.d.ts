@@ -10,7 +10,7 @@ export type SyncHookId = (updateStore: HandleId, id: string, store: any) => void
 export type InsertBatchHook = (updateStore: HandleDocs, docs: any[], store: any) => void | HandleDocs;
 export type PatchBatchHook = (updateStore: HandleDocIds, doc: any, ids: string[], store: any) => void | HandleDocIds;
 export type DeleteBatchHook = (updateStore: HandleIds, ids: string[], store: any) => void | HandleIds;
-export type ServerChangeHook = (updateStore: HandleDoc, doc: any, id: any, store: any) => void | HandleDoc;
+export type ServerChangeHook = (updateStore: HandleDoc, doc: any, id: any, store: any) => Promise<void> | void | HandleDoc;
 export type IConfig = {
     firestorePath: string;
     firestoreRefType: string;
