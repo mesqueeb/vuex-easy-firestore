@@ -4134,7 +4134,7 @@ function pluginGetters (firebaseApp) {
                     });
                     return cleanedParam;
                 };
-                return [cleanParam(whereClause[0]), whereClause[1], cleanParam(whereClause[2])];
+                return whereClause.map(cleanParam);
             });
         }; },
     };

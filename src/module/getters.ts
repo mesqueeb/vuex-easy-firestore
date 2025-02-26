@@ -202,7 +202,7 @@ export default function (firebaseApp: any): AnyObject {
           })
           return cleanedParam
         }
-        return [cleanParam(whereClause[0]), whereClause[1], cleanParam(whereClause[2])]
+        return whereClause.map(cleanParam) as any
       })
     },
   }
