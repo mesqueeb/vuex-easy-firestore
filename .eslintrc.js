@@ -1,7 +1,8 @@
 module.exports = {
   root: true,
+  parser: '@typescript-eslint/parser',
   parserOptions: {
-    parser: 'babel-eslint',
+    ecmaVersion: 2020,
     sourceType: 'module'
   },
   env: {
@@ -16,6 +17,7 @@ module.exports = {
   ],
   // required to lint *.vue files
   plugins: [
+    '@typescript-eslint',
     'vue'
   ],
   globals: {
@@ -25,6 +27,7 @@ module.exports = {
   },
   // add your custom rules here
   'rules': {
+    "@typescript-eslint/semi": "off",
     'space-before-function-paren': 'off',
     'indent': 'off',
     // allow async-await

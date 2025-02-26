@@ -26,7 +26,7 @@ export type IConfig = {
   statePropName: string | null
   logging?: boolean
   sync?: {
-    where?: any[][]
+    where?: [string, string, any][]
     orderBy?: [string, OrderByDirection?]
     fillables?: string[]
     guard?: string[]
