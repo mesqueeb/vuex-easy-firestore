@@ -7,6 +7,8 @@ import { IEasyFirestoreModule } from './declarations'
 import { arrayUnion, arrayRemove } from './utils/arrayHelpers'
 import { increment } from './utils/incrementHelper'
 
+export type { IPluginGetters } from './module/getters'
+
 /**
  * Create vuex-easy-firestore modules. Add as single plugin to Vuex Store.
  *
@@ -24,11 +26,11 @@ function vuexEasyFirestore(
     enablePersistence = false,
     synchronizeTabs = false,
   }: {
-    logging?: boolean
-    preventInitialDocInsertion?: boolean
-    FirebaseDependency?: ReturnType<typeof initializeApp> | null
-    enablePersistence?: boolean
-    synchronizeTabs?: boolean
+    logging?: boolean;
+    preventInitialDocInsertion?: boolean;
+    FirebaseDependency?: ReturnType<typeof initializeApp> | null;
+    enablePersistence?: boolean;
+    synchronizeTabs?: boolean;
   } = {
     logging: false,
     preventInitialDocInsertion: false,

@@ -14,30 +14,30 @@ import {
   deleteField as firestoreDeleteField,
 } from 'firebase/firestore'
 
-export type IPluginGetters = {
-  firestorePathComplete: (state: any, getters?: any, rootState?: any, rootGetters?: any) => string
-  signedIn: (state: any, getters?: any, rootState?: any, rootGetters?: any) => boolean
-  dbRef: (state: any, getters?: any, rootState?: any, rootGetters?: any) => any
-  storeRef: (state: any, getters?: any, rootState?: any, rootGetters?: any) => AnyObject
-  collectionMode: (state: any, getters?: any, rootState?: any, rootGetters?: any) => boolean
+export type IPluginGetters<State = any> = {
+  firestorePathComplete: (state: State, getters?: any, rootState?: any, rootGetters?: any) => string;
+  signedIn: (state: State, getters?: any, rootState?: any, rootGetters?: any) => boolean;
+  dbRef: (state: State, getters?: any, rootState?: any, rootGetters?: any) => any;
+  storeRef: (state: State, getters?: any, rootState?: any, rootGetters?: any) => AnyObject;
+  collectionMode: (state: State, getters?: any, rootState?: any, rootGetters?: any) => boolean;
   prepareForPatch: (
-    state: any,
+    state: State,
     getters?: any,
     rootState?: any,
     rootGetters?: any
-  ) => (ids: string[], doc: AnyObject) => AnyObject
+  ) => (ids: string[], doc: AnyObject) => AnyObject;
   prepareForInsert: (
-    state: any,
+    state: State,
     getters?: any,
     rootState?: any,
     rootGetters?: any
-  ) => (items: any[]) => any[]
+  ) => (items: any[]) => any[];
   prepareInitialDocForInsert: (
-    state: any,
+    state: State,
     getters?: any,
     rootState?: any,
     rootGetters?: any
-  ) => (doc: AnyObject) => AnyObject
+  ) => (doc: AnyObject) => AnyObject;
 }
 
 /**
