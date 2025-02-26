@@ -16,7 +16,7 @@
     "docs:build": "vuepress build docs",
     "docs:deploy": "./docs/.vuepress/deploy.sh",
     "lint:prettier": "prettier --write --loglevel warn \"**/*.{ts,md}\"",
-    "release": "npm run build && np"
+    "release": "npm run build && np --yolo"
   },
   "repository": {
     "type": "git",
