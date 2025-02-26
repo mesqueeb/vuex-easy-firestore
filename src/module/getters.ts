@@ -20,24 +20,16 @@ export type IPluginGetters<State = any> = {
   dbRef: (state: State, getters?: any, rootState?: any, rootGetters?: any) => any;
   storeRef: (state: State, getters?: any, rootState?: any, rootGetters?: any) => AnyObject;
   collectionMode: (state: State, getters?: any, rootState?: any, rootGetters?: any) => boolean;
-  prepareForPatch: (
-    state: State,
-    getters?: any,
-    rootState?: any,
-    rootGetters?: any
-  ) => (ids: string[], doc: AnyObject) => AnyObject;
-  prepareForInsert: (
-    state: State,
-    getters?: any,
-    rootState?: any,
-    rootGetters?: any
-  ) => (items: any[]) => any[];
-  prepareInitialDocForInsert: (
-    state: State,
-    getters?: any,
-    rootState?: any,
-    rootGetters?: any
-  ) => (doc: AnyObject) => AnyObject;
+  prepareForPatch: (state: State, getters?: any, rootState?: any, rootGetters?: any) => (ids?: string[], doc?: AnyObject) => AnyObject;
+  prepareForInsert: (state: State, getters?: any, rootState?: any, rootGetters?: any) => (items?: any[]) => any[];
+  prepareInitialDocForInsert: (state: State, getters?: any, rootState?: any, rootGetters?: any) => (doc: AnyObject) => AnyObject;
+  docModeId: (state: State, getters?: any, rootState?: any, rootGetters?: any) => string;
+  fillables: (state: State, getters?: any, rootState?: any, rootGetters?: any) => string[];
+  guard: (state: State, getters?: any, rootState?: any, rootGetters?: any) => string[];
+  defaultValues: (state: State, getters?: any, rootState?: any, rootGetters?: any) => AnyObject;
+  cleanUpRetrievedDoc: (state: State, getters?: any, rootState?: any, rootGetters?: any) => (doc?: AnyObject, id?: string) => AnyObject;
+  prepareForPropDeletion: (state: State, getters?: any, rootState?: any, rootGetters?: any) => (path?: string) => { [id: string]: AnyObject };
+  getWhereArrays: (state: State, getters?: any, rootState?: any, rootGetters?: any) => (whereArrays?: [string, string, any][]) => [string, string, any][];
 }
 
 /**
@@ -49,7 +41,7 @@ export type IPluginGetters<State = any> = {
  */
 export default function (firebaseApp: any): AnyObject {
   const firestore = getFirestore(firebaseApp)
-  return {
+  const getters: IPluginGetters = {
     firestorePathComplete(state, getters) {
       let path = state._conf.firestorePath
       Object.keys(state._sync.pathVariables).forEach((key) => {
@@ -89,7 +81,7 @@ export default function (firebaseApp: any): AnyObject {
       return getters.firestorePathComplete.split('/').pop()
     },
     fillables: (state) => {
-      let fillables = state._conf.sync.fillables
+      const fillables = state._conf.sync.fillables
       if (!fillables.length) return fillables
       return fillables.concat(['updated_at', 'updated_by', 'id', 'created_at', 'created_by'])
     },
@@ -212,4 +204,5 @@ export default function (firebaseApp: any): AnyObject {
       })
     },
   }
+  return getters
 }
