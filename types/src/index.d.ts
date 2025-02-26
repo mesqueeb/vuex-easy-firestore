@@ -3,6 +3,7 @@ import { IEasyFirestoreModule } from './declarations';
 import { arrayUnion, arrayRemove } from './utils/arrayHelpers';
 import { increment } from './utils/incrementHelper';
 export type { IPluginGetters } from './module/getters';
+export type { IConfig } from './module/defaultConfig';
 /**
  * Create vuex-easy-firestore modules. Add as single plugin to Vuex Store.
  *

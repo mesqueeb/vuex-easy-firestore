@@ -3957,7 +3957,7 @@ function pluginActions (firestoreConfig) {
  */
 function pluginGetters (firebaseApp) {
     var firestore = getFirestore(firebaseApp);
-    return {
+    var getters = {
         firestorePathComplete: function (state, getters) {
             var path = state._conf.firestorePath;
             Object.keys(state._sync.pathVariables).forEach(function (key) {
@@ -4104,7 +4104,7 @@ function pluginGetters (firebaseApp) {
             if (!isArray$1(whereArrays))
                 whereArrays = state._conf.sync.where;
             return whereArrays.map(function (whereClause) {
-                return whereClause.map(function (param) {
+                var cleanParam = function (param) {
                     if (!isString(param))
                         return param;
                     var cleanedParam = param;
@@ -4126,10 +4126,12 @@ function pluginGetters (firebaseApp) {
                         cleanedParam = cleanedParam.replace(keyRegEx, varVal);
                     });
                     return cleanedParam;
-                });
+                };
+                return [cleanParam(whereClause[0]), whereClause[1], cleanParam(whereClause[2])];
             });
         }; },
     };
+    return getters;
 }
 
 /**
