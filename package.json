@@ -11,11 +11,12 @@
     "test--only": "ava --verbose --match='*only:*'",
     "rollup": "rollup -c build/rollup.js",
     "rollup:watch": "rollup -c build/rollup.js --watch",
-    "build": "npm run rollup && npm run test",
+    "build": "npm run rollup",
     "docs:dev": "vuepress dev docs",
     "docs:build": "vuepress build docs",
     "docs:deploy": "./docs/.vuepress/deploy.sh",
-    "lint:prettier": "prettier --write --loglevel warn \"**/*.{ts,md}\""
+    "lint:prettier": "prettier --write --loglevel warn \"**/*.{ts,md}\"",
+    "release": "npm run build && np"
   },
   "repository": {
     "type": "git",
@@ -62,6 +63,7 @@
     "esm": "^3.2.25",
     "firebase": "^9.8.3",
     "mock-cloud-firestore": "^0.12.0",
+    "np": "^10.2.0",
     "patch-package": "^6.4.7",
     "prettier": "^2.5.1",
     "rollup": "^1.32.1",
