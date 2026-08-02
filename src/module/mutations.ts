@@ -21,6 +21,28 @@ function convertHelpers(originVal, newVal) {
 }
 
 /**
+ * Merges `updates` into `target` while preserving the insertion order of
+ * keys that already exist in `target`. New keys from `updates` are appended
+ * at the end. This keeps the in-memory object structurally stable so that
+ * JSON-string diffs against Firestore snapshots don't produce false positives
+ * (which would trigger a spurious `serverChange` event on every patch).
+ */
+function mergePreserveOrder(target: AnyObject, updates: AnyObject): AnyObject {
+  const result: AnyObject = {}
+  // 1. Existing keys in their original order
+  for (const key of Object.keys(target)) {
+    result[key] = key in updates ? updates[key] : target[key]
+  }
+  // 2. New keys from updates
+  for (const key of Object.keys(updates)) {
+    if (!(key in result)) {
+      result[key] = updates[key]
+    }
+  }
+  return result
+}
+
+/**
  * Creates the params needed to $set a target based on a nested.path
  *
  * @param {object} target
@@ -120,11 +142,20 @@ export default function (userState: object): AnyObject {
         const targetVal = pathToProp(ref, path)
         const newVal = convertHelpers(targetVal, value)
         // do not update anything if the values are the same
-        // this is technically not required, because vue takes care of this as well:
         if (targetVal === newVal) continue
-        // update just the nested value
+
         const setParams = getSetParams(ref, path, newVal)
-        setParams[0][setParams[1]] = setParams[2]
+        const [parentObj, prop] = setParams
+
+        // Use key-order-preserving merge when setting a plain-object value so
+        // that the object's insertion order does not change after a patch. This
+        // prevents spurious serverChange events caused by key-order drift
+        // between the local store and the Firestore snapshot (issue #300).
+        if (isPlainObject(parentObj[prop]) && isPlainObject(setParams[2])) {
+          parentObj[prop] = mergePreserveOrder(parentObj[prop], setParams[2])
+        } else {
+          parentObj[prop] = setParams[2]
+        }
       }
     },
     DELETE_DOC(state, id) {
