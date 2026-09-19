@@ -16,7 +16,7 @@
     "docs:build": "vuepress build docs",
     "docs:deploy": "./docs/.vuepress/deploy.sh",
     "lint:prettier": "prettier --write --loglevel warn \"**/*.{ts,md}\"",
-    "release": "npm run build && np --yolo"
+    "release": "npm run build && bumpp --no-push && npm publish && git push --follow-tags && gh release create $(git describe --tags --abbrev=0) --generate-notes"
   },
   "repository": {
     "type": "git",
@@ -57,13 +57,13 @@
     "@vuepress/plugin-google-analytics": "^2.0.0-beta.35",
     "ava": "^3.8.2",
     "babel-eslint": "^10.1.0",
+    "bumpp": "^12.3.0",
     "eslint": "^5.16.0",
     "eslint-loader": "^2.2.1",
     "eslint-plugin-vue": "^5.2.3",
     "esm": "^3.2.25",
     "firebase": "^9.8.3",
     "mock-cloud-firestore": "^0.12.0",
-    "np": "^12.1.1",
     "patch-package": "^6.4.7",
     "prettier": "^2.5.1",
     "rollup": "^1.32.1",
