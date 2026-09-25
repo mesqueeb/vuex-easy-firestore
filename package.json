@@ -47,7 +47,7 @@
     "find-and-replace-anything": "^2.0.5",
     "flatten-anything": "^1.4.1",
     "is-what": "^3.12.0",
-    "lodash-es": "^4.17.15",
+    "lodash-es": "^4.18.0",
     "merge-anything": "^2.4.4",
     "path-to-prop": "0.0.3",
     "vuex-easy-access": "github:adrianjost/vuex-easy-access#master"
