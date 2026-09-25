@@ -16,7 +16,7 @@
     "docs:build": "vuepress build docs",
     "docs:deploy": "./docs/.vuepress/deploy.sh",
     "lint:prettier": "prettier --write --loglevel warn \"**/*.{ts,md}\"",
-    "release": "npm run build && bumpp --no-push && npm publish && git push --follow-tags && gh release create $(git describe --tags --abbrev=0) --generate-notes --notes \"$(git log --pretty='- %s  %h' $(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD~1)\""
+    "release": "npm run build && bumpp --no-push --all && npm publish && git push --follow-tags && gh release create $(git describe --tags --abbrev=0) --generate-notes --notes \"$(git log --pretty='- %s  %h' $(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD~1)\""
   },
   "repository": {
     "type": "git",
