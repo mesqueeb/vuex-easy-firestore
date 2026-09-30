@@ -34,7 +34,8 @@ const plugins = [
   //   'merge-anything',
   //   'vuex-easy-access',
   // ]}),
-  typescript({ useTsconfigDeclarationDir: true, tsconfigOverride: { exclude: ['test/**/*'] } }),
+  // picomatch 2.3.2 no longer matches rpt2's default `*.ts+(|x)` include, so every .ts file gets skipped
+  typescript({ include: ['*.ts?(x)', '**/*.ts?(x)'], useTsconfigDeclarationDir: true, tsconfigOverride: { exclude: ['test/**/*'] } }),
 ]
 
 // ------------------------------------------------------------------------------------------
